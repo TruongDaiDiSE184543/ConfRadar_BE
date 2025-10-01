@@ -1,0 +1,18 @@
+﻿services:
+  confradar.api:
+    build:
+      context: .
+      dockerfile: ConfRadar.Api/Dockerfile
+  confradar.postgres:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: confradar123        
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: confradar_db    
+    ports:
+      - "5433:5432"
+    volumes:
+      - confradar_data:/var/lib/postgresql/data 
+volumes:
+  confradar_data:

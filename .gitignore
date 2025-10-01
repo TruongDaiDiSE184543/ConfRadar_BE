@@ -277,3 +277,6 @@ __pycache__/
 
 
 /ConfRadar/ConfRadar.Api/appsettings*.json
+/ConfRadar/docker-compose.dcproj
+/ConfRadar/ConfRadar.Api/Properties/launchSettings.json
+/ConfRadar/launchSettings.json
