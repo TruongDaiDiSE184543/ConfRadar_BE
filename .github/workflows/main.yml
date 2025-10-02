@@ -18,7 +18,6 @@ jobs:
           cd /sep490/ConfRadar_BE/ConfRadar
           git pull origin main
 
-          # overwrite appsettings.json
           cat <<EOF > ConfRadar.Api/appsettings.json
 ${{ secrets.APPSETTINGS_JSON }}
 EOF
