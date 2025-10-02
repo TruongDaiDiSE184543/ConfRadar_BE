@@ -1,0 +1,28 @@
+name: GFA25SE75
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy using ssh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        script: |
+          cd /sep490/ConfRadar_BE/ConfRadar
+          git pull origin main
+
+          # overwrite appsettings.json
+          cat <<EOF > ConfRadar.Api/appsettings.json
+${{ secrets.APPSETTINGS_JSON }}
+EOF
+
+          docker compose down
+          docker compose build --no-cache
+          docker compose up -d
