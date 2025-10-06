@@ -7,9 +7,13 @@
       - "8080:5000"
     environment:
       - DOTNET_URLS=http://+:5000 
+    networks:
+      - confradar-network
 
   confradar.postgres:
     image: postgres:17
+    networks:
+      - confradar-network
     restart: always
     environment:
       POSTGRES_USER: confradar123        
@@ -21,3 +25,8 @@
       - confradar_data:/var/lib/postgresql/data 
 volumes:
   confradar_data:
+
+
+networks:
+  confradar-network:
+    name: confradar-network
