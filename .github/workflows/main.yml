@@ -15,7 +15,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            cd /sep490/ConfRadar_BE/ConfRadar
+            cd /root/sep490/ConfRadar_BE/ConfRadar
             git pull origin main
 
             cat <<'EOF' > ConfRadar.Api/appsettings.json
