@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ConfRadar.Repositories.Models;
+﻿namespace ConfRadar.Repositories.Models;
 
 public partial class User
 {
@@ -34,6 +31,14 @@ public partial class User
     public string? Verificationtoken { get; set; }
 
     public DateTime? Verificationtokenexpiry { get; set; }
+
+    public string? Passwordresettoken { get; set; }
+
+    public DateTime? Passwordresettokenexpiry { get; set; }
+
+    public string? Loginprovider { get; set; }
+
+    public virtual ICollection<UserRefreshToken> UserRefreshTokens { get; set; } = new List<UserRefreshToken>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 }

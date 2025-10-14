@@ -4,7 +4,7 @@
     {
         string Hash(string password);
         bool Verify(string password, string hashedPassword);
-        
+
     }
     public class BcryptPasswordHasher : IPasswordHasher
     {
@@ -17,6 +17,6 @@
         {
             return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
-      
+
     }
 }

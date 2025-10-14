@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ConfRadar.Repositories.Models;
+﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -21,6 +19,8 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+
     public static string GetConnectionString(string connectionStringName)
     {
         var config = new ConfigurationBuilder()
@@ -33,8 +33,6 @@ public partial class ConfRadarDbContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Role>(entity =>
@@ -86,9 +84,18 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.Lastlogin)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("lastlogin");
+            entity.Property(e => e.Loginprovider)
+                .HasMaxLength(50)
+                .HasColumnName("loginprovider");
             entity.Property(e => e.Passwordhash)
                 .HasMaxLength(500)
                 .HasColumnName("passwordhash");
+            entity.Property(e => e.Passwordresettoken)
+                .HasMaxLength(255)
+                .HasColumnName("passwordresettoken");
+            entity.Property(e => e.Passwordresettokenexpiry)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("passwordresettokenexpiry");
             entity.Property(e => e.Phonenumber)
                 .HasMaxLength(20)
                 .HasColumnName("phonenumber");
@@ -121,6 +128,37 @@ public partial class ConfRadarDbContext : DbContext
                             .HasMaxLength(50)
                             .HasColumnName("roleid");
                     });
+        });
+
+        modelBuilder.Entity<UserRefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Tokenid).HasName("UserRefreshToken_pkey");
+
+            entity.ToTable("UserRefreshToken");
+
+            entity.HasIndex(e => e.Token, "UserRefreshToken_token_key").IsUnique();
+
+            entity.Property(e => e.Tokenid)
+                .HasMaxLength(50)
+                .HasColumnName("tokenid");
+            entity.Property(e => e.Createdat)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("createdat");
+            entity.Property(e => e.Expiry)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("expiry");
+            entity.Property(e => e.Isrevoked).HasColumnName("isrevoked");
+            entity.Property(e => e.Token)
+                .HasMaxLength(500)
+                .HasColumnName("token");
+            entity.Property(e => e.Userid)
+                .HasMaxLength(50)
+                .HasColumnName("userid");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRefreshTokens)
+                .HasForeignKey(d => d.Userid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("UserRefreshToken_userid_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -23,7 +23,7 @@ namespace ConfRadar.Services.DTOs.User
 
         [Required(ErrorMessage = "Full name is required")]
         [MaxLength(255)]
-        public string Fullname { get; set; }
+        public string FullName { get; set; }
 
         public DateOnly? Birthday { get; set; }
 

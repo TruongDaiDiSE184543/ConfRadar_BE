@@ -9,9 +9,9 @@ namespace ConfRadar.Services.Services
     {
 
         Task SendEmailAsync(string toEmail, string subject, string body);
-        Task SendRegistrationConfirmationEmailAsync(string toEmail, string userName, string confirmLink);
+        Task SendAuthenticationTemplateEmailAsync(string toEmail, string userName, string link, string subject, string templateFileName);
     }
-    public class SmtpEmailService: IEmailService
+    public class SmtpEmailService : IEmailService
     {
         private readonly EmailSettings _emailSettings;
         public SmtpEmailService(IOptions<EmailSettings> emailSetting)
@@ -20,9 +20,9 @@ namespace ConfRadar.Services.Services
         }
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            
+
             var email = new MimeMessage();
-            email.From.Add(new MailboxAddress(Encoding.UTF8,_emailSettings.FromName,_emailSettings.FromEmail));
+            email.From.Add(new MailboxAddress(Encoding.UTF8, _emailSettings.FromName, _emailSettings.FromEmail));
             email.To.Add(MailboxAddress.Parse(toEmail));
             email.Subject = subject;
             email.Body = new TextPart(MimeKit.Text.TextFormat.Html)
@@ -32,8 +32,8 @@ namespace ConfRadar.Services.Services
             using var smtp = new MailKit.Net.Smtp.SmtpClient();
             try
             {
-                await smtp.ConnectAsync(_emailSettings.SmtpServer,_emailSettings.Port , MailKit.Security.SecureSocketOptions.SslOnConnect);
-                smtp.Authenticate(_emailSettings.Username,_emailSettings.Password );
+                await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.Port, MailKit.Security.SecureSocketOptions.SslOnConnect);
+                smtp.Authenticate(_emailSettings.Username, _emailSettings.Password);
                 await smtp.SendAsync(email);
             }
             catch (Exception ex)
@@ -55,16 +55,17 @@ namespace ConfRadar.Services.Services
             return html;
         }
 
-        public async Task SendRegistrationConfirmationEmailAsync(string toEmail, string userName, string confirmLink)
+        public async Task SendAuthenticationTemplateEmailAsync( string toEmail,string userName,string link,string subject,string templateFileName)
         {
             var replacements = new Dictionary<string, string>
- {
- { "{{UserName}}", userName },
- { "{{ConfirmLink}}", confirmLink }
- };
-            var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "EmailRegistrationConfirmation.html");
+    {
+        { "{{UserName}}", userName },
+        { "{{Link}}", link }
+    };
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", templateFileName);
             string body = LoadTemplate(templatePath, replacements);
-            await SendEmailAsync(toEmail, "Confirm Account Registration", body);
+
+            await SendEmailAsync(toEmail, subject, body);
         }
     }
 }

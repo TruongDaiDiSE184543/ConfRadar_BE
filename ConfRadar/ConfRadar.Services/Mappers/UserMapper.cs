@@ -11,8 +11,8 @@ namespace ConfRadar.Services.Mappers
             {
                 Userid = Guid.NewGuid().ToString(),
                 Email = request.Email,
-                
-                Fullname = request.Fullname,
+
+                Fullname = request.FullName,
                 Birthday = request.Birthday,
                 Phonenumber = request.PhoneNumber,
                 Gender = request.Gender,
