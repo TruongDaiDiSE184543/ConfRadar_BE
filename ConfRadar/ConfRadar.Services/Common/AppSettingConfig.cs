@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.Services.Common
+﻿namespace ConfRadar.Services.Common
 {
     public static class AppSettingConfig
     {
@@ -17,6 +11,14 @@ namespace ConfRadar.Services.Common
             public string Username { get; set; }
             public string Password { get; set; }
             public bool UseSSL { get; set; }
+        }
+        public class JwtSettings
+        {
+            public string Issuer { get; set; }
+            public string Audience { get; set; }
+            public string SecretKey { get; set; }
+            public int ExpiresAccessToken { get; set; }
+            public int ExpiresRefreshToken { get; set; }
         }
     }
 }

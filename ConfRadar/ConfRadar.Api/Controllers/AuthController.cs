@@ -1,7 +1,9 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -15,18 +17,48 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
+
+        [HttpGet("confirm-registration-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+        {
+            await _serviceManager.AuthService.VerifyRegistration(token);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Email confirmed successfully"));
+        }
+
+
+
+
         [HttpPost("register")]
         public async Task<IActionResult> RegisterAccount([FromForm] CreateUserRequest request)
         {
             var result = await _serviceManager.AuthService.RegisterAccount(request);
             return Ok(ApiResponse<object>.SuccessResponse(result, "Please check your email"));
         }
-
-        [HttpGet("confirm-registration-email")]
-        public async Task<IActionResult> ConfirmEmail([FromQuery]string token)
+        [HttpPost("login")]
+        public async Task<IActionResult> LocalLogin([FromBody] LocalLoginUserRequest request)
         {
-            await _serviceManager.AuthService.VerifyRegistration(token);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "Email confirmed successfully"));
+            var loginResponse = await _serviceManager.AuthService.LocalLogin(request);
+            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Login successful"));
+        }
+        [HttpPost("forget-password")]
+        public async Task<IActionResult> ForgetPassword(string email)
+        {
+            await _serviceManager.AuthService.ForgetPassword(email);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "An email has been sent to your mailbox"));
+        }
+        [HttpPost("verify-forget-password")]
+        public async Task<IActionResult> VerifyForgetPassword([FromBody] ForgetPasswordRequest request)
+        {
+            await _serviceManager.AuthService.VerifyForgetPassword(request.Token,request.Password);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Password changed successfully"));
+        }
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            await _serviceManager.AuthService.ChangePassword(request.OldPassword,request.NewPassword,userId);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Your password has been changed"));
         }
 
     }

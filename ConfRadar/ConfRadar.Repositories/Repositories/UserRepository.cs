@@ -8,8 +8,19 @@ namespace ConfRadar.Repositories.Repositories
     public interface IUserRepository
     {
         Task<int> CreateUserAsync(User user);
-        Task<User?> GetUserByRegistrationConfirmationToken(string token);
+
+
         Task<int> UpdateUserAsync(User user);
+
+
+
+        Task<User?> GetUserByRegistrationConfirmationToken(string token);
+        Task<User?> GetUserByForgetPasswordToken(string token);
+        Task<User?> GetUserByEmail(string email);
+        Task<User?> GetUserByName(string name);
+        Task<User?> GetUserByUserId(string userId);
+
+
 
     }
     public class UserRepository : GenericRepository<User>, IUserRepository
@@ -22,9 +33,30 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await CreateAsync(user);
         }
+
+        public async Task<User?> GetUserByEmail(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(x => x.Email == email);
+        }
+
+        public async Task<User?> GetUserByForgetPasswordToken(string token)
+        {
+            return await _context.Users.FirstOrDefaultAsync(x => x.Passwordresettoken == token);
+        }
+
+        public async Task<User?> GetUserByName(string name)
+        {
+            return await _context.Users.FirstOrDefaultAsync(x => x.Fullname == name);
+        }
+
         public async Task<User?> GetUserByRegistrationConfirmationToken(string token)
         {
             return await _context.Users.FirstOrDefaultAsync(x => x.Verificationtoken == token);
+        }
+
+        public async Task<User?> GetUserByUserId(string userId)
+        {
+           return await _context.Users.FirstOrDefaultAsync(x=>x.Userid == userId);   
         }
 
         public async Task<int> UpdateUserAsync(User user)

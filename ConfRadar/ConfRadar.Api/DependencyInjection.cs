@@ -11,6 +11,9 @@ namespace ConfRadar.Api
         public static void AddApiConfig(this IServiceCollection services, IConfiguration configs)
         {
             services.Configure<AppSettingConfig.EmailSettings>(configs.GetSection("EmailSettings"));
+            services.Configure<AppSettingConfig.JwtSettings>(configs.GetSection("JwtSettings"));
+
+
             services.AddDbContext<ConfRadarDbContext>(options =>
             options.UseNpgsql(configs.GetConnectionString("ConnectionStrings")));
 

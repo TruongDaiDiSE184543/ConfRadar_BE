@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Api.Common.Configurations
 {
@@ -9,8 +10,8 @@ namespace ConfRadar.Api.Common.Configurations
     {
         public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
         {
-            var jwtSettings = config.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"];
+            var jwtSettings = config.GetSection("JwtSettings").Get<JwtSettings>();
+            var secretKey = jwtSettings.SecretKey;
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -25,8 +26,8 @@ namespace ConfRadar.Api.Common.Configurations
                     ValidateIssuerSigningKey = true,
 
 
-                    ValidIssuer = jwtSettings["Issuer"],
-                    ValidAudience = jwtSettings["Audience"],
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!)),
                 };
 
