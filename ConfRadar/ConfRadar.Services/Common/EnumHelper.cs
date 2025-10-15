@@ -15,6 +15,6 @@
     }
     public enum ObjectStorageBucket
     {
-        ConfRadar
+        avatar
     }
 }

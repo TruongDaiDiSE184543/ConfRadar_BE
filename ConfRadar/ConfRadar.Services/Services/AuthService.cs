@@ -16,8 +16,8 @@ namespace ConfRadar.Services.Services
         Task VerifyRegistration(string token);
         Task<LoginUserResponse> LocalLogin(LocalLoginUserRequest request);
         Task ForgetPassword(string email);
-        Task VerifyForgetPassword(string token,string newPassword);
-        Task ChangePassword(string oldPassword, string newPassword,string userId);
+        Task VerifyForgetPassword(string token, string newPassword);
+        Task ChangePassword(string oldPassword, string newPassword, string userId);
     }
     public class AuthService : IAuthService
     {
@@ -26,9 +26,10 @@ namespace ConfRadar.Services.Services
         private readonly IEmailService _emailService;
         private readonly ITokenService _tokenService;
         private readonly JwtSettings _jwtSettings;
+        private readonly ObjectStorageSettings _objectStorageSettings;
         private readonly IObjectStorageFileService _objectStorageFileService;
         public AuthService(IPasswordHasher passwordHasher, IEmailService emailService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IUnitOfWork unitOfWork,
-            IObjectStorageFileService objectStorageFileService)
+            IObjectStorageFileService objectStorageFileService, IOptions<ObjectStorageSettings> objectStorageSettings)
         {
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
@@ -36,6 +37,7 @@ namespace ConfRadar.Services.Services
             _tokenService = tokenService;
             _jwtSettings = jwtSettings.Value;
             _objectStorageFileService = objectStorageFileService;
+            _objectStorageSettings = objectStorageSettings.Value;
         }
         public async Task<int> RegisterAccount(CreateUserRequest request)
         {
@@ -58,8 +60,8 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException("Content type is null");
                 }
-                if (request.AvatarFile.ContentType != "image/png" 
-                    && request.AvatarFile.ContentType != "image/jpeg" 
+                if (request.AvatarFile.ContentType != "image/png"
+                    && request.AvatarFile.ContentType != "image/jpeg"
                     && request.AvatarFile.ContentType != "image/gif"
                     && request.AvatarFile.ContentType != "image/svg+xml"
                     && request.AvatarFile.ContentType != "image/webp")
@@ -68,8 +70,11 @@ namespace ConfRadar.Services.Services
                 }
                 using var stream = request.AvatarFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.AvatarFile.FileName);
-                 fileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucket.ConfRadar.ToString(), uniqueFileName, stream, request.AvatarFile.ContentType);
-                
+                var baseUri = _objectStorageSettings.EndPoint;
+                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucket.avatar.ToString(), uniqueFileName, stream, request.AvatarFile.ContentType);
+                fileUrl = baseUri + objectStorageFileUrl;
+
+
             }
 
             var hashedPassword = _passwordHasher.Hash(request.Password);
@@ -81,7 +86,7 @@ namespace ConfRadar.Services.Services
             userCreated.Loginprovider = LoginProvider.Local.ToString();
             userCreated.Verificationtokenexpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(24), DateTimeKind.Unspecified);
             userCreated.Avatarurl = fileUrl;
-            await _emailService.SendAuthenticationTemplateEmailAsync(request.Email,request.FullName,confirmationLink,"Confirm Email Registration","EmailRegistrationConfirmation.html");
+            await _emailService.SendAuthenticationTemplateEmailAsync(request.Email, request.FullName, confirmationLink, "Confirm Email Registration", "EmailRegistrationConfirmation.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
         public async Task VerifyRegistration(string token)
@@ -163,10 +168,10 @@ namespace ConfRadar.Services.Services
             user.Passwordresettoken = resetToken;
             user.Passwordresettokenexpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddMinutes(60), DateTimeKind.Unspecified);
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
-            await _emailService.SendAuthenticationTemplateEmailAsync(email,user.Fullname,resetLink,"Forget Password","EmailForgetPassword.html");
+            await _emailService.SendAuthenticationTemplateEmailAsync(email, user.Fullname, resetLink, "Forget Password", "EmailForgetPassword.html");
         }
 
-        public async Task VerifyForgetPassword(string token,string newPassword)
+        public async Task VerifyForgetPassword(string token, string newPassword)
         {
             var user = await _unitOfWork.UserRepository.GetUserByForgetPasswordToken(token);
             if (user == null)

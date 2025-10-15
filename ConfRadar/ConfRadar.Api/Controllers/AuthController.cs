@@ -49,7 +49,7 @@ namespace ConfRadar.Api.Controllers
         [HttpPost("verify-forget-password")]
         public async Task<IActionResult> VerifyForgetPassword([FromBody] ForgetPasswordRequest request)
         {
-            await _serviceManager.AuthService.VerifyForgetPassword(request.Token,request.Password);
+            await _serviceManager.AuthService.VerifyForgetPassword(request.Token, request.Password);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Password changed successfully"));
         }
         [Authorize]
@@ -57,7 +57,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-            await _serviceManager.AuthService.ChangePassword(request.OldPassword,request.NewPassword,userId);
+            await _serviceManager.AuthService.ChangePassword(request.OldPassword, request.NewPassword, userId);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Your password has been changed"));
         }
 
