@@ -26,13 +26,16 @@ namespace ConfRadar.Services.Services
         private readonly IEmailService _emailService;
         private readonly ITokenService _tokenService;
         private readonly JwtSettings _jwtSettings;
-        public AuthService(IPasswordHasher passwordHasher, IEmailService emailService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IUnitOfWork unitOfWork)
+        private readonly IObjectStorageFileService _objectStorageFileService;
+        public AuthService(IPasswordHasher passwordHasher, IEmailService emailService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IUnitOfWork unitOfWork,
+            IObjectStorageFileService objectStorageFileService)
         {
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
             _emailService = emailService;
             _tokenService = tokenService;
             _jwtSettings = jwtSettings.Value;
+            _objectStorageFileService = objectStorageFileService;
         }
         public async Task<int> RegisterAccount(CreateUserRequest request)
         {
@@ -48,6 +51,27 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User with this full name already exists");
             }
+            string fileUrl = null;
+            if (request.AvatarFile != null)
+            {
+                if (request.AvatarFile.ContentType == null)
+                {
+                    throw new BadRequestException("Content type is null");
+                }
+                if (request.AvatarFile.ContentType != "image/png" 
+                    && request.AvatarFile.ContentType != "image/jpeg" 
+                    && request.AvatarFile.ContentType != "image/gif"
+                    && request.AvatarFile.ContentType != "image/svg+xml"
+                    && request.AvatarFile.ContentType != "image/webp")
+                {
+                    throw new BadRequestException("Only PNG,JPEG,GIF,SVG,WEBP files are allowed for avatar");
+                }
+                using var stream = request.AvatarFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.AvatarFile.FileName);
+                 fileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucket.ConfRadar.ToString(), uniqueFileName, stream, request.AvatarFile.ContentType);
+                
+            }
+
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.ConfirmRegistrationEmail + $"?token={verificationToken}";
@@ -56,6 +80,7 @@ namespace ConfRadar.Services.Services
             userCreated.Verificationtoken = verificationToken;
             userCreated.Loginprovider = LoginProvider.Local.ToString();
             userCreated.Verificationtokenexpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(24), DateTimeKind.Unspecified);
+            userCreated.Avatarurl = fileUrl;
             await _emailService.SendAuthenticationTemplateEmailAsync(request.Email,request.FullName,confirmationLink,"Confirm Email Registration","EmailRegistrationConfirmation.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
@@ -64,7 +89,7 @@ namespace ConfRadar.Services.Services
             var user = await _unitOfWork.UserRepository.GetUserByRegistrationConfirmationToken(token);
             if (user == null)
             {
-                throw new ConfRadarAuthenticationException("User not found");
+                throw new ConfRadarAuthenticationException("Token not found");
             }
             if (user.Isemailconfirmed == true)
             {

@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-
+using Microsoft.AspNetCore.Http;
 namespace ConfRadar.Services.DTOs.User
 {
     public class CreateUserRequest
@@ -39,6 +39,6 @@ namespace ConfRadar.Services.DTOs.User
         [MaxLength(500)]
         public string? BioDescription { get; set; }
 
-
+        public IFormFile? AvatarFile { get; set; }
     }
 }

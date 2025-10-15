@@ -20,5 +20,12 @@
             public int ExpiresAccessToken { get; set; }
             public int ExpiresRefreshToken { get; set; }
         }
+        public class ObjectStorageSettings
+        {
+            public string EndPoint { get; set; } 
+            public string AccessKey { get; set; } 
+            public string SecretKey { get; set; }
+            public bool Secure { get; set; } 
+        }
     }
 }
