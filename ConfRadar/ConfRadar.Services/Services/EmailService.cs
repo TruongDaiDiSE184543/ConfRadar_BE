@@ -55,7 +55,7 @@ namespace ConfRadar.Services.Services
             return html;
         }
 
-        public async Task SendAuthenticationTemplateEmailAsync( string toEmail,string userName,string link,string subject,string templateFileName)
+        public async Task SendAuthenticationTemplateEmailAsync(string toEmail, string userName, string link, string subject, string templateFileName)
         {
             var replacements = new Dictionary<string, string>
     {

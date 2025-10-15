@@ -6,13 +6,13 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface IRoleRepository
     {
-       
+
     }
     public class RoleRepository : GenericRepository<Role>, IRoleRepository
     {
         public RoleRepository(ConfRadarDbContext context) : base(context)
         {
         }
-        
+
     }
 }

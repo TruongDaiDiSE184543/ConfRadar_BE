@@ -3,7 +3,6 @@ using ConfRadar.Api.Filters;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Services.Common;
 using Microsoft.EntityFrameworkCore;
-using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Api
 {
@@ -13,7 +12,7 @@ namespace ConfRadar.Api
         {
             services.Configure<AppSettingConfig.EmailSettings>(configs.GetSection("EmailSettings"));
             services.Configure<AppSettingConfig.JwtSettings>(configs.GetSection("JwtSettings"));
-            
+            services.Configure<AppSettingConfig.ObjectStorageSettings>(configs.GetSection("ObjectStorageSettings"));
 
             services.AddDbContext<ConfRadarDbContext>(options =>
             options.UseNpgsql(configs.GetConnectionString("ConnectionStrings")));

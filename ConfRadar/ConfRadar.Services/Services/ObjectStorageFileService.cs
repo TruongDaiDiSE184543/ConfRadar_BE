@@ -1,11 +1,6 @@
 ﻿using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 namespace ConfRadar.Services.Services
 {
     public interface IObjectStorageFileService
@@ -32,7 +27,7 @@ namespace ConfRadar.Services.Services
                     .WithObject(objectName);
                 await _minioClient.RemoveObjectAsync(removeObjectArgs).ConfigureAwait(false);
             }
-            catch(MinioException ex)
+            catch (MinioException ex)
             {
                 throw;
             }
@@ -60,13 +55,13 @@ namespace ConfRadar.Services.Services
                     .WithCallbackStream(stream =>
                     {
                         stream.CopyTo(memoryStream);
-                        
+
                     });
                 await _minioClient.GetObjectAsync(getObjectArgs).ConfigureAwait(false);
                 memoryStream.Position = 0;
                 return memoryStream;
             }
-            catch(MinioException ex)
+            catch (MinioException ex)
             {
                 throw;
             }
@@ -76,6 +71,7 @@ namespace ConfRadar.Services.Services
         {
             try
             {
+                await EnsureBucketExistsAsync(bucketName);
                 var putObjectArgs = new PutObjectArgs()
                     .WithBucket(bucketName)
                     .WithObject(objectName)

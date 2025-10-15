@@ -22,10 +22,11 @@
         }
         public class ObjectStorageSettings
         {
-            public string EndPoint { get; set; } 
-            public string AccessKey { get; set; } 
+            public string EndPointAccess { get; set; }
+            public string EndPoint { get; set; }
+            public string AccessKey { get; set; }
             public string SecretKey { get; set; }
-            public bool Secure { get; set; } 
+            public bool Secure { get; set; }
         }
     }
 }
