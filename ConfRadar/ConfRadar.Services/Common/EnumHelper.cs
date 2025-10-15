@@ -13,4 +13,8 @@
         LocalReviewer,
         Admin
     }
+    public enum ObjectStorageBucket
+    {
+        ConfRadar
+    }
 }

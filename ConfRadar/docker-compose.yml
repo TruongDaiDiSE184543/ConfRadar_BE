@@ -23,8 +23,26 @@
       - "5433:5432"
     volumes:
       - confradar_data:/var/lib/postgresql/data 
+
+  confradar.minio:
+    image: minio/minio:latest
+    container_name: minio
+    networks:
+      - confradar-network
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: confradar123
+      MINIO_ROOT_PASSWORD: 12345
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+
 volumes:
   confradar_data:
+  minio_data:
 
 
 networks:
