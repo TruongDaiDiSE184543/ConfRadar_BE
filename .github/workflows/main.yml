@@ -18,13 +18,8 @@ jobs:
             cd /root/sep490/ConfRadar_BE/ConfRadar
             git pull origin main
 
-            cat <<'EOF' > ConfRadar.Api/appsettings.json
-            ${{ secrets.APPSETTINGS_JSON }}
-            EOF
-
-            cat <<'EOF' > .env
-            ${{ secrets.ENV }}
-            EOF 
+            printf "%s" '${{ secrets.APPSETTINGS_JSON }}' > ConfRadar.Api/appsettings.json 
+            printf "%s" '${{ secrets.ENV }}' > .env
             
             docker compose down
             docker compose build --no-cache
