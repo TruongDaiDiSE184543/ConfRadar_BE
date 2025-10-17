@@ -20,7 +20,7 @@ jobs:
 
             printf "%s\n" '${{ secrets.APPSETTINGS_JSON }}' > ConfRadar.Api/appsettings.json
             printf "%s\n" '${{ secrets.ENV }}' > .env
-            printf "%s\n" '${{ secrets.CONFRADAR_ADMIN_SDK }}' > .confradar-admin-sdk.json
+            printf "%s\n" '${{ secrets.CONFRADAR_ADMIN_SDK }}' > confradar-admin-sdk.json
 
             
             docker compose down
