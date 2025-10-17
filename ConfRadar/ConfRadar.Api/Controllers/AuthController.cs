@@ -3,7 +3,7 @@ using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -40,6 +40,12 @@ namespace ConfRadar.Api.Controllers
             var loginResponse = await _serviceManager.AuthService.LocalLogin(request);
             return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Login successful"));
         }
+        [HttpPost("firebase-login")]
+        public async Task<IActionResult> FirebaseLogin([FromBody] FirebaseLoginRequest request)
+        {
+            var loginResponse = await _serviceManager.AuthService.FirebaseLogin(request);
+            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Login successful"));
+        }
         [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(string email)
         {
@@ -56,10 +62,17 @@ namespace ConfRadar.Api.Controllers
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             await _serviceManager.AuthService.ChangePassword(request.OldPassword, request.NewPassword, userId);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Your password has been changed"));
         }
-
+        [Authorize]
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var refreshTokenResponse = await _serviceManager.AuthService.RefreshToken(userId!, request.Token);
+            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(refreshTokenResponse, "Token refreshed successfully"));
+        }
     }
 }

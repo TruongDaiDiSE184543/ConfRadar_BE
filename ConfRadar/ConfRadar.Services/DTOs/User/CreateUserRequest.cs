@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using ConfRadar.Services.Common;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 namespace ConfRadar.Services.DTOs.User
 {
@@ -33,8 +34,8 @@ namespace ConfRadar.Services.DTOs.User
         public string? PhoneNumber { get; set; }
 
 
-        [MaxLength(20)]
-        public string? Gender { get; set; }
+        [EnumDataType(typeof(GenderType), ErrorMessage = "Invalid gender type")]
+        public GenderType? Gender { get; set; }
 
         [MaxLength(500)]
         public string? BioDescription { get; set; }

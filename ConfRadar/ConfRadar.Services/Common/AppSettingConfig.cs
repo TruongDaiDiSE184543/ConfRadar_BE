@@ -28,5 +28,9 @@
             public string SecretKey { get; set; }
             public bool Secure { get; set; }
         }
+        public class FirebaseSettings
+        {
+            public string ServiceAccountPath { get; set; }
+        }
     }
 }

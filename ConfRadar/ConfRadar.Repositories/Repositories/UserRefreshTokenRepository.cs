@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -8,6 +9,7 @@ namespace ConfRadar.Repositories.Repositories
     {
         Task<int> CreateUserRefreshToken(UserRefreshToken userRefreshToken);
         Task<int> UpdateUserRefreshToken(UserRefreshToken userRefreshToken);
+        Task<UserRefreshToken?> GetUserRefreshTokenByRefreshToken(string userId, string refreshToken);
     }
     public class UserRefreshTokenRepository : GenericRepository<UserRefreshToken>, IUserRefreshTokenRepository
     {
@@ -21,6 +23,10 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> UpdateUserRefreshToken(UserRefreshToken userRefreshToken)
         {
             return await UpdateAsync(userRefreshToken);
+        }
+        public async Task<UserRefreshToken?> GetUserRefreshTokenByRefreshToken(string userId, string refreshToken)
+        {
+            return await _context.UserRefreshTokens.Include(x => x.User).FirstOrDefaultAsync(x => x.Userid == userId && x.Token == refreshToken);
         }
     }
 }

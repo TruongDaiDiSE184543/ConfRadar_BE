@@ -4,6 +4,7 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -15,9 +16,11 @@ namespace ConfRadar.Services.Services
         Task<int> RegisterAccount(CreateUserRequest request);
         Task VerifyRegistration(string token);
         Task<LoginUserResponse> LocalLogin(LocalLoginUserRequest request);
+        Task<LoginUserResponse> FirebaseLogin(FirebaseLoginRequest request);
         Task ForgetPassword(string email);
         Task VerifyForgetPassword(string token, string newPassword);
         Task ChangePassword(string oldPassword, string newPassword, string userId);
+        Task<LoginUserResponse> RefreshToken(string userId, string refreshToken);
     }
     public class AuthService : IAuthService
     {
@@ -28,8 +31,9 @@ namespace ConfRadar.Services.Services
         private readonly JwtSettings _jwtSettings;
         private readonly ObjectStorageSettings _objectStorageSettings;
         private readonly IObjectStorageFileService _objectStorageFileService;
+        private readonly IFirebaseAuthService _firebaseAuthService;
         public AuthService(IPasswordHasher passwordHasher, IEmailService emailService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IUnitOfWork unitOfWork,
-            IObjectStorageFileService objectStorageFileService, IOptions<ObjectStorageSettings> objectStorageSettings)
+            IObjectStorageFileService objectStorageFileService, IOptions<ObjectStorageSettings> objectStorageSettings, IFirebaseAuthService firebaseAuthService)
         {
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
@@ -38,6 +42,7 @@ namespace ConfRadar.Services.Services
             _jwtSettings = jwtSettings.Value;
             _objectStorageFileService = objectStorageFileService;
             _objectStorageSettings = objectStorageSettings.Value;
+            _firebaseAuthService = firebaseAuthService;
         }
         public async Task<int> RegisterAccount(CreateUserRequest request)
         {
@@ -73,9 +78,8 @@ namespace ConfRadar.Services.Services
                 var baseUri = _objectStorageSettings.EndPoint;
                 var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucket.avatar.ToString(), uniqueFileName, stream, request.AvatarFile.ContentType);
                 fileUrl = baseUri + objectStorageFileUrl;
-
-
             }
+
 
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
@@ -86,6 +90,14 @@ namespace ConfRadar.Services.Services
             userCreated.Loginprovider = LoginProvider.Local.ToString();
             userCreated.Verificationtokenexpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(24), DateTimeKind.Unspecified);
             userCreated.Avatarurl = fileUrl;
+            var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRole.Customer.GetDescription());
+            var userRole = new UserRole()
+            {
+                Userid = userCreated.Userid,
+                Roleid = role!.Roleid,
+                Assignedat = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            };
+            userCreated.UserRoles.Add(userRole);
             await _emailService.SendAuthenticationTemplateEmailAsync(request.Email, request.FullName, confirmationLink, "Confirm Email Registration", "EmailRegistrationConfirmation.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
@@ -125,11 +137,16 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User is disabled");
             }
+            if (!string.Equals(user.Loginprovider, LoginProvider.Local.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.Loginprovider}'.");
+            }
             if (!_passwordHasher.Verify(request.Password, user.Passwordhash))
             {
                 throw new ConfRadarAuthenticationException("Invalid password");
             }
-            var accessToken = _tokenService.GenerateAccessToken(user.Userid, user.Email);
+
+            var accessToken = await _tokenService.GenerateAccessToken(user.Userid, user.Email);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             user.Lastlogin = timeNow;
@@ -205,5 +222,103 @@ namespace ConfRadar.Services.Services
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
 
         }
+
+        public async Task<LoginUserResponse> FirebaseLogin(FirebaseLoginRequest request)
+        {
+            FirebaseToken? decodedToken = await _firebaseAuthService.VerifyIdTokenAsync(request.Token);
+            if (decodedToken == null)
+            {
+                throw new ConfRadarAuthenticationException("Invalid Firebase token");
+            }
+            decodedToken.Claims.TryGetValue("email", out var emailFirebase);
+            decodedToken.Claims.TryGetValue("name", out var nameFirebase);
+
+            string? email = emailFirebase?.ToString();
+            string? name = nameFirebase?.ToString();
+            var user = await _unitOfWork.UserRepository.GetUserByEmail(email);
+            var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            if (user == null)
+            {
+                user = new User()
+                {
+                    Email = email,
+                    Fullname = name,
+                    Isemailconfirmed = true,
+                    Isactive = true,
+                    Lastlogin = timeNow,
+                    Loginprovider = LoginProvider.Firebase.ToString(),
+                    Userid = Guid.NewGuid().ToString(),
+                    Avatarurl = null,
+                    Createdat = timeNow,
+                };
+                await _unitOfWork.UserRepository.CreateUserAsync(user);
+            }
+            else
+            {
+                if (!string.Equals(user.Loginprovider, LoginProvider.Firebase.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.Loginprovider}'.");
+                }
+                user.Lastlogin = timeNow;
+                await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            }
+            var accessToken = await _tokenService.GenerateAccessToken(user.Userid, user.Email);
+            var refreshToken = _tokenService.GenerateSecureRandomToken();
+            UserRefreshToken userRefreshToken = new UserRefreshToken()
+            {
+                Createdat = timeNow,
+                Isrevoked = false,
+                Token = refreshToken,
+                Tokenid = Guid.NewGuid().ToString(),
+                Userid = user.Userid,
+                Expiry = timeNow.AddMinutes(_jwtSettings.ExpiresRefreshToken),
+            };
+            await _unitOfWork.UserRefreshTokenRepository.CreateUserRefreshToken(userRefreshToken);
+            return new LoginUserResponse()
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            };
+        }
+
+        public async Task<LoginUserResponse> RefreshToken(string userId, string refreshToken)
+        {
+            var tokenFound = await _unitOfWork.UserRefreshTokenRepository.GetUserRefreshTokenByRefreshToken(userId, refreshToken);
+            if (tokenFound == null)
+            {
+                throw new ConfRadarAuthenticationException("Refresh token not found");
+            }
+            var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            if (timeNow >= tokenFound.Expiry)
+            {
+                throw new ConfRadarAuthenticationException("Refresh token is expired!");
+            }
+            if (tokenFound.Isrevoked == true)
+            {
+                throw new ConfRadarAuthenticationException("Refresh token is revoked!");
+            }
+            tokenFound.Isrevoked = true;
+            await _unitOfWork.UserRefreshTokenRepository.UpdateUserRefreshToken(tokenFound);
+            var accessToken = await _tokenService.GenerateAccessToken(tokenFound.Userid, tokenFound.User.Email!);
+            var newRefreshToken = _tokenService.GenerateSecureRandomToken();
+            UserRefreshToken userRefreshToken = new UserRefreshToken()
+            {
+                Createdat = timeNow,
+                Isrevoked = false,
+                Token = refreshToken,
+                Tokenid = Guid.NewGuid().ToString(),
+                Userid = tokenFound.Userid,
+                Expiry = timeNow.AddMinutes(_jwtSettings.ExpiresRefreshToken),
+            };
+            await _unitOfWork.UserRefreshTokenRepository.CreateUserRefreshToken(userRefreshToken);
+            return new LoginUserResponse()
+            {
+                AccessToken = accessToken,
+                RefreshToken = newRefreshToken
+            };
+        }
     }
 }
+
+
+

@@ -8,6 +8,7 @@ namespace ConfRadar.Repositories
     {
         IUserRepository UserRepository { get; }
         IRoleRepository RoleRepository { get; }
+        IUserRoleRepository UserRoleRepository { get; }
         IUserRefreshTokenRepository UserRefreshTokenRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -20,6 +21,7 @@ namespace ConfRadar.Repositories
         private IDbContextTransaction? _transaction;
         private IUserRepository _UserRepository;
         private IRoleRepository _RoleRepository;
+        private IUserRoleRepository _UserRoleRepository;
         private IUserRefreshTokenRepository _UserRefreshTokenRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
@@ -28,6 +30,9 @@ namespace ConfRadar.Repositories
         public IUserRepository UserRepository => _UserRepository ??= new UserRepository(_context);
         public IRoleRepository RoleRepository => _RoleRepository ??= new RoleRepository(_context);
         public IUserRefreshTokenRepository UserRefreshTokenRepository => _UserRefreshTokenRepository ??= new UserRefreshTokenRepository(_context);
+
+
+        public IUserRoleRepository UserRoleRepository => _UserRoleRepository ??= new UserRoleRepository(_context);
 
         public async Task BeginTransactionAsync()
         {
