@@ -281,4 +281,4 @@ __pycache__/
 /ConfRadar/ConfRadar.Api/Properties/launchSettings.json
 /ConfRadar/launchSettings.json
 /ConfRadar/.env
-/ConfRadar/confradar-admin-sdk.json
+/ConfRadar/ConfRadar.Api/confradar-admin-sdk.json
