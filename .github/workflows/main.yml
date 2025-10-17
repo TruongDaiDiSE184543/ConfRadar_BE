@@ -18,8 +18,10 @@ jobs:
             cd /root/sep490/ConfRadar_BE/ConfRadar
             git pull origin main
 
-            printf "%s" '${{ secrets.APPSETTINGS_JSON }}' > ConfRadar.Api/appsettings.json 
-            printf "%s" '${{ secrets.ENV }}' > .env
+            printf "%s\n" '${{ secrets.APPSETTINGS_JSON }}' > ConfRadar.Api/appsettings.json
+            printf "%s\n" '${{ secrets.ENV }}' > .env
+            printf "%s\n" '${{ secrets.CONFRADAR_ADMIN_SDK }}' > .confradar-admin-sdk.json
+
             
             docker compose down
             docker compose build --no-cache
