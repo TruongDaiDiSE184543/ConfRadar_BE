@@ -2,6 +2,7 @@
 
 using ConfRadar.Api.Responses;
 using ConfRadar.Services.Exceptions;
+using FirebaseAdmin.Auth;
 using System.Text.Json;
 
 namespace ConfRadar.Api.Middleware
@@ -27,6 +28,7 @@ namespace ConfRadar.Api.Middleware
                 {
                     NotFoundException => StatusCodes.Status404NotFound,
                     ConfRadarAuthenticationException => StatusCodes.Status401Unauthorized,
+                    FirebaseAuthException => StatusCodes.Status401Unauthorized,
                     BadRequestException => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status500InternalServerError
                 };

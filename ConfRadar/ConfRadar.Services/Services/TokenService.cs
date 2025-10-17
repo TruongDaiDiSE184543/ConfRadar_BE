@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Options;
+﻿using ConfRadar.Repositories;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using static ConfRadar.Services.Common.AppSettingConfig;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
@@ -11,26 +13,36 @@ namespace ConfRadar.Services.Services
 {
     public interface ITokenService
     {
-        string GenerateAccessToken(string userId, string email);
+        Task<string> GenerateAccessToken(string userId, string email);
         string GenerateSecureRandomToken();
+
     }
     public class TokenService : ITokenService
     {
         private readonly JwtSettings _jwtSettings;
-        public TokenService(IOptions<JwtSettings> jwtSettings)
+        private readonly IUnitOfWork _unitOfWork;
+        public TokenService(IOptions<JwtSettings> jwtSettings,IUnitOfWork unitOfWork)
         {
             _jwtSettings = jwtSettings.Value;
+            _unitOfWork = unitOfWork;
         }
 
-        public string GenerateAccessToken(string userId, string email)
+        public async Task<string> GenerateAccessToken(string userId, string email)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+            var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userId);
+             
             var claims = new List<Claim>()
             {
                 new Claim(JwtRegisteredClaimNames.Email,email),
                 new Claim(JwtRegisteredClaimNames.Sub,userId),
+               
             };
+            foreach (var role in userRoles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.Role.Rolename));
+            }
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
@@ -49,7 +61,10 @@ namespace ConfRadar.Services.Services
             {
                 rng.GetBytes(randomNumber);
             }
-            var refreshToken = Convert.ToBase64String(randomNumber);
+            var refreshToken = Convert.ToBase64String(randomNumber)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .Replace("=", ""); ;
             return refreshToken;
         }
     }

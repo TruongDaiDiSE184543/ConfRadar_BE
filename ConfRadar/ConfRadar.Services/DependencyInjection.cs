@@ -1,7 +1,12 @@
 ﻿using ConfRadar.Services.Services;
+using FirebaseAdmin;
+using FirebaseAdmin.Auth;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Minio;
+using System;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services
@@ -14,19 +19,30 @@ namespace ConfRadar.Services
             services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
             services.AddScoped<IEmailService, SmtpEmailService>();
             services.AddScoped<ITokenService, TokenService>();
-
-
+            services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
+            services.AddScoped<ISeedDataService, SeedDataService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IServiceManager, ServiceManager>();
+
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>
             new Minio.MinioClient().WithEndpoint(objectStorageSettings!.EndPointAccess)
             .WithCredentials(objectStorageSettings!.AccessKey, objectStorageSettings!.SecretKey)
-            .WithSSL(true)
+            .WithSSL(objectStorageSettings.Secure)
             .Build());
             services.AddSingleton<IObjectStorageFileService, ObjectStorageFileService>();
 
+            var firebaseSettings = configs.GetSection("FirebaseSettings").Get<FirebaseSettings>();
+            var credential = GoogleCredential.FromFile(firebaseSettings!.ServiceAccountPath);
+            var firebaseApp = FirebaseApp.Create(new AppOptions()
+            {
+                Credential = credential
+            });
+            services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
+
+
+            
 
             return services;
         }

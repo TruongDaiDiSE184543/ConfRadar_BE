@@ -15,7 +15,7 @@ namespace ConfRadar.Services.Mappers
                 Fullname = request.FullName,
                 Birthday = request.Birthday,
                 Phonenumber = request.PhoneNumber,
-                Gender = request.Gender,
+                Gender = request.Gender?.ToString(),
                 Biodescription = request.BioDescription,
                 Isactive = true,
                 Isemailconfirmed = false,

@@ -3,6 +3,7 @@ using ConfRadar.Api.Filters;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Services.Common;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace ConfRadar.Api
 {
@@ -24,6 +25,9 @@ namespace ConfRadar.Api
             }).ConfigureApiBehaviorOptions(options =>
             {
                 options.SuppressModelStateInvalidFilter = true;
+            }).AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
             services.AddJwtAuthentication(configs);
             services.AddCors(options =>

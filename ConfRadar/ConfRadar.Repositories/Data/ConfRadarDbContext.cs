@@ -1,6 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -21,6 +23,8 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
 
+    public virtual DbSet<UserRole> UserRoles { get; set; }
+
     public static string GetConnectionString(string connectionStringName)
     {
         var config = new ConfigurationBuilder()
@@ -33,15 +37,16 @@ public partial class ConfRadarDbContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Roleid).HasName("role_pkey");
+            entity.HasKey(e => e.Roleid).HasName("Role_pkey");
 
-            entity.ToTable("role");
+            entity.ToTable("Role");
 
-            entity.HasIndex(e => e.Rolename, "role_rolename_key").IsUnique();
+            entity.HasIndex(e => e.Rolename, "Role_rolename_key").IsUnique();
 
             entity.Property(e => e.Roleid)
                 .HasMaxLength(50)
@@ -105,29 +110,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.Verificationtokenexpiry)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("verificationtokenexpiry");
-
-            entity.HasMany(d => d.Roles).WithMany(p => p.Users)
-                .UsingEntity<Dictionary<string, object>>(
-                    "Userrole",
-                    r => r.HasOne<Role>().WithMany()
-                        .HasForeignKey("Roleid")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("userrole_roleid_fkey"),
-                    l => l.HasOne<User>().WithMany()
-                        .HasForeignKey("Userid")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("userrole_userid_fkey"),
-                    j =>
-                    {
-                        j.HasKey("Userid", "Roleid").HasName("userrole_pkey");
-                        j.ToTable("userrole");
-                        j.IndexerProperty<string>("Userid")
-                            .HasMaxLength(50)
-                            .HasColumnName("userid");
-                        j.IndexerProperty<string>("Roleid")
-                            .HasMaxLength(50)
-                            .HasColumnName("roleid");
-                    });
         });
 
         modelBuilder.Entity<UserRefreshToken>(entity =>
@@ -159,6 +141,33 @@ public partial class ConfRadarDbContext : DbContext
                 .HasForeignKey(d => d.Userid)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("UserRefreshToken_userid_fkey");
+        });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(e => new { e.Userid, e.Roleid }).HasName("UserRole_pkey");
+
+            entity.ToTable("UserRole");
+
+            entity.Property(e => e.Userid)
+                .HasMaxLength(50)
+                .HasColumnName("userid");
+            entity.Property(e => e.Roleid)
+                .HasMaxLength(50)
+                .HasColumnName("roleid");
+            entity.Property(e => e.Assignedat)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("assignedat");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.Roleid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("UserRole_roleid_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.Userid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("UserRole_userid_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);
