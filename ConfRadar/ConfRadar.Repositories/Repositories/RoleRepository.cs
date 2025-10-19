@@ -28,7 +28,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<Role?> GetRoleByRoleName(string roleName)
         {
-            return await _context.Roles.FirstOrDefaultAsync(x => x.Rolename == roleName);
+            return await _context.Roles.FirstOrDefaultAsync(x => x.RoleName == roleName);
         }
         
 

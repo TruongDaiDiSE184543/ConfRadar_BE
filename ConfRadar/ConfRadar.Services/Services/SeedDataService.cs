@@ -24,8 +24,8 @@ namespace ConfRadar.Services.Services
                 {
                     roleFound = new Role()
                     {
-                        Roleid = Guid.NewGuid().ToString(),
-                        Rolename = role
+                        RoleId = Guid.NewGuid().ToString(),
+                        RoleName = role
                     };
                     roleList.Add(roleFound);
                 }
