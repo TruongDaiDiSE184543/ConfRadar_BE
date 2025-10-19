@@ -28,7 +28,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<IEnumerable<UserRole>> GetMutipleUserRolesByUserId(string userId)
         {
-            return await _context.UserRoles.Include(x=>x.Role).Where(x => x.Userid == userId).ToListAsync();
+            return await _context.UserRoles.Include(x=>x.Role).Where(x => x.UserId == userId).ToListAsync();
         }
     }
 }

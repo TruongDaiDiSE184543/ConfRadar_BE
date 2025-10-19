@@ -41,22 +41,22 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<User?> GetUserByForgetPasswordToken(string token)
         {
-            return await _context.Users.FirstOrDefaultAsync(x => x.Passwordresettoken == token);
+            return await _context.Users.FirstOrDefaultAsync(x => x.PasswordResetToken == token);
         }
 
         public async Task<User?> GetUserByName(string name)
         {
-            return await _context.Users.FirstOrDefaultAsync(x => x.Fullname == name);
+            return await _context.Users.FirstOrDefaultAsync(x => x.FullName == name);
         }
 
         public async Task<User?> GetUserByRegistrationConfirmationToken(string token)
         {
-            return await _context.Users.FirstOrDefaultAsync(x => x.Verificationtoken == token);
+            return await _context.Users.FirstOrDefaultAsync(x => x.VerificationToken == token);
         }
 
         public async Task<User?> GetUserByUserId(string userId)
         {
-            return await _context.Users.FirstOrDefaultAsync(x => x.Userid == userId);
+            return await _context.Users.FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
         public async Task<int> UpdateUserAsync(User user)

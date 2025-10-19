@@ -26,7 +26,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<UserRefreshToken?> GetUserRefreshTokenByRefreshToken(string userId, string refreshToken)
         {
-            return await _context.UserRefreshTokens.Include(x => x.User).FirstOrDefaultAsync(x => x.Userid == userId && x.Token == refreshToken);
+            return await _context.UserRefreshTokens.Include(x => x.User).FirstOrDefaultAsync(x => x.UserId == userId && x.Token == refreshToken);
         }
     }
 }

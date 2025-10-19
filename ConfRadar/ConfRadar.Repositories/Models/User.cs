@@ -5,41 +5,47 @@ namespace ConfRadar.Repositories.Models;
 
 public partial class User
 {
-    public string Userid { get; set; } = null!;
+    public string UserId { get; set; } = null!;
 
     public string Email { get; set; } = null!;
 
-    public string Passwordhash { get; set; } = null!;
+    public string PasswordHash { get; set; } = null!;
 
-    public string Fullname { get; set; } = null!;
+    public string FullName { get; set; } = null!;
 
-    public DateOnly? Birthday { get; set; }
+    public DateOnly? BirthDay { get; set; }
 
-    public string? Phonenumber { get; set; }
+    public string? PhoneNumber { get; set; }
 
     public string? Gender { get; set; }
 
-    public DateTime? Lastlogin { get; set; }
+    public DateTime? LastLogin { get; set; }
 
-    public string? Avatarurl { get; set; }
+    public string? AvatarUrl { get; set; }
 
-    public string? Biodescription { get; set; }
+    public string? BioDescription { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool? IsActive { get; set; }
 
-    public bool? Isemailconfirmed { get; set; }
+    public bool? IsEmailConfirmed { get; set; }
 
-    public DateTime? Createdat { get; set; }
+    public string? LoginProvider { get; set; }
 
-    public string? Verificationtoken { get; set; }
+    public string? VerificationToken { get; set; }
 
-    public DateTime? Verificationtokenexpiry { get; set; }
+    public DateTime? VerificationTokenExpiry { get; set; }
 
-    public string? Passwordresettoken { get; set; }
+    public string? PasswordResetToken { get; set; }
 
-    public DateTime? Passwordresettokenexpiry { get; set; }
+    public DateTime? PasswordResetTokenExpiry { get; set; }
 
-    public string? Loginprovider { get; set; }
+    public DateTime? CreatedAt { get; set; }
+
+    public virtual ICollection<FavouriteConference> FavouriteConferences { get; set; } = new List<FavouriteConference>();
+
+    public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+
+    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
     public virtual ICollection<UserRefreshToken> UserRefreshTokens { get; set; } = new List<UserRefreshToken>();
 

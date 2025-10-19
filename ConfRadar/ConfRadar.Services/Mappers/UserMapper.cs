@@ -9,17 +9,17 @@ namespace ConfRadar.Services.Mappers
         {
             return new User()
             {
-                Userid = Guid.NewGuid().ToString(),
+                UserId = Guid.NewGuid().ToString(),
                 Email = request.Email,
 
-                Fullname = request.FullName,
-                Birthday = request.Birthday,
-                Phonenumber = request.PhoneNumber,
+                FullName = request.FullName,
+                BirthDay = request.Birthday,
+                PhoneNumber = request.PhoneNumber,
                 Gender = request.Gender?.ToString(),
-                Biodescription = request.BioDescription,
-                Isactive = true,
-                Isemailconfirmed = false,
-                Createdat = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                BioDescription = request.BioDescription,
+                IsActive = true,
+                IsEmailConfirmed = false,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
         }
     }

@@ -41,7 +41,7 @@ namespace ConfRadar.Services.Services
             };
             foreach (var role in userRoles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, role.Role.Rolename));
+                claims.Add(new Claim(ClaimTypes.Role, role.Role.RoleName));
             }
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,
@@ -61,11 +61,11 @@ namespace ConfRadar.Services.Services
             {
                 rng.GetBytes(randomNumber);
             }
-            var refreshToken = Convert.ToBase64String(randomNumber)
+            var token = Convert.ToBase64String(randomNumber)
                 .Replace("+", "-")
                 .Replace("/", "_")
                 .Replace("=", ""); ;
-            return refreshToken;
+            return token;
         }
     }
 }

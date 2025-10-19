@@ -85,17 +85,17 @@ namespace ConfRadar.Services.Services
             var verificationToken = _tokenService.GenerateSecureRandomToken();
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.ConfirmRegistrationEmail + $"?token={verificationToken}";
             var userCreated = UserMapper.FromCreateUserRequestToUser(request);
-            userCreated.Passwordhash = hashedPassword;
-            userCreated.Verificationtoken = verificationToken;
-            userCreated.Loginprovider = LoginProvider.Local.ToString();
-            userCreated.Verificationtokenexpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(24), DateTimeKind.Unspecified);
-            userCreated.Avatarurl = fileUrl;
+            userCreated.PasswordHash = hashedPassword;
+            userCreated.VerificationToken = verificationToken;
+            userCreated.LoginProvider = LoginProvider.Local.ToString();
+            userCreated.VerificationTokenExpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(24), DateTimeKind.Unspecified);
+            userCreated.AvatarUrl = fileUrl;
             var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRole.Customer.GetDescription());
             var userRole = new UserRole()
             {
-                Userid = userCreated.Userid,
-                Roleid = role!.Roleid,
-                Assignedat = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                UserId = userCreated.UserId,
+                RoleId = role!.RoleId,
+                AssignedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             };
             userCreated.UserRoles.Add(userRole);
             await _emailService.SendAuthenticationTemplateEmailAsync(request.Email, request.FullName, confirmationLink, "Confirm Email Registration", "EmailRegistrationConfirmation.html");
@@ -108,18 +108,18 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Token not found");
             }
-            if (user.Isemailconfirmed == true)
+            if (user.IsEmailConfirmed == true)
             {
                 throw new ConfRadarAuthenticationException("User is already confirmed");
             }
             var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            if (user.Verificationtokenexpiry <= timeNow)
+            if (user.VerificationTokenExpiry <= timeNow)
             {
                 throw new ConfRadarAuthenticationException("Token is expired");
             }
-            user.Isemailconfirmed = true;
-            user.Verificationtoken = null;
-            user.Verificationtokenexpiry = null;
+            user.IsEmailConfirmed = true;
+            user.VerificationToken = null;
+            user.VerificationTokenExpiry = null;
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
         }
         public async Task<LoginUserResponse> LocalLogin(LocalLoginUserRequest request)
@@ -129,35 +129,35 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User not found");
             }
-            if (user.Isemailconfirmed == false)
+            if (user.IsEmailConfirmed == false)
             {
                 throw new ConfRadarAuthenticationException("Email is not confirmed");
             }
-            if (user.Isactive == false)
+            if (user.IsActive == false)
             {
                 throw new ConfRadarAuthenticationException("User is disabled");
             }
-            if (!string.Equals(user.Loginprovider, LoginProvider.Local.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(user.LoginProvider, LoginProvider.Local.ToString(), StringComparison.OrdinalIgnoreCase))
             {
-                throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.Loginprovider}'.");
+                throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
             }
-            if (!_passwordHasher.Verify(request.Password, user.Passwordhash))
+            if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
             {
                 throw new ConfRadarAuthenticationException("Invalid password");
             }
 
-            var accessToken = await _tokenService.GenerateAccessToken(user.Userid, user.Email);
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            user.Lastlogin = timeNow;
+            user.LastLogin = timeNow;
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
-                Createdat = timeNow,
+                CreatedAt = timeNow,
                 Expiry = timeNow.AddMinutes(_jwtSettings.ExpiresRefreshToken),
-                Isrevoked = false,
+                IsRevoked = false,
                 Token = refreshToken,
-                Userid = user.Userid,
-                Tokenid = Guid.NewGuid().ToString(),
+                UserId = user.UserId,
+                TokenId = Guid.NewGuid().ToString(),
             };
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
             await _unitOfWork.UserRefreshTokenRepository.CreateUserRefreshToken(userRefreshToken);
@@ -176,16 +176,16 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"User with email {email} not found");
             }
-            if (user.Isemailconfirmed == false)
+            if (user.IsEmailConfirmed == false)
             {
                 throw new ConfRadarAuthenticationException("Email is not confirmed");
             }
             var resetToken = _tokenService.GenerateSecureRandomToken();
             var resetLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={resetToken}";
-            user.Passwordresettoken = resetToken;
-            user.Passwordresettokenexpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddMinutes(60), DateTimeKind.Unspecified);
+            user.PasswordResetToken = resetToken;
+            user.PasswordResetTokenExpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddMinutes(60), DateTimeKind.Unspecified);
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
-            await _emailService.SendAuthenticationTemplateEmailAsync(email, user.Fullname, resetLink, "Forget Password", "EmailForgetPassword.html");
+            await _emailService.SendAuthenticationTemplateEmailAsync(email, user.FullName, resetLink, "Forget Password", "EmailForgetPassword.html");
         }
 
         public async Task VerifyForgetPassword(string token, string newPassword)
@@ -196,13 +196,13 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("Token is not found");
             }
             var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            if (user.Passwordresettokenexpiry == null || user.Passwordresettokenexpiry <= timeNow)
+            if (user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry <= timeNow)
             {
                 throw new ConfRadarAuthenticationException("Token is expired");
             }
-            user.Passwordhash = _passwordHasher.Hash(newPassword);
-            user.Passwordresettoken = null;
-            user.Passwordresettokenexpiry = null;
+            user.PasswordHash = _passwordHasher.Hash(newPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
 
         }
@@ -214,11 +214,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("User is not found");
             }
-            if (!_passwordHasher.Verify(oldPassword, user.Passwordhash))
+            if (!_passwordHasher.Verify(oldPassword, user.PasswordHash))
             {
                 throw new ConfRadarAuthenticationException("Invalid old password");
             }
-            user.Passwordhash = _passwordHasher.Hash(newPassword);
+            user.PasswordHash = _passwordHasher.Hash(newPassword);
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
 
         }
@@ -242,35 +242,35 @@ namespace ConfRadar.Services.Services
                 user = new User()
                 {
                     Email = email,
-                    Fullname = name,
-                    Isemailconfirmed = true,
-                    Isactive = true,
-                    Lastlogin = timeNow,
-                    Loginprovider = LoginProvider.Firebase.ToString(),
-                    Userid = Guid.NewGuid().ToString(),
-                    Avatarurl = null,
-                    Createdat = timeNow,
+                    FullName = name,
+                    IsEmailConfirmed = true,
+                    IsActive = true,
+                    LastLogin = timeNow,
+                    LoginProvider = LoginProvider.Firebase.ToString(),
+                    UserId = Guid.NewGuid().ToString(),
+                    AvatarUrl = null,
+                    CreatedAt = timeNow,
                 };
                 await _unitOfWork.UserRepository.CreateUserAsync(user);
             }
             else
             {
-                if (!string.Equals(user.Loginprovider, LoginProvider.Firebase.ToString(), StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(user.LoginProvider, LoginProvider.Firebase.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.Loginprovider}'.");
+                    throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
                 }
-                user.Lastlogin = timeNow;
+                user.LastLogin = timeNow;
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
             }
-            var accessToken = await _tokenService.GenerateAccessToken(user.Userid, user.Email);
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
-                Createdat = timeNow,
-                Isrevoked = false,
+                CreatedAt = timeNow,
+                IsRevoked = false,
                 Token = refreshToken,
-                Tokenid = Guid.NewGuid().ToString(),
-                Userid = user.Userid,
+                TokenId = Guid.NewGuid().ToString(),
+                UserId = user.UserId,
                 Expiry = timeNow.AddMinutes(_jwtSettings.ExpiresRefreshToken),
             };
             await _unitOfWork.UserRefreshTokenRepository.CreateUserRefreshToken(userRefreshToken);
@@ -293,21 +293,21 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Refresh token is expired!");
             }
-            if (tokenFound.Isrevoked == true)
+            if (tokenFound.IsRevoked == true)
             {
                 throw new ConfRadarAuthenticationException("Refresh token is revoked!");
             }
-            tokenFound.Isrevoked = true;
+            tokenFound.IsRevoked = true;
             await _unitOfWork.UserRefreshTokenRepository.UpdateUserRefreshToken(tokenFound);
-            var accessToken = await _tokenService.GenerateAccessToken(tokenFound.Userid, tokenFound.User.Email!);
+            var accessToken = await _tokenService.GenerateAccessToken(tokenFound.UserId, tokenFound.User.Email!);
             var newRefreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
-                Createdat = timeNow,
-                Isrevoked = false,
+                CreatedAt = timeNow,
+                IsRevoked = false,
                 Token = refreshToken,
-                Tokenid = Guid.NewGuid().ToString(),
-                Userid = tokenFound.Userid,
+                TokenId = Guid.NewGuid().ToString(),
+                UserId = tokenFound.UserId,
                 Expiry = timeNow.AddMinutes(_jwtSettings.ExpiresRefreshToken),
             };
             await _unitOfWork.UserRefreshTokenRepository.CreateUserRefreshToken(userRefreshToken);
