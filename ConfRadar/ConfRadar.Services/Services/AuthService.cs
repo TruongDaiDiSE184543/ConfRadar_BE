@@ -76,7 +76,7 @@ namespace ConfRadar.Services.Services
                 using var stream = request.AvatarFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.AvatarFile.FileName);
                 var baseUri = _objectStorageSettings.EndPoint;
-                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucket.avatar.ToString(), uniqueFileName, stream, request.AvatarFile.ContentType);
+                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.avatar.ToString(), uniqueFileName, stream, request.AvatarFile.ContentType);
                 fileUrl = baseUri + objectStorageFileUrl;
             }
 
@@ -87,10 +87,10 @@ namespace ConfRadar.Services.Services
             var userCreated = UserMapper.FromCreateUserRequestToUser(request);
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
-            userCreated.LoginProvider = LoginProvider.Local.ToString();
+            userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
             userCreated.VerificationTokenExpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(24), DateTimeKind.Unspecified);
             userCreated.AvatarUrl = fileUrl;
-            var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRole.Customer.GetDescription());
+            var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
             var userRole = new UserRole()
             {
                 UserId = userCreated.UserId,
@@ -137,7 +137,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User is disabled");
             }
-            if (!string.Equals(user.LoginProvider, LoginProvider.Local.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(user.LoginProvider, LoginProviderEnum.Local.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
             }
@@ -246,7 +246,7 @@ namespace ConfRadar.Services.Services
                     IsEmailConfirmed = true,
                     IsActive = true,
                     LastLogin = timeNow,
-                    LoginProvider = LoginProvider.Firebase.ToString(),
+                    LoginProvider = LoginProviderEnum.Firebase.ToString(),
                     UserId = Guid.NewGuid().ToString(),
                     AvatarUrl = null,
                     CreatedAt = timeNow,
@@ -255,7 +255,7 @@ namespace ConfRadar.Services.Services
             }
             else
             {
-                if (!string.Equals(user.LoginProvider, LoginProvider.Firebase.ToString(), StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(user.LoginProvider, LoginProviderEnum.Firebase.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
                     throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
                 }

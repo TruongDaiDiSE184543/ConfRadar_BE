@@ -18,8 +18,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var seedDataService = scope.ServiceProvider.GetRequiredService<ISeedDataService>();
-    var roles = Enum.GetValues<SystemRole>().Select(r => r.GetDescription());
-    await seedDataService.SeedRolesAsync(roles);
+    await seedDataService.SeedRolesAsync();
+    await seedDataService.SeedGlobalStatusesAsync();
+    await seedDataService.SeedTransactionStatusAsync();
+    await seedDataService.SeedPaymentMethodsAsync();
 }
 app.UseCors("AllowAll");
 app.UseSwagger();

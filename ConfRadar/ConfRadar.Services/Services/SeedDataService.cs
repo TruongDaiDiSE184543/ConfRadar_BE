@@ -1,11 +1,15 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Common;
 
 namespace ConfRadar.Services.Services
 {
     public interface ISeedDataService
     {
-        Task SeedRolesAsync(IEnumerable<string> roles);
+        Task SeedRolesAsync();
+        Task SeedTransactionStatusAsync();
+        Task SeedPaymentMethodsAsync();
+        Task SeedGlobalStatusesAsync();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -14,27 +18,81 @@ namespace ConfRadar.Services.Services
         {
             _unitOfWork = unitOfWork;
         }
-        public async Task SeedRolesAsync(IEnumerable<string> roles)
+        private async Task SeedEntityAsync<T>(
+            IEnumerable<string> names,
+            Func<string,Task<T?>> findByNameAsync,
+            Func<IEnumerable<T>,Task> createMutipleAsync,
+            Func<string,T> createEntityFunc
+            )
         {
-            List<Role> roleList = new List<Role>();
-            foreach (var role in roles)
+            List<T> newEntities = new List<T>();
+            foreach (var name in names)
             {
-                var roleFound = await _unitOfWork.RoleRepository.GetRoleByRoleName(role);
-                if (roleFound == null)
+                var entityFound = await findByNameAsync(name);
+                if (entityFound == null)
                 {
-                    roleFound = new Role()
-                    {
-                        RoleId = Guid.NewGuid().ToString(),
-                        RoleName = role
-                    };
-                    roleList.Add(roleFound);
+                    var newEntity = createEntityFunc(name);
+                    newEntities.Add(newEntity);
                 }
-               
             }
-            if (roleList.Count > 0)
+            if (newEntities.Count > 0)
             {
-                await _unitOfWork.RoleRepository.CreateMutipleRoleAsync(roleList);
+                await createMutipleAsync(newEntities);
             }
+
+        }
+        public async Task SeedRolesAsync()
+        {
+            var roleNames = Enum.GetValues<SystemRoleEnum>().Select(r => r.GetDescription()).ToList();
+            await SeedEntityAsync<Role>(
+                roleNames,
+                _unitOfWork.RoleRepository.GetRoleByRoleName,
+                _unitOfWork.RoleRepository.CreateMutipleRoleAsync,
+                name => new Role 
+                { RoleId = Guid.NewGuid().ToString(),
+                  RoleName = name
+                });
+        }
+        public async Task SeedGlobalStatusesAsync()
+        {
+            var statusNames = Enum.GetValues<GlobalStatusEnum>().Select(s => s.GetDescription()).ToList();
+            await SeedEntityAsync<GlobalStatus>(
+                statusNames,
+                _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName,
+                _unitOfWork.GlobalStatusRepository.CreateMutipleGlobalStatusesAsync,
+                name => new GlobalStatus
+                {
+                    GlobalStatusId = Guid.NewGuid().ToString(),
+                    Name = name
+                });
+        }
+        public async Task SeedPaymentMethodsAsync()
+        {
+            var statusNames = Enum.GetValues<PaymentMethodEnum>().Select(s => s.GetDescription()).ToList();
+            await SeedEntityAsync<PaymentMethod>(
+                statusNames,
+                _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName,
+                _unitOfWork.PaymentMethodRepository.CreateMutiplePaymentMethodsAsync,
+                name => new PaymentMethod
+                {
+                    PaymentMethodId = Guid.NewGuid().ToString(),
+                    MethodName = name,
+                });
+        }
+        public async Task SeedTransactionStatusAsync()
+        {
+            var statusNames = Enum.GetValues<TransactionStatusEnum>().Select(s => s.GetDescription()).ToList();
+            await SeedEntityAsync<TransactionStatus>(
+                statusNames,
+                _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName,
+                _unitOfWork.TransactionStatusRepository.CreateMutipleTransactionStatusesAsync,
+                name => new TransactionStatus
+                {
+                    TransactionStatusId = Guid.NewGuid().ToString(),
+                    StatusName = name,
+                });
         }
     }
+
+
 }
