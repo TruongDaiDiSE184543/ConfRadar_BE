@@ -2,13 +2,13 @@
 
 namespace ConfRadar.Services.Common
 {
-    public enum LoginProvider
+    public enum LoginProviderEnum
     {
         Local,
         Firebase,
         Orcid,
     }
-    public enum SystemRole
+    public enum SystemRoleEnum
     {
         [Description("Conference Organizer")]
         ConferenceOrganizer,
@@ -28,13 +28,13 @@ namespace ConfRadar.Services.Common
         [Description("Customer")]
         Customer
     }
-    public enum GenderType
+    public enum GenderTypeEnum
     {
         Male,
         Female,
         Other
     }
-    public enum ObjectStorageBucket
+    public enum ObjectStorageBucketEnum
     {
         avatar
     }
@@ -47,4 +47,33 @@ namespace ConfRadar.Services.Common
             return attribute?.Description ?? value.ToString();
         }
     }
+    public enum GlobalStatusEnum
+    {
+       
+        [Description("Pending")]
+        Pending,
+        [Description("Accepted")]
+        Accepted,
+        [Description("Rejected")]
+        Rejected
+    }
+    public enum TransactionStatusEnum
+    {
+
+        [Description("Pending")]
+        Pending,
+        [Description("Success")]
+        Success,
+        [Description("Fail")]
+        Fail
+    }
+
+    public enum PaymentMethodEnum
+    {
+        [Description("ZaloPay")]
+        ZaloPay,
+        [Description("MoMo")]
+        MoMo,
+    }
+
 }

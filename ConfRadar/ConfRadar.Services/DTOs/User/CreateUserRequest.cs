@@ -34,8 +34,8 @@ namespace ConfRadar.Services.DTOs.User
         public string? PhoneNumber { get; set; }
 
 
-        [EnumDataType(typeof(GenderType), ErrorMessage = "Invalid gender type")]
-        public GenderType? Gender { get; set; }
+        [EnumDataType(typeof(GenderTypeEnum), ErrorMessage = "Invalid gender type")]
+        public GenderTypeEnum? Gender { get; set; }
 
         [MaxLength(500)]
         public string? BioDescription { get; set; }
