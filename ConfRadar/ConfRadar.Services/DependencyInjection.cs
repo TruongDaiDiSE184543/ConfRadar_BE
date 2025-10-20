@@ -22,6 +22,7 @@ namespace ConfRadar.Services
             services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
             services.AddScoped<ISeedDataService, SeedDataService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IConferenceService, ConferenceService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
 

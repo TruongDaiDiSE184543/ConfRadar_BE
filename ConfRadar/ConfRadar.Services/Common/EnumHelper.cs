@@ -10,6 +10,8 @@ namespace ConfRadar.Services.Common
     }
     public enum SystemRoleEnum
     {
+       
+
         [Description("Conference Organizer")]
         ConferenceOrganizer,
 
