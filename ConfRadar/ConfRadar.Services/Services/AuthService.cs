@@ -305,7 +305,7 @@ namespace ConfRadar.Services.Services
             {
                 CreatedAt = timeNow,
                 IsRevoked = false,
-                Token = refreshToken,
+                Token = newRefreshToken,
                 TokenId = Guid.NewGuid().ToString(),
                 UserId = tokenFound.UserId,
                 Expiry = timeNow.AddMinutes(_jwtSettings.ExpiresRefreshToken),

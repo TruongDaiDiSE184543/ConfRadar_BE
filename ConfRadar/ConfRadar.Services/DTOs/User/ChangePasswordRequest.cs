@@ -4,8 +4,8 @@ namespace ConfRadar.Services.DTOs.User
 {
     public class ChangePasswordRequest
     {
-        [Required(ErrorMessage = "Change password token is required.")]
-        public string Token { get; set; }
+        //[Required(ErrorMessage = "Change password token is required.")]
+        //public string Token { get; set; }
 
         [Required(ErrorMessage = "Old password is required.")]
         public string OldPassword { get; set; }
