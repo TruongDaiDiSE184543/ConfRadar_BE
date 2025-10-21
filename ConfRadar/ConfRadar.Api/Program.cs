@@ -2,9 +2,7 @@ using ConfRadar.Api;
 using ConfRadar.Api.Middleware;
 using ConfRadar.Repositories;
 using ConfRadar.Services;
-using ConfRadar.Services.Common;
 using ConfRadar.Services.Services;
-using System.Collections.Generic;
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -22,6 +20,7 @@ using (var scope = app.Services.CreateScope())
     await seedDataService.SeedGlobalStatusesAsync();
     await seedDataService.SeedTransactionStatusAsync();
     await seedDataService.SeedPaymentMethodsAsync();
+    await seedDataService.SeedTransactionTypeAsync();
 }
 app.UseCors("AllowAll");
 app.UseSwagger();

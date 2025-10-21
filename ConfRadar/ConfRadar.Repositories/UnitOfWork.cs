@@ -13,6 +13,13 @@ namespace ConfRadar.Repositories
         IGlobalStatusRepository GlobalStatusRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
         ITransactionStatusRepository TransactionStatusRepository { get; }
+
+       
+       
+        ITransactionTypeRepository TransactionTypeRepository { get; }
+        ITransactionRepository TransactionRepository { get; }
+        ITicketRepository TicketRepository { get; }
+
         IConferenceRepository ConferenceRepository { get; }
         IConferencePolicyRepository ConferencePolicyRepository { get; }
         IConferenceMediumRepository ConferenceMediumRepository { get; }
@@ -25,6 +32,7 @@ namespace ConfRadar.Repositories
         IPricePhaseRepository PricePhaseRepository { get; }
         IMediaTypeRepository MediaTypeRepository { get; }
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
+
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -41,18 +49,26 @@ namespace ConfRadar.Repositories
         private IGlobalStatusRepository _GlobalStatusRepository;
         private IPaymentMethodRepository _PaymentMethodRepository;
         private ITransactionStatusRepository _TransactionStatusRepository;
+
+        private IPricePhaseRepository _PricePhaseRepository;
+        private IConferencePriceRepository _ConferencePriceRepository;
+        private ITransactionTypeRepository _TransactionTypeRepository;
+        private ITransactionRepository _TransactionRepository;
+        private ITicketRepository _TicketRepository;
+
         private IConferenceRepository _ConferenceRepository;
         private IConferencePolicyRepository _ConferencePolicyRepository;
         private IConferenceMediumRepository _ConferenceMediumRepository;
         private ISponsorRepository _SponsorRepository;
-        private IConferencePriceRepository _ConferencePriceRepository;
+       
         private IConferenceSessionRepository _ConferenceSessionRepository;
         private ISpeakerRepository _SpeakerRepository;
         private IRoomRepository _RoomRepository;
         private IDestinationRepository _DestinationRepository;
-        private IPricePhaseRepository _PricePhaseRepository;
+        
         private IMediaTypeRepository _MediaTypeRepository;
         private IConferenceCategoryRepository _ConferenceCategoryRepository;
+
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -68,7 +84,16 @@ namespace ConfRadar.Repositories
 
         public IPaymentMethodRepository PaymentMethodRepository => _PaymentMethodRepository ??= new PaymentMethodRepository(_context);
 
-        public ITransactionStatusRepository TransactionStatusRepository => _TransactionStatusRepository??= new TransactionStatusRepository(_context);
+        public ITransactionStatusRepository TransactionStatusRepository => _TransactionStatusRepository ??= new TransactionStatusRepository(_context);
+
+        public IPricePhaseRepository PricePhaseRepository => _PricePhaseRepository ??= new PricePhaseRepository(_context);
+
+        public IConferencePriceRepository ConferencePriceRepository => _ConferencePriceRepository ??= new ConferencePriceRepository(_context);
+        public ITransactionTypeRepository TransactionTypeRepository => _TransactionTypeRepository ??= new TransactionTypeRepository(_context);
+
+        public ITransactionRepository TransactionRepository => _TransactionRepository ??= new TransactionRepository(_context);
+
+        public ITicketRepository TicketRepository => _TicketRepository ??= new TicketRepository(_context);
 
         public IConferenceRepository ConferenceRepository => _ConferenceRepository ??= new ConferenceRepository(_context);
 
@@ -78,7 +103,7 @@ namespace ConfRadar.Repositories
 
         public ISponsorRepository SponsorRepository => _SponsorRepository ??= new SponsorRepository(_context);
 
-        public IConferencePriceRepository ConferencePriceRepository => _ConferencePriceRepository ??= new ConferencePriceRepository(_context);
+       
 
         public IConferenceSessionRepository ConferenceSessionRepository => _ConferenceSessionRepository ??= new ConferenceSessionRepository(_context);
 
@@ -88,7 +113,7 @@ namespace ConfRadar.Repositories
 
         public IDestinationRepository DestinationRepository => _DestinationRepository ??= new DestinationRepository(_context);
 
-        public IPricePhaseRepository PricePhaseRepository => _PricePhaseRepository ??= new PricePhaseRepository(_context);
+        
 
         public IMediaTypeRepository MediaTypeRepository => _MediaTypeRepository ??= new MediaTypeRepository(_context);
 

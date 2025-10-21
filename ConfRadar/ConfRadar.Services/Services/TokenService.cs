@@ -5,7 +5,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using static ConfRadar.Services.Common.AppSettingConfig;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
@@ -15,13 +14,14 @@ namespace ConfRadar.Services.Services
     {
         Task<string> GenerateAccessToken(string userId, string email);
         string GenerateSecureRandomToken();
+        string CreateSignature(string rawData, string secretKey);
 
     }
     public class TokenService : ITokenService
     {
         private readonly JwtSettings _jwtSettings;
         private readonly IUnitOfWork _unitOfWork;
-        public TokenService(IOptions<JwtSettings> jwtSettings,IUnitOfWork unitOfWork)
+        public TokenService(IOptions<JwtSettings> jwtSettings, IUnitOfWork unitOfWork)
         {
             _jwtSettings = jwtSettings.Value;
             _unitOfWork = unitOfWork;
@@ -32,12 +32,12 @@ namespace ConfRadar.Services.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
             var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userId);
-             
+
             var claims = new List<Claim>()
             {
                 new Claim(JwtRegisteredClaimNames.Email,email),
                 new Claim(JwtRegisteredClaimNames.Sub,userId),
-               
+
             };
             foreach (var role in userRoles)
             {
@@ -53,7 +53,17 @@ namespace ConfRadar.Services.Services
             var accessToken = tokenHandler.WriteToken(token);
             return accessToken;
         }
+        public  string CreateSignature(string rawData, string secretKey)
+        {
+            string signature;
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))
+            {
+                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+                signature = BitConverter.ToString(hash).Replace("-", "").ToLower();
+            }
+            return signature;
 
+        }
         public string GenerateSecureRandomToken()
         {
             var randomNumber = new byte[32];

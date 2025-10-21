@@ -47,6 +47,8 @@ public partial class User
 
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
+    public virtual ICollection<UserCheckIn> UserCheckIns { get; set; } = new List<UserCheckIn>();
+
     public virtual ICollection<UserRefreshToken> UserRefreshTokens { get; set; } = new List<UserRefreshToken>();
 
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();

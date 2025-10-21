@@ -2,11 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -15,7 +10,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<GlobalStatus?> GetGlobalStatusByName(string globalStatusName);
         Task<int> CreateMutipleGlobalStatusesAsync(IEnumerable<GlobalStatus> globalStatuses);
     }
-    public class GlobalStatusRepository : GenericRepository<GlobalStatus>,IGlobalStatusRepository
+    public class GlobalStatusRepository : GenericRepository<GlobalStatus>, IGlobalStatusRepository
     {
         public GlobalStatusRepository(ConfRadarDbContext context) : base(context)
         {

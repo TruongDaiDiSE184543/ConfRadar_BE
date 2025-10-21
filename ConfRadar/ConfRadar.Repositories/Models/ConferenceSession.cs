@@ -24,4 +24,6 @@ public partial class ConferenceSession
     public virtual Room? Room { get; set; }
 
     public virtual Speaker? Speaker { get; set; }
+
+    public virtual ICollection<UserCheckIn> UserCheckIns { get; set; } = new List<UserCheckIn>();
 }

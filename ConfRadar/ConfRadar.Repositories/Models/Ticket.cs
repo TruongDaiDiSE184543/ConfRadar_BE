@@ -26,4 +26,6 @@ public partial class Ticket
     public virtual Transaction? Transaction { get; set; }
 
     public virtual User? User { get; set; }
+
+    public virtual ICollection<UserCheckIn> UserCheckIns { get; set; } = new List<UserCheckIn>();
 }

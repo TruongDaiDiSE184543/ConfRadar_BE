@@ -2,13 +2,19 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 using System.Linq;
 using System.Linq.Expressions;
+
 
 namespace ConfRadar.Repositories.Repositories
 {
     public interface IConferencePriceRepository
     {
+        Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId);
         Task<int> CreateConferencePriceAsync(ConferencePrice price);
         Task<int> UpdateConferencePriceAsync(ConferencePrice price);
         Task<int> DeleteConferencePriceAsync(ConferencePrice price);
@@ -22,6 +28,12 @@ namespace ConfRadar.Repositories.Repositories
     public class ConferencePriceRepository : GenericRepository<ConferencePrice>, IConferencePriceRepository
     {
         public ConferencePriceRepository(ConfRadarDbContext context) : base(context) { }
+        public async Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId)
+        {
+            return await _context.ConferencePrices.Include(x=>x.PricePhase)
+                .Include(x=>x.Conference).ThenInclude(x=>x.ConferenceSessions)
+                .FirstOrDefaultAsync(x => x.ConferencePriceId == conferencePriceId);
+        }
 
         public async Task<int> CreateConferencePriceAsync(ConferencePrice price)
         {
@@ -77,3 +89,4 @@ namespace ConfRadar.Repositories.Repositories
         }
     }
 }
+
