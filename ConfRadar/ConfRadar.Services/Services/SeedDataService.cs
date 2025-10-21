@@ -11,6 +11,8 @@ namespace ConfRadar.Services.Services
         Task SeedPaymentMethodsAsync();
         Task SeedGlobalStatusesAsync();
         Task SeedTransactionTypeAsync();
+        Task SeedMediaTypesAsync();
+
     }
     public class SeedDataService : ISeedDataService
     {
@@ -94,6 +96,7 @@ namespace ConfRadar.Services.Services
                     StatusName = name,
                 });
         }
+
         public async Task SeedTransactionTypeAsync()
         {
             var typeNames = Enum.GetValues<TransactionTypeEnum>().Select(s => s.GetDescription()).ToList();
@@ -105,6 +108,28 @@ namespace ConfRadar.Services.Services
                 {
                     TransactionTypeId = Guid.NewGuid().ToString(),
                     TypeName = name,
+                });
+        }
+        
+        
+        public async Task SeedMediaTypesAsync()
+        {
+            var mediaTypeNames = Enum.GetValues<MediaTypeEnum>().Select(m => m.GetDescription()).ToList();
+            await SeedEntityAsync<MediaType>(
+                mediaTypeNames,
+                _unitOfWork.MediaTypeRepository.GetMediaTypeByNameAsync,
+                async entities => 
+                {
+                    foreach(var entity in entities)
+                    {
+                        await _unitOfWork.MediaTypeRepository.CreateMediaTypeAsync(entity);
+                    }
+                },
+                name => new MediaType 
+                { 
+                    MediaTypeId = Guid.NewGuid().ToString(),
+                    MediaTypeName = name
+
                 });
         }
     }

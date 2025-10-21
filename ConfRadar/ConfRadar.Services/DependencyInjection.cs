@@ -21,9 +21,19 @@ namespace ConfRadar.Services
             services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
             services.AddScoped<ISeedDataService, SeedDataService>();
             services.AddScoped<IAuthService, AuthService>();
+
             services.AddScoped<IMomoService, MomoService>();
             services.AddScoped<ITicketService, TicketService>();
             services.AddScoped<IPaymentService, PaymentService>();
+
+            services.AddScoped<IConferenceService, ConferenceService>();
+            services.AddScoped<IRoomService, RoomService>();
+            services.AddScoped<IDestinationService, DestinationService>();
+            services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
+            services.AddScoped<IConferencePriceTicketService, ConferencePriceTicketService>();
+            services.AddScoped<IConferenceStepService, ConferenceStepService>();
+            services.AddScoped<IConferenceCategoryService, ConferenceCategoryService>();
+
             services.AddScoped<IServiceManager, ServiceManager>();
 
 

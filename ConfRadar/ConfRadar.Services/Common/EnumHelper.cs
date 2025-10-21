@@ -10,6 +10,8 @@ namespace ConfRadar.Services.Common
     }
     public enum SystemRoleEnum
     {
+       
+
         [Description("Conference Organizer")]
         ConferenceOrganizer,
 
@@ -36,7 +38,18 @@ namespace ConfRadar.Services.Common
     }
     public enum ObjectStorageBucketEnum
     {
-        avatar
+        avatar,
+        conferencebanner,
+        conferencemedia
+    }
+
+    public enum MediaTypeEnum
+    {
+        [Description("Image")]
+        Image,
+
+        [Description("Video")]
+        Video
     }
     public static class EnumExtension
     {

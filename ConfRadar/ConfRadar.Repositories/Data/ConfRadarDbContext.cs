@@ -98,6 +98,8 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
             entity.Property(e => e.LocationId).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt)
+             .HasColumnType("timestamp with time zone");
 
             entity.HasOne(d => d.ConferenceCategory).WithMany(p => p.Conferences)
                 .HasForeignKey(d => d.ConferenceCategoryId)
@@ -180,6 +182,13 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.RoomId).HasMaxLength(50);
             entity.Property(e => e.StartTime).HasColumnType("timestamp without time zone");
             entity.Property(e => e.Title).HasMaxLength(50);
+            entity.Property(e => e.StartTime)
+             .HasColumnType("timestamp with time zone");
+
+            entity.Property(e => e.EndTime)
+                  .HasColumnType("timestamp with time zone");
+
+           
 
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferenceSessions)
                 .HasForeignKey(d => d.ConferenceId)
