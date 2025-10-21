@@ -4,8 +4,6 @@ public partial class Transaction
 {
     public string TransactionId { get; set; } = null!;
 
-    public string? TicketId { get; set; }
-
     public string? UserId { get; set; }
 
     public string? Currency { get; set; }

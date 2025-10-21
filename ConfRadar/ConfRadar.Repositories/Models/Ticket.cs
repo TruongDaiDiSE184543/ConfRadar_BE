@@ -8,6 +8,8 @@ public partial class Ticket
 
     public string? ConferencePriceId { get; set; }
 
+    public string? TransactionId { get; set; }
+
     public DateTime? RegisteredDate { get; set; }
 
     public bool? IsRefunded { get; set; }
@@ -18,7 +20,7 @@ public partial class Ticket
 
     public virtual RefundRequest? RefundRequest { get; set; }
 
-    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+    public virtual Transaction? Transaction { get; set; }
 
     public virtual User? User { get; set; }
 }
