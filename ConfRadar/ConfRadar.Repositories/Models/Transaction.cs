@@ -7,8 +7,6 @@ public partial class Transaction
 {
     public string TransactionId { get; set; } = null!;
 
-    public string? TicketId { get; set; }
-
     public string? UserId { get; set; }
 
     public string? Currency { get; set; }
@@ -27,9 +25,7 @@ public partial class Transaction
 
     public virtual PaymentMethod? PaymentMethod { get; set; }
 
-    public virtual ICollection<RefundRequest> RefundRequests { get; set; } = new List<RefundRequest>();
-
-    public virtual Ticket? Ticket { get; set; }
+    public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 
     public virtual TransactionStatus? TransactionStatus { get; set; }
 

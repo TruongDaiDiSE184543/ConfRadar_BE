@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using ConfRadar.Repositories.Models;
+﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -69,7 +69,6 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
-
     public static string GetConnectionString(string connectionStringName)
     {
         var config = new ConfigurationBuilder()
@@ -82,7 +81,6 @@ public partial class ConfRadarDbContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Conference>(entity =>
@@ -282,14 +280,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.GlobalStatus).WithMany(p => p.RefundRequests)
                 .HasForeignKey(d => d.GlobalStatusId)
                 .HasConstraintName("RefundRequest_GlobalStatusId_fkey");
-
-            entity.HasOne(d => d.Ticket).WithOne(p => p.RefundRequest)
-                .HasForeignKey<RefundRequest>(d => d.TicketId)
-                .HasConstraintName("RefundRequest_TicketId_fkey");
-
-            entity.HasOne(d => d.Transaction).WithMany(p => p.RefundRequests)
-                .HasForeignKey(d => d.TransactionId)
-                .HasConstraintName("RefundRequest_TransactionId_fkey");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -385,11 +375,16 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.ActualPrice).HasPrecision(10, 2);
             entity.Property(e => e.ConferencePriceId).HasMaxLength(50);
             entity.Property(e => e.RegisteredDate).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.TransactionId).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);
 
             entity.HasOne(d => d.ConferencePrice).WithMany(p => p.Tickets)
                 .HasForeignKey(d => d.ConferencePriceId)
                 .HasConstraintName("Ticket_ConferencePriceId_fkey");
+
+            entity.HasOne(d => d.Transaction).WithMany(p => p.Tickets)
+                .HasForeignKey(d => d.TransactionId)
+                .HasConstraintName("Ticket_TransactionId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.Tickets)
                 .HasForeignKey(d => d.UserId)
@@ -407,7 +402,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.Currency).HasMaxLength(50);
             entity.Property(e => e.PaymentMethodId).HasMaxLength(50);
-            entity.Property(e => e.TicketId).HasMaxLength(50);
             entity.Property(e => e.TransactionStatusId).HasMaxLength(50);
             entity.Property(e => e.TransactionTypeId).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);
@@ -415,10 +409,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.PaymentMethod).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.PaymentMethodId)
                 .HasConstraintName("Transaction_PaymentMethodId_fkey");
-
-            entity.HasOne(d => d.Ticket).WithMany(p => p.Transactions)
-                .HasForeignKey(d => d.TicketId)
-                .HasConstraintName("Transaction_TicketId_fkey");
 
             entity.HasOne(d => d.TransactionStatus).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.TransactionStatusId)
