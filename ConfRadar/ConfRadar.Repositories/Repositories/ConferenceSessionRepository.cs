@@ -77,22 +77,22 @@ namespace ConfRadar.Repositories.Repositories
             
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId && 
-                            cs.Date >= utcStartDate && 
-                            cs.Date <= utcEndDate)
+                            cs.StartTime >= utcStartDate && 
+                            cs.EndTime <= utcEndDate)
                 .ToListAsync();
         }
 
         public async Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateAsync(string roomId, DateOnly date)
         {
             // Get sessions on the specified date
-            // Assuming the Date field contains the full date (like 2025-12-15 00:00:00)
+            // Extract date from StartTime field since Date field has been removed
             var startDateTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
             var endDateTime = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
             
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId && 
-                            cs.Date >= startDateTime && 
-                            cs.Date <= endDateTime) // Check if the date portion matches
+                            cs.StartTime >= startDateTime && 
+                            cs.StartTime <= endDateTime) // Check if the StartTime is on the specified date
                 .ToListAsync();
         }
 
@@ -107,8 +107,8 @@ namespace ConfRadar.Repositories.Repositories
             
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId && 
-                            cs.Date >= dateStart && 
-                            cs.Date <= dateEnd &&
+                            cs.StartTime >= dateStart && 
+                            cs.StartTime <= dateEnd &&
                             cs.StartTime < utcEndTime && // New session starts before existing ends
                             cs.EndTime > utcStartTime)   // New session ends after existing starts
                 .ToListAsync();
@@ -124,8 +124,8 @@ namespace ConfRadar.Repositories.Repositories
             
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId && 
-                            cs.Date >= dateStart && 
-                            cs.Date <= dateEnd &&
+                            cs.StartTime >= dateStart && 
+                            cs.StartTime <= dateEnd &&
                             cs.StartTime <= utcCheckTime && // Session started before or at the check time
                             cs.EndTime > utcCheckTime)       // Session hasn't ended yet
                 .ToListAsync();

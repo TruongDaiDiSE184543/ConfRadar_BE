@@ -28,6 +28,7 @@ namespace ConfRadar.Services
             services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
             services.AddScoped<IConferencePriceTicketService, ConferencePriceTicketService>();
             services.AddScoped<IConferenceStepService, ConferenceStepService>();
+            services.AddScoped<IConferenceCategoryService, ConferenceCategoryService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
 

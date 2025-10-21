@@ -185,8 +185,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.EndTime)
                   .HasColumnType("timestamp with time zone");
 
-            entity.Property(e => e.Date)
-                  .HasColumnType("timestamp with time zone");
+           
 
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferenceSessions)
                 .HasForeignKey(d => d.ConferenceId)

@@ -11,6 +11,7 @@ namespace ConfRadar.Services
         public ISystemConfigurationService SystemConfigurationService { get; }
         public IConferencePriceTicketService ConferencePriceTicketService { get; }
         public IConferenceStepService ConferenceStepService { get; }
+        public IConferenceCategoryService ConferenceCategoryService { get; }
     }
 
     public class ServiceManager : IServiceManager
@@ -22,8 +23,9 @@ namespace ConfRadar.Services
         private readonly ISystemConfigurationService _systemConfigurationService;
         private readonly IConferencePriceTicketService _conferencePriceTicketService;
         private readonly IConferenceStepService _conferenceStepService;
+        private readonly IConferenceCategoryService _conferenceCategoryService;
 
-        public ServiceManager(IAuthService authService, IConferenceService conferenceService, IRoomService roomService, IDestinationService destinationService, ISystemConfigurationService systemConfigurationService, IConferencePriceTicketService conferencePriceTicketService, IConferenceStepService conferenceStepService)
+        public ServiceManager(IAuthService authService, IConferenceService conferenceService, IRoomService roomService, IDestinationService destinationService, ISystemConfigurationService systemConfigurationService, IConferencePriceTicketService conferencePriceTicketService, IConferenceStepService conferenceStepService, IConferenceCategoryService conferenceCategoryService)
         {
             
             _authService = authService;
@@ -33,6 +35,7 @@ namespace ConfRadar.Services
             _systemConfigurationService = systemConfigurationService;
             _conferencePriceTicketService = conferencePriceTicketService;
             _conferenceStepService = conferenceStepService;
+            _conferenceCategoryService = conferenceCategoryService;
         }
 
         public IAuthService AuthService => _authService;
@@ -42,6 +45,7 @@ namespace ConfRadar.Services
         public ISystemConfigurationService SystemConfigurationService => _systemConfigurationService;
         public IConferencePriceTicketService ConferencePriceTicketService => _conferencePriceTicketService;
         public IConferenceStepService ConferenceStepService => _conferenceStepService;
+        public IConferenceCategoryService ConferenceCategoryService => _conferenceCategoryService;
     }
 
 }

@@ -59,17 +59,20 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class CreateConferencePriceRequest
     {
+        [Required]
         public decimal? TicketPrice { get; set; }
 
         [MaxLength(255)]
+        [Required]
         public string? TicketName { get; set; }
 
         [MaxLength(500)]
+        [Required]
         public string? TicketDescription { get; set; }
-
+        [Required]
         public decimal? ActualPrice { get; set; }
 
-        public string? PricePhaseId { get; set; }
+        //public string? PricePhaseId { get; set; }
     }
 
     public class AddConferencePricesRequest
@@ -86,19 +89,20 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string Title { get; set; }
 
         [MaxLength(500)]
+        [Required]
         public string? Description { get; set; }
-
+        [Required]
         public DateTime? StartTime { get; set; }
-
+        [Required]
         public DateTime? EndTime { get; set; }
 
-        public DateTime? Date { get; set; }
 
         public string? StatusId { get; set; }
 
         [Required(ErrorMessage = "Room ID is required for the session")]
-        public string? RoomId { get; set; }
 
+        public string? RoomId { get; set; }
+        [Required(ErrorMessage = "At least one speaker is needed")]
         public CreateSpeakerRequest? Speaker { get; set; }
     }
 
@@ -121,8 +125,9 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateConferencePolicyRequest
     {
         [MaxLength(255)]
+        [Required]
         public string? PolicyName { get; set; }
-
+        [Required]
         public string? Description { get; set; }
     }
 
@@ -245,7 +250,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         public DateTime? EndTime { get; set; }
 
-        public DateTime? Date { get; set; }
 
         public string? StatusId { get; set; }
 
@@ -328,9 +332,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? Description { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
-        public DateTime? Date { get; set; }
         public string? ConferenceId { get; set; }
-        public string? StatusId { get; set; }
         public string? RoomId { get; set; }
         public RoomInfoResponse? Room { get; set; }
         public SpeakerResponse? Speaker { get; set; }

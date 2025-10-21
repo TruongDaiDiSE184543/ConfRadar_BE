@@ -250,7 +250,7 @@ namespace ConfRadar.Services.Services
                         TicketName = price.TicketName,
                         TicketDescription = price.TicketDescription,
                         ActualPrice = price.ActualPrice,
-                        PricePhaseId = pricePhaseId ?? price.PricePhaseId,
+                        PricePhaseId = pricePhaseId ,
                         ConferenceId = conferenceId
                     };
                     await _unitOfWork.ConferencePriceRepository.CreateConferencePriceAsync(conferencePrice);
@@ -334,9 +334,7 @@ namespace ConfRadar.Services.Services
                         Description = session.Description,
                         StartTime = session.StartTime,
                         EndTime = session.EndTime,
-                        Date = session.StartTime, // For compatibility with existing DB/DTO
                         ConferenceId = conferenceId,
-                        StatusId = session.StatusId,
                         RoomId = session.RoomId
                     };
                     await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
@@ -349,8 +347,16 @@ namespace ConfRadar.Services.Services
                         speakerResponse = new SpeakerResponse { Name = speaker.Name, Description = speaker.Description };
                     }
 
-                    responses.Add(new ConferenceSessionStepResponse { SessionId = conferenceSession.ConferenceSessionId, Title = conferenceSession.Title, Description = conferenceSession.Description, StartTime = conferenceSession.StartTime, EndTime = conferenceSession.EndTime, Date = conferenceSession.Date, ConferenceId = conferenceSession.ConferenceId, StatusId = conferenceSession.StatusId, RoomId = conferenceSession.RoomId, Speaker = speakerResponse });
-                }
+                    responses.Add(new ConferenceSessionStepResponse { 
+                        SessionId = conferenceSession.ConferenceSessionId, 
+                        Title = conferenceSession.Title, 
+                        Description = conferenceSession.Description, 
+                        StartTime = conferenceSession.StartTime, 
+                        EndTime = conferenceSession.EndTime, 
+                        ConferenceId = conferenceSession.ConferenceId, 
+                        RoomId = conferenceSession.RoomId, 
+                        Speaker = speakerResponse });
+                }   
             }
             return responses;
         }
@@ -365,9 +371,7 @@ namespace ConfRadar.Services.Services
                 Description = s.Description,
                 StartTime = s.StartTime,
                 EndTime = s.EndTime,
-                Date = s.Date,
                 ConferenceId = s.ConferenceId,
-                StatusId = s.StatusId,
                 RoomId = s.RoomId,
                 Room = s.Room != null ? new RoomInfoResponse { RoomId = s.Room.RoomId, Number = s.Room.Number, DisplayName = s.Room.DisplayName, DestinationId = s.Room.DestinationId } : null,
                 Speaker = s.Speaker != null ? new SpeakerResponse { Name = s.Speaker.Name, Description = s.Speaker.Description } : null
@@ -390,9 +394,7 @@ namespace ConfRadar.Services.Services
             session.Title = request.Title ?? session.Title;
             session.Description = request.Description ?? session.Description;
             session.StartTime = newStartTime;
-            session.EndTime = newEndTime;
-            session.Date = newStartTime; // Update redundant Date from the new StartTime
-            session.StatusId = request.StatusId ?? session.StatusId;
+            session.EndTime = newEndTime; 
             session.RoomId = newRoomId;
 
             await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
@@ -405,9 +407,7 @@ namespace ConfRadar.Services.Services
                 Description = updatedSession.Description,
                 StartTime = updatedSession.StartTime,
                 EndTime = updatedSession.EndTime,
-                Date = updatedSession.Date,
                 ConferenceId = updatedSession.ConferenceId,
-                StatusId = updatedSession.StatusId,
                 RoomId = updatedSession.RoomId,
                 Room = updatedSession.Room != null ? new RoomInfoResponse { RoomId = updatedSession.Room.RoomId, DisplayName = updatedSession.Room.DisplayName } : null,
                 Speaker = updatedSession.Speaker != null ? new SpeakerResponse { Name = updatedSession.Speaker.Name, Description = updatedSession.Speaker.Description } : null

@@ -199,9 +199,8 @@ namespace ConfRadar.Services.Services
                             Description = session.Description,
                             StartTime = session.StartTime,
                             EndTime = session.EndTime,
-                            Date = session.Date,
+                            // Date field has been removed, using StartTime and EndTime which contain date and time
                             ConferenceId = conferenceId,
-                            StatusId = session.StatusId,
                             RoomId = session.RoomId // Use existing room ID
                         };
                         await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
@@ -494,9 +493,7 @@ namespace ConfRadar.Services.Services
                     Description = s.Description,
                     StartTime = s.StartTime,
                     EndTime = s.EndTime,
-                    Date = s.Date,
                     ConferenceId = s.ConferenceId,
-                    StatusId = s.StatusId,
                     RoomId = s.RoomId,
                     Room = s.Room != null ? new RoomInfoResponse
                     {
