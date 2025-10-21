@@ -365,6 +365,8 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.ToTable("Ticket");
 
+            entity.HasIndex(e => e.TransactionId, "Ticket_TransactionId_key").IsUnique();
+
             entity.Property(e => e.TicketId).HasMaxLength(50);
             entity.Property(e => e.ActualPrice).HasPrecision(10, 2);
             entity.Property(e => e.ConferencePriceId).HasMaxLength(50);
@@ -376,8 +378,8 @@ public partial class ConfRadarDbContext : DbContext
                 .HasForeignKey(d => d.ConferencePriceId)
                 .HasConstraintName("Ticket_ConferencePriceId_fkey");
 
-            entity.HasOne(d => d.Transaction).WithMany(p => p.Tickets)
-                .HasForeignKey(d => d.TransactionId)
+            entity.HasOne(d => d.Transaction).WithOne(p => p.Ticket)
+                .HasForeignKey<Ticket>(d => d.TransactionId)
                 .HasConstraintName("Ticket_TransactionId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.Tickets)

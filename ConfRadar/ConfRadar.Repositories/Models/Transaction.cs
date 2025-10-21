@@ -27,7 +27,7 @@ public partial class Transaction
 
     public virtual ICollection<RefundRequest> RefundRequests { get; set; } = new List<RefundRequest>();
 
-    public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    public virtual Ticket? Ticket { get; set; }
 
     public virtual TransactionStatus? TransactionStatus { get; set; }
 
