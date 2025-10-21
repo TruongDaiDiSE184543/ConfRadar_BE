@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class Ticket
 {
@@ -23,4 +26,6 @@ public partial class Ticket
     public virtual Transaction? Transaction { get; set; }
 
     public virtual User? User { get; set; }
+
+    public virtual ICollection<UserCheckIn> UserCheckIns { get; set; } = new List<UserCheckIn>();
 }

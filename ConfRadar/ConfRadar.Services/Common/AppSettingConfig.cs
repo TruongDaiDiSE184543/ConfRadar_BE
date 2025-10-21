@@ -36,12 +36,10 @@
         {
             public string AccessKey { get; set; }
             public string SecretKey { get; set; }
-            public string OrderInfo { get; set; }
             public string PartnerCode { get; set; }
             public string RedirectUrl { get; set; }
             public string IpnUrl { get; set; }
             public string RequestType { get; set; }
-            public string Amount { get; set; }
             public string PaymentCode { get; set; }
             public bool AutoCapture { get; set; }
             public string ExtraData { get; set; }

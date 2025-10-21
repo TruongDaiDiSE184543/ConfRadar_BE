@@ -16,6 +16,8 @@ namespace ConfRadar.Repositories
         IPricePhaseRepository PricePhaseRepository { get; }
         IConferencePriceRepository ConferencePriceRepository { get; }
         ITransactionTypeRepository TransactionTypeRepository { get; }
+        ITransactionRepository TransactionRepository { get; }
+        ITicketRepository TicketRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -35,6 +37,8 @@ namespace ConfRadar.Repositories
         private IPricePhaseRepository _PricePhaseRepository;
         private IConferencePriceRepository _ConferencePriceRepository;
         private ITransactionTypeRepository _TransactionTypeRepository;
+        private ITransactionRepository _TransactionRepository;
+        private ITicketRepository _TicketRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -56,6 +60,10 @@ namespace ConfRadar.Repositories
 
         public IConferencePriceRepository ConferencePriceRepository => _ConferencePriceRepository ??= new ConferencePriceRepository(_context);
         public ITransactionTypeRepository TransactionTypeRepository => _TransactionTypeRepository ??= new TransactionTypeRepository(_context);
+
+        public ITransactionRepository TransactionRepository => _TransactionRepository ??= new TransactionRepository(_context);
+
+        public ITicketRepository TicketRepository => _TicketRepository ??= new TicketRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

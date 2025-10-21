@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ConfRadar.Services.DTOs.Payment
 {
-    public class MomoPaymentRequestResponse
+    public class MomoPaymentCallBackResponse
     {
         public string partnerCode { get; set; } 
         public string orderId { get; set; }

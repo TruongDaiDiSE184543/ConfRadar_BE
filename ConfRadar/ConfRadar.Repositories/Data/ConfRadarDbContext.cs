@@ -1,10 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-
 using System;
 using System.Collections.Generic;
-
 
 namespace ConfRadar.Repositories.Data;
 
@@ -65,6 +63,8 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserCheckIn> UserCheckIns { get; set; }
+
     public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
@@ -81,6 +81,7 @@ public partial class ConfRadarDbContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Conference>(entity =>
@@ -463,6 +464,31 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.Property(e => e.VerificationToken).HasMaxLength(255);
             entity.Property(e => e.VerificationTokenExpiry).HasColumnType("timestamp without time zone");
+        });
+
+        modelBuilder.Entity<UserCheckIn>(entity =>
+        {
+            entity.HasKey(e => e.UserCheckInId).HasName("UserCheckIn_pkey");
+
+            entity.ToTable("UserCheckIn");
+
+            entity.Property(e => e.UserCheckInId).HasMaxLength(50);
+            entity.Property(e => e.CheckInTime).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.ConferenceSessionId).HasMaxLength(50);
+            entity.Property(e => e.TicketId).HasMaxLength(50);
+            entity.Property(e => e.UserId).HasMaxLength(50);
+
+            entity.HasOne(d => d.ConferenceSession).WithMany(p => p.UserCheckIns)
+                .HasForeignKey(d => d.ConferenceSessionId)
+                .HasConstraintName("UserCheckIn_ConferenceSessionId_fkey");
+
+            entity.HasOne(d => d.Ticket).WithMany(p => p.UserCheckIns)
+                .HasForeignKey(d => d.TicketId)
+                .HasConstraintName("UserCheckIn_TicketId_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserCheckIns)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("UserCheckIn_UserId_fkey");
         });
 
         modelBuilder.Entity<UserRefreshToken>(entity =>

@@ -22,7 +22,8 @@ namespace ConfRadar.Services
             services.AddScoped<ISeedDataService, SeedDataService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IMomoService, MomoService>();
-            
+            services.AddScoped<ITicketService, TicketService>();
+            services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
 

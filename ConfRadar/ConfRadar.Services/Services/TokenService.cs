@@ -14,6 +14,7 @@ namespace ConfRadar.Services.Services
     {
         Task<string> GenerateAccessToken(string userId, string email);
         string GenerateSecureRandomToken();
+        string CreateSignature(string rawData, string secretKey);
 
     }
     public class TokenService : ITokenService
@@ -52,7 +53,17 @@ namespace ConfRadar.Services.Services
             var accessToken = tokenHandler.WriteToken(token);
             return accessToken;
         }
+        public  string CreateSignature(string rawData, string secretKey)
+        {
+            string signature;
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))
+            {
+                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+                signature = BitConverter.ToString(hash).Replace("-", "").ToLower();
+            }
+            return signature;
 
+        }
         public string GenerateSecureRandomToken()
         {
             var randomNumber = new byte[32];

@@ -21,7 +21,9 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId)
         {
-            return await _context.ConferencePrices.Include(x=>x.PricePhase).Include(x=>x.Conference).FirstOrDefaultAsync(x => x.ConferencePriceId == conferencePriceId);
+            return await _context.ConferencePrices.Include(x=>x.PricePhase)
+                .Include(x=>x.Conference).ThenInclude(x=>x.ConferenceSessions)
+                .FirstOrDefaultAsync(x => x.ConferencePriceId == conferencePriceId);
         }
     }
 }

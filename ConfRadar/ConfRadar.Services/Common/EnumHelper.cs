@@ -82,4 +82,5 @@ namespace ConfRadar.Services.Common
         [Description("Payment")]
         Payment,
     }
+   
 }
