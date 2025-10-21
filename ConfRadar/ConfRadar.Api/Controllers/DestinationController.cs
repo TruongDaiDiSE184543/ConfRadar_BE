@@ -8,6 +8,7 @@ namespace ConfRadar.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class DestinationController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
