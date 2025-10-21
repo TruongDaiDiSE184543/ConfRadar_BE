@@ -51,8 +51,6 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<Sponsor> Sponsors { get; set; }
 
-    public virtual DbSet<Status> Statuses { get; set; }
-
     public virtual DbSet<TechnicalConferenceDetail> TechnicalConferenceDetails { get; set; }
 
     public virtual DbSet<Ticket> Tickets { get; set; }
@@ -175,11 +173,9 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.ConferenceSessionId).HasMaxLength(50);
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
-            entity.Property(e => e.Date).HasColumnType("timestamp without time zone");
             entity.Property(e => e.EndTime).HasColumnType("timestamp without time zone");
             entity.Property(e => e.RoomId).HasMaxLength(50);
             entity.Property(e => e.StartTime).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.StatusId).HasMaxLength(50);
             entity.Property(e => e.Title).HasMaxLength(50);
 
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferenceSessions)
@@ -280,6 +276,14 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.GlobalStatus).WithMany(p => p.RefundRequests)
                 .HasForeignKey(d => d.GlobalStatusId)
                 .HasConstraintName("RefundRequest_GlobalStatusId_fkey");
+
+            entity.HasOne(d => d.Ticket).WithOne(p => p.RefundRequest)
+                .HasForeignKey<RefundRequest>(d => d.TicketId)
+                .HasConstraintName("RefundRequest_TicketId_fkey");
+
+            entity.HasOne(d => d.Transaction).WithMany(p => p.RefundRequests)
+                .HasForeignKey(d => d.TransactionId)
+                .HasConstraintName("RefundRequest_TransactionId_fkey");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -339,16 +343,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.Conference).WithMany(p => p.Sponsors)
                 .HasForeignKey(d => d.ConferenceId)
                 .HasConstraintName("Sponsor_ConferenceId_fkey");
-        });
-
-        modelBuilder.Entity<Status>(entity =>
-        {
-            entity.HasKey(e => e.StatusId).HasName("Status_pkey");
-
-            entity.ToTable("Status");
-
-            entity.Property(e => e.StatusId).HasMaxLength(50);
-            entity.Property(e => e.StatusName).HasMaxLength(255);
         });
 
         modelBuilder.Entity<TechnicalConferenceDetail>(entity =>

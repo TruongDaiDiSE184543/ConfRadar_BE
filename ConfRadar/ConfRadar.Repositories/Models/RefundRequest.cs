@@ -14,4 +14,8 @@ public partial class RefundRequest
     public string? GlobalStatusId { get; set; }
 
     public virtual GlobalStatus? GlobalStatus { get; set; }
+
+    public virtual Ticket? Ticket { get; set; }
+
+    public virtual Transaction? Transaction { get; set; }
 }

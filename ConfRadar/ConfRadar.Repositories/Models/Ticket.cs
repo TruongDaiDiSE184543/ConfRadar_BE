@@ -21,6 +21,8 @@ public partial class Ticket
 
     public virtual ConferencePrice? ConferencePrice { get; set; }
 
+    public virtual RefundRequest? RefundRequest { get; set; }
+
     public virtual Transaction? Transaction { get; set; }
 
     public virtual User? User { get; set; }
