@@ -15,11 +15,7 @@ public partial class ConferenceSession
 
     public DateTime? EndTime { get; set; }
 
-    public DateTime? Date { get; set; }
-
     public string? ConferenceId { get; set; }
-
-    public string? StatusId { get; set; }
 
     public string? RoomId { get; set; }
 
