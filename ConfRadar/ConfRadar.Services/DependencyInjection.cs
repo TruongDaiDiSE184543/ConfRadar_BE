@@ -1,12 +1,10 @@
 ﻿using ConfRadar.Services.Services;
 using FirebaseAdmin;
 using FirebaseAdmin.Auth;
-using FirebaseAdmin.Messaging;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Minio;
-using System;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services
@@ -17,11 +15,14 @@ namespace ConfRadar.Services
         {
 
             services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
+            services.AddSingleton<IRedisService, RedisService>();
             services.AddScoped<IEmailService, SmtpEmailService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
             services.AddScoped<ISeedDataService, SeedDataService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IMomoService, MomoService>();
+            
             services.AddScoped<IServiceManager, ServiceManager>();
 
 
@@ -42,7 +43,7 @@ namespace ConfRadar.Services
             services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
 
 
-            
+
 
             return services;
         }

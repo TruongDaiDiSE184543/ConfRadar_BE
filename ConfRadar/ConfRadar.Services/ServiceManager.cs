@@ -5,7 +5,7 @@ namespace ConfRadar.Services
     public interface IServiceManager
     {
         public IAuthService AuthService { get; }
-       
+
     }
 
     public class ServiceManager : IServiceManager
@@ -14,7 +14,7 @@ namespace ConfRadar.Services
 
         public ServiceManager(IAuthService authService)
         {
-            
+
             _authService = authService;
         }
 

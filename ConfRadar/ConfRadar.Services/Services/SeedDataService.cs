@@ -10,6 +10,7 @@ namespace ConfRadar.Services.Services
         Task SeedTransactionStatusAsync();
         Task SeedPaymentMethodsAsync();
         Task SeedGlobalStatusesAsync();
+        Task SeedTransactionTypeAsync();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -20,9 +21,9 @@ namespace ConfRadar.Services.Services
         }
         private async Task SeedEntityAsync<T>(
             IEnumerable<string> names,
-            Func<string,Task<T?>> findByNameAsync,
-            Func<IEnumerable<T>,Task> createMutipleAsync,
-            Func<string,T> createEntityFunc
+            Func<string, Task<T?>> findByNameAsync,
+            Func<IEnumerable<T>, Task> createMutipleAsync,
+            Func<string, T> createEntityFunc
             )
         {
             List<T> newEntities = new List<T>();
@@ -48,9 +49,10 @@ namespace ConfRadar.Services.Services
                 roleNames,
                 _unitOfWork.RoleRepository.GetRoleByRoleName,
                 _unitOfWork.RoleRepository.CreateMutipleRoleAsync,
-                name => new Role 
-                { RoleId = Guid.NewGuid().ToString(),
-                  RoleName = name
+                name => new Role
+                {
+                    RoleId = Guid.NewGuid().ToString(),
+                    RoleName = name
                 });
         }
         public async Task SeedGlobalStatusesAsync()
@@ -90,6 +92,19 @@ namespace ConfRadar.Services.Services
                 {
                     TransactionStatusId = Guid.NewGuid().ToString(),
                     StatusName = name,
+                });
+        }
+        public async Task SeedTransactionTypeAsync()
+        {
+            var typeNames = Enum.GetValues<TransactionTypeEnum>().Select(s => s.GetDescription()).ToList();
+            await SeedEntityAsync<TransactionType>(
+                typeNames,
+                _unitOfWork.TransactionTypeRepository.GetTransactionTypeByName,
+                _unitOfWork.TransactionTypeRepository.CreateMutipleTransactionTypesAsync,
+                name => new TransactionType
+                {
+                    TransactionTypeId = Guid.NewGuid().ToString(),
+                    TypeName = name,
                 });
         }
     }

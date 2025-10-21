@@ -38,11 +38,22 @@
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+  confradar.redis:
+    image: redis:8.2.2
+    networks:
+      - confradar-network
+    ports:
+      - "6379:6379"
+    volumes:
+      - confradar-redis-data:/data
+    command: ["redis-server", "--appendonly", "yes", "--requirepass","${REDIS_PASSWORD}"]
+
 
 
 volumes:
   confradar_data:
   minio_data:
+  confradar-redis-data:
 
 
 networks:

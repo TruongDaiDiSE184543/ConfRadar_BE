@@ -14,6 +14,8 @@ namespace ConfRadar.Api
             services.Configure<AppSettingConfig.EmailSettings>(configs.GetSection("EmailSettings"));
             services.Configure<AppSettingConfig.JwtSettings>(configs.GetSection("JwtSettings"));
             services.Configure<AppSettingConfig.ObjectStorageSettings>(configs.GetSection("ObjectStorageSettings"));
+            services.Configure<AppSettingConfig.MomoSettings>(configs.GetSection("MomoSettings"));
+            services.Configure<AppSettingConfig.RedisSettings>(configs.GetSection("RedisSettings"));
 
             services.AddDbContext<ConfRadarDbContext>(options =>
             options.UseNpgsql(configs.GetConnectionString("ConnectionStrings")));

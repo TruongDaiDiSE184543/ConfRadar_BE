@@ -2,15 +2,10 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
-    
+
 
     public interface IUserRoleRepository
     {
@@ -28,7 +23,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<IEnumerable<UserRole>> GetMutipleUserRolesByUserId(string userId)
         {
-            return await _context.UserRoles.Include(x=>x.Role).Where(x => x.UserId == userId).ToListAsync();
+            return await _context.UserRoles.Include(x => x.Role).Where(x => x.UserId == userId).ToListAsync();
         }
     }
 }

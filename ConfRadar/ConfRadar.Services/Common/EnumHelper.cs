@@ -49,7 +49,7 @@ namespace ConfRadar.Services.Common
     }
     public enum GlobalStatusEnum
     {
-       
+
         [Description("Pending")]
         Pending,
         [Description("Accepted")]
@@ -75,5 +75,11 @@ namespace ConfRadar.Services.Common
         [Description("MoMo")]
         MoMo,
     }
-
+    public enum TransactionTypeEnum
+    {
+        [Description("Refund")]
+        Refund,
+        [Description("Payment")]
+        Payment,
+    }
 }

@@ -13,6 +13,9 @@ namespace ConfRadar.Repositories
         IGlobalStatusRepository GlobalStatusRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
         ITransactionStatusRepository TransactionStatusRepository { get; }
+        IPricePhaseRepository PricePhaseRepository { get; }
+        IConferencePriceRepository ConferencePriceRepository { get; }
+        ITransactionTypeRepository TransactionTypeRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -29,6 +32,9 @@ namespace ConfRadar.Repositories
         private IGlobalStatusRepository _GlobalStatusRepository;
         private IPaymentMethodRepository _PaymentMethodRepository;
         private ITransactionStatusRepository _TransactionStatusRepository;
+        private IPricePhaseRepository _PricePhaseRepository;
+        private IConferencePriceRepository _ConferencePriceRepository;
+        private ITransactionTypeRepository _TransactionTypeRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -44,7 +50,12 @@ namespace ConfRadar.Repositories
 
         public IPaymentMethodRepository PaymentMethodRepository => _PaymentMethodRepository ??= new PaymentMethodRepository(_context);
 
-        public ITransactionStatusRepository TransactionStatusRepository => _TransactionStatusRepository??= new TransactionStatusRepository(_context);
+        public ITransactionStatusRepository TransactionStatusRepository => _TransactionStatusRepository ??= new TransactionStatusRepository(_context);
+
+        public IPricePhaseRepository PricePhaseRepository => _PricePhaseRepository ??= new PricePhaseRepository(_context);
+
+        public IConferencePriceRepository ConferencePriceRepository => _ConferencePriceRepository ??= new ConferencePriceRepository(_context);
+        public ITransactionTypeRepository TransactionTypeRepository => _TransactionTypeRepository ??= new TransactionTypeRepository(_context);
 
         public async Task BeginTransactionAsync()
         {
