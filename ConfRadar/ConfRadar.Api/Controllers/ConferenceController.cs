@@ -18,9 +18,9 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpPost]
-        public async Task<IActionResult> CreateConference([FromBody] CreateConferenceRequest request)
+        public async Task<IActionResult> CreateConference([FromForm] CreateConferenceRequest request)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateConference(string id, [FromBody] UpdateConferenceRequest request)
         {
@@ -58,7 +58,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteConference(string id)
         {
@@ -78,6 +78,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetConference(string id)
         {
             try

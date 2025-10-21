@@ -13,6 +13,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Conference?> GetConferenceByIdAsync(string conferenceId);
         Task<List<Conference>> GetAllConferencesAsync();
         Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId);
+        Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
     }
 
     public class ConferenceRepository : GenericRepository<Conference>, IConferenceRepository
@@ -31,6 +32,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<int> DeleteConferenceAsync(Conference conference)
         {
+            _context.Conferences.Remove(conference);
             return await _context.SaveChangesAsync();
         }
 
@@ -57,10 +59,21 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room)
                         .ThenInclude(r => r.Destination)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Speaker)
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
                 .Include(c => c.FavouriteConferences)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
+        }
+
+        public async Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds)
+        {
+            var conferences = await _context.Conferences
+                .Where(c => conferenceIds.Contains(c.ConferenceId))
+                .ToListAsync();
+            
+            return conferences.ToDictionary(c => c.ConferenceId);
         }
     }
 }

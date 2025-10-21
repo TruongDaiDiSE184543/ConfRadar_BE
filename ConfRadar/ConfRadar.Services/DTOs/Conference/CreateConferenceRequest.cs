@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.Conference
@@ -16,14 +17,13 @@ namespace ConfRadar.Services.DTOs.Conference
 
         [Required(ErrorMessage = "End date is required")]
         public DateOnly? EndDate { get; set; }
-
+        [Required(ErrorMessage = "Capacity is required")]
         public int? Capacity { get; set; }
 
         [MaxLength(255)]
         public string? Address { get; set; }
 
-        [Url(ErrorMessage = "Banner image URL must be a valid URL")]
-        public string? BannerImageUrl { get; set; }
+        public IFormFile? BannerImageFile { get; set; }
 
         public bool? IsInternalHosted { get; set; }
 
@@ -33,6 +33,7 @@ namespace ConfRadar.Services.DTOs.Conference
         [MaxLength(50)]
         public string CategoryName { get; set; }
 
+        public string? LocationId { get; set; }  // Reference to existing destination
         public string? GlobalStatusId { get; set; }
 
         public List<ConferencePolicyRequest>? Policies { get; set; }
@@ -40,7 +41,27 @@ namespace ConfRadar.Services.DTOs.Conference
         public List<SponsorRequest>? Sponsors { get; set; }
         public List<ConferencePriceRequest>? Prices { get; set; }
         public List<ConferenceSessionRequest>? Sessions { get; set; }
-        public DestinationRequest? Destination { get; set; }
+        public CreatePricePhaseRequest? PricePhase { get; set; }
+    }
+
+    public class CreatePricePhaseRequest
+    {
+        [MaxLength(50)]
+        public string? Name { get; set; }
+
+        public DateOnly? EarlierBirdEndInterval { get; set; }
+
+        [Range(0, 200, ErrorMessage = "PercentForEarly must be between 0 and 200")]
+        public int? PercentForEarly { get; set; }
+
+        public DateOnly? StandardEndInterval { get; set; }
+
+        public DateOnly? LateEndInterval { get; set; }
+
+        [Range(0, 200, ErrorMessage = "PercentForEnd must be between 0 and 200")]
+        public int? PercentForEnd { get; set; }
+        public List<ConferenceSessionRequest>? Sessions { get; set; }
+        // Remove Destination property since destinations are managed separately
     }
 
     public class ConferencePolicyRequest
@@ -53,8 +74,10 @@ namespace ConfRadar.Services.DTOs.Conference
 
     public class ConferenceMediaRequest
     {
+        public IFormFile? MediaFile { get; set; }
+
         [Url(ErrorMessage = "Media URL must be a valid URL")]
-        public string? MediaUrl { get; set; }
+        public string? MediaUrl { get; set; }  // Allow URL as fallback
 
         public string? MediaTypeId { get; set; }
     }
@@ -66,6 +89,8 @@ namespace ConfRadar.Services.DTOs.Conference
 
         [Url(ErrorMessage = "Image URL must be a valid URL")]
         public string? ImageUrl { get; set; }
+        
+        public IFormFile? ImageFile { get; set; }  // Allow file upload instead of URL
     }
 
     public class ConferencePriceRequest
@@ -80,7 +105,7 @@ namespace ConfRadar.Services.DTOs.Conference
 
         public decimal? ActualPrice { get; set; }
 
-        [Required(ErrorMessage = "Price phase ID is required")]
+        
         public string? PricePhaseId { get; set; }
     }
 
@@ -96,11 +121,10 @@ namespace ConfRadar.Services.DTOs.Conference
         public DateTime? StartTime { get; set; }
 
         public DateTime? EndTime { get; set; }
-
         public DateTime? Date { get; set; }
-
         public string? StatusId { get; set; }
 
+        [Required(ErrorMessage = "Room ID is required for the session")]
         public string? RoomId { get; set; }
 
         public SpeakerRequest? Speaker { get; set; }
@@ -115,19 +139,5 @@ namespace ConfRadar.Services.DTOs.Conference
         [MaxLength(500)]
         public string? Description { get; set; }
     }
-
-    public class DestinationRequest
-    {
-        [MaxLength(50)]
-        public string? Name { get; set; }
-
-        [MaxLength(50)]
-        public string? City { get; set; }
-
-        [MaxLength(50)]
-        public string? District { get; set; }
-
-        [MaxLength(50)]
-        public string? Street { get; set; }
-    }
+    // Remove DestinationRequest since destinations are managed separately
 }

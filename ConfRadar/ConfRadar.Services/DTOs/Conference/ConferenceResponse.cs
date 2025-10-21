@@ -55,6 +55,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? TicketName { get; set; }
         public string? TicketDescription { get; set; }
         public decimal? ActualPrice { get; set; }
+        public string? CurrentPhase { get; set; }  // Added: Current active phase
         public string? PricePhaseId { get; set; }
     }
 
@@ -69,7 +70,16 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceId { get; set; }
         public string? StatusId { get; set; }
         public string? RoomId { get; set; }
+        public RoomInfoResponse? Room { get; set; }  // Include room details
         public SpeakerResponse? Speaker { get; set; }
+    }
+    
+    public class RoomInfoResponse
+    {
+        public string RoomId { get; set; }
+        public string? Number { get; set; }
+        public string? DisplayName { get; set; }
+        public string? DestinationId { get; set; }
     }
 
     public class SpeakerResponse

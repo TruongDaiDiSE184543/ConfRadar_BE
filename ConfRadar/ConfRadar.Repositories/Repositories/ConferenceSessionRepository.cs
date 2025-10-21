@@ -14,6 +14,11 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferenceSession>> GetAllConferenceSessionsAsync();
         Task<List<ConferenceSession>> GetSessionsByConferenceIdAsync(string conferenceId);
         Task<ConferenceSession?> GetSessionWithDetailsAsync(string sessionId);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateTime startDate, DateTime endDate);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateAsync(string roomId, DateOnly date);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdOverlappingTimeAsync(string roomId, DateOnly date, DateTime startTime, DateTime endTime);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdAtTimeAsync(string roomId, DateOnly date, DateTime checkTime);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date);
     }
 
     public class ConferenceSessionRepository : GenericRepository<ConferenceSession>, IConferenceSessionRepository
@@ -62,6 +67,93 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(r => r.Destination)
                 .Include(cs => cs.Speaker)
                 .FirstOrDefaultAsync(cs => cs.ConferenceSessionId == sessionId);
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateTime startDate, DateTime endDate)
+        {
+            // Ensure DateTime parameters are in UTC
+            var utcStartDate = startDate.Kind == DateTimeKind.Utc ? startDate : DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            var utcEndDate = endDate.Kind == DateTimeKind.Utc ? endDate : DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+            
+            return await _context.ConferenceSessions
+                .Where(cs => cs.RoomId == roomId && 
+                            cs.Date >= utcStartDate && 
+                            cs.Date <= utcEndDate)
+                .ToListAsync();
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateAsync(string roomId, DateOnly date)
+        {
+            // Get sessions on the specified date
+            // Assuming the Date field contains the full date (like 2025-12-15 00:00:00)
+            var startDateTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+            var endDateTime = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
+            
+            return await _context.ConferenceSessions
+                .Where(cs => cs.RoomId == roomId && 
+                            cs.Date >= startDateTime && 
+                            cs.Date <= endDateTime) // Check if the date portion matches
+                .ToListAsync();
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdOverlappingTimeAsync(string roomId, DateOnly date, DateTime startTime, DateTime endTime)
+        {
+            var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+            var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
+            
+            // Ensure time parameters are in UTC
+            var utcStartTime = startTime.Kind == DateTimeKind.Utc ? startTime : DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
+            var utcEndTime = endTime.Kind == DateTimeKind.Utc ? endTime : DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
+            
+            return await _context.ConferenceSessions
+                .Where(cs => cs.RoomId == roomId && 
+                            cs.Date >= dateStart && 
+                            cs.Date <= dateEnd &&
+                            cs.StartTime < utcEndTime && // New session starts before existing ends
+                            cs.EndTime > utcStartTime)   // New session ends after existing starts
+                .ToListAsync();
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdAtTimeAsync(string roomId, DateOnly date, DateTime checkTime)
+        {
+            var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+            var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
+            
+            // Ensure checkTime parameter is in UTC
+            var utcCheckTime = checkTime.Kind == DateTimeKind.Utc ? checkTime : DateTime.SpecifyKind(checkTime, DateTimeKind.Utc);
+            
+            return await _context.ConferenceSessions
+                .Where(cs => cs.RoomId == roomId && 
+                            cs.Date >= dateStart && 
+                            cs.Date <= dateEnd &&
+                            cs.StartTime <= utcCheckTime && // Session started before or at the check time
+                            cs.EndTime > utcCheckTime)       // Session hasn't ended yet
+                .ToListAsync();
+        }
+
+        //public async Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date)
+        //{
+        //    var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+        //    var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
+
+        //    return await _context.ConferenceSessions
+        //        .Where(cs => cs.RoomId == roomId && 
+        //                    cs.Date >= dateStart && 
+        //                    cs.Date < dateEnd)//.AddDays(1)) // From start of day to start of next day
+        //        .ToListAsync();
+        //}
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date)
+        {
+            // These define the 24-hour window for the given date in UTC
+            var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+            var dateEnd = dateStart.AddDays(1); // From the start of the day to the start of the next day
+
+            return await _context.ConferenceSessions
+                .Where(cs => cs.RoomId == roomId &&
+                             cs.StartTime.HasValue && // Ensure StartTime is not null
+                             cs.StartTime.Value >= dateStart &&
+                             cs.StartTime.Value < dateEnd)
+                .ToListAsync();
         }
     }
 }

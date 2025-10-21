@@ -2,6 +2,8 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -13,6 +15,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<ConferencePrice?> GetConferencePriceByIdAsync(string priceId);
         Task<List<ConferencePrice>> GetAllConferencePricesAsync();
         Task<List<ConferencePrice>> GetPricesByConferenceIdAsync(string conferenceId);
+        IQueryable<ConferencePrice> GetConferencePricesWithIncludes();
+        Task<ConferencePrice?> GetConferencePriceWithIncludesAsync(string priceId);
     }
 
     public class ConferencePriceRepository : GenericRepository<ConferencePrice>, IConferencePriceRepository
@@ -55,6 +59,21 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(cp => cp.PricePhase)
                 .Where(cp => cp.ConferenceId == conferenceId)
                 .ToListAsync();
+        }
+
+        public IQueryable<ConferencePrice> GetConferencePricesWithIncludes()
+        {
+            return _context.ConferencePrices
+                .Include(cp => cp.PricePhase)
+                .Include(cp => cp.Conference);
+        }
+        
+        public async Task<ConferencePrice?> GetConferencePriceWithIncludesAsync(string priceId)
+        {
+            return await _context.ConferencePrices
+                .Include(cp => cp.PricePhase)
+                .Include(cp => cp.Conference)
+                .FirstOrDefaultAsync(cp => cp.ConferencePriceId == priceId);
         }
     }
 }

@@ -38,7 +38,18 @@ namespace ConfRadar.Services.Common
     }
     public enum ObjectStorageBucketEnum
     {
-        avatar
+        avatar,
+        conferencebanner,
+        conferencemedia
+    }
+
+    public enum MediaTypeEnum
+    {
+        [Description("Image")]
+        Image,
+
+        [Description("Video")]
+        Video
     }
     public static class EnumExtension
     {

@@ -23,6 +23,7 @@ namespace ConfRadar.Repositories
         IRoomRepository RoomRepository { get; }
         IDestinationRepository DestinationRepository { get; }
         IPricePhaseRepository PricePhaseRepository { get; }
+        IMediaTypeRepository MediaTypeRepository { get; }
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -50,6 +51,7 @@ namespace ConfRadar.Repositories
         private IRoomRepository _RoomRepository;
         private IDestinationRepository _DestinationRepository;
         private IPricePhaseRepository _PricePhaseRepository;
+        private IMediaTypeRepository _MediaTypeRepository;
         private IConferenceCategoryRepository _ConferenceCategoryRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
@@ -87,6 +89,8 @@ namespace ConfRadar.Repositories
         public IDestinationRepository DestinationRepository => _DestinationRepository ??= new DestinationRepository(_context);
 
         public IPricePhaseRepository PricePhaseRepository => _PricePhaseRepository ??= new PricePhaseRepository(_context);
+
+        public IMediaTypeRepository MediaTypeRepository => _MediaTypeRepository ??= new MediaTypeRepository(_context);
 
         public IConferenceCategoryRepository ConferenceCategoryRepository => _ConferenceCategoryRepository ??= new ConferenceCategoryRepository(_context);
 
