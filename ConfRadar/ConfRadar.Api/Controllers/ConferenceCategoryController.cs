@@ -9,7 +9,7 @@ namespace ConfRadar.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Conference Organizer")]
+    [Authorize(Roles = "Conference Organizer, Admin")]
     public class ConferenceCategoryController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
