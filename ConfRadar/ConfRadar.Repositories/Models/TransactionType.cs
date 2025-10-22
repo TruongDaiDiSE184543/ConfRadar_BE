@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ConfRadar.Repositories.Models;
+﻿namespace ConfRadar.Repositories.Models;
 
 public partial class TransactionType
 {

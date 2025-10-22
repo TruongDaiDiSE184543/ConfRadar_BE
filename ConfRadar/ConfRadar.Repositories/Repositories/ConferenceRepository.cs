@@ -78,7 +78,7 @@ namespace ConfRadar.Repositories.Repositories
             var conferences = await _context.Conferences
                 .Where(c => conferenceIds.Contains(c.ConferenceId))
                 .ToListAsync();
-            
+
             return conferences.ToDictionary(c => c.ConferenceId);
         }
     }

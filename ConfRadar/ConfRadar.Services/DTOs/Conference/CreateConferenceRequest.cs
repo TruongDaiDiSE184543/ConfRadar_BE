@@ -89,7 +89,7 @@ namespace ConfRadar.Services.DTOs.Conference
 
         [Url(ErrorMessage = "Image URL must be a valid URL")]
         public string? ImageUrl { get; set; }
-        
+
         public IFormFile? ImageFile { get; set; }  // Allow file upload instead of URL
     }
 
@@ -105,7 +105,7 @@ namespace ConfRadar.Services.DTOs.Conference
 
         public decimal? ActualPrice { get; set; }
 
-        
+
         public string? PricePhaseId { get; set; }
     }
 

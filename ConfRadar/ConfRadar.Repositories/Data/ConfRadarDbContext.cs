@@ -1,8 +1,6 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -188,7 +186,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.EndTime)
                   .HasColumnType("timestamp with time zone");
 
-           
+
 
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferenceSessions)
                 .HasForeignKey(d => d.ConferenceId)

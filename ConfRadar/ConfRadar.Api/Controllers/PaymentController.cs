@@ -2,14 +2,9 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Payment;
-using ConfRadar.Services.DTOs.User;
-using ConfRadar.Services.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -27,7 +22,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreatePaymentForTech([FromBody] CreateTechPaymentRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.MomoService.HandleMomoPaymentWithTechConf(request,userId!);
+            var result = await _serviceManager.MomoService.HandleMomoPaymentWithTechConf(request, userId!);
             return Ok(ApiResponse<string>.SuccessResponse(result, "Pay with momo"));
         }
         [HttpPost("verify-momo-for-tech")]

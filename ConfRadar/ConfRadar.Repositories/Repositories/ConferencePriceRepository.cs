@@ -2,12 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Linq.Expressions;
 
 
 namespace ConfRadar.Repositories.Repositories
@@ -30,8 +24,8 @@ namespace ConfRadar.Repositories.Repositories
         public ConferencePriceRepository(ConfRadarDbContext context) : base(context) { }
         public async Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId)
         {
-            return await _context.ConferencePrices.Include(x=>x.PricePhase)
-                .Include(x=>x.Conference).ThenInclude(x=>x.ConferenceSessions)
+            return await _context.ConferencePrices.Include(x => x.PricePhase)
+                .Include(x => x.Conference).ThenInclude(x => x.ConferenceSessions)
                 .FirstOrDefaultAsync(x => x.ConferencePriceId == conferencePriceId);
         }
 
@@ -79,7 +73,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(cp => cp.PricePhase)
                 .Include(cp => cp.Conference);
         }
-        
+
         public async Task<ConferencePrice?> GetConferencePriceWithIncludesAsync(string priceId)
         {
             return await _context.ConferencePrices

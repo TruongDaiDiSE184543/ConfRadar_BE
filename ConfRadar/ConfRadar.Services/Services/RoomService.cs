@@ -2,7 +2,6 @@ using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Room;
 using ConfRadar.Services.Exceptions;
-using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
 {
@@ -13,7 +12,7 @@ namespace ConfRadar.Services.Services
         Task<int> DeleteRoomAsync(string roomId);
         Task<RoomResponse> GetRoomByIdAsync(string roomId);
         Task<List<RoomResponse>> GetAllRoomsAsync();
-        
+
         // Room occupation checking methods
         Task<List<RoomOccupationSlotResponse>> GetRoomOccupationSlots(string roomId, DateOnly startDate, DateOnly endDate);
         Task<bool> IsRoomAvailable(string roomId, DateOnly date, TimeOnly startTime, TimeOnly endTime);
@@ -110,7 +109,7 @@ namespace ConfRadar.Services.Services
         }
 
         // Room occupation checking methods
-        
+
         /// <summary>
         /// Get all occupation slots for a room within a date range
         /// Performance optimization: Uses efficient date/time queries with indexes
@@ -155,8 +154,8 @@ namespace ConfRadar.Services.Services
                 StartTime = session.StartTime!.Value,
                 EndTime = session.EndTime!.Value,
                 ConferenceId = session.ConferenceId!,
-                ConferenceName = conferences.ContainsKey(session.ConferenceId!) 
-                    ? conferences[session.ConferenceId!].ConferenceName 
+                ConferenceName = conferences.ContainsKey(session.ConferenceId!)
+                    ? conferences[session.ConferenceId!].ConferenceName
                     : "Unknown Conference"
             }).ToList();
 

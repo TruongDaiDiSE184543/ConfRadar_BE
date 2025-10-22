@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.Services.DTOs.Payment
+﻿namespace ConfRadar.Services.DTOs.Payment
 {
     public class MomoPaymentCallBackResponse
     {
-        public string partnerCode { get; set; } 
+        public string partnerCode { get; set; }
         public string orderId { get; set; }
         public string requestId { get; set; }
         public long amount { get; set; }

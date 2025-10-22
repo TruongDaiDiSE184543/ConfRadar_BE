@@ -2,11 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -16,7 +11,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId);
         Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId);
     }
-    public class TicketRepository :GenericRepository<Ticket>,ITicketRepository
+    public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
     {
         public TicketRepository(ConfRadarDbContext context) : base(context)
         {
@@ -26,9 +21,9 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Tickets.Where(x => x.UserId == userId).ToListAsync();
         }
-        public async Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId,string conferencePriceId)
+        public async Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId)
         {
-            return await _context.Tickets.FirstOrDefaultAsync(x => x.UserId == userId&& x.ConferencePriceId == conferencePriceId);
+            return await _context.Tickets.FirstOrDefaultAsync(x => x.UserId == userId && x.ConferencePriceId == conferencePriceId);
         }
         public async Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId)
         {
@@ -59,7 +54,7 @@ namespace ConfRadar.Repositories.Repositories
                                 }
                             },
                             RegisteredDate = t.RegisteredDate,
-                            
+
                         };
             return await query.ToListAsync();
 

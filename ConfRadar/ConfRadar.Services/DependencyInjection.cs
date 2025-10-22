@@ -33,7 +33,7 @@ namespace ConfRadar.Services
             services.AddScoped<IConferencePriceTicketService, ConferencePriceTicketService>();
             services.AddScoped<IConferenceStepService, ConferenceStepService>();
             services.AddScoped<IConferenceCategoryService, ConferenceCategoryService>();
-
+            services.AddScoped<IGlobalStatusService, GlobalStatusService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
 

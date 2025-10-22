@@ -53,7 +53,7 @@ namespace ConfRadar.Services.Services
             var accessToken = tokenHandler.WriteToken(token);
             return accessToken;
         }
-        public  string CreateSignature(string rawData, string secretKey)
+        public string CreateSignature(string rawData, string secretKey)
         {
             string signature;
             using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))

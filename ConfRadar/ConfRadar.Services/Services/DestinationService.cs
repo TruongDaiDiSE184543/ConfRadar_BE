@@ -3,7 +3,6 @@ using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Destination;
 using ConfRadar.Services.DTOs.Room;
 using ConfRadar.Services.Exceptions;
-using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
 {

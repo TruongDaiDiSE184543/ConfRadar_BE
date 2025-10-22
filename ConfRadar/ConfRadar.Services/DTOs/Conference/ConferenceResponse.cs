@@ -73,7 +73,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public RoomInfoResponse? Room { get; set; }  // Include room details
         public SpeakerResponse? Speaker { get; set; }
     }
-    
+
     public class RoomInfoResponse
     {
         public string RoomId { get; set; }
