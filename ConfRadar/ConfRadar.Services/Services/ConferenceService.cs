@@ -1,15 +1,12 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
-using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.DTOs.Conference;
-using Microsoft.AspNetCore.Http;
-using System.Text.Json;
-using System.Transactions;
 using ConfRadar.Services.DTOs.Configuration;
-using Microsoft.Extensions.Options;
 using ConfRadar.Services.DTOs.General;
+using ConfRadar.Services.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace ConfRadar.Services.Services
 {
@@ -44,7 +41,7 @@ namespace ConfRadar.Services.Services
         public async Task<string> CreateConferenceAsync(CreateConferenceRequest request, string userId)
         {
             await _unitOfWork.BeginTransactionAsync();
-            
+
             try
             {
                 // Check if user exists
@@ -91,9 +88,9 @@ namespace ConfRadar.Services.Services
                     using var stream = request.BannerImageFile.OpenReadStream();
                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
                     bannerImageUrl = await _objectStorageFileService.UploadFileAsync(
-                        ObjectStorageBucketEnum.conferencebanner.ToString(), 
-                        uniqueFileName, 
-                        stream, 
+                        ObjectStorageBucketEnum.conferencebanner.ToString(),
+                        uniqueFileName,
+                        stream,
                         request.BannerImageFile.ContentType);
                 }
 
@@ -119,7 +116,7 @@ namespace ConfRadar.Services.Services
                 };
 
                 var result = await _unitOfWork.ConferenceRepository.CreateConferenceAsync(conference);
-                
+
                 if (result <= 0)
                 {
                     throw new BadRequestException("Failed to create conference");
@@ -149,7 +146,7 @@ namespace ConfRadar.Services.Services
                     foreach (var price in request.Prices)
                     {
                         string actualPricePhaseId = pricePhaseId; // Use the newly created price phase if available
-                        
+
                         if (string.IsNullOrEmpty(actualPricePhaseId))
                         {
                             // If no new price phase was created, validate existing one
@@ -191,7 +188,7 @@ namespace ConfRadar.Services.Services
                             {
                                 throw new NotFoundException($"Room with ID {session.RoomId} not found");
                             }
-                            
+
                             // Validate session time availability in the room
                             await ValidateSessionTimeAvailability(session, sessionConfig);
                         }
@@ -245,7 +242,7 @@ namespace ConfRadar.Services.Services
                     foreach (var media in request.Media)
                     {
                         string? mediaUrl = media.MediaUrl; // Default to provided URL
-                        
+
                         if (media.MediaFile != null)
                         {
                             // Validate media type based on MediaType
@@ -257,14 +254,14 @@ namespace ConfRadar.Services.Services
 
                             using var stream = media.MediaFile.OpenReadStream();
                             var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(media.MediaFile.FileName);
-                            
+
                             // Determine bucket based on media type
                             var bucket = ObjectStorageBucketEnum.conferencemedia.ToString();
-                            
+
                             mediaUrl = await _objectStorageFileService.UploadFileAsync(
-                                bucket, 
-                                uniqueFileName, 
-                                stream, 
+                                bucket,
+                                uniqueFileName,
+                                stream,
                                 media.MediaFile.ContentType);
                         }
 
@@ -285,16 +282,16 @@ namespace ConfRadar.Services.Services
                     foreach (var sponsor in request.Sponsors)
                     {
                         string? imageUrl = sponsor.ImageUrl; // Default to provided URL
-                        
+
                         // If an image file is provided, upload it to MinIO
                         if (sponsor.ImageFile != null)
                         {
                             using var stream = sponsor.ImageFile.OpenReadStream();
                             var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(sponsor.ImageFile.FileName);
                             imageUrl = await _objectStorageFileService.UploadFileAsync(
-                                ObjectStorageBucketEnum.conferencemedia.ToString(), 
-                                uniqueFileName, 
-                                stream, 
+                                ObjectStorageBucketEnum.conferencemedia.ToString(),
+                                uniqueFileName,
+                                stream,
                                 sponsor.ImageFile.ContentType);
                         }
 
@@ -371,7 +368,7 @@ namespace ConfRadar.Services.Services
             }
 
             var prices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
-            
+
             foreach (var price in prices)
             {
                 await _unitOfWork.ConferencePriceRepository.DeleteConferencePriceAsync(price);
@@ -390,7 +387,7 @@ namespace ConfRadar.Services.Services
                 {
                     await _unitOfWork.SpeakerRepository.DeleteSpeakerAsync(speaker);
                 }
-                
+
                 await _unitOfWork.ConferenceSessionRepository.DeleteConferenceSessionAsync(session);
             }
 
@@ -442,16 +439,16 @@ namespace ConfRadar.Services.Services
                     Name = s.Name,
                     ImageUrl = AddBaseUrlToUrl(s.ImageUrl)
                 }).ToList(),
-                Prices = conference.ConferencePrices?.Select(p => 
+                Prices = conference.ConferencePrices?.Select(p =>
                 {
                     // Calculate current phase and actual price based on current date and price phase
                     string currentPhase = "Unknown";
                     decimal? calculatedActualPrice = p.ActualPrice; // Default to the stored actual price
-                    
+
                     if (p.PricePhase != null) // If the price phase is loaded with the conference
                     {
                         var now = DateOnly.FromDateTime(DateTime.UtcNow);
-                        
+
                         if (p.PricePhase.EarlierBirdEndInterval != null && now <= p.PricePhase.EarlierBirdEndInterval)
                         {
                             currentPhase = "Early Bird";
@@ -478,7 +475,7 @@ namespace ConfRadar.Services.Services
                             currentPhase = "Expired"; // After all phases ended
                         }
                     }
-                    
+
                     return new ConferencePriceResponse
                     {
                         PriceId = p.ConferencePriceId,
@@ -535,7 +532,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<List<ConferenceResponse>> GetAllConferencesAsync()
         {
-            var conferences =  await _unitOfWork.ConferenceRepository.GetAllConferencesAsync();
+            var conferences = await _unitOfWork.ConferenceRepository.GetAllConferencesAsync();
             var responses = new List<ConferenceResponse>();
 
             foreach (var conference in conferences)
@@ -575,15 +572,15 @@ namespace ConfRadar.Services.Services
             }
 
             // Convert to UTC for consistency
-            var startTimeUtc = session.StartTime.Value.Kind == DateTimeKind.Utc ? 
+            var startTimeUtc = session.StartTime.Value.Kind == DateTimeKind.Utc ?
                 session.StartTime.Value : DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Utc);
-            var endTimeUtc = session.EndTime.Value.Kind == DateTimeKind.Utc ? 
+            var endTimeUtc = session.EndTime.Value.Kind == DateTimeKind.Utc ?
                 session.EndTime.Value : DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Utc);
 
             // Check if session meets minimum duration requirement
             var sessionDuration = endTimeUtc - startTimeUtc;
             var minimumDuration = TimeSpan.FromHours(config.MinimumSessionDurationHours);
-            
+
             if (sessionDuration < minimumDuration)
             {
                 throw new BadRequestException($"Session duration must be at least {config.MinimumSessionDurationHours} hours");
@@ -599,9 +596,9 @@ namespace ConfRadar.Services.Services
                 if (!existingSession.StartTime.HasValue || !existingSession.EndTime.HasValue) continue;
 
                 // Ensure existing session times are also in UTC for comparison
-                var existingStartUtc = existingSession.StartTime.Value.Kind == DateTimeKind.Utc ? 
+                var existingStartUtc = existingSession.StartTime.Value.Kind == DateTimeKind.Utc ?
                     existingSession.StartTime.Value : DateTime.SpecifyKind(existingSession.StartTime.Value, DateTimeKind.Utc);
-                var existingEndUtc = existingSession.EndTime.Value.Kind == DateTimeKind.Utc ? 
+                var existingEndUtc = existingSession.EndTime.Value.Kind == DateTimeKind.Utc ?
                     existingSession.EndTime.Value : DateTime.SpecifyKind(existingSession.EndTime.Value, DateTimeKind.Utc);
 
                 // Calculate session times with interval buffer
@@ -612,7 +609,7 @@ namespace ConfRadar.Services.Services
                 var existingSessionEndWithBuffer = existingEndUtc.AddHours(config.SessionIntervalHours);
 
                 // Check if there's an overlap (including interval buffer)
-                if ((newSessionStartWithBuffer < existingSessionEndWithBuffer) && 
+                if ((newSessionStartWithBuffer < existingSessionEndWithBuffer) &&
                     (newSessionEndWithBuffer > existingSessionStartWithBuffer))
                 {
                     throw new BadRequestException($"Session conflicts with existing session in room {session.RoomId} at time {existingSession.StartTime?.ToString("HH:mm")} - {existingSession.EndTime?.ToString("HH:mm")}");
@@ -622,12 +619,12 @@ namespace ConfRadar.Services.Services
 
         public async Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize)
         {
-            var query =  _unitOfWork.ConferenceRepository.GetAllConferences();
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences();
 
             var totalCount = await query.CountAsync();
 
-            var pagedConferences =  await query
-                .OrderBy(c => c.CreatedAt) 
+            var pagedConferences = await query
+                .OrderBy(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -648,7 +645,7 @@ namespace ConfRadar.Services.Services
                 UserId = conference.UserId,
                 LocationId = conference.LocationId,
                 CategoryId = conference.ConferenceCategoryId,
-                
+
             }).ToList();
             return new PagedResult<ConferenceResponse>
             {

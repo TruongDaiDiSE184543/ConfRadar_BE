@@ -3,12 +3,7 @@ using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -250,7 +245,7 @@ namespace ConfRadar.Services.Services
                         TicketName = price.TicketName,
                         TicketDescription = price.TicketDescription,
                         ActualPrice = price.ActualPrice,
-                        PricePhaseId = pricePhaseId ,
+                        PricePhaseId = pricePhaseId,
                         ConferenceId = conferenceId
                     };
                     await _unitOfWork.ConferencePriceRepository.CreateConferencePriceAsync(conferencePrice);
@@ -347,16 +342,18 @@ namespace ConfRadar.Services.Services
                         speakerResponse = new SpeakerResponse { Name = speaker.Name, Description = speaker.Description };
                     }
 
-                    responses.Add(new ConferenceSessionStepResponse { 
-                        SessionId = conferenceSession.ConferenceSessionId, 
-                        Title = conferenceSession.Title, 
-                        Description = conferenceSession.Description, 
-                        StartTime = conferenceSession.StartTime, 
-                        EndTime = conferenceSession.EndTime, 
-                        ConferenceId = conferenceSession.ConferenceId, 
-                        RoomId = conferenceSession.RoomId, 
-                        Speaker = speakerResponse });
-                }   
+                    responses.Add(new ConferenceSessionStepResponse
+                    {
+                        SessionId = conferenceSession.ConferenceSessionId,
+                        Title = conferenceSession.Title,
+                        Description = conferenceSession.Description,
+                        StartTime = conferenceSession.StartTime,
+                        EndTime = conferenceSession.EndTime,
+                        ConferenceId = conferenceSession.ConferenceId,
+                        RoomId = conferenceSession.RoomId,
+                        Speaker = speakerResponse
+                    });
+                }
             }
             return responses;
         }
@@ -394,7 +391,7 @@ namespace ConfRadar.Services.Services
             session.Title = request.Title ?? session.Title;
             session.Description = request.Description ?? session.Description;
             session.StartTime = newStartTime;
-            session.EndTime = newEndTime; 
+            session.EndTime = newEndTime;
             session.RoomId = newRoomId;
 
             await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);

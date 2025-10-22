@@ -23,10 +23,10 @@ namespace ConfRadar.Api.Controllers
             {
                 var tickets = await _serviceManager.ConferencePriceTicketService.GetConferencePriceTicketListAsync(request);
                 var totalCount = await _serviceManager.ConferencePriceTicketService.GetTotalConferencePriceTicketCountAsync(request);
-                
+
                 // Calculate pagination info
                 var totalPages = (int)Math.Ceiling((double)totalCount / request.PageSize);
-                
+
                 var response = new
                 {
                     Data = tickets,

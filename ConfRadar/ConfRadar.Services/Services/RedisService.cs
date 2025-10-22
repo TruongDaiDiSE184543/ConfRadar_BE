@@ -1,10 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
 using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -18,7 +13,7 @@ namespace ConfRadar.Services.Services
         Task<long> DecrementAsync(string key, long value = 1);
         Task<long> IncrementAsync(string key, long value = 1);
     }
-    public class RedisService:IRedisService
+    public class RedisService : IRedisService
     {
         private readonly ConnectionMultiplexer _redis;
         private readonly IDatabase _db;
@@ -34,9 +29,9 @@ namespace ConfRadar.Services.Services
                 ConnectRetry = 3,
             };
             _redis = ConnectionMultiplexer.Connect(options);
-            _db = _redis.GetDatabase(); 
+            _db = _redis.GetDatabase();
         }
-        public async Task SetStringAsync(string key,string value, TimeSpan? expiry = null)
+        public async Task SetStringAsync(string key, string value, TimeSpan? expiry = null)
         {
             await _db.StringSetAsync(key, value, expiry);
         }

@@ -2,12 +2,6 @@ using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.ConferenceCategory;
 using ConfRadar.Services.Exceptions;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -76,7 +70,7 @@ namespace ConfRadar.Services.Services
         {
             // Get all categories with conference counts
             var categories = await _unitOfWork.ConferenceCategoryRepository.GetAllConferenceCategoriesAsync();
-            
+
             // Get conference counts for each category
             var conferences = await _unitOfWork.ConferenceRepository.GetAllConferencesAsync();
             var categoryCounts = conferences
@@ -102,7 +96,7 @@ namespace ConfRadar.Services.Services
             }
 
             // If name is being updated, check if another category with the same name exists
-            if (!string.IsNullOrEmpty(request.ConferenceCategoryName) && 
+            if (!string.IsNullOrEmpty(request.ConferenceCategoryName) &&
                 request.ConferenceCategoryName != category.ConferenceCategoryName)
             {
                 var existingCategory = await _unitOfWork.ConferenceCategoryRepository.GetCategoryByCategoryName(request.ConferenceCategoryName);
@@ -110,7 +104,7 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException($"Conference category with name '{request.ConferenceCategoryName}' already exists");
                 }
-                
+
                 category.ConferenceCategoryName = request.ConferenceCategoryName;
             }
 
@@ -138,7 +132,7 @@ namespace ConfRadar.Services.Services
             // Check if category is being used by any conferences
             var conferences = await _unitOfWork.ConferenceRepository.GetAllConferencesAsync();
             var conferenceCount = conferences.Count(c => c.ConferenceCategoryId == categoryId);
-            
+
             if (conferenceCount > 0)
             {
                 throw new BadRequestException($"Cannot delete conference category '{category.ConferenceCategoryName}' because it is being used by {conferenceCount} conference(s)");

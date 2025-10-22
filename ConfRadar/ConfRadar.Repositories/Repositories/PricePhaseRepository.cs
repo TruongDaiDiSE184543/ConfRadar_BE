@@ -2,12 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using Microsoft.EntityFrameworkCore;
 
 
@@ -27,7 +21,7 @@ namespace ConfRadar.Repositories.Repositories
     {
         public PricePhaseRepository(ConfRadarDbContext context) : base(context) { }
 
-         public async Task<PricePhase?> GetPricePhaseByPricePhaseId(string pricePhaseId)
+        public async Task<PricePhase?> GetPricePhaseByPricePhaseId(string pricePhaseId)
         {
             return await GetByIdAsync(pricePhaseId);
         }

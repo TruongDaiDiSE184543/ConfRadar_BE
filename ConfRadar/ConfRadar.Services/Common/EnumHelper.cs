@@ -10,7 +10,7 @@ namespace ConfRadar.Services.Common
     }
     public enum SystemRoleEnum
     {
-       
+
 
         [Description("Conference Organizer")]
         ConferenceOrganizer,
@@ -95,5 +95,5 @@ namespace ConfRadar.Services.Common
         [Description("Payment")]
         Payment,
     }
-   
+
 }

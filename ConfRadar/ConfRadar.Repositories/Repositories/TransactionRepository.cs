@@ -2,15 +2,10 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
-    public interface ITransactionRepository 
+    public interface ITransactionRepository
     {
         Task<int> CreateTransactionAsync(Transaction transaction);
         Task<List<Transaction>> GetOwnTransactionByUserId(string userId);
@@ -20,7 +15,7 @@ namespace ConfRadar.Repositories.Repositories
         public TransactionRepository(ConfRadarDbContext context) : base(context)
         {
         }
-        
+
         public async Task<int> CreateTransactionAsync(Transaction transaction)
         {
             return await CreateAsync(transaction);

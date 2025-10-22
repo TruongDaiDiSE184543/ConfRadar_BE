@@ -118,10 +118,10 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<PaidTicketResponse>>.SuccessResponse(userList, "data retrieved"));
         }
         [HttpGet("paginated-conferences")]
-        public async Task<IActionResult> GetAllConferencesWithPagination([FromQuery] int page = 1,[FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllConferencesWithPagination([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-               var conferences =  await _serviceManager.ConferenceService.GetAllConferencesPaginatedAsync(page,pageSize);
-               return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
+            var conferences = await _serviceManager.ConferenceService.GetAllConferencesPaginatedAsync(page, pageSize);
+            return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
         }
     }
 }

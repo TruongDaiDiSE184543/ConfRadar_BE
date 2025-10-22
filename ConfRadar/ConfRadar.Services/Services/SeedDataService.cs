@@ -110,23 +110,23 @@ namespace ConfRadar.Services.Services
                     TypeName = name,
                 });
         }
-        
-        
+
+
         public async Task SeedMediaTypesAsync()
         {
             var mediaTypeNames = Enum.GetValues<MediaTypeEnum>().Select(m => m.GetDescription()).ToList();
             await SeedEntityAsync<MediaType>(
                 mediaTypeNames,
                 _unitOfWork.MediaTypeRepository.GetMediaTypeByNameAsync,
-                async entities => 
+                async entities =>
                 {
-                    foreach(var entity in entities)
+                    foreach (var entity in entities)
                     {
                         await _unitOfWork.MediaTypeRepository.CreateMediaTypeAsync(entity);
                     }
                 },
-                name => new MediaType 
-                { 
+                name => new MediaType
+                {
                     MediaTypeId = Guid.NewGuid().ToString(),
                     MediaTypeName = name
 

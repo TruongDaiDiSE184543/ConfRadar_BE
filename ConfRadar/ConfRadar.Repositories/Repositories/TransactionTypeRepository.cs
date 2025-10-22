@@ -2,11 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -15,7 +10,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<TransactionType?> GetTransactionTypeByName(string transactionTypeName);
         Task<int> CreateMutipleTransactionTypesAsync(IEnumerable<TransactionType> transactionTypes);
     }
-    public class TransactionTypeRepository : GenericRepository<TransactionType>,ITransactionTypeRepository
+    public class TransactionTypeRepository : GenericRepository<TransactionType>, ITransactionTypeRepository
     {
         public TransactionTypeRepository(ConfRadarDbContext context) : base(context)
         {
