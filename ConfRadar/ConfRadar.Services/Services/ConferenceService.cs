@@ -535,7 +535,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<List<ConferenceResponse>> GetAllConferencesAsync()
         {
-            var conferences =  _unitOfWork.ConferenceRepository.GetAllConferences();
+            var conferences =  await _unitOfWork.ConferenceRepository.GetAllConferencesAsync();
             var responses = new List<ConferenceResponse>();
 
             foreach (var conference in conferences)
