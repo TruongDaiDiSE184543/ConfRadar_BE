@@ -8,6 +8,8 @@ using System.Text.Json;
 using System.Transactions;
 using ConfRadar.Services.DTOs.Configuration;
 using Microsoft.Extensions.Options;
+using ConfRadar.Services.DTOs.General;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
 {
@@ -18,6 +20,8 @@ namespace ConfRadar.Services.Services
         Task<int> DeleteConferenceAsync(string conferenceId);
         Task<ConferenceResponse> GetConferenceByIdAsync(string conferenceId);
         Task<List<ConferenceResponse>> GetAllConferencesAsync();
+        Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize);
+
     }
 
     public class ConferenceService : IConferenceService
@@ -531,7 +535,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<List<ConferenceResponse>> GetAllConferencesAsync()
         {
-            var conferences = await _unitOfWork.ConferenceRepository.GetAllConferencesAsync();
+            var conferences =  _unitOfWork.ConferenceRepository.GetAllConferences();
             var responses = new List<ConferenceResponse>();
 
             foreach (var conference in conferences)
@@ -614,6 +618,45 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException($"Session conflicts with existing session in room {session.RoomId} at time {existingSession.StartTime?.ToString("HH:mm")} - {existingSession.EndTime?.ToString("HH:mm")}");
                 }
             }
+        }
+
+        public async Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize)
+        {
+            var query =  _unitOfWork.ConferenceRepository.GetAllConferences();
+
+            var totalCount = await query.CountAsync();
+
+            var pagedConferences =  await query
+                .OrderBy(c => c.CreatedAt) 
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            var responses = pagedConferences.Select(conference => new ConferenceResponse
+            {
+                ConferenceId = conference.ConferenceId,
+                ConferenceName = conference.ConferenceName,
+                Description = conference.Description,
+                StartDate = conference.StartDate,
+                EndDate = conference.EndDate,
+                Capacity = conference.Capacity,
+                Address = conference.Address,
+                BannerImageUrl = AddBaseUrlToUrl(conference.BannerImageUrl),
+                CreatedAt = conference.CreatedAt,
+                IsInternalHosted = conference.IsInternalHosted,
+                IsResearchConference = conference.IsResearchConference,
+                IsActive = conference.IsActive,
+                UserId = conference.UserId,
+                LocationId = conference.LocationId,
+                CategoryId = conference.ConferenceCategoryId,
+                
+            }).ToList();
+            return new PagedResult<ConferenceResponse>
+            {
+                Items = responses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
 }

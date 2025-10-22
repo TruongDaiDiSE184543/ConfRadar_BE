@@ -12,8 +12,10 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> DeleteConferenceAsync(Conference conference);
         Task<Conference?> GetConferenceByIdAsync(string conferenceId);
         Task<List<Conference>> GetAllConferencesAsync();
+        IQueryable<Conference> GetAllConferences();
         Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId);
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
+
     }
 
     public class ConferenceRepository : GenericRepository<Conference>, IConferenceRepository
@@ -45,6 +47,10 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Conference>> GetAllConferencesAsync()
         {
             return await _context.Conferences.ToListAsync();
+        }
+        public IQueryable<Conference> GetAllConferences()
+        {
+            return _context.Conferences.AsNoTracking(); ;
         }
 
         public async Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId)
