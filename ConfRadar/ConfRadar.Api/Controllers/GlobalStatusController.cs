@@ -45,5 +45,11 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<GlobalStatus>.SuccessResponse(result, "data retrieved successfully"));
 
         }
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllGlobalStatus()
+        {
+            var result = await _serviceManager.GlobalStatusService.GetAllGlobalStatusAsync();
+            return Ok(ApiResponse<List<GlobalStatus>>.SuccessResponse(result, "data retrieved successfully"));
+        }
     }
 }

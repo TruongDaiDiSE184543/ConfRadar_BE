@@ -11,6 +11,7 @@ namespace ConfRadar.Services.Services
         Task<GlobalStatus> GetGlobalStatusByIdAsync(string globalStatusId);
         Task<int> UpdateGlobalStatusAsync(string globalStatusId, GlobalStatusRequest globalStatus);
         Task<bool> DeleteGlobalStatusAsync(string globalStatusId);
+        Task<List<GlobalStatus>> GetAllGlobalStatusAsync();
     }
     public class GlobalStatusService : IGlobalStatusService
     {
@@ -38,6 +39,11 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("global status not found");
             }
             return await _unitOfWork.GlobalStatusRepository.DeleteGlobalStatusAsync(globalStatusFound);
+        }
+
+        public async Task<List<GlobalStatus>> GetAllGlobalStatusAsync()
+        {
+            return await _unitOfWork.GlobalStatusRepository.GetAllGlobalStatusAsync();
         }
 
         public async Task<GlobalStatus> GetGlobalStatusByIdAsync(string globalStatusId)
