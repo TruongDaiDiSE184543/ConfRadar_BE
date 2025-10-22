@@ -8,7 +8,6 @@ namespace ConfRadar.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class DestinationController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
@@ -18,7 +17,7 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateDestination([FromBody] CreateDestinationRequest request)
         {
@@ -33,7 +32,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDestination(string id, [FromBody] UpdateDestinationRequest request)
         {
@@ -52,7 +51,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer,Admin ")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDestination(string id)
         {
@@ -71,7 +70,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDestination(string id)
         {
@@ -86,7 +85,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAllDestinations()
         {
@@ -101,7 +100,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet("{id}/rooms")]
         public async Task<IActionResult> GetDestinationWithRooms(string id)
         {

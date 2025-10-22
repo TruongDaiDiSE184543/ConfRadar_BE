@@ -19,7 +19,7 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request)
         {
@@ -34,7 +34,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRoom(string id, [FromBody] UpdateRoomRequest request)
         {
@@ -53,7 +53,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRoom(string id)
         {
@@ -72,7 +72,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRoom(string id)
         {
@@ -87,7 +87,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAllRooms()
         {
@@ -103,7 +103,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         // Room occupation checking endpoints
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet("{roomId}/occupation")]
         public async Task<IActionResult> GetRoomOccupation(string roomId, [FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
         {
@@ -118,7 +118,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet("{roomId}/occupation/check-availability")]
         public async Task<IActionResult> CheckRoomAvailability(string roomId, [FromQuery] DateOnly date, [FromQuery] TimeOnly startTime, [FromQuery] TimeOnly endTime)
         {
@@ -133,7 +133,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Admin")]
         [HttpGet("{roomId}/occupation/is-occupied")]
         public async Task<IActionResult> IsRoomOccupiedAtTime(string roomId, [FromQuery] DateOnly date, [FromQuery] TimeOnly time)
         {
