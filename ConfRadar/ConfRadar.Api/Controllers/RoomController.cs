@@ -8,7 +8,6 @@ using System.Security.Claims;
 namespace ConfRadar.Api.Controllers
 {
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
     [ApiController]
     public class RoomController : ControllerBase
     {

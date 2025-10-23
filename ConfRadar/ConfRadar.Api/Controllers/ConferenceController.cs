@@ -97,6 +97,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllConferences()
         {
             try
