@@ -40,6 +40,7 @@ namespace ConfRadar.Api.Controllers
         /// Get a conference category by ID
         /// </summary>
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetConferenceCategory(string id)
         {
             try
@@ -57,6 +58,7 @@ namespace ConfRadar.Api.Controllers
         /// Get all conference categories with conference counts
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllConferenceCategories()
         {
             try
