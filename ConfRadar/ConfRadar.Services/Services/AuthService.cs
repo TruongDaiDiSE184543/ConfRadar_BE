@@ -153,7 +153,7 @@ namespace ConfRadar.Services.Services
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
                 CreatedAt = timeNow,
-                Expiry = timeNow.AddMinutes(_jwtSettings.ExpiresRefreshToken),
+                Expiry = timeNow.AddDays(_jwtSettings.ExpiresRefreshToken),
                 IsRevoked = false,
                 Token = refreshToken,
                 UserId = user.UserId,
