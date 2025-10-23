@@ -1,11 +1,12 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Services.DTOs.Transaction;
 
 namespace ConfRadar.Services.Services
 {
     public interface IPaymentService
     {
-        Task<List<Transaction>> GetOwnTransactionByUserId(string userId);
+        Task<List<TransactionDetailResponse>> GetOwnTransactionByUserId(string userId);
     }
     public class PaymentService : IPaymentService
     {
@@ -14,9 +15,25 @@ namespace ConfRadar.Services.Services
         {
             _unitOfWork = unitOfWork;
         }
-        public async Task<List<Transaction>> GetOwnTransactionByUserId(string userId)
+        public async Task<List<TransactionDetailResponse>> GetOwnTransactionByUserId(string userId)
         {
-            return await _unitOfWork.TransactionRepository.GetOwnTransactionByUserId(userId);
+            var transactions = await _unitOfWork.TransactionRepository.GetOwnTransactionByUserId(userId);
+            var transactionDetailResponses = transactions.Select(x => new TransactionDetailResponse()
+            {
+                Amount = x.Amount,
+                CreatedAt = x.CreatedAt,
+                Currency = x.Currency,
+                PaymentMethodId = x.PaymentMethodId,
+                PaymentMethodName = x.PaymentMethod?.MethodName,
+                PaymentStatusName = x.TransactionStatus?.StatusName,
+                TransactionCode = x.TransactionCode,
+                TransactionId = x.TransactionId,
+                TransactionStatusId = x.TransactionStatusId,
+                TransactionTypeId = x.TransactionTypeId,
+                UserId = x.UserId,
+                
+            }).ToList();
+            return transactionDetailResponses;
         }
     }
 }
