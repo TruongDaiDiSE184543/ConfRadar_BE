@@ -34,9 +34,9 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
         }
         [HttpGet("momo-success")]
-        public async Task<IActionResult> MomoSucess(/*[FromQuery]MomoPaymentCallBackResponse response*/) 
+        public async Task<IActionResult> MomoSucess([FromQuery]MomoPaymentCallBackResponse response) 
         {
-            //await _serviceManager.MomoService.VerifyMomoPaymentDataWithTechConf(response);
+            await _serviceManager.MomoService.VerifyMomoPaymentDataWithTechConf(response);
             return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
         }
         [Authorize]
