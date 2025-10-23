@@ -3,6 +3,7 @@ using ConfRadar.Services;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -25,7 +26,7 @@ namespace ConfRadar.Api.Controllers
         {
             try
             {
-                var userId = User.FindFirst("UserId")?.Value;
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(ApiResponse<object>.FailResponse("User not authenticated"));
