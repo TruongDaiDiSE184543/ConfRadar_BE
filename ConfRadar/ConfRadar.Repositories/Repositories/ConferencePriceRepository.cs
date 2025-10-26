@@ -24,7 +24,7 @@ namespace ConfRadar.Repositories.Repositories
         public ConferencePriceRepository(ConfRadarDbContext context) : base(context) { }
         public async Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId)
         {
-            return await _context.ConferencePrices.Include(x => x.PricePhase)
+            return await _context.ConferencePrices.Include(x => x.PricePhases)
                 .Include(x => x.Conference).ThenInclude(x => x.ConferenceSessions)
                 .FirstOrDefaultAsync(x => x.ConferencePriceId == conferencePriceId);
         }
@@ -48,21 +48,21 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<ConferencePrice?> GetConferencePriceByIdAsync(string priceId)
         {
             return await _context.ConferencePrices
-                .Include(cp => cp.PricePhase)
+                .Include(cp => cp.PricePhases)
                 .FirstOrDefaultAsync(c => c.ConferencePriceId == priceId);
         }
 
         public async Task<List<ConferencePrice>> GetAllConferencePricesAsync()
         {
             return await _context.ConferencePrices
-                .Include(cp => cp.PricePhase)
+                .Include(cp => cp.PricePhases)
                 .ToListAsync();
         }
 
         public async Task<List<ConferencePrice>> GetPricesByConferenceIdAsync(string conferenceId)
         {
             return await _context.ConferencePrices
-                .Include(cp => cp.PricePhase)
+                .Include(cp => cp.PricePhases)
                 .Where(cp => cp.ConferenceId == conferenceId)
                 .ToListAsync();
         }
@@ -70,14 +70,14 @@ namespace ConfRadar.Repositories.Repositories
         public IQueryable<ConferencePrice> GetConferencePricesWithIncludes()
         {
             return _context.ConferencePrices
-                .Include(cp => cp.PricePhase)
+                .Include(cp => cp.PricePhases)
                 .Include(cp => cp.Conference);
         }
 
         public async Task<ConferencePrice?> GetConferencePriceWithIncludesAsync(string priceId)
         {
             return await _context.ConferencePrices
-                .Include(cp => cp.PricePhase)
+                .Include(cp => cp.PricePhases)
                 .Include(cp => cp.Conference)
                 .FirstOrDefaultAsync(cp => cp.ConferencePriceId == priceId);
         }

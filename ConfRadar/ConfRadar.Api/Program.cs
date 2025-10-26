@@ -18,9 +18,9 @@ using (var scope = app.Services.CreateScope())
     var seedDataService = scope.ServiceProvider.GetRequiredService<ISeedDataService>();
     await seedDataService.SeedRolesAsync();
     await seedDataService.SeedGlobalStatusesAsync();
-    await seedDataService.SeedTransactionStatusAsync();
+    //await seedDataService.SeedTransactionStatusAsync();
     await seedDataService.SeedPaymentMethodsAsync();
-    await seedDataService.SeedTransactionTypeAsync();
+    //await seedDataService.SeedTransactionTypeAsync();
 }
 app.UseCors("AllowAll");
 app.UseSwagger();

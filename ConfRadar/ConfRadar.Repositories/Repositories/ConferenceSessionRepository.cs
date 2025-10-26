@@ -65,7 +65,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(cs => cs.Conference)
                 .Include(cs => cs.Room)
                     .ThenInclude(r => r.Destination)
-                .Include(cs => cs.Speaker)
+                .Include(cs => cs.Speakers)
                 .FirstOrDefaultAsync(cs => cs.ConferenceSessionId == sessionId);
         }
 

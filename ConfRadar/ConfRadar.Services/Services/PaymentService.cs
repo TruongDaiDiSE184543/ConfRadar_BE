@@ -25,11 +25,11 @@ namespace ConfRadar.Services.Services
                 Currency = x.Currency,
                 PaymentMethodId = x.PaymentMethodId,
                 PaymentMethodName = x.PaymentMethod?.MethodName,
-                PaymentStatusName = x.TransactionStatus?.StatusName,
+                //PaymentStatusName = x.TransactionStatus?.StatusName,
                 TransactionCode = x.TransactionCode,
                 TransactionId = x.TransactionId,
-                TransactionStatusId = x.TransactionStatusId,
-                TransactionTypeId = x.TransactionTypeId,
+                //TransactionStatusId = x.TransactionStatusId,
+                //TransactionTypeId = x.TransactionTypeId,
                 UserId = x.UserId,
                 
             }).ToList();

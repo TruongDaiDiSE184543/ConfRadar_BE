@@ -12,11 +12,11 @@ namespace ConfRadar.Repositories
         IUserRefreshTokenRepository UserRefreshTokenRepository { get; }
         IGlobalStatusRepository GlobalStatusRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
-        ITransactionStatusRepository TransactionStatusRepository { get; }
+        //ITransactionStatusRepository TransactionStatusRepository { get; }
 
 
 
-        ITransactionTypeRepository TransactionTypeRepository { get; }
+        //ITransactionTypeRepository TransactionTypeRepository { get; }
         ITransactionRepository TransactionRepository { get; }
         ITicketRepository TicketRepository { get; }
 
@@ -30,7 +30,7 @@ namespace ConfRadar.Repositories
         IRoomRepository RoomRepository { get; }
         IDestinationRepository DestinationRepository { get; }
         IPricePhaseRepository PricePhaseRepository { get; }
-        IMediaTypeRepository MediaTypeRepository { get; }
+        //IMediaTypeRepository MediaTypeRepository { get; }
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
 
         Task<int> SaveChangesAsync();
@@ -48,11 +48,11 @@ namespace ConfRadar.Repositories
         private IUserRefreshTokenRepository _UserRefreshTokenRepository;
         private IGlobalStatusRepository _GlobalStatusRepository;
         private IPaymentMethodRepository _PaymentMethodRepository;
-        private ITransactionStatusRepository _TransactionStatusRepository;
+        //private ITransactionStatusRepository _TransactionStatusRepository;
 
         private IPricePhaseRepository _PricePhaseRepository;
         private IConferencePriceRepository _ConferencePriceRepository;
-        private ITransactionTypeRepository _TransactionTypeRepository;
+        //private ITransactionTypeRepository _TransactionTypeRepository;
         private ITransactionRepository _TransactionRepository;
         private ITicketRepository _TicketRepository;
 
@@ -66,7 +66,7 @@ namespace ConfRadar.Repositories
         private IRoomRepository _RoomRepository;
         private IDestinationRepository _DestinationRepository;
 
-        private IMediaTypeRepository _MediaTypeRepository;
+        //private IMediaTypeRepository _MediaTypeRepository;
         private IConferenceCategoryRepository _ConferenceCategoryRepository;
 
         public UnitOfWork(ConfRadarDbContext context)
@@ -84,12 +84,10 @@ namespace ConfRadar.Repositories
 
         public IPaymentMethodRepository PaymentMethodRepository => _PaymentMethodRepository ??= new PaymentMethodRepository(_context);
 
-        public ITransactionStatusRepository TransactionStatusRepository => _TransactionStatusRepository ??= new TransactionStatusRepository(_context);
 
         public IPricePhaseRepository PricePhaseRepository => _PricePhaseRepository ??= new PricePhaseRepository(_context);
 
         public IConferencePriceRepository ConferencePriceRepository => _ConferencePriceRepository ??= new ConferencePriceRepository(_context);
-        public ITransactionTypeRepository TransactionTypeRepository => _TransactionTypeRepository ??= new TransactionTypeRepository(_context);
 
         public ITransactionRepository TransactionRepository => _TransactionRepository ??= new TransactionRepository(_context);
 
@@ -115,7 +113,6 @@ namespace ConfRadar.Repositories
 
 
 
-        public IMediaTypeRepository MediaTypeRepository => _MediaTypeRepository ??= new MediaTypeRepository(_context);
 
         public IConferenceCategoryRepository ConferenceCategoryRepository => _ConferenceCategoryRepository ??= new ConferenceCategoryRepository(_context);
 

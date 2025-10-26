@@ -31,7 +31,7 @@ namespace ConfRadar.Services.Services
                 UserName = x.User?.FullName ?? "",
                 Email = x.User?.Email ?? "",
                 AvatarUrl = x.User?.AvatarUrl ?? "",
-                RegisteredDate = x.RegisteredDate ?? DateTime.Now,
+                //RegisteredDate = x.RegisteredDate ?? DateTime.Now,
                 ConferenceId = x.ConferencePrice?.ConferencePriceId ?? "",
                 ConferenceName = x.ConferencePrice.Conference.ConferenceName,
             }).ToList();

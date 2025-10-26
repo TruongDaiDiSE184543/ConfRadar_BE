@@ -38,21 +38,18 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<ConferenceMedium?> GetConferenceMediumByIdAsync(string mediaId)
         {
             return await _context.ConferenceMedia
-                .Include(cm => cm.MediaType)
                 .FirstOrDefaultAsync(c => c.ConferenceMediaId == mediaId);
         }
 
         public async Task<List<ConferenceMedium>> GetAllConferenceMediaAsync()
         {
             return await _context.ConferenceMedia
-                .Include(cm => cm.MediaType)
                 .ToListAsync();
         }
 
         public async Task<List<ConferenceMedium>> GetMediaByConferenceIdAsync(string conferenceId)
         {
             return await _context.ConferenceMedia
-                .Include(cm => cm.MediaType)
                 .Where(cm => cm.ConferenceId == conferenceId)
                 .ToListAsync();
         }

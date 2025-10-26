@@ -1,6 +1,9 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
 
-public partial class RefundRequest
+namespace ConfRadar.Repositories.Models;
+
+public partial class Refundrequest
 {
     public string RefundRequestId { get; set; } = null!;
 
@@ -10,9 +13,7 @@ public partial class RefundRequest
 
     public string? GlobalStatusId { get; set; }
 
+    public DateTime? CreatedAt { get; set; }
+
     public virtual GlobalStatus? GlobalStatus { get; set; }
-
-    public virtual Ticket? Ticket { get; set; }
-
-    public virtual Transaction? Transaction { get; set; }
 }

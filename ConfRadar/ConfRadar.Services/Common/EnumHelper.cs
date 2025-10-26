@@ -43,14 +43,7 @@ namespace ConfRadar.Services.Common
         conferencemedia
     }
 
-    public enum MediaTypeEnum
-    {
-        [Description("Image")]
-        Image,
-
-        [Description("Video")]
-        Video
-    }
+    
     public static class EnumExtension
     {
         public static string GetDescription(this Enum value)
@@ -70,16 +63,7 @@ namespace ConfRadar.Services.Common
         [Description("Rejected")]
         Rejected
     }
-    public enum TransactionStatusEnum
-    {
-
-        [Description("Pending")]
-        Pending,
-        [Description("Success")]
-        Success,
-        [Description("Fail")]
-        Fail
-    }
+    
 
     public enum PaymentMethodEnum
     {
@@ -88,12 +72,6 @@ namespace ConfRadar.Services.Common
         [Description("MoMo")]
         MoMo,
     }
-    public enum TransactionTypeEnum
-    {
-        [Description("Refund")]
-        Refund,
-        [Description("Payment")]
-        Payment,
-    }
+   
 
 }
