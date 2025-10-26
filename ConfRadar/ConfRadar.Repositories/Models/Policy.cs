@@ -1,6 +1,9 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
 
-public partial class ConferencePolicy
+namespace ConfRadar.Repositories.Models;
+
+public partial class Policy
 {
     public string PolicyId { get; set; } = null!;
 

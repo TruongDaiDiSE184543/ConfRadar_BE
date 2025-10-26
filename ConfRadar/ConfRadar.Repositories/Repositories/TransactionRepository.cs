@@ -20,9 +20,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await CreateAsync(transaction);
         }
-        public Task<List<Transaction>> GetOwnTransactionByUserId(string userId)
+        public async Task<List<Transaction>> GetOwnTransactionByUserId(string userId)
         {
-            return _context.Transactions.Where(x => x.UserId == userId).ToListAsync();
+            return await _context.Transactions
+                .Include(x=>x.PaymentMethod).
+                Where(x => x.UserId == userId).ToListAsync();
         }
     }
 }

@@ -31,7 +31,7 @@ namespace ConfRadar.Services.Services
             {
                 DestinationId = Guid.NewGuid().ToString(),
                 Name = request.Name,
-                City = request.City,
+                //City = request.City,
                 District = request.District,
                 Street = request.Street
             };
@@ -54,7 +54,7 @@ namespace ConfRadar.Services.Services
             }
 
             existingDestination.Name = request.Name ?? existingDestination.Name;
-            existingDestination.City = request.City ?? existingDestination.City;
+            //existingDestination.City = request.City ?? existingDestination.City;
             existingDestination.District = request.District ?? existingDestination.District;
             existingDestination.Street = request.Street ?? existingDestination.Street;
 
@@ -86,7 +86,7 @@ namespace ConfRadar.Services.Services
             {
                 DestinationId = destination.DestinationId,
                 Name = destination.Name,
-                City = destination.City,
+                //City = destination.City,
                 District = destination.District,
                 Street = destination.Street
             };
@@ -101,7 +101,7 @@ namespace ConfRadar.Services.Services
             {
                 DestinationId = destination.DestinationId,
                 Name = destination.Name,
-                City = destination.City,
+                //City = destination.City,
                 District = destination.District,
                 Street = destination.Street
             }).ToList();
@@ -130,7 +130,7 @@ namespace ConfRadar.Services.Services
             {
                 DestinationId = destination.DestinationId,
                 Name = destination.Name,
-                City = destination.City,
+                //City = destination.City,
                 District = destination.District,
                 Street = destination.Street,
                 Rooms = roomResponses

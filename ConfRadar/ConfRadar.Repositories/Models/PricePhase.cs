@@ -1,20 +1,25 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class PricePhase
 {
     public string PricePhaseId { get; set; } = null!;
 
-    public string? Name { get; set; }
+    public string? PhaseName { get; set; }
 
-    public DateOnly? EarlierBirdEndInterval { get; set; }
+    public DateOnly? StartDate { get; set; }
 
-    public int? PercentForEarly { get; set; }
+    public DateOnly? EndDate { get; set; }
 
-    public DateOnly? StandardEndInterval { get; set; }
+    public decimal? ApplyPercent { get; set; }
 
-    public DateOnly? LateEndInterval { get; set; }
+    public int? TotalSlot { get; set; }
 
-    public int? PercentForEnd { get; set; }
+    public int? AvailableSlot { get; set; }
 
-    public virtual ICollection<ConferencePrice> ConferencePrices { get; set; } = new List<ConferencePrice>();
+    public string? ConferencePriceId { get; set; }
+
+    public virtual ConferencePrice? ConferencePrice { get; set; }
 }

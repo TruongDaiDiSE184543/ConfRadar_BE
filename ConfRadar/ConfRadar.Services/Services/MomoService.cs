@@ -40,7 +40,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Conference price not found");
             }
-            if (conferencePrice.Conference?.Capacity == 0)
+            if (conferencePrice.Conference?.AvailableSlot == 0)
             {
                 throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} is sold out!");
             }
@@ -51,36 +51,36 @@ namespace ConfRadar.Services.Services
             }
             var dateNow = DateOnly.FromDateTime(DateTime.UtcNow);
             int discountPercent = 0;
-            var phase = conferencePrice.PricePhase;
+            var phase = conferencePrice.PricePhases;
             if (phase == null)
             {
                 throw new BadRequestException("Phase is not available");
             }
-            if (dateNow <= phase.EarlierBirdEndInterval)
-            {
-                discountPercent = phase.PercentForEarly ?? 0;
-            }
-            else if (dateNow <= phase.StandardEndInterval)
-            {
-                discountPercent = 0;
-            }
-            else if (dateNow <= phase.LateEndInterval)
-            {
-                discountPercent = phase.PercentForEnd ?? 0;
-            }
-            else
-            {
-                throw new BadRequestException("Price phase is not available!");
-            }
+            //if (dateNow <= phase.EarlierBirdEndInterval)
+            //{
+            //    discountPercent = phase.PercentForEarly ?? 0;
+            //}
+            //else if (dateNow <= phase.StandardEndInterval)
+            //{
+            //    discountPercent = 0;
+            //}
+            //else if (dateNow <= phase.LateEndInterval)
+            //{
+            //    discountPercent = phase.PercentForEnd ?? 0;
+            //}
+            //else
+            //{
+            //    throw new BadRequestException("Price phase is not available!");
+            //}
 
-            var moneyAmount = conferencePrice.ActualPrice - (conferencePrice.ActualPrice * discountPercent / 100);
-            if (moneyAmount < 10000 || moneyAmount > 50000000)
-            {
-                throw new BadRequestException("Money amount must between 10000 - 50000000");
-            }
+            var moneyAmount = conferencePrice.TicketPrice - (conferencePrice.TicketPrice * discountPercent / 100);
+            //if (moneyAmount < 10000 || moneyAmount > 50000000)
+            //{
+            //    throw new BadRequestException("Money amount must between 10000 - 50000000");
+            //}
             var finalAmount = (long)Math.Round(moneyAmount ?? 0);
-            var transactionStatus = await _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName(TransactionStatusEnum.Pending.GetDescription());
-            var transactionType = await _unitOfWork.TransactionTypeRepository.GetTransactionTypeByName(TransactionTypeEnum.Payment.GetDescription());
+            //var transactionStatus = await _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName(TransactionStatusEnum.Pending.GetDescription());
+            //var transactionType = await _unitOfWork.TransactionTypeRepository.GetTransactionTypeByName(TransactionTypeEnum.Payment.GetDescription());
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.MoMo.GetDescription());
             List<string> sessionIds = new List<string>();
             foreach (var sessionId in conferencePrice.Conference!.ConferenceSessions)
@@ -92,8 +92,8 @@ namespace ConfRadar.Services.Services
             {
                 PaymentMethodId = paymentMethod!.PaymentMethodId,
                 TransactionId = transactionId,
-                TransactionStatusId = transactionStatus!.TransactionStatusId,
-                TransactionTypeId = transactionType!.TransactionTypeId,
+                //TransactionStatusId = transactionStatus!.TransactionStatusId,
+                //TransactionTypeId = transactionType!.TransactionTypeId,
                 UserId = user.UserId,
                 ConferencePriceId = request.ConferencePriceId,
                 ConferenceSessionIds = sessionIds,
@@ -175,7 +175,7 @@ namespace ConfRadar.Services.Services
             {
                 PropertyNameCaseInsensitive = true,
             });
-            var successTransactionStatus = await _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName(TransactionStatusEnum.Success.GetDescription());
+            //var successTransactionStatus = await _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName(TransactionStatusEnum.Success.GetDescription());
             var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             var listUserCheckIn = new List<UserCheckIn>();
             var ticketId = Guid.NewGuid().ToString();
@@ -183,10 +183,10 @@ namespace ConfRadar.Services.Services
             {
                 var userCheckIn = new UserCheckIn()
                 {
-                    UserCheckInId = Guid.NewGuid().ToString(),
+                    UserCheckinId = Guid.NewGuid().ToString(),
                     IsPresenter = false,
-                    HasCheckIn = false,
                     CheckInTime = null,
+                    
                     ConferenceSessionId = sessionId,
                     UserId = transacDataHolder.UserId,
                     TicketId = ticketId
@@ -201,16 +201,16 @@ namespace ConfRadar.Services.Services
                 Amount = data.amount,
                 TransactionCode = data.transId.ToString(),
                 CreatedAt = timeNow,
-                TransactionStatusId = successTransactionStatus?.TransactionStatusId,
-                TransactionTypeId = transacDataHolder.TransactionTypeId,
+                //TransactionStatusId = successTransactionStatus?.TransactionStatusId,
+                //TransactionTypeId = transacDataHolder.TransactionTypeId,
                 PaymentMethodId = transacDataHolder.PaymentMethodId,
                 Ticket = new Ticket()
                 {
                     TicketId = ticketId,
                     UserId = transacDataHolder.UserId,
                     ConferencePriceId = transacDataHolder.ConferencePriceId,
-                    TransactionId = transacDataHolder.TransactionId,
-                    RegisteredDate = timeNow,
+                    //TransactionId = transacDataHolder.TransactionId,
+                    //RegisteredDate = timeNow,
                     IsRefunded = false,
                     ActualPrice = data.amount,
                     UserCheckIns = listUserCheckIn

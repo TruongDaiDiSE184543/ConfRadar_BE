@@ -1,9 +1,10 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class FavouriteConference
 {
-    public string FavouriteConferenceId { get; set; } = null!;
-
     public string? UserId { get; set; }
 
     public string? ConferenceId { get; set; }
