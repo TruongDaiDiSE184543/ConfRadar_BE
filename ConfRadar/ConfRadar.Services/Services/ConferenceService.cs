@@ -571,10 +571,10 @@ namespace ConfRadar.Services.Services
             }
 
             // Convert to UTC for consistency
-            var startTimeUtc = session.StartTime.Value.Kind == DateTimeKind.Utc ? 
-                session.StartTime.Value : DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Utc);
-            var endTimeUtc = session.EndTime.Value.Kind == DateTimeKind.Utc ? 
-                session.EndTime.Value : DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Utc);
+            var startTimeUtc = session.StartTime.Value.Kind == DateTimeKind.Unspecified ? 
+                session.StartTime.Value : DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Unspecified);
+            var endTimeUtc = session.EndTime.Value.Kind == DateTimeKind.Unspecified ? 
+                session.EndTime.Value : DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Unspecified);
 
             // Check if session meets minimum duration requirement
             var sessionDuration = endTimeUtc - startTimeUtc;

@@ -82,8 +82,8 @@ namespace ConfRadar.Services.Services
 
         private async Task ValidateSessionTimeAvailability(DateTime startTime, DateTime endTime, string roomId, string? sessionIdToExclude = null)
         {
-            var startTimeUtc = DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
-            var endTimeUtc = DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
+            var startTimeUtc = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
+            var endTimeUtc = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
             if ((endTimeUtc - startTimeUtc).TotalMinutes < 30)
             {
@@ -98,8 +98,8 @@ namespace ConfRadar.Services.Services
                 if (existingSession.ConferenceSessionId == sessionIdToExclude) continue;
                 if (!existingSession.StartTime.HasValue || !existingSession.EndTime.HasValue) continue;
 
-                var existingStartUtc = DateTime.SpecifyKind(existingSession.StartTime.Value, DateTimeKind.Utc);
-                var existingEndUtc = DateTime.SpecifyKind(existingSession.EndTime.Value, DateTimeKind.Utc);
+                var existingStartUtc = DateTime.SpecifyKind(existingSession.StartTime.Value, DateTimeKind.Unspecified);
+                var existingEndUtc = DateTime.SpecifyKind(existingSession.EndTime.Value, DateTimeKind.Unspecified);
 
                 if (startTimeUtc < existingEndUtc && endTimeUtc > existingStartUtc)
                 {

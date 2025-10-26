@@ -145,7 +145,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date)
         {
             // These define the 24-hour window for the given date in UTC
-            var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+            var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Unspecified);
             var dateEnd = dateStart.AddDays(1); // From the start of the day to the start of the next day
 
             return await _context.ConferenceSessions

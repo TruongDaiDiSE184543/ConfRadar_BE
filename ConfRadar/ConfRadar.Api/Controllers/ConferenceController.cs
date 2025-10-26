@@ -24,11 +24,6 @@ namespace ConfRadar.Api.Controllers
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse("User not authenticated"));
-                }
 
                 var conferenceId = await _serviceManager.ConferenceService.CreateConferenceAsync(request, userId);
                 return Ok(ApiResponse<string>.SuccessResponse(conferenceId, "Conference created successfully"));
