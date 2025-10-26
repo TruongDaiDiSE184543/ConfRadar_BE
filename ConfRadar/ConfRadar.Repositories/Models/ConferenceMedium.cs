@@ -11,9 +11,5 @@ public partial class ConferenceMedium
 
     public string? ConferenceId { get; set; }
 
-    public string? MediaTypeId { get; set; }
-
     public virtual Conference? Conference { get; set; }
-
-    public virtual MediaType? MediaType { get; set; }
 }

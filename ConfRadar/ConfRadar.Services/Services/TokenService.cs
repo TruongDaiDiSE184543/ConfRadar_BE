@@ -47,13 +47,13 @@ namespace ConfRadar.Services.Services
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresAccessToken),
+                expires: DateTime.UtcNow.AddDays(_jwtSettings.ExpiresAccessToken),
                 signingCredentials: creds);
             var tokenHandler = new JwtSecurityTokenHandler();
             var accessToken = tokenHandler.WriteToken(token);
             return accessToken;
         }
-        public  string CreateSignature(string rawData, string secretKey)
+        public string CreateSignature(string rawData, string secretKey)
         {
             string signature;
             using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))

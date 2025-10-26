@@ -1,12 +1,11 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
-using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.DTOs.Conference;
-using Microsoft.AspNetCore.Http;
-using System.Text.Json;
-using System.Transactions;
 using ConfRadar.Services.DTOs.Configuration;
+using ConfRadar.Services.DTOs.General;
+using ConfRadar.Services.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace ConfRadar.Services.Services
@@ -18,6 +17,8 @@ namespace ConfRadar.Services.Services
         Task<int> DeleteConferenceAsync(string conferenceId);
         Task<ConferenceResponse> GetConferenceByIdAsync(string conferenceId);
         Task<List<ConferenceResponse>> GetAllConferencesAsync();
+        Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize);
+
     }
 
     public class ConferenceService : IConferenceService
@@ -40,7 +41,7 @@ namespace ConfRadar.Services.Services
         public async Task<string> CreateConferenceAsync(CreateConferenceRequest request, string userId)
         {
             await _unitOfWork.BeginTransactionAsync();
-            
+
             try
             {
                 // Check if user exists
@@ -87,9 +88,9 @@ namespace ConfRadar.Services.Services
                     using var stream = request.BannerImageFile.OpenReadStream();
                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
                     bannerImageUrl = await _objectStorageFileService.UploadFileAsync(
-                        ObjectStorageBucketEnum.conferencebanner.ToString(), 
-                        uniqueFileName, 
-                        stream, 
+                        ObjectStorageBucketEnum.conferencebanner.ToString(),
+                        uniqueFileName,
+                        stream,
                         request.BannerImageFile.ContentType);
                 }
 
@@ -101,21 +102,21 @@ namespace ConfRadar.Services.Services
                     Description = request.Description,
                     StartDate = request.StartDate,
                     EndDate = request.EndDate,
-                    Capacity = request.Capacity,
+                    //Capacity = request.Capacity,
                     Address = request.Address,
                     BannerImageUrl = bannerImageUrl,
-                    CreatedAt = DateTime.UtcNow,
+                    //CreatedAt = DateTime.UtcNow,
                     IsInternalHosted = request.IsInternalHosted,
                     IsResearchConference = request.IsResearchConference,
-                    IsActive = true,
+                    //IsActive = true,
                     ConferenceCategoryId = category.ConferenceCategoryId,
-                    UserId = userId,
-                    LocationId = "", // Use existing location ID (fixed from hardcoded value)
-                    GlobalStatusId = request.GlobalStatusId
+                    //UserId = userId,
+                    //LocationId = "", // Use existing location ID (fixed from hardcoded value)
+                    //GlobalStatusId = request.GlobalStatusId
                 };
 
                 var result = await _unitOfWork.ConferenceRepository.CreateConferenceAsync(conference);
-                
+
                 if (result <= 0)
                 {
                     throw new BadRequestException("Failed to create conference");
@@ -128,12 +129,12 @@ namespace ConfRadar.Services.Services
                     var pricePhase = new PricePhase
                     {
                         PricePhaseId = Guid.NewGuid().ToString(),
-                        Name = request.PricePhase.Name,
-                        EarlierBirdEndInterval = request.PricePhase.EarlierBirdEndInterval,
-                        PercentForEarly = request.PricePhase.PercentForEarly,
-                        StandardEndInterval = request.PricePhase.StandardEndInterval,
-                        LateEndInterval = request.PricePhase.LateEndInterval,
-                        PercentForEnd = request.PricePhase.PercentForEnd
+                        //Name = request.PricePhase.Name,
+                        //EarlierBirdEndInterval = request.PricePhase.EarlierBirdEndInterval,
+                        //PercentForEarly = request.PricePhase.PercentForEarly,
+                        //StandardEndInterval = request.PricePhase.StandardEndInterval,
+                        //LateEndInterval = request.PricePhase.LateEndInterval,
+                        //PercentForEnd = request.PricePhase.PercentForEnd
                     };
                     await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(pricePhase);
                     pricePhaseId = pricePhase.PricePhaseId;
@@ -145,7 +146,7 @@ namespace ConfRadar.Services.Services
                     foreach (var price in request.Prices)
                     {
                         string actualPricePhaseId = pricePhaseId; // Use the newly created price phase if available
-                        
+
                         if (string.IsNullOrEmpty(actualPricePhaseId))
                         {
                             // If no new price phase was created, validate existing one
@@ -163,8 +164,8 @@ namespace ConfRadar.Services.Services
                             TicketPrice = price.TicketPrice,
                             TicketName = price.TicketName,
                             TicketDescription = price.TicketDescription,
-                            ActualPrice = price.ActualPrice,
-                            PricePhaseId = actualPricePhaseId,
+                            //ActualPrice = price.ActualPrice,
+                            //PricePhaseId = actualPricePhaseId,
                             ConferenceId = conferenceId
                         };
                         await _unitOfWork.ConferencePriceRepository.CreateConferencePriceAsync(conferencePrice);
@@ -187,7 +188,7 @@ namespace ConfRadar.Services.Services
                             {
                                 throw new NotFoundException($"Room with ID {session.RoomId} not found");
                             }
-                            
+
                             // Validate session time availability in the room
                             await ValidateSessionTimeAvailability(session, sessionConfig);
                         }
@@ -224,7 +225,7 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var policy in request.Policies)
                     {
-                        var conferencePolicy = new ConferencePolicy
+                        var conferencePolicy = new Policy
                         {
                             PolicyId = Guid.NewGuid().ToString(),
                             PolicyName = policy.PolicyName,
@@ -241,26 +242,26 @@ namespace ConfRadar.Services.Services
                     foreach (var media in request.Media)
                     {
                         string? mediaUrl = media.MediaUrl; // Default to provided URL
-                        
+
                         if (media.MediaFile != null)
                         {
                             // Validate media type based on MediaType
-                            var mediaType = await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(media.MediaTypeId);
-                            if (mediaType == null)
-                            {
-                                throw new NotFoundException($"Media type with ID {media.MediaTypeId} not found");
-                            }
+                            //var mediaType = await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(media.MediaTypeId);
+                            //if (mediaType == null)
+                            //{
+                            //    throw new NotFoundException($"Media type with ID {media.MediaTypeId} not found");
+                            //}
 
                             using var stream = media.MediaFile.OpenReadStream();
                             var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(media.MediaFile.FileName);
-                            
+
                             // Determine bucket based on media type
                             var bucket = ObjectStorageBucketEnum.conferencemedia.ToString();
-                            
+
                             mediaUrl = await _objectStorageFileService.UploadFileAsync(
-                                bucket, 
-                                uniqueFileName, 
-                                stream, 
+                                bucket,
+                                uniqueFileName,
+                                stream,
                                 media.MediaFile.ContentType);
                         }
 
@@ -269,7 +270,7 @@ namespace ConfRadar.Services.Services
                             ConferenceMediaId = Guid.NewGuid().ToString(),
                             ConferenceMediaUrl = mediaUrl,
                             ConferenceId = conferenceId,
-                            MediaTypeId = media.MediaTypeId
+                            //MediaTypeId = media.MediaTypeId
                         };
                         await _unitOfWork.ConferenceMediumRepository.CreateConferenceMediumAsync(conferenceMedia);
                     }
@@ -281,16 +282,16 @@ namespace ConfRadar.Services.Services
                     foreach (var sponsor in request.Sponsors)
                     {
                         string? imageUrl = sponsor.ImageUrl; // Default to provided URL
-                        
+
                         // If an image file is provided, upload it to MinIO
                         if (sponsor.ImageFile != null)
                         {
                             using var stream = sponsor.ImageFile.OpenReadStream();
                             var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(sponsor.ImageFile.FileName);
                             imageUrl = await _objectStorageFileService.UploadFileAsync(
-                                ObjectStorageBucketEnum.conferencemedia.ToString(), 
-                                uniqueFileName, 
-                                stream, 
+                                ObjectStorageBucketEnum.conferencemedia.ToString(),
+                                uniqueFileName,
+                                stream,
                                 sponsor.ImageFile.ContentType);
                         }
 
@@ -328,12 +329,12 @@ namespace ConfRadar.Services.Services
             existingConference.Description = request.Description ?? existingConference.Description;
             existingConference.StartDate = request.StartDate ?? existingConference.StartDate;
             existingConference.EndDate = request.EndDate ?? existingConference.EndDate;
-            existingConference.Capacity = request.Capacity ?? existingConference.Capacity;
+            //existingConference.Capacity = request.Capacity ?? existingConference.Capacity;
             existingConference.Address = request.Address ?? existingConference.Address;
             existingConference.BannerImageUrl = request.BannerImageUrl ?? existingConference.BannerImageUrl;
             existingConference.IsInternalHosted = request.IsInternalHosted ?? existingConference.IsInternalHosted;
             existingConference.IsResearchConference = request.IsResearchConference ?? existingConference.IsResearchConference;
-            existingConference.IsActive = request.IsActive ?? existingConference.IsActive;
+            //existingConference.IsActive = request.IsActive ?? existingConference.IsActive;
 
             var result = await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(existingConference);
             return result;
@@ -367,7 +368,7 @@ namespace ConfRadar.Services.Services
             }
 
             var prices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
-            
+
             foreach (var price in prices)
             {
                 await _unitOfWork.ConferencePriceRepository.DeleteConferencePriceAsync(price);
@@ -386,7 +387,7 @@ namespace ConfRadar.Services.Services
                 {
                     await _unitOfWork.SpeakerRepository.DeleteSpeakerAsync(speaker);
                 }
-                
+
                 await _unitOfWork.ConferenceSessionRepository.DeleteConferenceSessionAsync(session);
             }
 
@@ -410,71 +411,71 @@ namespace ConfRadar.Services.Services
                 Description = conference.Description,
                 StartDate = conference.StartDate,
                 EndDate = conference.EndDate,
-                Capacity = conference.Capacity,
+                //Capacity = conference.Capacity,
                 Address = conference.Address,
                 BannerImageUrl = AddBaseUrlToUrl(conference.BannerImageUrl),
-                CreatedAt = conference.CreatedAt,
+                //CreatedAt = conference.CreatedAt,
                 IsInternalHosted = conference.IsInternalHosted,
                 IsResearchConference = conference.IsResearchConference,
-                IsActive = conference.IsActive,
-                UserId = conference.UserId,
-                LocationId = conference.LocationId,
+                //IsActive = conference.IsActive,
+                //UserId = conference.UserId,
+                //LocationId = conference.LocationId,
                 CategoryId = conference.ConferenceCategoryId,
-                Policies = conference.ConferencePolicies?.Select(p => new ConferencePolicyResponse
+                Policies = conference.Policies?.Select(p => new ConferencePolicyResponse
                 {
                     PolicyId = p.PolicyId,
                     PolicyName = p.PolicyName,
                     Description = p.Description
                 }).ToList(),
-                Media = conference.ConferenceMedia?.Select(m => new ConferenceMediaResponse
-                {
-                    MediaId = m.ConferenceMediaId,
-                    MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl),
-                    MediaTypeId = m.MediaTypeId
-                }).ToList(),
+                //Media = conference.ConferenceMedia?.Select(m => new ConferenceMediaResponse
+                //{
+                //    MediaId = m.ConferenceMediaId,
+                //    MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl),
+                //    MediaTypeId = m.MediaTypeId
+                //}).ToList(),
                 Sponsors = conference.Sponsors?.Select(s => new SponsorResponse
                 {
                     SponsorId = s.SponsorId,
                     Name = s.Name,
                     ImageUrl = AddBaseUrlToUrl(s.ImageUrl)
                 }).ToList(),
-                Prices = conference.ConferencePrices?.Select(p => 
+                Prices = conference.ConferencePrices?.Select(p =>
                 {
                     // Calculate current phase and actual price based on current date and price phase
                     string currentPhase = "Unknown";
-                    decimal? calculatedActualPrice = p.ActualPrice; // Default to the stored actual price
-                    
-                    if (p.PricePhase != null) // If the price phase is loaded with the conference
+                    decimal? calculatedActualPrice = p.TicketPrice; // Default to the stored actual price
+
+                    if (p.PricePhases != null) // If the price phase is loaded with the conference
                     {
                         var now = DateOnly.FromDateTime(DateTime.UtcNow);
-                        
-                        if (p.PricePhase.EarlierBirdEndInterval != null && now <= p.PricePhase.EarlierBirdEndInterval)
-                        {
-                            currentPhase = "Early Bird";
-                            if (p.PricePhase.PercentForEarly.HasValue && p.TicketPrice.HasValue)
-                            {
-                                calculatedActualPrice = p.TicketPrice * (p.PricePhase.PercentForEarly.Value / 100.0m);
-                            }
-                        }
-                        else if (p.PricePhase.StandardEndInterval != null && now <= p.PricePhase.StandardEndInterval)
-                        {
-                            currentPhase = "Standard";
-                            calculatedActualPrice = p.TicketPrice; // Full price during standard phase
-                        }
-                        else if (p.PricePhase.LateEndInterval != null && now <= p.PricePhase.LateEndInterval)
-                        {
-                            currentPhase = "Late";
-                            if (p.PricePhase.PercentForEnd.HasValue && p.TicketPrice.HasValue)
-                            {
-                                calculatedActualPrice = p.TicketPrice * (p.PricePhase.PercentForEnd.Value / 100.0m);
-                            }
-                        }
-                        else
-                        {
-                            currentPhase = "Expired"; // After all phases ended
-                        }
+
+                        //if (p.PricePhases.EarlierBirdEndInterval != null && now <= p.PricePhases.EarlierBirdEndInterval)
+                        //{
+                        //    currentPhase = "Early Bird";
+                        //    if (p.PricePhases.PercentForEarly.HasValue && p.TicketPrice.HasValue)
+                        //    {
+                        //        calculatedActualPrice = p.TicketPrice * (p.PricePhases.PercentForEarly.Value / 100.0m);
+                        //    }
+                        //}
+                        //else if (p.PricePhase.StandardEndInterval != null && now <= p.PricePhase.StandardEndInterval)
+                        //{
+                        //    currentPhase = "Standard";
+                        //    calculatedActualPrice = p.TicketPrice; // Full price during standard phase
+                        //}
+                        //else if (p.PricePhase.LateEndInterval != null && now <= p.PricePhase.LateEndInterval)
+                        //{
+                        //    currentPhase = "Late";
+                        //    if (p.PricePhase.PercentForEnd.HasValue && p.TicketPrice.HasValue)
+                        //    {
+                        //        calculatedActualPrice = p.TicketPrice * (p.PricePhase.PercentForEnd.Value / 100.0m);
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    currentPhase = "Expired"; // After all phases ended
+                        //}
                     }
-                    
+
                     return new ConferencePriceResponse
                     {
                         PriceId = p.ConferencePriceId,
@@ -483,7 +484,7 @@ namespace ConfRadar.Services.Services
                         TicketDescription = p.TicketDescription,
                         ActualPrice = calculatedActualPrice,
                         CurrentPhase = currentPhase,
-                        PricePhaseId = p.PricePhaseId
+                        //PricePhaseId = p.PricePhaseId
                     };
                 }).ToList(),
                 Sessions = conference.ConferenceSessions?.Select(s => new ConferenceSessionResponse
@@ -502,11 +503,11 @@ namespace ConfRadar.Services.Services
                         DisplayName = s.Room.DisplayName,
                         DestinationId = s.Room.DestinationId
                     } : null,
-                    Speaker = s.Speaker != null ? new SpeakerResponse
-                    {
-                        Name = s.Speaker.Name,
-                        Description = s.Speaker.Description
-                    } : null
+                    //Speaker = s.Speakers != null ? new SpeakerResponse
+                    //{
+                    //    Name = s.Speakers.Name,
+                    //    Description = s.Speakers.Description
+                    //} : null
                 }).ToList()
             };
 
@@ -543,15 +544,15 @@ namespace ConfRadar.Services.Services
                     Description = conference.Description,
                     StartDate = conference.StartDate,
                     EndDate = conference.EndDate,
-                    Capacity = conference.Capacity,
+                    Capacity = conference.AvailableSlot,
                     Address = conference.Address,
                     BannerImageUrl = AddBaseUrlToUrl(conference.BannerImageUrl),
-                    CreatedAt = conference.CreatedAt,
+                    //CreatedAt = conference.CreatedAt,
                     IsInternalHosted = conference.IsInternalHosted,
                     IsResearchConference = conference.IsResearchConference,
-                    IsActive = conference.IsActive,
-                    UserId = conference.UserId,
-                    LocationId = conference.LocationId,
+                    //IsActive = conference.IsActive,
+                    //UserId = conference.UserId,
+                    //LocationId = conference.LocationId,
                     CategoryId = conference.ConferenceCategoryId
                 };
                 responses.Add(response);
@@ -579,7 +580,7 @@ namespace ConfRadar.Services.Services
             // Check if session meets minimum duration requirement
             var sessionDuration = endTimeUtc - startTimeUtc;
             var minimumDuration = TimeSpan.FromHours(config.MinimumSessionDurationHours);
-            
+
             if (sessionDuration < minimumDuration)
             {
                 throw new BadRequestException($"Session duration must be at least {config.MinimumSessionDurationHours} hours");
@@ -595,9 +596,9 @@ namespace ConfRadar.Services.Services
                 if (!existingSession.StartTime.HasValue || !existingSession.EndTime.HasValue) continue;
 
                 // Ensure existing session times are also in UTC for comparison
-                var existingStartUtc = existingSession.StartTime.Value.Kind == DateTimeKind.Utc ? 
+                var existingStartUtc = existingSession.StartTime.Value.Kind == DateTimeKind.Utc ?
                     existingSession.StartTime.Value : DateTime.SpecifyKind(existingSession.StartTime.Value, DateTimeKind.Utc);
-                var existingEndUtc = existingSession.EndTime.Value.Kind == DateTimeKind.Utc ? 
+                var existingEndUtc = existingSession.EndTime.Value.Kind == DateTimeKind.Utc ?
                     existingSession.EndTime.Value : DateTime.SpecifyKind(existingSession.EndTime.Value, DateTimeKind.Utc);
 
                 // Calculate session times with interval buffer
@@ -608,12 +609,51 @@ namespace ConfRadar.Services.Services
                 var existingSessionEndWithBuffer = existingEndUtc.AddHours(config.SessionIntervalHours);
 
                 // Check if there's an overlap (including interval buffer)
-                if ((newSessionStartWithBuffer < existingSessionEndWithBuffer) && 
+                if ((newSessionStartWithBuffer < existingSessionEndWithBuffer) &&
                     (newSessionEndWithBuffer > existingSessionStartWithBuffer))
                 {
                     throw new BadRequestException($"Session conflicts with existing session in room {session.RoomId} at time {existingSession.StartTime?.ToString("HH:mm")} - {existingSession.EndTime?.ToString("HH:mm")}");
                 }
             }
+        }
+
+        public async Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize)
+        {
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences();
+
+            var totalCount = await query.CountAsync();
+
+            var pagedConferences = await query
+                .OrderBy(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            var responses = pagedConferences.Select(conference => new ConferenceResponse
+            {
+                ConferenceId = conference.ConferenceId,
+                ConferenceName = conference.ConferenceName,
+                Description = conference.Description,
+                StartDate = conference.StartDate,
+                EndDate = conference.EndDate,
+                //Capacity = conference.Capacity,
+                Address = conference.Address,
+                BannerImageUrl = AddBaseUrlToUrl(conference.BannerImageUrl),
+                //CreatedAt = conference.CreatedAt,
+                IsInternalHosted = conference.IsInternalHosted,
+                IsResearchConference = conference.IsResearchConference,
+                //IsActive = conference.IsActive,
+                //UserId = conference.UserId,
+                //LocationId = conference.LocationId,
+                CategoryId = conference.ConferenceCategoryId,
+
+            }).ToList();
+            return new PagedResult<ConferenceResponse>
+            {
+                Items = responses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
 }

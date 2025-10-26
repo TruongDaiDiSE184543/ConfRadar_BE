@@ -1,6 +1,8 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Conference;
+using ConfRadar.Services.DTOs.General;
+using ConfRadar.Services.DTOs.Ticket;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -104,6 +106,18 @@ namespace ConfRadar.Api.Controllers
             {
                 return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
             }
+        }
+        [HttpGet("view-registered-users-for-conference")]
+        public async Task<IActionResult> ViewRegisteredUsersInAConference(string conferenceId)
+        {
+            var userList = await _serviceManager.TicketService.GetTicketListByConferenceId(conferenceId);
+            return Ok(ApiResponse<List<PaidTicketResponse>>.SuccessResponse(userList, "data retrieved"));
+        }
+        [HttpGet("paginated-conferences")]
+        public async Task<IActionResult> GetAllConferencesWithPagination([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var conferences = await _serviceManager.ConferenceService.GetAllConferencesPaginatedAsync(page, pageSize);
+            return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
         }
     }
 }

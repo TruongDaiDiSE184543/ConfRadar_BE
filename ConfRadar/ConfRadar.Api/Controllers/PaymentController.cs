@@ -2,14 +2,11 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Payment;
-using ConfRadar.Services.DTOs.User;
-using ConfRadar.Services.Services;
+using ConfRadar.Services.DTOs.Transaction;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.Text.Json;
+using static Google.Apis.Requests.BatchRequest;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -27,27 +24,28 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreatePaymentForTech([FromBody] CreateTechPaymentRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.MomoService.HandleMomoPaymentWithTechConf(request,userId!);
+            var result = await _serviceManager.MomoService.HandleMomoPaymentWithTechConf(request, userId!);
             return Ok(ApiResponse<string>.SuccessResponse(result, "Pay with momo"));
         }
         [HttpPost("verify-momo-for-tech")]
-        public async Task<IActionResult> VerifyPaymentForTech(MomoPaymentCallBackResponse response)
+        public async Task<IActionResult> VerifyPaymentForTech([FromBody]MomoPaymentCallBackResponse response)
         {
             await _serviceManager.MomoService.VerifyMomoPaymentDataWithTechConf(response);
             return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
         }
         [HttpGet("momo-success")]
-        public async Task<IActionResult> MomoSucess()
+        public async Task<IActionResult> MomoSucess([FromQuery]MomoPaymentCallBackResponse response) 
         {
-            return Ok("momo");
+            await _serviceManager.MomoService.VerifyMomoPaymentDataWithTechConf(response);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
         }
-
+        [Authorize]
         [HttpGet("get-own-transaction")]
         public async Task<IActionResult> GetOwnTransaction()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaymentService.GetOwnTransactionByUserId(userId);
-            return Ok(ApiResponse<Transaction>.SuccessResponse(null, "data retrieved!"));
+            return Ok(ApiResponse<List<TransactionDetailResponse>>.SuccessResponse(result, "data retrieved!"));
         }
 
     }

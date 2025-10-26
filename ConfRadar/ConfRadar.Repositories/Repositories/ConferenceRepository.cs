@@ -12,8 +12,10 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> DeleteConferenceAsync(Conference conference);
         Task<Conference?> GetConferenceByIdAsync(string conferenceId);
         Task<List<Conference>> GetAllConferencesAsync();
+        IQueryable<Conference> GetAllConferences();
         Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId);
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
+
     }
 
     public class ConferenceRepository : GenericRepository<Conference>, IConferenceRepository
@@ -46,24 +48,27 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Conferences.ToListAsync();
         }
+        public IQueryable<Conference> GetAllConferences()
+        {
+            return _context.Conferences.AsNoTracking(); ;
+        }
 
         public async Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId)
         {
             return await _context.Conferences
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
-                    .ThenInclude(cm => cm.MediaType)
-                .Include(c => c.ConferencePolicies)
+                .Include(c => c.Policies)
                 .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhase)
+                    .ThenInclude(cp => cp.PricePhases)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room)
                         .ThenInclude(r => r.Destination)
                 .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Speaker)
+                    .ThenInclude(cs => cs.Speakers)
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
-                .Include(c => c.FavouriteConferences)
+                //.Include(c => c.FavouriteConferences)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
         }
 
@@ -72,7 +77,7 @@ namespace ConfRadar.Repositories.Repositories
             var conferences = await _context.Conferences
                 .Where(c => conferenceIds.Contains(c.ConferenceId))
                 .ToListAsync();
-            
+
             return conferences.ToDictionary(c => c.ConferenceId);
         }
     }

@@ -7,11 +7,11 @@ namespace ConfRadar.Services.Services
     public interface ISeedDataService
     {
         Task SeedRolesAsync();
-        Task SeedTransactionStatusAsync();
+        //Task SeedTransactionStatusAsync();
         Task SeedPaymentMethodsAsync();
         Task SeedGlobalStatusesAsync();
-        Task SeedTransactionTypeAsync();
-        Task SeedMediaTypesAsync();
+        //Task SeedTransactionTypeAsync();
+        //Task SeedMediaTypesAsync();
 
     }
     public class SeedDataService : ISeedDataService
@@ -83,55 +83,24 @@ namespace ConfRadar.Services.Services
                     MethodName = name,
                 });
         }
-        public async Task SeedTransactionStatusAsync()
-        {
-            var statusNames = Enum.GetValues<TransactionStatusEnum>().Select(s => s.GetDescription()).ToList();
-            await SeedEntityAsync<TransactionStatus>(
-                statusNames,
-                _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName,
-                _unitOfWork.TransactionStatusRepository.CreateMutipleTransactionStatusesAsync,
-                name => new TransactionStatus
-                {
-                    TransactionStatusId = Guid.NewGuid().ToString(),
-                    StatusName = name,
-                });
-        }
+        //public async Task SeedTransactionStatusAsync()
+        //{
+        //    var statusNames = Enum.GetValues<TransactionStatusEnum>().Select(s => s.GetDescription()).ToList();
+        //    await SeedEntityAsync<TransactionStatus>(
+        //        statusNames,
+        //        _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName,
+        //        _unitOfWork.TransactionStatusRepository.CreateMutipleTransactionStatusesAsync,
+        //        name => new TransactionStatus
+        //        {
+        //            TransactionStatusId = Guid.NewGuid().ToString(),
+        //            StatusName = name,
+        //        });
+        //}
 
-        public async Task SeedTransactionTypeAsync()
-        {
-            var typeNames = Enum.GetValues<TransactionTypeEnum>().Select(s => s.GetDescription()).ToList();
-            await SeedEntityAsync<TransactionType>(
-                typeNames,
-                _unitOfWork.TransactionTypeRepository.GetTransactionTypeByName,
-                _unitOfWork.TransactionTypeRepository.CreateMutipleTransactionTypesAsync,
-                name => new TransactionType
-                {
-                    TransactionTypeId = Guid.NewGuid().ToString(),
-                    TypeName = name,
-                });
-        }
         
-        
-        public async Task SeedMediaTypesAsync()
-        {
-            var mediaTypeNames = Enum.GetValues<MediaTypeEnum>().Select(m => m.GetDescription()).ToList();
-            await SeedEntityAsync<MediaType>(
-                mediaTypeNames,
-                _unitOfWork.MediaTypeRepository.GetMediaTypeByNameAsync,
-                async entities => 
-                {
-                    foreach(var entity in entities)
-                    {
-                        await _unitOfWork.MediaTypeRepository.CreateMediaTypeAsync(entity);
-                    }
-                },
-                name => new MediaType 
-                { 
-                    MediaTypeId = Guid.NewGuid().ToString(),
-                    MediaTypeName = name
 
-                });
-        }
+
+      
     }
 
 

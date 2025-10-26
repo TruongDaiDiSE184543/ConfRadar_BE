@@ -1,5 +1,4 @@
 using ConfRadar.Repositories;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferencePriceTicket;
 using Microsoft.EntityFrameworkCore;
@@ -49,17 +48,17 @@ namespace ConfRadar.Services.Services
             // Apply sorting
             query = request.SortBy?.ToLower() switch
             {
-                "ticketname" => request.SortOrder?.ToLower() == "desc" 
-                    ? query.OrderByDescending(cp => cp.TicketName) 
+                "ticketname" => request.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(cp => cp.TicketName)
                     : query.OrderBy(cp => cp.TicketName),
-                "ticketprice" => request.SortOrder?.ToLower() == "desc" 
-                    ? query.OrderByDescending(cp => cp.TicketPrice) 
+                "ticketprice" => request.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(cp => cp.TicketPrice)
                     : query.OrderBy(cp => cp.TicketPrice),
-                "actualprice" => request.SortOrder?.ToLower() == "desc" 
-                    ? query.OrderByDescending(cp => cp.ActualPrice) 
-                    : query.OrderBy(cp => cp.ActualPrice),
-                _ => request.SortOrder?.ToLower() == "desc" 
-                    ? query.OrderByDescending(cp => cp.TicketPrice) 
+                "actualprice" => request.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(cp => cp.TicketPrice)
+                    : query.OrderBy(cp => cp.TicketPrice),
+                _ => request.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(cp => cp.TicketPrice)
                     : query.OrderBy(cp => cp.TicketPrice) // Default sort by TicketPrice
             };
 
@@ -76,35 +75,35 @@ namespace ConfRadar.Services.Services
             foreach (var ticket in tickets)
             {
                 string currentPhase = "Unknown";
-                decimal? actualPrice = ticket.ActualPrice ?? ticket.TicketPrice; // Default to stored actual price or ticket price
+                decimal? actualPrice = ticket.TicketPrice ?? ticket.TicketPrice; // Default to stored actual price or ticket price
 
-                if (ticket.PricePhase != null)
+                if (ticket.PricePhases != null)
                 {
-                    if (ticket.PricePhase.EarlierBirdEndInterval != null && now <= ticket.PricePhase.EarlierBirdEndInterval)
-                    {
-                        currentPhase = "Early Bird";
-                        if (ticket.PricePhase.PercentForEarly.HasValue && ticket.TicketPrice.HasValue)
-                        {
-                            actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEarly.Value / 100.0m);
-                        }
-                    }
-                    else if (ticket.PricePhase.StandardEndInterval != null && now <= ticket.PricePhase.StandardEndInterval)
-                    {
-                        currentPhase = "Standard";
-                        actualPrice = ticket.TicketPrice; // Full price during standard phase
-                    }
-                    else if (ticket.PricePhase.LateEndInterval != null && now <= ticket.PricePhase.LateEndInterval)
-                    {
-                        currentPhase = "Late";
-                        if (ticket.PricePhase.PercentForEnd.HasValue && ticket.TicketPrice.HasValue)
-                        {
-                            actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEnd.Value / 100.0m);
-                        }
-                    }
-                    else
-                    {
-                        currentPhase = "Expired"; // After all phases ended
-                    }
+                    //if (ticket.PricePhase.EarlierBirdEndInterval != null && now <= ticket.PricePhase.EarlierBirdEndInterval)
+                    //{
+                    //    currentPhase = "Early Bird";
+                    //    if (ticket.PricePhase.PercentForEarly.HasValue && ticket.TicketPrice.HasValue)
+                    //    {
+                    //        actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEarly.Value / 100.0m);
+                    //    }
+                    //}
+                    //else if (ticket.PricePhase.StandardEndInterval != null && now <= ticket.PricePhase.StandardEndInterval)
+                    //{
+                    //    currentPhase = "Standard";
+                    //    actualPrice = ticket.TicketPrice; // Full price during standard phase
+                    //}
+                    //else if (ticket.PricePhase.LateEndInterval != null && now <= ticket.PricePhase.LateEndInterval)
+                    //{
+                    //    currentPhase = "Late";
+                    //    if (ticket.PricePhase.PercentForEnd.HasValue && ticket.TicketPrice.HasValue)
+                    //    {
+                    //        actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEnd.Value / 100.0m);
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    currentPhase = "Expired"; // After all phases ended
+                    //}
                 }
 
                 responses.Add(new ConferencePriceTicketListResponse
@@ -137,36 +136,36 @@ namespace ConfRadar.Services.Services
             var now = DateOnly.FromDateTime(DateTime.UtcNow);
 
             string currentPhase = "Unknown";
-            decimal? actualPrice = ticket.ActualPrice ?? ticket.TicketPrice; // Default to stored actual price or ticket price
+            decimal? actualPrice = ticket.TicketPrice ?? ticket.TicketPrice; // Default to stored actual price or ticket price
 
-            if (ticket.PricePhase != null)
-            {
-                if (ticket.PricePhase.EarlierBirdEndInterval != null && now <= ticket.PricePhase.EarlierBirdEndInterval)
-                {
-                    currentPhase = "Early Bird";
-                    if (ticket.PricePhase.PercentForEarly.HasValue && ticket.TicketPrice.HasValue)
-                    {
-                        actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEarly.Value / 100.0m);
-                    }
-                }
-                else if (ticket.PricePhase.StandardEndInterval != null && now <= ticket.PricePhase.StandardEndInterval)
-                {
-                    currentPhase = "Standard";
-                    actualPrice = ticket.TicketPrice; // Full price during standard phase
-                }
-                else if (ticket.PricePhase.LateEndInterval != null && now <= ticket.PricePhase.LateEndInterval)
-                {
-                    currentPhase = "Late";
-                    if (ticket.PricePhase.PercentForEnd.HasValue && ticket.TicketPrice.HasValue)
-                    {
-                        actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEnd.Value / 100.0m);
-                    }
-                }
-                else
-                {
-                    currentPhase = "Expired"; // After all phases ended
-                }
-            }
+            //if (ticket.PricePhases != null)
+            //{
+            //    if (ticket.PricePhase.EarlierBirdEndInterval != null && now <= ticket.PricePhase.EarlierBirdEndInterval)
+            //    {
+            //        currentPhase = "Early Bird";
+            //        if (ticket.PricePhase.PercentForEarly.HasValue && ticket.TicketPrice.HasValue)
+            //        {
+            //            actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEarly.Value / 100.0m);
+            //        }
+            //    }
+            //    else if (ticket.PricePhase.StandardEndInterval != null && now <= ticket.PricePhase.StandardEndInterval)
+            //    {
+            //        currentPhase = "Standard";
+            //        actualPrice = ticket.TicketPrice; // Full price during standard phase
+            //    }
+            //    else if (ticket.PricePhase.LateEndInterval != null && now <= ticket.PricePhase.LateEndInterval)
+            //    {
+            //        currentPhase = "Late";
+            //        if (ticket.PricePhase.PercentForEnd.HasValue && ticket.TicketPrice.HasValue)
+            //        {
+            //            actualPrice = ticket.TicketPrice * (ticket.PricePhase.PercentForEnd.Value / 100.0m);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        currentPhase = "Expired"; // After all phases ended
+            //    }
+            //}
 
             return new ConferencePriceTicketDetailResponse
             {
@@ -181,15 +180,15 @@ namespace ConfRadar.Services.Services
                 ConferenceBannerUrl = AddBaseUrlToUrl(ticket.Conference?.BannerImageUrl),
                 ConferenceStartDate = ticket.Conference?.StartDate,
                 ConferenceEndDate = ticket.Conference?.EndDate,
-                PricePhase = ticket.PricePhase != null ? new PricePhaseInfoResponse
+                PricePhase = ticket.PricePhases != null ? new PricePhaseInfoResponse
                 {
-                    PricePhaseId = ticket.PricePhase.PricePhaseId,
-                    Name = ticket.PricePhase.Name,
-                    EarlierBirdEndInterval = ticket.PricePhase.EarlierBirdEndInterval,
-                    PercentForEarly = ticket.PricePhase.PercentForEarly,
-                    StandardEndInterval = ticket.PricePhase.StandardEndInterval,
-                    LateEndInterval = ticket.PricePhase.LateEndInterval,
-                    PercentForEnd = ticket.PricePhase.PercentForEnd
+                    //PricePhaseId = ticket.PricePhase.PricePhaseId,
+                    //Name = ticket.PricePhase.Name,
+                    //EarlierBirdEndInterval = ticket.PricePhase.EarlierBirdEndInterval,
+                    //PercentForEarly = ticket.PricePhase.PercentForEarly,
+                    //StandardEndInterval = ticket.PricePhase.StandardEndInterval,
+                    //LateEndInterval = ticket.PricePhase.LateEndInterval,
+                    //PercentForEnd = ticket.PricePhase.PercentForEnd
                 } : null
             };
         }

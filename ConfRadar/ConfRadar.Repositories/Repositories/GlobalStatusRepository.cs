@@ -9,6 +9,11 @@ namespace ConfRadar.Repositories.Repositories
     {
         Task<GlobalStatus?> GetGlobalStatusByName(string globalStatusName);
         Task<int> CreateMutipleGlobalStatusesAsync(IEnumerable<GlobalStatus> globalStatuses);
+        Task<int> CreateGlobalStatus(GlobalStatus globalStatus);
+        Task<GlobalStatus> GetGlobalStatusByIdAsync(string globalStatusId);
+        Task<int> UpdateGlobalStatusAsync(GlobalStatus globalStatus);
+        Task<bool> DeleteGlobalStatusAsync(GlobalStatus globalStatus);
+        Task<List<GlobalStatus>> GetAllGlobalStatusAsync();
     }
     public class GlobalStatusRepository : GenericRepository<GlobalStatus>, IGlobalStatusRepository
     {
@@ -24,6 +29,27 @@ namespace ConfRadar.Repositories.Repositories
         {
             await _context.GlobalStatuses.AddRangeAsync(globalStatuses);
             return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> CreateGlobalStatus(GlobalStatus globalStatus)
+        {
+            return await CreateAsync(globalStatus);
+        }
+        public async Task<GlobalStatus> GetGlobalStatusByIdAsync(string globalStatusId)
+        {
+            return await GetByIdAsync(globalStatusId);
+        }
+        public async Task<int> UpdateGlobalStatusAsync(GlobalStatus globalStatus)
+        {
+            return await UpdateAsync(globalStatus);
+        }
+        public async Task<bool> DeleteGlobalStatusAsync(GlobalStatus globalStatus)
+        {
+            return await RemoveAsync(globalStatus);
+        }
+        public async Task<List<GlobalStatus>> GetAllGlobalStatusAsync()
+        {
+            return await GetAllAsync();
         }
     }
 }

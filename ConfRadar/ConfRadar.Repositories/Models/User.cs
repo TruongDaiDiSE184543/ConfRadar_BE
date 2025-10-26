@@ -7,23 +7,17 @@ public partial class User
 {
     public string UserId { get; set; } = null!;
 
-    public string Email { get; set; } = null!;
+    public string? Email { get; set; }
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
 
-    public string FullName { get; set; } = null!;
+    public string? FullName { get; set; }
 
     public DateOnly? BirthDay { get; set; }
 
     public string? PhoneNumber { get; set; }
 
     public string? Gender { get; set; }
-
-    public DateTime? LastLogin { get; set; }
-
-    public string? AvatarUrl { get; set; }
-
-    public string? BioDescription { get; set; }
 
     public bool? IsActive { get; set; }
 
@@ -39,9 +33,43 @@ public partial class User
 
     public DateTime? PasswordResetTokenExpiry { get; set; }
 
+    public DateTime? LastLogin { get; set; }
+
+    public string? AvatarUrl { get; set; }
+
+    public string? BioDescription { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
-    public virtual ICollection<FavouriteConference> FavouriteConferences { get; set; } = new List<FavouriteConference>();
+    public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+
+    public virtual ICollection<ConferenceFeedback> ConferenceFeedbacks { get; set; } = new List<ConferenceFeedback>();
+
+    public virtual ICollection<Conference> Conferences { get; set; } = new List<Conference>();
+
+    public virtual ICollection<FullPaperReview> FullPaperReviews { get; set; } = new List<FullPaperReview>();
+
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+    public virtual ICollection<PaperWaitList> PaperWaitLists { get; set; } = new List<PaperWaitList>();
+
+    public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
+
+    public virtual ICollection<PresenterChangeRequest> PresenterChangeRequestNewPresenters { get; set; } = new List<PresenterChangeRequest>();
+
+    public virtual ICollection<PresenterChangeRequest> PresenterChangeRequestRequestedBies { get; set; } = new List<PresenterChangeRequest>();
+
+    public virtual ICollection<ReportFeedback> ReportFeedbacks { get; set; } = new List<ReportFeedback>();
+
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+
+    public virtual ICollection<ReviewerContract> ReviewerContracts { get; set; } = new List<ReviewerContract>();
+
+    public virtual ICollection<RevisionPaperReview> RevisionPaperReviews { get; set; } = new List<RevisionPaperReview>();
+
+    public virtual ICollection<RevisionSubmissionFeedback> RevisionSubmissionFeedbacks { get; set; } = new List<RevisionSubmissionFeedback>();
+
+    public virtual ICollection<SessionChangeRequest> SessionChangeRequests { get; set; } = new List<SessionChangeRequest>();
 
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 

@@ -3,12 +3,7 @@ using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -142,17 +137,17 @@ namespace ConfRadar.Services.Services
                 Description = request.Description,
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
-                Capacity = request.Capacity,
+                //Capacity = request.Capacity,
                 Address = request.Address,
                 BannerImageUrl = bannerImageUrl,
-                CreatedAt = DateTime.UtcNow,
+                //CreatedAt = DateTime.UtcNow,
                 IsInternalHosted = request.IsInternalHosted,
                 IsResearchConference = request.IsResearchConference,
-                IsActive = true,
+                //IsActive = true,
                 ConferenceCategoryId = category.ConferenceCategoryId,
-                UserId = userId,
-                LocationId = request.LocationId,
-                GlobalStatusId = request.GlobalStatusId
+                //UserId = userId,
+                //LocationId = request.LocationId,
+                //GlobalStatusId = request.GlobalStatusId
             };
 
             await _unitOfWork.ConferenceRepository.CreateConferenceAsync(conference);
@@ -171,15 +166,15 @@ namespace ConfRadar.Services.Services
                 Description = conference.Description,
                 StartDate = conference.StartDate,
                 EndDate = conference.EndDate,
-                Capacity = conference.Capacity,
+                //Capacity = conference.Capacity,
                 Address = conference.Address,
                 BannerImageUrl = AddBaseUrlToUrl(conference.BannerImageUrl),
-                CreatedAt = conference.CreatedAt,
+                //CreatedAt = conference.CreatedAt,
                 IsInternalHosted = conference.IsInternalHosted,
                 IsResearchConference = conference.IsResearchConference,
-                IsActive = conference.IsActive,
-                UserId = conference.UserId,
-                LocationId = conference.LocationId,
+                //IsActive = conference.IsActive,
+                //UserId = conference.UserId,
+                //LocationId = conference.LocationId,
                 CategoryId = conference.ConferenceCategoryId
             };
         }
@@ -193,13 +188,13 @@ namespace ConfRadar.Services.Services
             conference.Description = request.Description ?? conference.Description;
             conference.StartDate = request.StartDate ?? conference.StartDate;
             conference.EndDate = request.EndDate ?? conference.EndDate;
-            conference.Capacity = request.Capacity ?? conference.Capacity;
+            //conference.Capacity = request.Capacity ?? conference.Capacity;
             conference.Address = request.Address ?? conference.Address;
             conference.IsInternalHosted = request.IsInternalHosted ?? conference.IsInternalHosted;
             conference.IsResearchConference = request.IsResearchConference ?? conference.IsResearchConference;
-            conference.IsActive = request.IsActive ?? conference.IsActive;
-            conference.LocationId = request.LocationId ?? conference.LocationId;
-            conference.GlobalStatusId = request.GlobalStatusId ?? conference.GlobalStatusId;
+            //conference.IsActive = request.IsActive ?? conference.IsActive;
+            //conference.LocationId = request.LocationId ?? conference.LocationId;
+            //conference.GlobalStatusId = request.GlobalStatusId ?? conference.GlobalStatusId;
 
             if (request.BannerImageFile != null)
             {
@@ -228,12 +223,12 @@ namespace ConfRadar.Services.Services
                 var pricePhase = new PricePhase
                 {
                     PricePhaseId = Guid.NewGuid().ToString(),
-                    Name = request.PricePhase.Name,
-                    EarlierBirdEndInterval = request.PricePhase.EarlierBirdEndInterval,
-                    PercentForEarly = request.PricePhase.PercentForEarly,
-                    StandardEndInterval = request.PricePhase.StandardEndInterval,
-                    LateEndInterval = request.PricePhase.LateEndInterval,
-                    PercentForEnd = request.PricePhase.PercentForEnd
+                    //Name = request.PricePhase.Name,
+                    //EarlierBirdEndInterval = request.PricePhase.EarlierBirdEndInterval,
+                    //PercentForEarly = request.PricePhase.PercentForEarly,
+                    //StandardEndInterval = request.PricePhase.StandardEndInterval,
+                    //LateEndInterval = request.PricePhase.LateEndInterval,
+                    //PercentForEnd = request.PricePhase.PercentForEnd
                 };
                 await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(pricePhase);
                 pricePhaseId = pricePhase.PricePhaseId;
@@ -249,8 +244,8 @@ namespace ConfRadar.Services.Services
                         TicketPrice = price.TicketPrice,
                         TicketName = price.TicketName,
                         TicketDescription = price.TicketDescription,
-                        ActualPrice = price.ActualPrice,
-                        PricePhaseId = pricePhaseId ,
+                        //ActualPrice = price.ActualPrice,
+                        //PricePhaseId = pricePhaseId,
                         ConferenceId = conferenceId
                     };
                     await _unitOfWork.ConferencePriceRepository.CreateConferencePriceAsync(conferencePrice);
@@ -261,9 +256,9 @@ namespace ConfRadar.Services.Services
                         TicketPrice = conferencePrice.TicketPrice,
                         TicketName = conferencePrice.TicketName,
                         TicketDescription = conferencePrice.TicketDescription,
-                        ActualPrice = conferencePrice.ActualPrice,
+                        //ActualPrice = conferencePrice.ActualPrice,
                         CurrentPhase = "Standard", // TODO: Implement dynamic phase calculation
-                        PricePhaseId = conferencePrice.PricePhaseId
+                        //PricePhaseId = conferencePrice.PricePhaseId
                     });
                 }
             }
@@ -281,9 +276,9 @@ namespace ConfRadar.Services.Services
                 TicketPrice = p.TicketPrice,
                 TicketName = p.TicketName,
                 TicketDescription = p.TicketDescription,
-                ActualPrice = p.ActualPrice,
+                //ActualPrice = p.ActualPrice,
                 CurrentPhase = "Standard", // TODO: Implement dynamic phase calculation
-                PricePhaseId = p.PricePhaseId
+                //PricePhaseId = p.PricePhaseId
             }).ToList();
         }
 
@@ -295,11 +290,11 @@ namespace ConfRadar.Services.Services
             price.TicketPrice = request.TicketPrice ?? price.TicketPrice;
             price.TicketName = request.TicketName ?? price.TicketName;
             price.TicketDescription = request.TicketDescription ?? price.TicketDescription;
-            price.ActualPrice = request.ActualPrice ?? price.ActualPrice;
-            price.PricePhaseId = request.PricePhaseId ?? price.PricePhaseId;
+            //price.ActualPrice = request.ActualPrice ?? price.ActualPrice;
+            //price.PricePhaseId = request.PricePhaseId ?? price.PricePhaseId;
 
             await _unitOfWork.ConferencePriceRepository.UpdateConferencePriceAsync(price);
-            return new ConferencePriceStepResponse { PriceId = price.ConferencePriceId, TicketPrice = price.TicketPrice, TicketName = price.TicketName, TicketDescription = price.TicketDescription, ActualPrice = price.ActualPrice, CurrentPhase = "Standard", PricePhaseId = price.PricePhaseId };
+            return new ConferencePriceStepResponse { PriceId = price.ConferencePriceId, TicketPrice = price.TicketPrice, TicketName = price.TicketName, TicketDescription = price.TicketDescription, ActualPrice = price.TicketPrice, CurrentPhase = "Standard", /*PricePhaseId = price.PricePhases */};
         }
 
         public async Task<bool> DeleteConferencePriceAsync(string priceId)
@@ -347,16 +342,18 @@ namespace ConfRadar.Services.Services
                         speakerResponse = new SpeakerResponse { Name = speaker.Name, Description = speaker.Description };
                     }
 
-                    responses.Add(new ConferenceSessionStepResponse { 
-                        SessionId = conferenceSession.ConferenceSessionId, 
-                        Title = conferenceSession.Title, 
-                        Description = conferenceSession.Description, 
-                        StartTime = conferenceSession.StartTime, 
-                        EndTime = conferenceSession.EndTime, 
-                        ConferenceId = conferenceSession.ConferenceId, 
-                        RoomId = conferenceSession.RoomId, 
-                        Speaker = speakerResponse });
-                }   
+                    responses.Add(new ConferenceSessionStepResponse
+                    {
+                        SessionId = conferenceSession.ConferenceSessionId,
+                        Title = conferenceSession.Title,
+                        Description = conferenceSession.Description,
+                        StartTime = conferenceSession.StartTime,
+                        EndTime = conferenceSession.EndTime,
+                        ConferenceId = conferenceSession.ConferenceId,
+                        RoomId = conferenceSession.RoomId,
+                        Speaker = speakerResponse
+                    });
+                }
             }
             return responses;
         }
@@ -374,7 +371,7 @@ namespace ConfRadar.Services.Services
                 ConferenceId = s.ConferenceId,
                 RoomId = s.RoomId,
                 Room = s.Room != null ? new RoomInfoResponse { RoomId = s.Room.RoomId, Number = s.Room.Number, DisplayName = s.Room.DisplayName, DestinationId = s.Room.DestinationId } : null,
-                Speaker = s.Speaker != null ? new SpeakerResponse { Name = s.Speaker.Name, Description = s.Speaker.Description } : null
+                //Speaker = s.Speaker != null ? new SpeakerResponse { Name = s.Speakers.Name, Description = s.Speakers.Description } : null
             }).ToList();
         }
 
@@ -394,7 +391,7 @@ namespace ConfRadar.Services.Services
             session.Title = request.Title ?? session.Title;
             session.Description = request.Description ?? session.Description;
             session.StartTime = newStartTime;
-            session.EndTime = newEndTime; 
+            session.EndTime = newEndTime;
             session.RoomId = newRoomId;
 
             await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
@@ -410,7 +407,7 @@ namespace ConfRadar.Services.Services
                 ConferenceId = updatedSession.ConferenceId,
                 RoomId = updatedSession.RoomId,
                 Room = updatedSession.Room != null ? new RoomInfoResponse { RoomId = updatedSession.Room.RoomId, DisplayName = updatedSession.Room.DisplayName } : null,
-                Speaker = updatedSession.Speaker != null ? new SpeakerResponse { Name = updatedSession.Speaker.Name, Description = updatedSession.Speaker.Description } : null
+                //Speaker = updatedSession.Speaker != null ? new SpeakerResponse { Name = updatedSession.Speaker.Name, Description = updatedSession.Speaker.Description } : null
             };
         }
 
@@ -456,7 +453,7 @@ namespace ConfRadar.Services.Services
             {
                 foreach (var policy in request.Policies)
                 {
-                    var conferencePolicy = new ConferencePolicy { PolicyId = Guid.NewGuid().ToString(), PolicyName = policy.PolicyName, Description = policy.Description, ConferenceId = conferenceId };
+                    var conferencePolicy = new Policy { PolicyId = Guid.NewGuid().ToString(), PolicyName = policy.PolicyName, Description = policy.Description, ConferenceId = conferenceId };
                     await _unitOfWork.ConferencePolicyRepository.CreateConferencePolicyAsync(conferencePolicy);
                     responses.Add(new ConferencePolicyResponse { PolicyId = conferencePolicy.PolicyId, PolicyName = conferencePolicy.PolicyName, Description = conferencePolicy.Description });
                 }
@@ -504,14 +501,14 @@ namespace ConfRadar.Services.Services
                     string? mediaUrl = media.MediaUrl;
                     if (media.MediaFile != null)
                     {
-                        if (await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(media.MediaTypeId) == null) throw new NotFoundException($"Media type with ID {media.MediaTypeId} not found");
+                        //if (await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(media.MediaTypeId) == null) throw new NotFoundException($"Media type with ID {media.MediaTypeId} not found");
                         using var stream = media.MediaFile.OpenReadStream();
                         var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(media.MediaFile.FileName);
                         mediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, media.MediaFile.ContentType);
                     }
-                    var conferenceMedia = new ConferenceMedium { ConferenceMediaId = Guid.NewGuid().ToString(), ConferenceMediaUrl = mediaUrl, ConferenceId = conferenceId, MediaTypeId = media.MediaTypeId };
+                    var conferenceMedia = new ConferenceMedium { ConferenceMediaId = Guid.NewGuid().ToString(), ConferenceMediaUrl = mediaUrl, ConferenceId = conferenceId, };
                     await _unitOfWork.ConferenceMediumRepository.CreateConferenceMediumAsync(conferenceMedia);
-                    responses.Add(new ConferenceMediaResponse { MediaId = conferenceMedia.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(conferenceMedia.ConferenceMediaUrl), MediaTypeId = conferenceMedia.MediaTypeId });
+                    responses.Add(new ConferenceMediaResponse { MediaId = conferenceMedia.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(conferenceMedia.ConferenceMediaUrl)});
                 }
             }
             return responses;
@@ -520,7 +517,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferenceMediaResponse>> GetConferenceMediaAsync(string conferenceId)
         {
             var media = await _unitOfWork.ConferenceMediumRepository.GetMediaByConferenceIdAsync(conferenceId);
-            return media.Select(m => new ConferenceMediaResponse { MediaId = m.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl), MediaTypeId = m.MediaTypeId }).ToList();
+            return media.Select(m => new ConferenceMediaResponse { MediaId = m.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl)}).ToList();
         }
 
         public async Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request)
@@ -530,8 +527,8 @@ namespace ConfRadar.Services.Services
 
             if (request.MediaFile != null)
             {
-                var mediaTypeId = request.MediaTypeId ?? media.MediaTypeId;
-                if (await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(mediaTypeId) == null) throw new NotFoundException($"Media type with ID {mediaTypeId} not found");
+                //var mediaTypeId = request.MediaTypeId ?? media.MediaTypeId;
+                //if (await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(mediaTypeId) == null) throw new NotFoundException($"Media type with ID {mediaTypeId} not found");
                 using var stream = request.MediaFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.MediaFile.FileName);
                 media.ConferenceMediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, request.MediaFile.ContentType);
@@ -541,9 +538,9 @@ namespace ConfRadar.Services.Services
                 media.ConferenceMediaUrl = request.MediaUrl;
             }
 
-            media.MediaTypeId = request.MediaTypeId ?? media.MediaTypeId;
+            //media.MediaTypeId = request.MediaTypeId ?? media.MediaTypeId;
             await _unitOfWork.ConferenceMediumRepository.UpdateConferenceMediumAsync(media);
-            return new ConferenceMediaResponse { MediaId = media.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(media.ConferenceMediaUrl), MediaTypeId = media.MediaTypeId };
+            return new ConferenceMediaResponse { MediaId = media.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(media.ConferenceMediaUrl) };
         }
 
         public async Task<bool> DeleteConferenceMediaAsync(string mediaId)

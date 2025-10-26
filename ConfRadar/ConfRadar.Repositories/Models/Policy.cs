@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Models;
 
-public partial class ConferencePolicy
+public partial class Policy
 {
     public string PolicyId { get; set; } = null!;
 

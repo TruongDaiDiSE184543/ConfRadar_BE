@@ -65,7 +65,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(cs => cs.Conference)
                 .Include(cs => cs.Room)
                     .ThenInclude(r => r.Destination)
-                .Include(cs => cs.Speaker)
+                .Include(cs => cs.Speakers)
                 .FirstOrDefaultAsync(cs => cs.ConferenceSessionId == sessionId);
         }
 
@@ -74,10 +74,10 @@ namespace ConfRadar.Repositories.Repositories
             // Ensure DateTime parameters are in UTC
             var utcStartDate = startDate.Kind == DateTimeKind.Utc ? startDate : DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
             var utcEndDate = endDate.Kind == DateTimeKind.Utc ? endDate : DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
-            
+
             return await _context.ConferenceSessions
-                .Where(cs => cs.RoomId == roomId && 
-                            cs.StartTime >= utcStartDate && 
+                .Where(cs => cs.RoomId == roomId &&
+                            cs.StartTime >= utcStartDate &&
                             cs.EndTime <= utcEndDate)
                 .ToListAsync();
         }
@@ -88,10 +88,10 @@ namespace ConfRadar.Repositories.Repositories
             // Extract date from StartTime field since Date field has been removed
             var startDateTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
             var endDateTime = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
-            
+
             return await _context.ConferenceSessions
-                .Where(cs => cs.RoomId == roomId && 
-                            cs.StartTime >= startDateTime && 
+                .Where(cs => cs.RoomId == roomId &&
+                            cs.StartTime >= startDateTime &&
                             cs.StartTime <= endDateTime) // Check if the StartTime is on the specified date
                 .ToListAsync();
         }
@@ -100,14 +100,14 @@ namespace ConfRadar.Repositories.Repositories
         {
             var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
             var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
-            
+
             // Ensure time parameters are in UTC
             var utcStartTime = startTime.Kind == DateTimeKind.Utc ? startTime : DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
             var utcEndTime = endTime.Kind == DateTimeKind.Utc ? endTime : DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
-            
+
             return await _context.ConferenceSessions
-                .Where(cs => cs.RoomId == roomId && 
-                            cs.StartTime >= dateStart && 
+                .Where(cs => cs.RoomId == roomId &&
+                            cs.StartTime >= dateStart &&
                             cs.StartTime <= dateEnd &&
                             cs.StartTime < utcEndTime && // New session starts before existing ends
                             cs.EndTime > utcStartTime)   // New session ends after existing starts
@@ -118,13 +118,13 @@ namespace ConfRadar.Repositories.Repositories
         {
             var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
             var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
-            
+
             // Ensure checkTime parameter is in UTC
             var utcCheckTime = checkTime.Kind == DateTimeKind.Utc ? checkTime : DateTime.SpecifyKind(checkTime, DateTimeKind.Utc);
-            
+
             return await _context.ConferenceSessions
-                .Where(cs => cs.RoomId == roomId && 
-                            cs.StartTime >= dateStart && 
+                .Where(cs => cs.RoomId == roomId &&
+                            cs.StartTime >= dateStart &&
                             cs.StartTime <= dateEnd &&
                             cs.StartTime <= utcCheckTime && // Session started before or at the check time
                             cs.EndTime > utcCheckTime)       // Session hasn't ended yet

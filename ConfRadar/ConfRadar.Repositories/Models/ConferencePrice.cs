@@ -13,15 +13,17 @@ public partial class ConferencePrice
 
     public string? TicketDescription { get; set; }
 
-    public decimal? ActualPrice { get; set; }
+    public bool? IsAuthor { get; set; }
 
-    public string? PricePhaseId { get; set; }
+    public int? TotalSlot { get; set; }
+
+    public int? AvailableSlot { get; set; }
 
     public string? ConferenceId { get; set; }
 
     public virtual Conference? Conference { get; set; }
 
-    public virtual PricePhase? PricePhase { get; set; }
+    public virtual ICollection<PricePhase> PricePhases { get; set; } = new List<PricePhase>();
 
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }
