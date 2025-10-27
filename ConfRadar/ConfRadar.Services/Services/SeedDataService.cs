@@ -16,8 +16,6 @@ namespace ConfRadar.Services.Services
         Task SeedPaperPhasesAsync();
         //Task SeedTransactionTypeAsync();
         //Task SeedMediaTypesAsync();
-        Task SeedConferenceStatusesAsync();
-        Task SeedPaperPhasesAsync();
         Task SeedCheckInStatusAsync();
 
     }
@@ -51,6 +49,24 @@ namespace ConfRadar.Services.Services
             }
 
         }
+
+        public async Task SeedCheckInStatusAsync()
+        {
+            var statusNames = Enum.GetValues<CheckInStatusEnum>()
+                .Select(s => s.GetDescription())
+                .ToList();
+
+            await SeedEntityAsync<CheckinStatus>(
+                statusNames,
+                _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync,
+                _unitOfWork.CheckInStatusRepository.CreateMultipleCheckInStatusesAsync,
+                name => new CheckinStatus
+                {
+                    CheckinStatusId = Guid.NewGuid().ToString(),
+                    CheckinStatusName = name
+                });
+        }
+
         public async Task SeedRolesAsync()
         {
             var roleNames = Enum.GetValues<SystemRoleEnum>().Select(r => r.GetDescription()).ToList();

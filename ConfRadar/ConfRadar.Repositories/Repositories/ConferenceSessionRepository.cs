@@ -103,8 +103,8 @@ namespace ConfRadar.Repositories.Repositories
             var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
 
             // Ensure time parameters are in UTC
-            var utcStartTime = startTime.Kind == DateTimeKind.Utc ? startTime : DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
-            var utcEndTime = endTime.Kind == DateTimeKind.Utc ? endTime : DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
+            var utcStartTime = startTime.Kind == DateTimeKind.Unspecified ? startTime : DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
+            var utcEndTime = endTime.Kind == DateTimeKind.Unspecified ? endTime : DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
@@ -121,7 +121,7 @@ namespace ConfRadar.Repositories.Repositories
             var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Utc);
 
             // Ensure checkTime parameter is in UTC
-            var utcCheckTime = checkTime.Kind == DateTimeKind.Utc ? checkTime : DateTime.SpecifyKind(checkTime, DateTimeKind.Utc);
+            var utcCheckTime = checkTime.Kind == DateTimeKind.Unspecified ? checkTime : DateTime.SpecifyKind(checkTime, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
