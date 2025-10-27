@@ -8,6 +8,7 @@ namespace ConfRadar.Repositories.Repositories
     public interface IConferencePolicyRepository
     {
         Task<int> CreateConferencePolicyAsync(Policy policy);
+        Task<int> CreateMutipleConferencePoliciesAsync(List<Policy> policy);
         Task<int> UpdateConferencePolicyAsync(Policy policy);
         Task<int> DeleteConferencePolicyAsync(Policy policy);
         Task<Policy?> GetConferencePolicyByIdAsync(string policyId);
@@ -23,7 +24,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await CreateAsync(policy);
         }
-
+        public async Task<int> CreateMutipleConferencePoliciesAsync(List<Policy> policy)
+        {
+            await _context.Policies.AddRangeAsync(policy);
+            return await _context.SaveChangesAsync();        
+        }
         public async Task<int> UpdateConferencePolicyAsync(Policy policy)
         {
             return await UpdateAsync(policy);

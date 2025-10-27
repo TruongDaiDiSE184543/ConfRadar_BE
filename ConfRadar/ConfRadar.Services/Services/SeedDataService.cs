@@ -12,6 +12,9 @@ namespace ConfRadar.Services.Services
         Task SeedGlobalStatusesAsync();
         //Task SeedTransactionTypeAsync();
         //Task SeedMediaTypesAsync();
+        Task SeedConferenceStatusesAsync();
+        Task SeedPaperPhasesAsync();
+        Task SeedCheckInStatusAsync();
 
     }
     public class SeedDataService : ISeedDataService
@@ -24,7 +27,7 @@ namespace ConfRadar.Services.Services
         private async Task SeedEntityAsync<T>(
             IEnumerable<string> names,
             Func<string, Task<T?>> findByNameAsync,
-            Func<IEnumerable<T>, Task> createMutipleAsync,
+            Func<List<T>, Task> createMutipleAsync,
             Func<string, T> createEntityFunc
             )
         {
@@ -83,24 +86,57 @@ namespace ConfRadar.Services.Services
                     MethodName = name,
                 });
         }
-        //public async Task SeedTransactionStatusAsync()
-        //{
-        //    var statusNames = Enum.GetValues<TransactionStatusEnum>().Select(s => s.GetDescription()).ToList();
-        //    await SeedEntityAsync<TransactionStatus>(
-        //        statusNames,
-        //        _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName,
-        //        _unitOfWork.TransactionStatusRepository.CreateMutipleTransactionStatusesAsync,
-        //        name => new TransactionStatus
-        //        {
-        //            TransactionStatusId = Guid.NewGuid().ToString(),
-        //            StatusName = name,
-        //        });
-        //}
+        public async Task SeedConferenceStatusesAsync()
+        {
+            var statusNames = Enum.GetValues<ConferenceStatusEnum>()
+                .Select(s => s.GetDescription())
+                .ToList();
 
-        
+            await SeedEntityAsync<ConferenceStatus>(
+                statusNames,
+                _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync,
+                _unitOfWork.ConferenceStatusRepository.CreateMultipleConferenceStatusAsync,
+                name => new ConferenceStatus
+                {
+                    ConferenceStatusId = Guid.NewGuid().ToString(),
+                    ConferenceStatusName = name
+                });
+        }
+
+        public async Task SeedPaperPhasesAsync()
+        {
+            var phaseNames = Enum.GetValues<PaperPhaseEnum>()
+                .Select(s => s.GetDescription())
+                .ToList();
+
+            await SeedEntityAsync<PaperPhase>(
+                phaseNames,
+                _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync,
+                _unitOfWork.PaperPhaseRepository.CreateMultiplePaperPhasesAsync,
+                name => new PaperPhase
+                {
+                    PaperPhaseId = Guid.NewGuid().ToString(),
+                    PhaseName = name
+                });
+        }
+        public async Task SeedCheckInStatusAsync()
+        {
+            var statusNames = Enum.GetValues<CheckInStatusEnum>()
+                .Select(s => s.GetDescription())
+                .ToList();
+
+            await SeedEntityAsync<CheckinStatus>(
+                statusNames,
+                _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync,
+                _unitOfWork.CheckInStatusRepository.CreateMultipleCheckInStatusesAsync,
+                name => new CheckinStatus
+                {
+                    CheckinStatusId = Guid.NewGuid().ToString(),
+                    CheckinStatusName = name
+                });
+        }
 
 
-      
     }
 
 

@@ -8,6 +8,7 @@ namespace ConfRadar.Repositories.Repositories
     public interface IConferenceSessionRepository
     {
         Task<int> CreateConferenceSessionAsync(ConferenceSession session);
+        Task<int> CreateListConferenceSessionAsync(List<ConferenceSession> sessions);
         Task<int> UpdateConferenceSessionAsync(ConferenceSession session);
         Task<int> DeleteConferenceSessionAsync(ConferenceSession session);
         Task<ConferenceSession?> GetConferenceSessionByIdAsync(string sessionId);
@@ -154,6 +155,12 @@ namespace ConfRadar.Repositories.Repositories
                              cs.StartTime.Value >= dateStart &&
                              cs.StartTime.Value < dateEnd)
                 .ToListAsync();
+        }
+
+        public async Task<int> CreateListConferenceSessionAsync(List<ConferenceSession> sessions)
+        {
+            await _context.ConferenceSessions.AddRangeAsync(sessions);
+            return await _context.SaveChangesAsync();
         }
     }
 }

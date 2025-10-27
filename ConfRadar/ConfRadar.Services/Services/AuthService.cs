@@ -1,4 +1,5 @@
-﻿using ConfRadar.Repositories;
+﻿using CommunityToolkit.HighPerformance.Helpers;
+using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
@@ -6,6 +7,8 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
+using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -21,6 +24,10 @@ namespace ConfRadar.Services.Services
         Task VerifyForgetPassword(string token, string newPassword);
         Task ChangePassword(string oldPassword, string newPassword, string userId);
         Task<LoginUserResponse> RefreshToken(string userId, string refreshToken);
+        Task<int> ActivateAccount(string userId);
+        Task<int> SuspendAccount(string userId);
+        Task<int> UpdateProfile(ProfileUpdateRequest request, string userId);
+        Task<UserDetailResponse> ViewUserDetail(string userId);
     }
     public class AuthService : IAuthService
     {
@@ -88,14 +95,14 @@ namespace ConfRadar.Services.Services
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
             userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
-            userCreated.VerificationTokenExpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(24), DateTimeKind.Unspecified);
+            userCreated.VerificationTokenExpiry = ExtensionHelper.GetVietnamTime();
             userCreated.AvatarUrl = fileUrl;
             var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
             var userRole = new UserRole()
             {
                 UserId = userCreated.UserId,
                 RoleId = role!.RoleId,
-                AssignedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                AssignedAt = ExtensionHelper.GetVietnamTime(),
             };
             userCreated.UserRoles.Add(userRole);
             await _emailService.SendAuthenticationTemplateEmailAsync(request.Email, request.FullName, confirmationLink, "Confirm Email Registration", "EmailRegistrationConfirmation.html");
@@ -112,7 +119,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User is already confirmed");
             }
-            var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            var timeNow = ExtensionHelper.GetVietnamTime();
             if (user.VerificationTokenExpiry <= timeNow)
             {
                 throw new ConfRadarAuthenticationException("Token is expired");
@@ -148,7 +155,7 @@ namespace ConfRadar.Services.Services
 
             var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
-            var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            var timeNow = ExtensionHelper.GetVietnamTime();
             user.LastLogin = timeNow;
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
@@ -183,7 +190,7 @@ namespace ConfRadar.Services.Services
             var resetToken = _tokenService.GenerateSecureRandomToken();
             var resetLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
-            user.PasswordResetTokenExpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddMinutes(60), DateTimeKind.Unspecified);
+            user.PasswordResetTokenExpiry = ExtensionHelper.GetVietnamTime();
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
             await _emailService.SendAuthenticationTemplateEmailAsync(email, user.FullName, resetLink, "Forget Password", "EmailForgetPassword.html");
         }
@@ -195,7 +202,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("Token is not found");
             }
-            var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            var timeNow = ExtensionHelper.GetVietnamTime();
             if (user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry <= timeNow)
             {
                 throw new ConfRadarAuthenticationException("Token is expired");
@@ -236,9 +243,20 @@ namespace ConfRadar.Services.Services
             string? email = emailFirebase?.ToString();
             string? name = nameFirebase?.ToString();
             var user = await _unitOfWork.UserRepository.GetUserByEmail(email);
-            var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            var timeNow = ExtensionHelper.GetVietnamTime();
             if (user == null)
             {
+                var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
+                var userId = Guid.NewGuid().ToString();
+                var userRole = new UserRole()
+                {
+                    UserId = userId,
+                    RoleId = role!.RoleId,
+                    AssignedAt = timeNow,
+                };
+                var userRoleList = new List<UserRole>();
+                userRoleList.Add(userRole);
                 user = new User()
                 {
                     Email = email,
@@ -247,9 +265,10 @@ namespace ConfRadar.Services.Services
                     IsActive = true,
                     LastLogin = timeNow,
                     LoginProvider = LoginProviderEnum.Firebase.ToString(),
-                    UserId = Guid.NewGuid().ToString(),
+                    UserId = userId,
                     AvatarUrl = null,
                     CreatedAt = timeNow,
+                    UserRoles = userRoleList,
                 };
                 await _unitOfWork.UserRepository.CreateUserAsync(user);
             }
@@ -258,6 +277,10 @@ namespace ConfRadar.Services.Services
                 if (!string.Equals(user.LoginProvider, LoginProviderEnum.Firebase.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
                     throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
+                }
+                if (user.IsActive == false)
+                {
+                    throw new ConfRadarAuthenticationException("User is disabled");
                 }
                 user.LastLogin = timeNow;
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
@@ -288,7 +311,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Refresh token not found");
             }
-            var timeNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            var timeNow = ExtensionHelper.GetVietnamTime();
             if (timeNow >= tokenFound.Expiry)
             {
                 throw new ConfRadarAuthenticationException("Refresh token is expired!");
@@ -315,6 +338,86 @@ namespace ConfRadar.Services.Services
             {
                 AccessToken = accessToken,
                 RefreshToken = newRefreshToken
+            };
+        }
+        public async Task<int> SuspendAccount(string userId)
+        {
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            if (user == null)
+            {
+                throw new BadRequestException("User not found");
+            }
+            user.IsActive = false;
+            return await _unitOfWork.UserRepository.UpdateUserAsync(user);
+        }
+        public async Task<int> ActivateAccount(string userId)
+        {
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            if (user == null)
+            {
+                throw new BadRequestException("User not found");
+            }
+            user.IsActive = true;
+            return await _unitOfWork.UserRepository.UpdateUserAsync(user);
+        }
+        public async Task<int> UpdateProfile(ProfileUpdateRequest request, string userId)
+        {
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            if (user == null)
+            {
+                throw new ConfRadarAuthenticationException($"Không tìm thấy người dùng với id {userId} trong hệ thống");
+            }
+
+            user.FullName = request.FullName;
+            user.BirthDay = request.BirthDay;
+            user.PhoneNumber = request.PhoneNumber;
+            if (request.Gender != null)
+            {
+                user.Gender = request.Gender.GetDescription();
+            }
+            string fileUrl = string.Empty;
+            if (request.AvatarFile != null)
+            {
+                if (request.AvatarFile.ContentType == null)
+                {
+                    throw new BadRequestException("Content type is null");
+                }
+                if (request.AvatarFile.ContentType != "image/png"
+                    && request.AvatarFile.ContentType != "image/jpeg"
+                    && request.AvatarFile.ContentType != "image/gif"
+                    && request.AvatarFile.ContentType != "image/svg+xml"
+                    && request.AvatarFile.ContentType != "image/webp")
+                {
+                    throw new BadRequestException("Only PNG,JPEG,GIF,SVG,WEBP files are allowed for avatar");
+                }
+                using var stream = request.AvatarFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.AvatarFile.FileName);
+                var baseUri = _objectStorageSettings.EndPoint;
+                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.avatar.ToString(), uniqueFileName, stream, request.AvatarFile.ContentType);
+                fileUrl = baseUri + objectStorageFileUrl;
+                user.AvatarUrl = fileUrl;
+            }
+            user.BioDescription = request.BioDescription;
+            return await _unitOfWork.UserRepository.UpdateUserAsync(user);
+        }
+        public async Task<UserDetailResponse> ViewUserDetail(string userId)
+        {
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            if (user == null)
+            {
+                throw new ConfRadarAuthenticationException($"Không tìm thấy người dùng với id {userId} trong hệ thống");
+            }
+            return new UserDetailResponse()
+            {
+                UserId = user.UserId,
+                Email = user.Email,
+                FullName = user.FullName,
+                BirthDay = user.BirthDay,
+                PhoneNumber = user.PhoneNumber,
+                Gender = user.Gender,
+                AvatarUrl = user.AvatarUrl,
+                BioDescription = user.BioDescription,
+                CreatedAt = user.CreatedAt,
             };
         }
     }

@@ -74,5 +74,35 @@ namespace ConfRadar.Api.Controllers
             var refreshTokenResponse = await _serviceManager.AuthService.RefreshToken(userId!, request.Token);
             return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(refreshTokenResponse, "Token refreshed successfully"));
         }
+        [Authorize]
+        [HttpPut("suspend-account")]
+        public async Task<IActionResult> SuspendAccount(string userId)
+        {
+            var result = await _serviceManager.AuthService.SuspendAccount(userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Suspended user!"));
+        }
+        [Authorize]
+        [HttpPut("activate-account")]
+        public async Task<IActionResult> ActivateAccount(string userId)
+        {
+            var result = await _serviceManager.AuthService.ActivateAccount(userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Activated user!"));
+        }
+        [Authorize]
+        [HttpPut("update-profile")]
+        public async Task<IActionResult> UpdateProfile([FromForm]ProfileUpdateRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.AuthService.UpdateProfile(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã update profile"));
+
+        }
+        [HttpGet("view-profile-by-id")]
+        public async Task<IActionResult> ViewProfileDetail(string userId)
+        {
+            var result = await _serviceManager.AuthService.ViewUserDetail(userId);
+            return Ok(ApiResponse<UserDetailResponse>.SuccessResponse(result, $"Thông tin user với id {userId}"));
+        }
+
     }
 }

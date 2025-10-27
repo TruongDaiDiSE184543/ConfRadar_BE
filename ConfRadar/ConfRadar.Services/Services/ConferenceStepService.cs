@@ -507,7 +507,7 @@ namespace ConfRadar.Services.Services
                         mediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, media.MediaFile.ContentType);
                     }
                     var conferenceMedia = new ConferenceMedium { ConferenceMediaId = Guid.NewGuid().ToString(), ConferenceMediaUrl = mediaUrl, ConferenceId = conferenceId, };
-                    await _unitOfWork.ConferenceMediumRepository.CreateConferenceMediumAsync(conferenceMedia);
+                    await _unitOfWork.ConferenceMediaRepository.CreateConferenceMediaAsync(conferenceMedia);
                     responses.Add(new ConferenceMediaResponse { MediaId = conferenceMedia.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(conferenceMedia.ConferenceMediaUrl)});
                 }
             }
@@ -516,13 +516,13 @@ namespace ConfRadar.Services.Services
 
         public async Task<List<ConferenceMediaResponse>> GetConferenceMediaAsync(string conferenceId)
         {
-            var media = await _unitOfWork.ConferenceMediumRepository.GetMediaByConferenceIdAsync(conferenceId);
+            var media = await _unitOfWork.ConferenceMediaRepository.GetMediaByConferenceIdAsync(conferenceId);
             return media.Select(m => new ConferenceMediaResponse { MediaId = m.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl)}).ToList();
         }
 
         public async Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request)
         {
-            var media = await _unitOfWork.ConferenceMediumRepository.GetConferenceMediumByIdAsync(mediaId);
+            var media = await _unitOfWork.ConferenceMediaRepository.GetConferenceMediaByIdAsync(mediaId);
             if (media == null) throw new NotFoundException($"Conference media with ID {mediaId} not found");
 
             if (request.MediaFile != null)
@@ -539,15 +539,15 @@ namespace ConfRadar.Services.Services
             }
 
             //media.MediaTypeId = request.MediaTypeId ?? media.MediaTypeId;
-            await _unitOfWork.ConferenceMediumRepository.UpdateConferenceMediumAsync(media);
+            await _unitOfWork.ConferenceMediaRepository.UpdateConferenceMediaAsync(media);
             return new ConferenceMediaResponse { MediaId = media.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(media.ConferenceMediaUrl) };
         }
 
         public async Task<bool> DeleteConferenceMediaAsync(string mediaId)
         {
-            var media = await _unitOfWork.ConferenceMediumRepository.GetConferenceMediumByIdAsync(mediaId);
+            var media = await _unitOfWork.ConferenceMediaRepository.GetConferenceMediaByIdAsync(mediaId);
             if (media == null) throw new NotFoundException($"Conference media with ID {mediaId} not found");
-            return await _unitOfWork.ConferenceMediumRepository.DeleteConferenceMediumAsync(media) > 0;
+            return await _unitOfWork.ConferenceMediaRepository.DeleteConferenceMediaAsync(media) > 0;
         }
 
         #endregion
