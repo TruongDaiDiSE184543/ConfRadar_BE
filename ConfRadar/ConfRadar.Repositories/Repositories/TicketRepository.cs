@@ -10,6 +10,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Ticket>> GetTicketsByUserId(string userId);
         Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId);
         Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId);
+        Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId);
     }
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
     {
@@ -59,6 +60,13 @@ namespace ConfRadar.Repositories.Repositories
             return await query.ToListAsync();
 
 
+        }
+
+        public async Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId)
+        {
+            return await _context.Tickets
+                .Where(t => t.ConferencePriceId == conferencePriceId && !t.IsRefunded.Value)
+                .CountAsync();
         }
     }
 }

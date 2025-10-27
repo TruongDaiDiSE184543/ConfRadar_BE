@@ -11,6 +11,10 @@ namespace ConfRadar.Repositories
         IUserRoleRepository UserRoleRepository { get; }
         IUserRefreshTokenRepository UserRefreshTokenRepository { get; }
         IGlobalStatusRepository GlobalStatusRepository { get; }
+        IConferenceStatusRepository ConferenceStatusRepository { get; }
+        IRankingCategoryRepository RankingCategoryRepository { get; }
+        IReviewStatusRepository ReviewStatusRepository { get; }
+        IPaperPhaseRepository PaperPhaseRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
         //ITransactionStatusRepository TransactionStatusRepository { get; }
 
@@ -23,6 +27,7 @@ namespace ConfRadar.Repositories
         IConferenceRepository ConferenceRepository { get; }
         IConferencePolicyRepository ConferencePolicyRepository { get; }
         IConferenceMediumRepository ConferenceMediumRepository { get; }
+        ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository { get; }
         ISponsorRepository SponsorRepository { get; }
         IConferencePriceRepository ConferencePriceRepository { get; }
         IConferenceSessionRepository ConferenceSessionRepository { get; }
@@ -32,6 +37,7 @@ namespace ConfRadar.Repositories
         IPricePhaseRepository PricePhaseRepository { get; }
         //IMediaTypeRepository MediaTypeRepository { get; }
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
+        IConferenceSessionMediumRepository ConferenceSessionMediumRepository { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -47,6 +53,10 @@ namespace ConfRadar.Repositories
         private IUserRoleRepository _UserRoleRepository;
         private IUserRefreshTokenRepository _UserRefreshTokenRepository;
         private IGlobalStatusRepository _GlobalStatusRepository;
+        private IConferenceStatusRepository _ConferenceStatusRepository;
+        private IRankingCategoryRepository _RankingCategoryRepository;
+        private IReviewStatusRepository _ReviewStatusRepository;
+        private IPaperPhaseRepository _PaperPhaseRepository;
         private IPaymentMethodRepository _PaymentMethodRepository;
         //private ITransactionStatusRepository _TransactionStatusRepository;
 
@@ -59,6 +69,7 @@ namespace ConfRadar.Repositories
         private IConferenceRepository _ConferenceRepository;
         private IConferencePolicyRepository _ConferencePolicyRepository;
         private IConferenceMediumRepository _ConferenceMediumRepository;
+        private ITechnicalConferenceDetailRepository _TechnicalConferenceDetailRepository;
         private ISponsorRepository _SponsorRepository;
 
         private IConferenceSessionRepository _ConferenceSessionRepository;
@@ -68,6 +79,7 @@ namespace ConfRadar.Repositories
 
         //private IMediaTypeRepository _MediaTypeRepository;
         private IConferenceCategoryRepository _ConferenceCategoryRepository;
+        private IConferenceSessionMediumRepository _ConferenceSessionMediumRepository;
 
         public UnitOfWork(ConfRadarDbContext context)
         {
@@ -81,6 +93,14 @@ namespace ConfRadar.Repositories
         public IUserRoleRepository UserRoleRepository => _UserRoleRepository ??= new UserRoleRepository(_context);
 
         public IGlobalStatusRepository GlobalStatusRepository => _GlobalStatusRepository ??= new GlobalStatusRepository(_context);
+
+        public IConferenceStatusRepository ConferenceStatusRepository => _ConferenceStatusRepository ??= new ConferenceStatusRepository(_context);
+
+        public IRankingCategoryRepository RankingCategoryRepository => _RankingCategoryRepository ??= new RankingCategoryRepository(_context);
+
+        public IReviewStatusRepository ReviewStatusRepository => _ReviewStatusRepository ??= new ReviewStatusRepository(_context);
+
+        public IPaperPhaseRepository PaperPhaseRepository => _PaperPhaseRepository ??= new PaperPhaseRepository(_context);
 
         public IPaymentMethodRepository PaymentMethodRepository => _PaymentMethodRepository ??= new PaymentMethodRepository(_context);
 
@@ -99,6 +119,8 @@ namespace ConfRadar.Repositories
 
         public IConferenceMediumRepository ConferenceMediumRepository => _ConferenceMediumRepository ??= new ConferenceMediumRepository(_context);
 
+        public ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository => _TechnicalConferenceDetailRepository ??= new TechnicalConferenceDetailRepository(_context);
+
         public ISponsorRepository SponsorRepository => _SponsorRepository ??= new SponsorRepository(_context);
 
 
@@ -115,6 +137,8 @@ namespace ConfRadar.Repositories
 
 
         public IConferenceCategoryRepository ConferenceCategoryRepository => _ConferenceCategoryRepository ??= new ConferenceCategoryRepository(_context);
+
+        public IConferenceSessionMediumRepository ConferenceSessionMediumRepository => _ConferenceSessionMediumRepository ??= new ConferenceSessionMediumRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

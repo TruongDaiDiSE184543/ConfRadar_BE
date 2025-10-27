@@ -10,6 +10,10 @@ namespace ConfRadar.Services.Services
         //Task SeedTransactionStatusAsync();
         Task SeedPaymentMethodsAsync();
         Task SeedGlobalStatusesAsync();
+        Task SeedConferenceStatusesAsync();
+        Task SeedRankingCategoriesAsync();
+        Task SeedReviewStatusesAsync();
+        Task SeedPaperPhasesAsync();
         //Task SeedTransactionTypeAsync();
         //Task SeedMediaTypesAsync();
 
@@ -83,6 +87,63 @@ namespace ConfRadar.Services.Services
                     MethodName = name,
                 });
         }
+
+        public async Task SeedConferenceStatusesAsync()
+        {
+            var statusNames = Enum.GetValues<ConfRadar.Services.Common.ConferenceStatus>().Select(s => s.ToString()).ToList();
+            await SeedEntityAsync<ConfRadar.Repositories.Models.ConferenceStatus>(
+                statusNames,
+                _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName,
+                _unitOfWork.ConferenceStatusRepository.CreateMultipleConferenceStatusesAsync,
+                name => new ConfRadar.Repositories.Models.ConferenceStatus
+                {
+                    ConferenceStatusId = Guid.NewGuid().ToString(),
+                    ConferenceStatusName = name
+                });
+        }
+
+        public async Task SeedRankingCategoriesAsync()
+        {
+            var categoryNames = Enum.GetValues<ConfRadar.Services.Common.RankingCategories>().Select(s => s.ToString()).ToList();
+            await SeedEntityAsync<ConfRadar.Repositories.Models.RankingCategory>(
+                categoryNames,
+                _unitOfWork.RankingCategoryRepository.GetRankingCategoryByName,
+                _unitOfWork.RankingCategoryRepository.CreateMultipleRankingCategoriesAsync,
+                name => new ConfRadar.Repositories.Models.RankingCategory
+                {
+                    RankingCategoryId = Guid.NewGuid().ToString(),
+                    RankName = name
+                });
+        }
+
+        public async Task SeedReviewStatusesAsync()
+        {
+            var statusNames = Enum.GetValues<ConfRadar.Services.Common.ReviewStatus>().Select(s => s.ToString()).ToList();
+            await SeedEntityAsync<ConfRadar.Repositories.Models.ReviewStatus>(
+                statusNames,
+                _unitOfWork.ReviewStatusRepository.GetReviewStatusByName,
+                _unitOfWork.ReviewStatusRepository.CreateMultipleReviewStatusesAsync,
+                name => new ConfRadar.Repositories.Models.ReviewStatus
+                {
+                    ReviewStatusId = Guid.NewGuid().ToString(),
+                    Name = name
+                });
+        }
+
+        public async Task SeedPaperPhasesAsync()
+        {
+            var phaseNames = Enum.GetValues<ConfRadar.Services.Common.PaperPhase>().Select(s => s.ToString()).ToList();
+            await SeedEntityAsync<ConfRadar.Repositories.Models.PaperPhase>(
+                phaseNames,
+                _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName,
+                _unitOfWork.PaperPhaseRepository.CreateMultiplePaperPhasesAsync,
+                name => new ConfRadar.Repositories.Models.PaperPhase
+                {
+                    PaperPhaseId = Guid.NewGuid().ToString(),
+                    PhaseName = name
+                });
+        }
+
         //public async Task SeedTransactionStatusAsync()
         //{
         //    var statusNames = Enum.GetValues<TransactionStatusEnum>().Select(s => s.GetDescription()).ToList();
