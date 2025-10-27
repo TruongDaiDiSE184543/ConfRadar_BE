@@ -5,37 +5,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
 {
-    public interface IConferenceMediumRepository
+    public interface IConferenceMediaRepository
     {
-        Task<int> CreateConferenceMediumAsync(ConferenceMedium media);
-        Task<int> UpdateConferenceMediumAsync(ConferenceMedium media);
-        Task<int> DeleteConferenceMediumAsync(ConferenceMedium media);
-        Task<ConferenceMedium?> GetConferenceMediumByIdAsync(string mediaId);
+        Task<int> CreateConferenceMediaAsync(ConferenceMedium media);
+        Task<int> CreateMutipleConferenceMediaAsync(List<ConferenceMedium> media);
+        Task<int> UpdateConferenceMediaAsync(ConferenceMedium media);
+        Task<int> DeleteConferenceMediaAsync(ConferenceMedium media);
+        Task<ConferenceMedium?> GetConferenceMediaByIdAsync(string mediaId);
         Task<List<ConferenceMedium>> GetAllConferenceMediaAsync();
         Task<List<ConferenceMedium>> GetMediaByConferenceIdAsync(string conferenceId);
     }
 
-    public class ConferenceMediumRepository : GenericRepository<ConferenceMedium>, IConferenceMediumRepository
+    public class ConferenceMediaRepository : GenericRepository<ConferenceMedium>, IConferenceMediaRepository
     {
-        public ConferenceMediumRepository(ConfRadarDbContext context) : base(context) { }
+        public ConferenceMediaRepository(ConfRadarDbContext context) : base(context) { }
 
-        public async Task<int> CreateConferenceMediumAsync(ConferenceMedium media)
+        public async Task<int> CreateConferenceMediaAsync(ConferenceMedium media)
         {
             return await CreateAsync(media);
         }
 
-        public async Task<int> UpdateConferenceMediumAsync(ConferenceMedium media)
+        public async Task<int> UpdateConferenceMediaAsync(ConferenceMedium media)
         {
             return await UpdateAsync(media);
         }
 
-        public async Task<int> DeleteConferenceMediumAsync(ConferenceMedium media)
+        public async Task<int> DeleteConferenceMediaAsync(ConferenceMedium media)
         {
             _context.ConferenceMedia.Remove(media);
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<ConferenceMedium?> GetConferenceMediumByIdAsync(string mediaId)
+        public async Task<ConferenceMedium?> GetConferenceMediaByIdAsync(string mediaId)
         {
             return await _context.ConferenceMedia
                 .FirstOrDefaultAsync(c => c.ConferenceMediaId == mediaId);
@@ -52,6 +53,12 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.ConferenceMedia
                 .Where(cm => cm.ConferenceId == conferenceId)
                 .ToListAsync();
+        }
+
+        public async Task<int> CreateMutipleConferenceMediaAsync(List<ConferenceMedium> media)
+        {
+            await _context.ConferenceMedia.AddRangeAsync(media);
+            return await _context.SaveChangesAsync();   
         }
     }
 }

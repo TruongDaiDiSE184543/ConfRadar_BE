@@ -1,8 +1,13 @@
-using ConfRadar.Repositories.Base;
+
+﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 namespace ConfRadar.Repositories.Repositories
 {
     public interface IPaperPhaseRepository
@@ -14,8 +19,12 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdatePaperPhaseAsync(PaperPhase paperPhase);
         Task<bool> DeletePaperPhaseAsync(PaperPhase paperPhase);
         Task<List<PaperPhase>> GetAllPaperPhaseAsync();
-    }
 
+        Task<int> CreatePaperPhaseAsync(PaperPhase paperPhase);
+        Task<List<PaperPhase>> GetAllPaperPhasesAsync();
+        Task<int> CreateMultiplePaperPhasesAsync(List<PaperPhase> paperPhases);
+        Task<PaperPhase?> GetPaperPhaseByNameAsync(string phaseName);
+    }
     public class PaperPhaseRepository : GenericRepository<PaperPhase>, IPaperPhaseRepository
     {
         public PaperPhaseRepository(ConfRadarDbContext context) : base(context) { }
@@ -41,6 +50,16 @@ namespace ConfRadar.Repositories.Repositories
             return await GetByIdAsync(paperPhaseId);
         }
 
+        public async Task<int> CreatePaperPhaseAsync(PaperPhase paperPhase)
+        {
+            return await CreateAsync(paperPhase);
+        }
+        public async Task<PaperPhase?> GetPaperPhaseByNameAsync(string phaseName)
+        {
+            return await _context.PaperPhases
+                .FirstOrDefaultAsync(p => p.PhaseName == phaseName);
+        }
+
         public async Task<int> UpdatePaperPhaseAsync(PaperPhase paperPhase)
         {
             return await UpdateAsync(paperPhase);
@@ -54,6 +73,19 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<PaperPhase>> GetAllPaperPhaseAsync()
         {
             return await GetAllAsync();
+        }
+
+       
+
+        public async Task<List<PaperPhase>> GetAllPaperPhasesAsync()
+        {
+            return await _context.PaperPhases.ToListAsync();
+        }
+
+        public async Task<int> CreateMultiplePaperPhasesAsync(List<PaperPhase> paperPhases)
+        {
+            await _context.PaperPhases.AddRangeAsync(paperPhases);
+            return await _context.SaveChangesAsync();
         }
     }
 }

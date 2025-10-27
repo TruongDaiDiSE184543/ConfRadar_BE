@@ -26,8 +26,7 @@ namespace ConfRadar.Repositories
 
         IConferenceRepository ConferenceRepository { get; }
         IConferencePolicyRepository ConferencePolicyRepository { get; }
-        IConferenceMediumRepository ConferenceMediumRepository { get; }
-        ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository { get; }
+        IConferenceMediaRepository ConferenceMediaRepository { get; }
         ISponsorRepository SponsorRepository { get; }
         IConferencePriceRepository ConferencePriceRepository { get; }
         IConferenceSessionRepository ConferenceSessionRepository { get; }
@@ -37,7 +36,13 @@ namespace ConfRadar.Repositories
         IPricePhaseRepository PricePhaseRepository { get; }
         //IMediaTypeRepository MediaTypeRepository { get; }
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
-        IConferenceSessionMediumRepository ConferenceSessionMediumRepository { get; }
+        ICityRepository CityRepository { get; }
+        IConferenceStatusRepository ConferenceStatusRepository { get; }
+        IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }     
+        IPaperPhaseRepository PaperPhaseRepository { get; }
+        ICheckInStatusRepository CheckInStatusRepository { get; }
+        IAbstractRepository AbstractRepository { get; }
+        IPaperRepository PaperRepository { get; }       
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -68,8 +73,7 @@ namespace ConfRadar.Repositories
 
         private IConferenceRepository _ConferenceRepository;
         private IConferencePolicyRepository _ConferencePolicyRepository;
-        private IConferenceMediumRepository _ConferenceMediumRepository;
-        private ITechnicalConferenceDetailRepository _TechnicalConferenceDetailRepository;
+        private IConferenceMediaRepository _ConferenceMediaRepository;
         private ISponsorRepository _SponsorRepository;
 
         private IConferenceSessionRepository _ConferenceSessionRepository;
@@ -79,7 +83,14 @@ namespace ConfRadar.Repositories
 
         //private IMediaTypeRepository _MediaTypeRepository;
         private IConferenceCategoryRepository _ConferenceCategoryRepository;
-        private IConferenceSessionMediumRepository _ConferenceSessionMediumRepository;
+
+        private ICityRepository _CityRepository;
+        private IConferenceStatusRepository _ConferenceStatusRepository;
+        private IConferenceRefundPolicyRepository _ConferenceRefundPolicyRepository;
+        private IPaperPhaseRepository _PaperPhaseRepository;
+        private ICheckInStatusRepository _CheckInStatusRepository;
+        private IAbstractRepository _AbstractRepository;
+        private IPaperRepository _PaperRepository;
 
         public UnitOfWork(ConfRadarDbContext context)
         {
@@ -117,9 +128,7 @@ namespace ConfRadar.Repositories
 
         public IConferencePolicyRepository ConferencePolicyRepository => _ConferencePolicyRepository ??= new ConferencePolicyRepository(_context);
 
-        public IConferenceMediumRepository ConferenceMediumRepository => _ConferenceMediumRepository ??= new ConferenceMediumRepository(_context);
-
-        public ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository => _TechnicalConferenceDetailRepository ??= new TechnicalConferenceDetailRepository(_context);
+        public IConferenceMediaRepository ConferenceMediaRepository => _ConferenceMediaRepository ??= new ConferenceMediaRepository(_context);
 
         public ISponsorRepository SponsorRepository => _SponsorRepository ??= new SponsorRepository(_context);
 
@@ -138,7 +147,19 @@ namespace ConfRadar.Repositories
 
         public IConferenceCategoryRepository ConferenceCategoryRepository => _ConferenceCategoryRepository ??= new ConferenceCategoryRepository(_context);
 
-        public IConferenceSessionMediumRepository ConferenceSessionMediumRepository => _ConferenceSessionMediumRepository ??= new ConferenceSessionMediumRepository(_context);
+        public ICityRepository CityRepository => _CityRepository ??= new CityRepository(_context);
+
+        public IConferenceStatusRepository ConferenceStatusRepository => _ConferenceStatusRepository ??= new ConferenceStatusRepository(_context);
+
+        public IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository => _ConferenceRefundPolicyRepository ??= new ConferenceRefundPolicyRepository(_context);
+
+        public IPaperPhaseRepository PaperPhaseRepository => _PaperPhaseRepository ??= new PaperPhaseRepository(_context);
+
+        public ICheckInStatusRepository CheckInStatusRepository => _CheckInStatusRepository ??= new CheckInStatusRepository(_context);
+
+        public IAbstractRepository AbstractRepository => _AbstractRepository ??= new AbstractRepository(_context);
+
+        public IPaperRepository PaperRepository => _PaperRepository ??= new PaperRepository(_context);  
 
         public async Task BeginTransactionAsync()
         {

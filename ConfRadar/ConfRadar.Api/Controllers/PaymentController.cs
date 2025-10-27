@@ -30,13 +30,27 @@ namespace ConfRadar.Api.Controllers
         [HttpPost("verify-momo-for-tech")]
         public async Task<IActionResult> VerifyPaymentForTech([FromBody]MomoPaymentCallBackResponse response)
         {
-            await _serviceManager.MomoService.VerifyMomoPaymentDataWithTechConf(response);
+            //await _serviceManager.MomoService.VerifyMomoPaymentDataForTechConference(response);
+            await Task.CompletedTask;
             return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
         }
-        [HttpGet("momo-success")]
-        public async Task<IActionResult> MomoSucess([FromQuery]MomoPaymentCallBackResponse response) 
+        [HttpPost("verify-momo-for-research")]
+        public async Task<IActionResult> VerifyPaymentForResearch([FromBody] MomoPaymentCallBackResponse response)
         {
-            await _serviceManager.MomoService.VerifyMomoPaymentDataWithTechConf(response);
+            //await _serviceManager.MomoService.VerifyMomoPaymentDataForResearchConferenceAbstractSubmission(response);
+            await Task.CompletedTask;
+            return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
+        }
+        [HttpGet("momo-success-for-tech")]
+        public async Task<IActionResult> MomoSucessForTech([FromQuery]MomoPaymentCallBackResponse response) 
+        {
+            await _serviceManager.MomoService.VerifyMomoPaymentDataForTechConference(response);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
+        }
+        [HttpGet("momo-success-for-research")]
+        public async Task<IActionResult> MomoSucessForResearch([FromQuery] MomoPaymentCallBackResponse response)
+        {
+            await _serviceManager.MomoService.VerifyMomoPaymentDataForResearchConferenceAbstractSubmission(response);
             return Ok(ApiResponse<object>.SuccessResponse(null, "verified successfully"));
         }
         [Authorize]

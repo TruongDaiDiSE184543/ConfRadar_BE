@@ -16,6 +16,8 @@ namespace ConfRadar.Services
         public IConferenceStepService ConferenceStepService { get; }
         public IConferenceCategoryService ConferenceCategoryService { get; }
         public IGlobalStatusService GlobalStatusService { get; }
+        public IPaperService PaperService { get; }
+        public ICityService CityService { get; }    
 
     }
 
@@ -34,6 +36,8 @@ namespace ConfRadar.Services
         private readonly IConferenceStepService _conferenceStepService;
         private readonly IConferenceCategoryService _conferenceCategoryService;
         private readonly IGlobalStatusService _globalStatusService;
+        private readonly IPaperService _paperService;
+        private readonly ICityService _cityService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -46,7 +50,9 @@ namespace ConfRadar.Services
             IConferencePriceTicketService conferencePriceTicketService,
             IConferenceStepService conferenceStepService,
             IConferenceCategoryService conferenceCategoryService,
-            IGlobalStatusService globalStatusService)
+            IGlobalStatusService globalStatusService,
+            IPaperService paperService,
+            ICityService cityService)
         {
             _authService = authService;
             _momoService = momoService;
@@ -60,6 +66,8 @@ namespace ConfRadar.Services
             _conferenceStepService = conferenceStepService;
             _conferenceCategoryService = conferenceCategoryService;
             _globalStatusService = globalStatusService;
+            _paperService = paperService;
+            _cityService = cityService;
         }
 
         public IAuthService AuthService => _authService;
@@ -75,6 +83,10 @@ namespace ConfRadar.Services
         public IConferenceCategoryService ConferenceCategoryService => _conferenceCategoryService;
 
         public IGlobalStatusService GlobalStatusService => _globalStatusService;
+
+        public IPaperService PaperService => _paperService;
+
+        public ICityService CityService => _cityService;
     }
 
 }

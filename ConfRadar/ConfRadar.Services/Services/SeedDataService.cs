@@ -16,6 +16,9 @@ namespace ConfRadar.Services.Services
         Task SeedPaperPhasesAsync();
         //Task SeedTransactionTypeAsync();
         //Task SeedMediaTypesAsync();
+        Task SeedConferenceStatusesAsync();
+        Task SeedPaperPhasesAsync();
+        Task SeedCheckInStatusAsync();
 
     }
     public class SeedDataService : ISeedDataService
@@ -28,7 +31,7 @@ namespace ConfRadar.Services.Services
         private async Task SeedEntityAsync<T>(
             IEnumerable<string> names,
             Func<string, Task<T?>> findByNameAsync,
-            Func<IEnumerable<T>, Task> createMutipleAsync,
+            Func<List<T>, Task> createMutipleAsync,
             Func<string, T> createEntityFunc
             )
         {
@@ -161,7 +164,7 @@ namespace ConfRadar.Services.Services
         
 
 
-      
+
     }
 
 

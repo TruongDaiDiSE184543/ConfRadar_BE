@@ -25,6 +25,9 @@ using (var scope = app.Services.CreateScope())
     //await seedDataService.SeedTransactionStatusAsync();
     await seedDataService.SeedPaymentMethodsAsync();
     //await seedDataService.SeedTransactionTypeAsync();
+    await seedDataService.SeedConferenceStatusesAsync();
+    await seedDataService.SeedPaperPhasesAsync();
+    await seedDataService.SeedCheckInStatusAsync(); 
 }
 app.UseCors("AllowAll");
 app.UseSwagger();

@@ -620,50 +620,33 @@ namespace ConfRadar.Services.Services
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                if (request.Media != null)
+                foreach (var media in request.Media)
                 {
-                    foreach (var media in request.Media)
+                    string? mediaUrl = media.MediaUrl;
+                    if (media.MediaFile != null)
                     {
-                        string? mediaUrl = media.MediaUrl;
-                        if (media.MediaFile != null)
-                        {
-                            using var stream = media.MediaFile.OpenReadStream();
-                            var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(media.MediaFile.FileName);
-                            mediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, media.MediaFile.ContentType);
-                            mediaUrl = _objectStorageSettings.EndPoint + mediaUrl;
-                        }
-
-                        var conferenceMedia = media.ToModel(conferenceId);
-                        conferenceMedia.ConferenceMediaUrl = mediaUrl;
-                        
-                        await _unitOfWork.ConferenceMediumRepository.CreateConferenceMediumAsync(conferenceMedia);
-                        responses.Add(conferenceMedia.ToResponse());
+                        //if (await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(media.MediaTypeId) == null) throw new NotFoundException($"Media type with ID {media.MediaTypeId} not found");
+                        using var stream = media.MediaFile.OpenReadStream();
+                        var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(media.MediaFile.FileName);
+                        mediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, media.MediaFile.ContentType);
                     }
+                    var conferenceMedia = new ConferenceMedium { ConferenceMediaId = Guid.NewGuid().ToString(), ConferenceMediaUrl = mediaUrl, ConferenceId = conferenceId, };
+                    await _unitOfWork.ConferenceMediumRepository.CreateConferenceMediumAsync(conferenceMedia);
+                    responses.Add(new ConferenceMediaResponse { MediaId = conferenceMedia.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(conferenceMedia.ConferenceMediaUrl)});
                 }
-
-                await _unitOfWork.CommitAsync();
             }
-            catch (Exception)
-            {
-                await _unitOfWork.RollbackAsync();
-                throw;
-            }
-
             return responses;
         }
 
         public async Task<List<ConferenceMediaResponse>> GetConferenceMediaAsync(string conferenceId)
         {
-            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
-
             var media = await _unitOfWork.ConferenceMediumRepository.GetMediaByConferenceIdAsync(conferenceId);
-            return media.Select(m => m.ToResponse()).ToList();
+            return media.Select(m => new ConferenceMediaResponse { MediaId = m.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl)}).ToList();
         }
 
         public async Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request)
         {
-            var media = await _unitOfWork.ConferenceMediumRepository.GetConferenceMediumByIdAsync(mediaId);
+            var media = await _unitOfWork.ConferenceMediaRepository.GetConferenceMediaByIdAsync(mediaId);
             if (media == null) throw new NotFoundException($"Conference media with ID {mediaId} not found");
 
             if (request.MediaFile != null)
@@ -678,15 +661,15 @@ namespace ConfRadar.Services.Services
                 media.ConferenceMediaUrl = request.MediaUrl;
             }
 
+            //media.MediaTypeId = request.MediaTypeId ?? media.MediaTypeId;
             await _unitOfWork.ConferenceMediumRepository.UpdateConferenceMediumAsync(media);
-            return media.ToResponse();
+            return new ConferenceMediaResponse { MediaId = media.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(media.ConferenceMediaUrl) };
         }
 
         public async Task<bool> DeleteConferenceMediaAsync(string mediaId)
         {
-            var media = await _unitOfWork.ConferenceMediumRepository.GetConferenceMediumByIdAsync(mediaId);
+            var media = await _unitOfWork.ConferenceMediaRepository.GetConferenceMediaByIdAsync(mediaId);
             if (media == null) throw new NotFoundException($"Conference media with ID {mediaId} not found");
-
             return await _unitOfWork.ConferenceMediumRepository.DeleteConferenceMediumAsync(media) > 0;
         }
 
