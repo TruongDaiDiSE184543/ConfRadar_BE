@@ -10,6 +10,7 @@ namespace ConfRadar.Repositories.Repositories
     {
         Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId);
         Task<int> CreateConferencePriceAsync(ConferencePrice price);
+        Task<int> CreateMutipleConferencePriceAsync(List<ConferencePrice> price);
         Task<int> UpdateConferencePriceAsync(ConferencePrice price);
         Task<int> DeleteConferencePriceAsync(ConferencePrice price);
         Task<ConferencePrice?> GetConferencePriceByIdAsync(string priceId);
@@ -17,6 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferencePrice>> GetPricesByConferenceIdAsync(string conferenceId);
         IQueryable<ConferencePrice> GetConferencePricesWithIncludes();
         Task<ConferencePrice?> GetConferencePriceWithIncludesAsync(string priceId);
+
     }
 
     public class ConferencePriceRepository : GenericRepository<ConferencePrice>, IConferencePriceRepository
@@ -49,6 +51,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.ConferencePrices
                 .Include(cp => cp.PricePhases)
+                .Include(c=>c.Conference)
                 .FirstOrDefaultAsync(c => c.ConferencePriceId == priceId);
         }
 
@@ -80,6 +83,12 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(cp => cp.PricePhases)
                 .Include(cp => cp.Conference)
                 .FirstOrDefaultAsync(cp => cp.ConferencePriceId == priceId);
+        }
+
+        public async Task<int> CreateMutipleConferencePriceAsync(List<ConferencePrice> price)
+        {
+            await _context.ConferencePrices.AddRangeAsync(price);
+            return await _context.SaveChangesAsync();
         }
     }
 }

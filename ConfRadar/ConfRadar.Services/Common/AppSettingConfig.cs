@@ -44,6 +44,10 @@
             public bool AutoCapture { get; set; }
             public string ExtraData { get; set; }
             public string Lang { get; set; }
+            public string IpnTech { get; set; }
+            public string IpnResearch { get; set; }
+            public string TechRedirectUrl { get; set; }
+            public string ResearchRedirectUrl { get; set; }
         }
         public class RedisSettings
         {

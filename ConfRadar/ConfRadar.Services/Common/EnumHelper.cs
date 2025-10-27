@@ -40,7 +40,11 @@ namespace ConfRadar.Services.Common
     {
         avatar,
         conferencebanner,
-        conferencemedia
+        conferencemedia,
+        sessionmedia,
+        speakermedia,
+        abstractfile
+        
     }
 
     
@@ -72,6 +76,54 @@ namespace ConfRadar.Services.Common
         [Description("MoMo")]
         MoMo,
     }
-   
+    public enum ConferenceStatusEnum
+    {
+       
+        [Description("Preparing")]
+        Preparing, 
+
+        [Description("Pending")]
+        Pending, 
+       
+        [Description("Completed")]
+        Completed, 
+
+        [Description("Cancelled")]
+        Cancelled, 
+
+        [Description("OnHold")]
+        OnHold, 
+
+       
+
+        
+    }
+    public enum PaperPhaseEnum
+    {
+        [Description("Abstract")]
+        Abstract,
+
+        [Description("Full Paper")]
+        FullPaper,
+
+        [Description("Revision")]
+        Revision,
+
+        [Description("Camera Ready")]
+        CameraReady
+
+    }
+    public enum CheckInStatusEnum
+    {
+        [Description("Pending")]
+        Pending, 
+
+        [Description("Checked In")]
+        CheckedIn, 
+
+        [Description("Expired")]
+        Expired 
+    }
+
 
 }

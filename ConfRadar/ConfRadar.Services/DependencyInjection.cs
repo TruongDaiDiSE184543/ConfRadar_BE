@@ -34,6 +34,8 @@ namespace ConfRadar.Services
             services.AddScoped<IConferenceStepService, ConferenceStepService>();
             services.AddScoped<IConferenceCategoryService, ConferenceCategoryService>();
             services.AddScoped<IGlobalStatusService, GlobalStatusService>();
+            services.AddScoped<IPaperService, PaperService>();
+            services.AddScoped<ICityService, CityService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
 

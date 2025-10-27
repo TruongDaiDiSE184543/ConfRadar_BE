@@ -272,7 +272,7 @@ namespace ConfRadar.Services.Services
                             ConferenceId = conferenceId,
                             //MediaTypeId = media.MediaTypeId
                         };
-                        await _unitOfWork.ConferenceMediumRepository.CreateConferenceMediumAsync(conferenceMedia);
+                        await _unitOfWork.ConferenceMediaRepository.CreateConferenceMediaAsync(conferenceMedia);
                     }
                 }
 
@@ -355,10 +355,10 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.ConferencePolicyRepository.DeleteConferencePolicyAsync(policy);
             }
 
-            var media = await _unitOfWork.ConferenceMediumRepository.GetMediaByConferenceIdAsync(conferenceId);
+            var media = await _unitOfWork.ConferenceMediaRepository.GetMediaByConferenceIdAsync(conferenceId);
             foreach (var m in media)
             {
-                await _unitOfWork.ConferenceMediumRepository.DeleteConferenceMediumAsync(m);
+                await _unitOfWork.ConferenceMediaRepository.DeleteConferenceMediaAsync(m);
             }
 
             var sponsors = await _unitOfWork.SponsorRepository.GetSponsorsByConferenceIdAsync(conferenceId);
@@ -420,7 +420,7 @@ namespace ConfRadar.Services.Services
                 //IsActive = conference.IsActive,
                 //UserId = conference.UserId,
                 //LocationId = conference.LocationId,
-                CategoryId = conference.ConferenceCategoryId,
+                //CategoryId = conference.ConferenceCategoryId,
                 Policies = conference.Policies?.Select(p => new ConferencePolicyResponse
                 {
                     PolicyId = p.PolicyId,
@@ -544,7 +544,7 @@ namespace ConfRadar.Services.Services
                     Description = conference.Description,
                     StartDate = conference.StartDate,
                     EndDate = conference.EndDate,
-                    Capacity = conference.AvailableSlot,
+                    AvailableSlot = conference.AvailableSlot,
                     Address = conference.Address,
                     BannerImageUrl = AddBaseUrlToUrl(conference.BannerImageUrl),
                     //CreatedAt = conference.CreatedAt,
@@ -553,7 +553,7 @@ namespace ConfRadar.Services.Services
                     //IsActive = conference.IsActive,
                     //UserId = conference.UserId,
                     //LocationId = conference.LocationId,
-                    CategoryId = conference.ConferenceCategoryId
+                    //CategoryId = conference.ConferenceCategoryId
                 };
                 responses.Add(response);
             }
@@ -635,7 +635,8 @@ namespace ConfRadar.Services.Services
                 Description = conference.Description,
                 StartDate = conference.StartDate,
                 EndDate = conference.EndDate,
-                //Capacity = conference.Capacity,
+                AvailableSlot = conference.AvailableSlot,
+                TotalSlot = conference.TotalSlot,
                 Address = conference.Address,
                 BannerImageUrl = AddBaseUrlToUrl(conference.BannerImageUrl),
                 //CreatedAt = conference.CreatedAt,
@@ -644,7 +645,7 @@ namespace ConfRadar.Services.Services
                 //IsActive = conference.IsActive,
                 //UserId = conference.UserId,
                 //LocationId = conference.LocationId,
-                CategoryId = conference.ConferenceCategoryId,
+                //CategoryId = conference.ConferenceCategoryId,
 
             }).ToList();
             return new PagedResult<ConferenceResponse>

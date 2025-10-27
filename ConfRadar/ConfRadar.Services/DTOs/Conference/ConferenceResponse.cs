@@ -9,16 +9,23 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? Description { get; set; }
         public DateOnly? StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
-        public int? Capacity { get; set; }
+        public int? TotalSlot { get; set; }
+        public int? AvailableSlot { get; set; }
+
         public string? Address { get; set; }
         public string? BannerImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public DateOnly? TicketSaleStart { get; set; }
+
+        public DateOnly? TicketSaleEnd { get; set; }
+
         public bool? IsInternalHosted { get; set; }
         public bool? IsResearchConference { get; set; }
-        public bool? IsActive { get; set; }
-        public string? UserId { get; set; }
-        public string? LocationId { get; set; }
-        public string? CategoryId { get; set; }
+        public string? CityId { get; set; }
+        public string? CreatedBy { get; set; }
+        public string? ConferenceCategoryId { get; set; }
+        public string? ConferenceStatusId { get; set; }
+
 
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<ConferenceMediaResponse>? Media { get; set; }
@@ -36,9 +43,10 @@ namespace ConfRadar.Services.DTOs.Conference
 
     public class ConferenceMediaResponse
     {
-        public string MediaId { get; set; }
-        public string? MediaUrl { get; set; }
-        public string? MediaTypeId { get; set; }
+        public string ConferenceMediaId { get; set; } = null!;
+
+        public string? ConferenceMediaUrl { get; set; }
+
     }
 
     public class SponsorResponse
