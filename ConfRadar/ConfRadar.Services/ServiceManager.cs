@@ -51,6 +51,7 @@ namespace ConfRadar.Services
             IConferenceStepService conferenceStepService,
             IConferenceCategoryService conferenceCategoryService,
             IGlobalStatusService globalStatusService,
+
             IPaperService paperService,
             ICityService cityService)
         {

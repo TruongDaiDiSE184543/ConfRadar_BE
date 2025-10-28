@@ -30,6 +30,14 @@ namespace ConfRadar.Services.Common
         [Description("Customer")]
         Customer
     }
+
+    public enum PaperPhase
+    {
+        Abstract,
+        FullPaper,
+        Revise,
+        CameraReady
+    }
     public enum GenderTypeEnum
     {
         Male,
@@ -41,13 +49,25 @@ namespace ConfRadar.Services.Common
         avatar,
         conferencebanner,
         conferencemedia,
-        sessionmedia,
-        speakermedia,
+
+        conferencesessionmedia,
+        sponsorimage,
+        speakerimage,
+
         abstractfile
         
     }
 
-    
+    public enum ConferenceStatus
+    {
+        Pending,
+        Rejected,
+        Rreparing,
+        Ready,
+        OnHold,
+        Canceled,
+        Completed
+    }
     public static class EnumExtension
     {
         public static string GetDescription(this Enum value)
@@ -56,6 +76,22 @@ namespace ConfRadar.Services.Common
             var attribute = (DescriptionAttribute?)Attribute.GetCustomAttribute(field!, typeof(DescriptionAttribute));
             return attribute?.Description ?? value.ToString();
         }
+    }
+
+    public enum RankingCategories
+    {
+        Core,
+        IF,
+        H5,
+        CiteScore
+    }
+
+    public enum ReviewStatus
+    {
+        Accepted,
+        Rejected,
+        Revise,
+        Pending
     }
     public enum GlobalStatusEnum
     {

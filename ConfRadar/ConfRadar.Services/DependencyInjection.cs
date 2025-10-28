@@ -38,7 +38,6 @@ namespace ConfRadar.Services
             services.AddScoped<ICityService, CityService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
-
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>
             new Minio.MinioClient().WithEndpoint(objectStorageSettings!.EndPointAccess)

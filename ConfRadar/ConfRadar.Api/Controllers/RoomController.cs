@@ -102,7 +102,7 @@ namespace ConfRadar.Api.Controllers
 
         // Room occupation checking endpoints
         [Authorize(Roles = "Conference Organizer, Admin")]
-        [HttpGet("{roomId}/occupation")]
+        [HttpGet("{roomId}/session-between-2-dateonlys")]
         public async Task<IActionResult> GetRoomOccupation(string roomId, [FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
         {
             try
@@ -117,7 +117,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [Authorize(Roles = "Conference Organizer, Admin")]
-        [HttpGet("{roomId}/occupation/check-availability")]
+        [HttpGet("{roomId}/occupation/check-if-room-is-available-in-a-date-between-2-timeonly")]
         public async Task<IActionResult> CheckRoomAvailability(string roomId, [FromQuery] DateOnly date, [FromQuery] TimeOnly startTime, [FromQuery] TimeOnly endTime)
         {
             try
@@ -132,13 +132,45 @@ namespace ConfRadar.Api.Controllers
         }
 
         [Authorize(Roles = "Conference Organizer, Admin")]
-        [HttpGet("{roomId}/occupation/is-occupied")]
+        [HttpGet("{roomId}/occupation/is-occupied-in-a-given-time")]
         public async Task<IActionResult> IsRoomOccupiedAtTime(string roomId, [FromQuery] DateOnly date, [FromQuery] TimeOnly time)
         {
             try
             {
                 var isOccupied = await _serviceManager.RoomService.IsRoomOccupiedAtTime(roomId, date, time);
                 return Ok(ApiResponse<bool>.SuccessResponse(isOccupied, "Room occupation checked successfully"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
+            }
+        }
+
+        // NEW ENDPOINT: Get all sessions in a room for a specific date
+        [Authorize(Roles = "Conference Organizer, Admin")]
+        [HttpGet("{roomId}/sessions-on-date")]
+        public async Task<IActionResult> GetSessionsInRoomOnDate(string roomId, [FromQuery] DateOnly date)
+        {
+            try
+            {
+                var sessions = await _serviceManager.RoomService.GetSessionsInRoomOnDateAsync(roomId, date);
+                return Ok(ApiResponse<List<RoomOccupationSlotResponse>>.SuccessResponse(sessions, "Sessions retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
+            }
+        }
+
+        // NEW ENDPOINT: Get unoccupied time spans in a room for a specific date
+        [Authorize(Roles = "Conference Organizer, Admin")]
+        [HttpGet("{roomId}/unoccupied-times")]
+        public async Task<IActionResult> GetUnoccupiedTimeSpansInRoomOnDate(string roomId, [FromQuery] DateOnly date)
+        {
+            try
+            {
+                var unoccupiedTimeSpans = await _serviceManager.RoomService.GetUnoccupiedTimeSpansInRoomOnDateAsync(roomId, date);
+                return Ok(ApiResponse<List<TimeSpanResponse>>.SuccessResponse(unoccupiedTimeSpans, "Unoccupied time spans retrieved successfully"));
             }
             catch (Exception ex)
             {

@@ -1,3 +1,4 @@
+
 ﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
@@ -7,15 +8,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 namespace ConfRadar.Repositories.Repositories
 {
     public interface IPaperPhaseRepository
     {
-        Task<int> CreatePaperPhaseAsync(PaperPhase paperPhase);
+        Task<PaperPhase?> GetPaperPhaseByName(string phaseName);
+        Task<int> CreateMultiplePaperPhasesAsync(IEnumerable<PaperPhase> paperPhases);
+        Task<int> CreatePaperPhase(PaperPhase paperPhase);
+        Task<PaperPhase> GetPaperPhaseByIdAsync(string paperPhaseId);
         Task<int> UpdatePaperPhaseAsync(PaperPhase paperPhase);
-        Task<int> DeletePaperPhaseAsync(PaperPhase paperPhase);
-        Task<PaperPhase?> GetPaperPhaseByIdAsync(string paperPhaseId);
+        Task<bool> DeletePaperPhaseAsync(PaperPhase paperPhase);
+        Task<List<PaperPhase>> GetAllPaperPhaseAsync();
+
+        Task<int> CreatePaperPhaseAsync(PaperPhase paperPhase);
         Task<List<PaperPhase>> GetAllPaperPhasesAsync();
         Task<int> CreateMultiplePaperPhasesAsync(List<PaperPhase> paperPhases);
         Task<PaperPhase?> GetPaperPhaseByNameAsync(string phaseName);
@@ -23,6 +28,27 @@ namespace ConfRadar.Repositories.Repositories
     public class PaperPhaseRepository : GenericRepository<PaperPhase>, IPaperPhaseRepository
     {
         public PaperPhaseRepository(ConfRadarDbContext context) : base(context) { }
+
+        public async Task<PaperPhase?> GetPaperPhaseByName(string phaseName)
+        {
+            return await _context.PaperPhases.FirstOrDefaultAsync(x => x.PhaseName == phaseName);
+        }
+
+        public async Task<int> CreateMultiplePaperPhasesAsync(IEnumerable<PaperPhase> paperPhases)
+        {
+            await _context.PaperPhases.AddRangeAsync(paperPhases);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> CreatePaperPhase(PaperPhase paperPhase)
+        {
+            return await CreateAsync(paperPhase);
+        }
+
+        public async Task<PaperPhase> GetPaperPhaseByIdAsync(string paperPhaseId)
+        {
+            return await GetByIdAsync(paperPhaseId);
+        }
 
         public async Task<int> CreatePaperPhaseAsync(PaperPhase paperPhase)
         {
@@ -33,22 +59,23 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.PaperPhases
                 .FirstOrDefaultAsync(p => p.PhaseName == phaseName);
         }
+
         public async Task<int> UpdatePaperPhaseAsync(PaperPhase paperPhase)
         {
             return await UpdateAsync(paperPhase);
         }
 
-        public async Task<int> DeletePaperPhaseAsync(PaperPhase paperPhase)
+        public async Task<bool> DeletePaperPhaseAsync(PaperPhase paperPhase)
         {
-            _context.PaperPhases.Remove(paperPhase);
-            return await _context.SaveChangesAsync();
+            return await RemoveAsync(paperPhase);
         }
 
-        public async Task<PaperPhase?> GetPaperPhaseByIdAsync(string paperPhaseId)
+        public async Task<List<PaperPhase>> GetAllPaperPhaseAsync()
         {
-            return await _context.PaperPhases
-                .FirstOrDefaultAsync(p => p.PaperPhaseId == paperPhaseId);
+            return await GetAllAsync();
         }
+
+       
 
         public async Task<List<PaperPhase>> GetAllPaperPhasesAsync()
         {
