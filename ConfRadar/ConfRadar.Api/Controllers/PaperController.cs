@@ -69,14 +69,29 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.CreateRevisionSubmissionResponse(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision response"));
         }
-        //[Authorize]
-        //[HttpPost("submit-paper-revision-review")]
-        //public async Task<IActionResult> SubmitPaperRevisionReview([FromForm] CreateRevisionPaperReviewRequest request)
-        //{
-        //    //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    //var result = await _serviceManager.PaperService.CreateRevisionSubmissionResponse(request, userId);
-        //    //return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision response"));
-        //}
-
+        [Authorize]
+        [HttpPost("submit-paper-revision-review")]
+        public async Task<IActionResult> SubmitPaperRevisionReview([FromForm] CreateRevisionPaperReviewRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.CreateRevisionReview(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision review"));
+        }
+        [Authorize]
+        [HttpPut("decide-revise-status")]
+        public async Task<IActionResult> DecideReviseStatus([FromBody] UpdateRevisionStatusRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.DecideReviseStatus(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công status thành công cho giai đoạn revise"));
+        }
+        [Authorize]
+        [HttpGet("list-revision-paper-review")]
+        public async Task<IActionResult> ListRevisionPaperReview([FromQuery]ListRevisionPaperReviewRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.ListRevisionPaperReview(request, userId);
+            return Ok(ApiResponse<List<RevisionPaperReviewResponse>>.SuccessResponse(result, "Danh sách paper reviewer trong revise phase"));
+        }
     }
 }

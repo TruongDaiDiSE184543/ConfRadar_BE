@@ -27,6 +27,7 @@ namespace ConfRadar.Services.Services
         Task<int> UpdateProfile(ProfileUpdateRequest request, string userId);
         Task<UserDetailResponse> ViewUserDetail(string userId);
         Task<ListUserDetailForAdminAndOrganizerResponse> ListUserForAdminAndOrganizer();
+        Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request);
     }
     public class AuthService : IAuthService
     {
@@ -94,7 +95,7 @@ namespace ConfRadar.Services.Services
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
             userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
-            userCreated.VerificationTokenExpiry = ExtensionHelper.GetVietnamTime();
+            userCreated.VerificationTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1);
             userCreated.AvatarUrl = fileUrl;
             var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
             var userRole = new UserRole()
@@ -443,6 +444,59 @@ namespace ConfRadar.Services.Services
 
             };
             return result;
+        }
+
+        public async Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request)
+        {
+            request.Email = request.Email.Trim().ToLower();
+            request.FullName = request.FullName.Trim();
+            var userByEmail = await _unitOfWork.UserRepository.GetUserByEmail(request.Email);
+            if (userByEmail != null)
+            {
+                throw new ConfRadarAuthenticationException("User with this email already exists");
+            }
+            var userByName = await _unitOfWork.UserRepository.GetUserByName(request.FullName);
+            if (userByName != null)
+            {
+                throw new ConfRadarAuthenticationException("User with this full name already exists");
+            }
+            
+
+            var hashedPassword = _passwordHasher.Hash(request.Password);
+            var verificationToken = _tokenService.GenerateSecureRandomToken();
+
+
+            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            var userCreated = new User()
+            {
+                UserId= Guid.NewGuid().ToString(),
+                Email = request.Email,
+                FullName = request.FullName,
+                PasswordHash = hashedPassword,
+                IsActive = true,
+                IsEmailConfirmed = true,
+                LoginProvider = LoginProviderEnum.Local.ToString(),
+                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                UserRoles = new List<UserRole>(),
+                PasswordResetToken = verificationToken,
+                PasswordResetTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1),
+            };
+            List<string> listStringRole = new List<string>();
+            listStringRole.Add(SystemRoleEnum.Customer.GetDescription());
+            listStringRole.Add(SystemRoleEnum.Collaborator.GetDescription());
+            var listRole = await _unitOfWork.RoleRepository.GetListRoleByListRoleName(listStringRole);
+            foreach (var role in listRole)
+            {
+                var userRoleObj = new UserRole()
+                {
+                    AssignedAt = ExtensionHelper.GetVietnamTime(),
+                    RoleId = role.RoleId,
+                    UserId = userCreated.UserId,
+                };
+                userCreated.UserRoles.Add(userRoleObj);
+            }
+            await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName,request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
+            return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
     }
 }
