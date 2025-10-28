@@ -2,15 +2,10 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
-    public  interface IConferenceRefundPolicyRepository
+    public interface IConferenceRefundPolicyRepository
     {
         Task<int> CreateConferenceRefundPolicyAsync(RefundPolicy refundPolicy);
         Task<int> CreateMultipleConferenceRefundPoliciesAsync(List<RefundPolicy> refundPolicies);

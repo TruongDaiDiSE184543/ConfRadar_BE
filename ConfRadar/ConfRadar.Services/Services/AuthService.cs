@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.HighPerformance.Helpers;
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
@@ -7,7 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
-using StackExchange.Redis;
 using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -28,6 +26,7 @@ namespace ConfRadar.Services.Services
         Task<int> SuspendAccount(string userId);
         Task<int> UpdateProfile(ProfileUpdateRequest request, string userId);
         Task<UserDetailResponse> ViewUserDetail(string userId);
+        Task<ListUserDetailForAdminAndOrganizerResponse> ListUserForAdminAndOrganizer();
     }
     public class AuthService : IAuthService
     {
@@ -243,7 +242,7 @@ namespace ConfRadar.Services.Services
             string? email = emailFirebase?.ToString();
             string? name = nameFirebase?.ToString();
             var user = await _unitOfWork.UserRepository.GetUserByEmail(email);
-            
+
             var timeNow = ExtensionHelper.GetVietnamTime();
             if (user == null)
             {
@@ -419,6 +418,31 @@ namespace ConfRadar.Services.Services
                 BioDescription = user.BioDescription,
                 CreatedAt = user.CreatedAt,
             };
+        }
+
+        public async Task<ListUserDetailForAdminAndOrganizerResponse> ListUserForAdminAndOrganizer()
+        {
+            var userList = await _unitOfWork.UserRepository.GetListUser();
+            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
+            var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
+
+            var filteredUsers = userList.Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId)).ToList();
+            var result = new ListUserDetailForAdminAndOrganizerResponse
+            {
+                Users = filteredUsers.Select(u => new UserDetailForAdminAndOrganizerResponse
+                {
+                    UserId = u.UserId,
+                    Email = u.Email,
+                    FullName = u.FullName,
+                    PhoneNumber = u.PhoneNumber,
+                    Gender = u.Gender,
+                    AvatarUrl = u.AvatarUrl,
+                    CreatedAt = u.CreatedAt,
+                    Roles = u.UserRoles.Select(ur => ur.Role.RoleName).ToList(),
+                }).ToList(),
+
+            };
+            return result;
         }
     }
 }

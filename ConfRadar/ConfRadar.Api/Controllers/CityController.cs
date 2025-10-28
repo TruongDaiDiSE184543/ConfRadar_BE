@@ -1,10 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
-using ConfRadar.Services.DTOs.Abstract;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -13,9 +10,9 @@ namespace ConfRadar.Api.Controllers
     public class CityController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
-        public CityController(IServiceManager serviceManager) 
-        { 
-            _serviceManager = serviceManager;       
+        public CityController(IServiceManager serviceManager)
+        {
+            _serviceManager = serviceManager;
         }
         [HttpGet("cities")]
         public async Task<IActionResult> GetAllCities()

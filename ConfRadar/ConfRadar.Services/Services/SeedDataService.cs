@@ -15,6 +15,7 @@ namespace ConfRadar.Services.Services
         Task SeedConferenceStatusesAsync();
         Task SeedPaperPhasesAsync();
         Task SeedCheckInStatusAsync();
+        Task SeedReviewStatusAsync();
 
     }
     public class SeedDataService : ISeedDataService
@@ -133,6 +134,22 @@ namespace ConfRadar.Services.Services
                 {
                     CheckinStatusId = Guid.NewGuid().ToString(),
                     CheckinStatusName = name
+                });
+        }
+        public async Task SeedReviewStatusAsync()
+        {
+            var statusNames = Enum.GetValues<ReviewStatusEnum>()
+                .Select(s => s.GetDescription())
+                .ToList();
+
+            await SeedEntityAsync<ReviewStatus>(
+                statusNames,
+                _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync,
+                _unitOfWork.ReviewStatusRepository.CreateMultipleReviewStatusesAsync,
+                name => new ReviewStatus
+                {
+                    ReviewStatusId = Guid.NewGuid().ToString(),
+                    Name = name
                 });
         }
 

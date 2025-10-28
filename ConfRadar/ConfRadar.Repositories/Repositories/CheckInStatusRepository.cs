@@ -2,11 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -41,7 +36,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<CheckinStatus?> GetCheckInStatusByIdAsync(string statusId)
         {
-            return await GetByIdAsync(statusId);    
+            return await GetByIdAsync(statusId);
         }
 
         public async Task<CheckinStatus?> GetCheckInStatusByNameAsync(string statusName)

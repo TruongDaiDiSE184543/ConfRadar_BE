@@ -90,7 +90,7 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize]
         [HttpPut("update-profile")]
-        public async Task<IActionResult> UpdateProfile([FromForm]ProfileUpdateRequest request)
+        public async Task<IActionResult> UpdateProfile([FromForm] ProfileUpdateRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.UpdateProfile(request, userId);
@@ -103,6 +103,12 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.AuthService.ViewUserDetail(userId);
             return Ok(ApiResponse<UserDetailResponse>.SuccessResponse(result, $"Thông tin user với id {userId}"));
         }
-
+        [Authorize(Roles = "Conference Organizer,Admin")]
+        [HttpGet("list-users")]
+        public async Task<IActionResult> GetUserListForAdminAndOrganizer()
+        {
+            var result = await _serviceManager.AuthService.ListUserForAdminAndOrganizer();
+            return Ok(ApiResponse<ListUserDetailForAdminAndOrganizerResponse>.SuccessResponse(result, $"Danh sách người dùng:"));
+        }
     }
 }

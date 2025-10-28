@@ -43,11 +43,13 @@ namespace ConfRadar.Services.Common
         conferencemedia,
         sessionmedia,
         speakermedia,
-        abstractfile
-        
+        abstractfile,
+        fullpaperfile,
+        revisionpaperfile
+
     }
 
-    
+
     public static class EnumExtension
     {
         public static string GetDescription(this Enum value)
@@ -67,7 +69,7 @@ namespace ConfRadar.Services.Common
         [Description("Rejected")]
         Rejected
     }
-    
+
 
     public enum PaymentMethodEnum
     {
@@ -78,25 +80,25 @@ namespace ConfRadar.Services.Common
     }
     public enum ConferenceStatusEnum
     {
-       
+
         [Description("Preparing")]
-        Preparing, 
+        Preparing,
 
         [Description("Pending")]
-        Pending, 
-       
+        Pending,
+
         [Description("Completed")]
-        Completed, 
+        Completed,
 
         [Description("Cancelled")]
-        Cancelled, 
+        Cancelled,
 
         [Description("OnHold")]
-        OnHold, 
+        OnHold,
 
-       
 
-        
+
+
     }
     public enum PaperPhaseEnum
     {
@@ -116,13 +118,27 @@ namespace ConfRadar.Services.Common
     public enum CheckInStatusEnum
     {
         [Description("Pending")]
-        Pending, 
+        Pending,
 
         [Description("Checked In")]
-        CheckedIn, 
+        CheckedIn,
 
         [Description("Expired")]
-        Expired 
+        Expired
+    }
+    public enum ReviewStatusEnum
+    {
+        [Description("Pending")]
+        Pending,
+
+        [Description("Revise")]
+        Revise,
+
+        [Description("Rejected")]
+        Rejected,
+
+        [Description("Accepted")]
+        Accepted
     }
 
 

@@ -17,7 +17,7 @@ namespace ConfRadar.Services
         public IConferenceCategoryService ConferenceCategoryService { get; }
         public IGlobalStatusService GlobalStatusService { get; }
         public IPaperService PaperService { get; }
-        public ICityService CityService { get; }    
+        public ICityService CityService { get; }
 
     }
 

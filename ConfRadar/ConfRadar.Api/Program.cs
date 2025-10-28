@@ -23,7 +23,8 @@ using (var scope = app.Services.CreateScope())
     //await seedDataService.SeedTransactionTypeAsync();
     await seedDataService.SeedConferenceStatusesAsync();
     await seedDataService.SeedPaperPhasesAsync();
-    await seedDataService.SeedCheckInStatusAsync(); 
+    await seedDataService.SeedCheckInStatusAsync();
+    await seedDataService.SeedReviewStatusAsync();
 }
 app.UseCors("AllowAll");
 app.UseSwagger();
