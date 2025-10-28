@@ -58,7 +58,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> CreateMutipleConferenceMediaAsync(List<ConferenceMedium> media)
         {
             await _context.ConferenceMedia.AddRangeAsync(media);
-            return await _context.SaveChangesAsync();   
+            return await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
 
 namespace ConfRadar.Services.Mappers
@@ -19,7 +20,7 @@ namespace ConfRadar.Services.Mappers
                 BioDescription = request.BioDescription,
                 IsActive = true,
                 IsEmailConfirmed = false,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                CreatedAt = ExtensionHelper.GetVietnamTime(),
             };
         }
     }

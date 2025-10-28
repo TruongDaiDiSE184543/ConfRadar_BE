@@ -25,6 +25,8 @@ namespace ConfRadar.Services
         public ICameraReadyService CameraReadyService { get; }
         public ICityService CityService { get; }
         public IConferenceStatusService ConferenceStatusService { get; }
+        //public ICityService CityService { get; }
+
     }
 
     public class ServiceManager : IServiceManager

@@ -1,18 +1,27 @@
-using ConfRadar.Repositories.Base;
+
+﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
+    public interface IPaperReviewerRepository
+    {
+        Task<int> CreatePaperReviewerAsync(PaperReviewer paperReviewer);
+        Task<int> UpdatePaperReviewerAsync(PaperReviewer paperReviewer);
+        Task<bool> DeletePaperReviewerAsync(PaperReviewer paperReviewer);
+        Task<PaperReviewer?> GetPaperReviewerByIdAsync(string paperReviewerId);
+        Task<List<PaperReviewer>> GetAllPaperReviewersAsync();
+        Task<PaperReviewer?> GetPaperReviewersByPaperIdAndUserIdAsync(string paperId, string userId);
+        Task<List<PaperReviewer>> GetPaperReviewersByPaperIdAsync(string paperId);
+    }
     public class PaperReviewerRepository : GenericRepository<PaperReviewer>, IPaperReviewerRepository
     {
-        public PaperReviewerRepository(ConfRadarDbContext context) : base(context) { }
+
+        public PaperReviewerRepository(ConfRadarDbContext context) : base(context)
+        {
+        }
 
         public async Task<int> CreatePaperReviewerAsync(PaperReviewer paperReviewer)
         {
@@ -42,8 +51,9 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<PaperReviewer>> GetPaperReviewersByPaperIdAsync(string paperId)
         {
-            return await _context.Set<PaperReviewer>()
+            return await _context.PaperReviewers
                 .Where(pr => pr.PaperId == paperId)
+                .Include(pr => pr.User)
                 .ToListAsync();
         }
 
@@ -59,6 +69,15 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Set<PaperReviewer>()
                 .Where(pr => pr.PaperId == paperId && pr.IsHeadReviewer == true)
                 .ToListAsync();
+        }
+
+        public async Task<PaperReviewer?> GetPaperReviewersByPaperIdAndUserIdAsync(string paperId,string userId)
+        {
+            return await _context.PaperReviewers
+                .Include(pr=>pr.User)
+                .Include(pr=>pr.Paper)
+                .FirstOrDefaultAsync(pr => pr.PaperId == paperId && pr.UserId == userId);
+                
         }
     }
 }

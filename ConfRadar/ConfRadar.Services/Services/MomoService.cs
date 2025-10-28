@@ -17,7 +17,7 @@ namespace ConfRadar.Services.Services
         Task<string> HandleMomoPaymentWithTechConf(CreateTechPaymentRequest request, string userId);
         Task VerifyMomoPaymentDataForTechConference(MomoPaymentCallBackResponse data);
         Task VerifyMomoPaymentDataForResearchConferenceAbstractSubmission(MomoPaymentCallBackResponse data);
-        Task<string> ProcessPaymentForAbstract(CreateAbstractRequest request, string conferenceId,string userId, long amount, string paymentMethodId, List<string> conferenceSessionIds, string abstractUrl, string orderInfo);
+        Task<string> ProcessPaymentForAbstract(CreateAbstractRequest request, string conferenceId, string userId, long amount, string paymentMethodId, List<string> conferenceSessionIds, string abstractUrl, string orderInfo);
     }
     public class MomoService : IMomoService
     {
@@ -53,7 +53,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("You have already purchase ticket!");
             }
-            var dateNow = ExtensionHelper.GetVietnamDate(); 
+            var dateNow = ExtensionHelper.GetVietnamDate();
             var validPhases = conferencePrice.PricePhases.Where(p => p.StartDate <= dateNow && p.EndDate >= dateNow).OrderBy(p => p.StartDate).ToList();
             if (!validPhases.Any())
             {
@@ -67,7 +67,7 @@ namespace ConfRadar.Services.Services
             var discountPercent = currentPhase.ApplyPercent ?? 0;
 
             var rawPrice = conferencePrice.TicketPrice;
-            var discountedPrice = rawPrice - (rawPrice * discountPercent/100);
+            var discountedPrice = rawPrice - (rawPrice * discountPercent / 100);
             var finalAmount = (long)discountedPrice;
 
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.MoMo.GetDescription());
@@ -85,12 +85,12 @@ namespace ConfRadar.Services.Services
 
             var transacJson = JsonSerializer.Serialize(transactionData);
             await _redisService.SetStringAsync(ticketId, transacJson, TimeSpan.FromMinutes(120));
-            var result = await CreateMomoPayment(ticketId, finalAmount,$"Trả phí cho {conferencePrice.Conference?.ConferenceName}",_momoSettings.Value.IpnTech,_momoSettings.Value.TechRedirectUrl);
+            var result = await CreateMomoPayment(ticketId, finalAmount, $"Trả phí cho {conferencePrice.Conference?.ConferenceName}", _momoSettings.Value.IpnTech, _momoSettings.Value.TechRedirectUrl);
             return result.payUrl;
         }
-        public async Task<string> ProcessPaymentForAbstract(CreateAbstractRequest request,string conferenceId, string userId,long amount,string paymentMethodId, List<string> conferenceSessionIds,string abstractUrl,string orderInfo)
+        public async Task<string> ProcessPaymentForAbstract(CreateAbstractRequest request, string conferenceId, string userId, long amount, string paymentMethodId, List<string> conferenceSessionIds, string abstractUrl, string orderInfo)
         {
-            var ticketId = Guid.NewGuid().ToString();   
+            var ticketId = Guid.NewGuid().ToString();
             var transactionData = new TransactionResearchConferenceAbstractDataHolder()
             {
                 TicketId = ticketId,
@@ -103,10 +103,10 @@ namespace ConfRadar.Services.Services
             };
             var transacJson = JsonSerializer.Serialize(transactionData);
             await _redisService.SetStringAsync(ticketId, transacJson, TimeSpan.FromMinutes(120));
-            var result = await CreateMomoPayment(ticketId, amount, orderInfo,_momoSettings.Value.IpnResearch,_momoSettings.Value.ResearchRedirectUrl);
-            return result.payUrl;   
+            var result = await CreateMomoPayment(ticketId, amount, orderInfo, _momoSettings.Value.IpnResearch, _momoSettings.Value.ResearchRedirectUrl);
+            return result.payUrl;
         }
-        private async Task<MomoCreatePaymentResponse> CreateMomoPayment(string orderId, long amount, string orderInfo,string ipnUrl,string redirectUrl)
+        private async Task<MomoCreatePaymentResponse> CreateMomoPayment(string orderId, long amount, string orderInfo, string ipnUrl, string redirectUrl)
         {
 
             var rawSignature = "accessKey=" + _momoSettings.Value.AccessKey + "&amount=" + amount +
@@ -266,7 +266,7 @@ namespace ConfRadar.Services.Services
                 TicketId = transacDataHolder.TicketId
             };
             ticketObj.Transactions.Add(transaction);
-            foreach(var sessionId in transacDataHolder.ConferenceSessionIds)
+            foreach (var sessionId in transacDataHolder.ConferenceSessionIds)
             {
                 var userCheckInObj = new UserCheckIn()
                 {

@@ -1,4 +1,4 @@
-using ConfRadar.Repositories.Base;
+﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
@@ -7,53 +7,55 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface IReviewStatusRepository
     {
-        Task<ReviewStatus?> GetReviewStatusByName(string name);
-        Task<int> CreateMultipleReviewStatusesAsync(IEnumerable<ReviewStatus> reviewStatuses);
-        Task<int> CreateReviewStatus(ReviewStatus reviewStatus);
-        Task<ReviewStatus> GetReviewStatusByIdAsync(string reviewStatusId);
-        Task<int> UpdateReviewStatusAsync(ReviewStatus reviewStatus);
-        Task<bool> DeleteReviewStatusAsync(ReviewStatus reviewStatus);
-        Task<List<ReviewStatus>> GetAllReviewStatusAsync();
+        Task<int> CreateReviewStatusAsync(ReviewStatus status);
+        Task<int> CreateMultipleReviewStatusesAsync(List<ReviewStatus> statuses);
+        Task<int> UpdateReviewStatusAsync(ReviewStatus status);
+        Task<bool> DeleteReviewStatusAsync(ReviewStatus status);
+        Task<ReviewStatus?> GetReviewStatusByIdAsync(string statusId);
+        Task<ReviewStatus?> GetReviewStatusByNameAsync(string statusName);
+        Task<List<ReviewStatus>> GetAllReviewStatusesAsync();
     }
 
     public class ReviewStatusRepository : GenericRepository<ReviewStatus>, IReviewStatusRepository
     {
         public ReviewStatusRepository(ConfRadarDbContext context) : base(context) { }
 
-        public async Task<ReviewStatus?> GetReviewStatusByName(string name)
+        public async Task<int> CreateReviewStatusAsync(ReviewStatus status)
         {
-            return await _context.ReviewStatuses.FirstOrDefaultAsync(x => x.Name == name);
+            return await CreateAsync(status);
         }
 
-        public async Task<int> CreateMultipleReviewStatusesAsync(IEnumerable<ReviewStatus> reviewStatuses)
+        public async Task<int> CreateMultipleReviewStatusesAsync(List<ReviewStatus> statuses)
         {
-            await _context.ReviewStatuses.AddRangeAsync(reviewStatuses);
+            await _context.ReviewStatuses.AddRangeAsync(statuses);
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<int> CreateReviewStatus(ReviewStatus reviewStatus)
+        public async Task<int> UpdateReviewStatusAsync(ReviewStatus status)
         {
-            return await CreateAsync(reviewStatus);
+            return await UpdateAsync(status);
         }
 
-        public async Task<ReviewStatus> GetReviewStatusByIdAsync(string reviewStatusId)
+        public async Task<bool> DeleteReviewStatusAsync(ReviewStatus status)
         {
-            return await GetByIdAsync(reviewStatusId);
+            return await RemoveAsync(status);
         }
 
-        public async Task<int> UpdateReviewStatusAsync(ReviewStatus reviewStatus)
+        public async Task<ReviewStatus?> GetReviewStatusByIdAsync(string statusId)
         {
-            return await UpdateAsync(reviewStatus);
+            return await _context.ReviewStatuses
+                .FirstOrDefaultAsync(s => s.ReviewStatusId == statusId);
         }
 
-        public async Task<bool> DeleteReviewStatusAsync(ReviewStatus reviewStatus)
+        public async Task<ReviewStatus?> GetReviewStatusByNameAsync(string statusName)
         {
-            return await RemoveAsync(reviewStatus);
+            return await _context.ReviewStatuses
+                .FirstOrDefaultAsync(s => s.Name == statusName);
         }
 
-        public async Task<List<ReviewStatus>> GetAllReviewStatusAsync()
+        public async Task<List<ReviewStatus>> GetAllReviewStatusesAsync()
         {
-            return await GetAllAsync();
+            return await _context.ReviewStatuses.ToListAsync();
         }
     }
 }

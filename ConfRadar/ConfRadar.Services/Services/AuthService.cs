@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.HighPerformance.Helpers;
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
@@ -7,7 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
-using StackExchange.Redis;
 using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -28,6 +26,8 @@ namespace ConfRadar.Services.Services
         Task<int> SuspendAccount(string userId);
         Task<int> UpdateProfile(ProfileUpdateRequest request, string userId);
         Task<UserDetailResponse> ViewUserDetail(string userId);
+        Task<ListUserDetailForAdminAndOrganizerResponse> ListUserForAdminAndOrganizer();
+        Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request);
     }
     public class AuthService : IAuthService
     {
@@ -95,7 +95,7 @@ namespace ConfRadar.Services.Services
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
             userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
-            userCreated.VerificationTokenExpiry = ExtensionHelper.GetVietnamTime();
+            userCreated.VerificationTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1);
             userCreated.AvatarUrl = fileUrl;
             var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
             var userRole = new UserRole()
@@ -243,7 +243,7 @@ namespace ConfRadar.Services.Services
             string? email = emailFirebase?.ToString();
             string? name = nameFirebase?.ToString();
             var user = await _unitOfWork.UserRepository.GetUserByEmail(email);
-            
+
             var timeNow = ExtensionHelper.GetVietnamTime();
             if (user == null)
             {
@@ -419,6 +419,84 @@ namespace ConfRadar.Services.Services
                 BioDescription = user.BioDescription,
                 CreatedAt = user.CreatedAt,
             };
+        }
+
+        public async Task<ListUserDetailForAdminAndOrganizerResponse> ListUserForAdminAndOrganizer()
+        {
+            var userList = await _unitOfWork.UserRepository.GetListUser();
+            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
+            var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
+
+            var filteredUsers = userList.Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId)).ToList();
+            var result = new ListUserDetailForAdminAndOrganizerResponse
+            {
+                Users = filteredUsers.Select(u => new UserDetailForAdminAndOrganizerResponse
+                {
+                    UserId = u.UserId,
+                    Email = u.Email,
+                    FullName = u.FullName,
+                    PhoneNumber = u.PhoneNumber,
+                    Gender = u.Gender,
+                    AvatarUrl = u.AvatarUrl,
+                    CreatedAt = u.CreatedAt,
+                    Roles = u.UserRoles.Select(ur => ur.Role.RoleName).ToList(),
+                }).ToList(),
+
+            };
+            return result;
+        }
+
+        public async Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request)
+        {
+            request.Email = request.Email.Trim().ToLower();
+            request.FullName = request.FullName.Trim();
+            var userByEmail = await _unitOfWork.UserRepository.GetUserByEmail(request.Email);
+            if (userByEmail != null)
+            {
+                throw new ConfRadarAuthenticationException("User with this email already exists");
+            }
+            var userByName = await _unitOfWork.UserRepository.GetUserByName(request.FullName);
+            if (userByName != null)
+            {
+                throw new ConfRadarAuthenticationException("User with this full name already exists");
+            }
+            
+
+            var hashedPassword = _passwordHasher.Hash(request.Password);
+            var verificationToken = _tokenService.GenerateSecureRandomToken();
+
+
+            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            var userCreated = new User()
+            {
+                UserId= Guid.NewGuid().ToString(),
+                Email = request.Email,
+                FullName = request.FullName,
+                PasswordHash = hashedPassword,
+                IsActive = true,
+                IsEmailConfirmed = true,
+                LoginProvider = LoginProviderEnum.Local.ToString(),
+                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                UserRoles = new List<UserRole>(),
+                PasswordResetToken = verificationToken,
+                PasswordResetTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1),
+            };
+            List<string> listStringRole = new List<string>();
+            listStringRole.Add(SystemRoleEnum.Customer.GetDescription());
+            listStringRole.Add(SystemRoleEnum.Collaborator.GetDescription());
+            var listRole = await _unitOfWork.RoleRepository.GetListRoleByListRoleName(listStringRole);
+            foreach (var role in listRole)
+            {
+                var userRoleObj = new UserRole()
+                {
+                    AssignedAt = ExtensionHelper.GetVietnamTime(),
+                    RoleId = role.RoleId,
+                    UserId = userCreated.UserId,
+                };
+                userCreated.UserRoles.Add(userRoleObj);
+            }
+            await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName,request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
+            return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
     }
 }

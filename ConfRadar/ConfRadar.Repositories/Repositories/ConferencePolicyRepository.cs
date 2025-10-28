@@ -27,7 +27,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> CreateMutipleConferencePoliciesAsync(List<Policy> policy)
         {
             await _context.Policies.AddRangeAsync(policy);
-            return await _context.SaveChangesAsync();        
+            return await _context.SaveChangesAsync();
         }
         public async Task<int> UpdateConferencePolicyAsync(Policy policy)
         {

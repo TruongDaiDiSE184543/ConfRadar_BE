@@ -1,5 +1,4 @@
 ﻿using ConfRadar.Repositories;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Transaction;
 
 namespace ConfRadar.Services.Services
@@ -31,7 +30,7 @@ namespace ConfRadar.Services.Services
                 //TransactionStatusId = x.TransactionStatusId,
                 //TransactionTypeId = x.TransactionTypeId,
                 UserId = x.UserId,
-                
+
             }).ToList();
             return transactionDetailResponses;
         }

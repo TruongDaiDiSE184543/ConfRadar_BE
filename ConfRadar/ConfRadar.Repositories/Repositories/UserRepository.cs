@@ -19,6 +19,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<User?> GetUserByEmail(string email);
         Task<User?> GetUserByName(string name);
         Task<User?> GetUserByUserId(string userId);
+        Task<List<User>> GetListUser();
 
 
 
@@ -32,6 +33,14 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> CreateUserAsync(User user)
         {
             return await CreateAsync(user);
+        }
+
+        public async Task<List<User>> GetListUser()
+        {
+            return await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .ToListAsync();
         }
 
         public async Task<User?> GetUserByEmail(string email)
@@ -56,7 +65,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<User?> GetUserByUserId(string userId)
         {
-            return await _context.Users.Include(x=>x.UserRoles).ThenInclude(x=>x.Role).FirstOrDefaultAsync(x => x.UserId == userId);
+            return await _context.Users.Include(x => x.UserRoles).ThenInclude(x => x.Role).FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
         public async Task<int> UpdateUserAsync(User user)

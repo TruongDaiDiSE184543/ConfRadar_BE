@@ -1,3 +1,4 @@
+
 using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
@@ -23,7 +24,6 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await RemoveAsync(cameraReady);
         }
-
         public async Task<CameraReady?> GetCameraReadyByIdAsync(string cameraReadyId)
         {
             return await GetByIdAsync(cameraReadyId);

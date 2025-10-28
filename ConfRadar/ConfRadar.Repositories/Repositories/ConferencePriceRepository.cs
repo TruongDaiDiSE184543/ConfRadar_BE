@@ -51,7 +51,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.ConferencePrices
                 .Include(cp => cp.PricePhases)
-                .Include(c=>c.Conference)
+                .Include(c => c.Conference)
                 .FirstOrDefaultAsync(c => c.ConferencePriceId == priceId);
         }
 
