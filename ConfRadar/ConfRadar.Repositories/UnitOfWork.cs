@@ -51,6 +51,9 @@ namespace ConfRadar.Repositories
         IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository { get; }
         IPaperAuthorRepository PaperAuthorRepository { get; }
         IPaperReviewerRepository PaperReviewerRepository { get; }
+        IFullPaperRepository FullPaperRepository { get; }
+        IRevisionPaperRepository RevisionPaperRepository { get; }
+        ICameraReadyRepository CameraReadyRepository { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -108,6 +111,9 @@ namespace ConfRadar.Repositories
         private IRevisionRoundDeadlineRepository _RevisionRoundDeadlineRepository;
         private IPaperAuthorRepository _PaperAuthorRepository;
         private IPaperReviewerRepository _PaperReviewerRepository;
+        private IFullPaperRepository _FullPaperRepository;
+        private IRevisionPaperRepository _RevisionPaperRepository;
+        private ICameraReadyRepository _CameraReadyRepository;
 
         public UnitOfWork(ConfRadarDbContext context)
         {
@@ -194,6 +200,12 @@ namespace ConfRadar.Repositories
         public IPaperAuthorRepository PaperAuthorRepository => _PaperAuthorRepository ??= new PaperAuthorRepository(_context);
 
         public IPaperReviewerRepository PaperReviewerRepository => _PaperReviewerRepository ??= new PaperReviewerRepository(_context);
+
+        public IFullPaperRepository FullPaperRepository => _FullPaperRepository ??= new FullPaperRepository(_context);
+
+        public IRevisionPaperRepository RevisionPaperRepository => _RevisionPaperRepository ??= new RevisionPaperRepository(_context);
+
+        public ICameraReadyRepository CameraReadyRepository => _CameraReadyRepository ??= new CameraReadyRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

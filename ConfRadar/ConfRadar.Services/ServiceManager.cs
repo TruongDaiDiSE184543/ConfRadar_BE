@@ -20,6 +20,9 @@ namespace ConfRadar.Services
         public IGlobalStatusService GlobalStatusService { get; }
         public IPaperService PaperService { get; }
         public IPaperAssignmentService PaperAssignmentService { get; }
+        public IFullPaperService FullPaperService { get; }
+        public IRevisionPaperService RevisionPaperService { get; }
+        public ICameraReadyService CameraReadyService { get; }
         public ICityService CityService { get; }
         public IConferenceStatusService ConferenceStatusService { get; }
     }
@@ -43,6 +46,9 @@ namespace ConfRadar.Services
         private readonly IGlobalStatusService _globalStatusService;
         private readonly IPaperService _paperService;
         private readonly IPaperAssignmentService _paperAssignmentService;
+        private readonly IFullPaperService _fullPaperService;
+        private readonly IRevisionPaperService _revisionPaperService;
+        private readonly ICameraReadyService _cameraReadyService;
         private readonly ICityService _cityService;
         private readonly IConferenceStatusService _conferenceStatusService;
 
@@ -61,6 +67,9 @@ namespace ConfRadar.Services
             IGlobalStatusService globalStatusService,
             IPaperService paperService,
             IPaperAssignmentService paperAssignmentService,
+            IFullPaperService fullPaperService,
+            IRevisionPaperService revisionPaperService,
+            ICameraReadyService cameraReadyService,
             IRankingCategoryService rankingCategoryService,
             ICityService cityService,
             IConferenceStatusService conferenceStatusService)
@@ -80,6 +89,9 @@ namespace ConfRadar.Services
             _rankingCategoryService = rankingCategoryService;
             _paperService = paperService;
             _paperAssignmentService = paperAssignmentService;
+            _fullPaperService = fullPaperService;
+            _revisionPaperService = revisionPaperService;
+            _cameraReadyService = cameraReadyService;
             _cityService = cityService;
             _conferenceStatusService = conferenceStatusService;
         }
@@ -102,6 +114,9 @@ namespace ConfRadar.Services
 
         public IPaperService PaperService => _paperService;
         public IPaperAssignmentService PaperAssignmentService => _paperAssignmentService;
+        public IFullPaperService FullPaperService => _fullPaperService;
+        public IRevisionPaperService RevisionPaperService => _revisionPaperService;
+        public ICameraReadyService CameraReadyService => _cameraReadyService;
 
         public ICityService CityService => _cityService;
 

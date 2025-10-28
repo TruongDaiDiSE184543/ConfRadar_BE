@@ -101,6 +101,7 @@ namespace ConfRadar.Services.Services
         {
             if (request.PaperId == null) throw new Exception("Cần có paperid để nộp fullpaper");
             var PaperBase = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
+            if (PaperBase == null) throw new Exception($"Không tìm thấy paper với id{request.PaperId}");
             string fullPaperURL = string.Empty;
             if(request.FullPaperFile != null)
             {
@@ -111,7 +112,18 @@ namespace ConfRadar.Services.Services
             }
             var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByName("Pending");
             var fullPaperObject = request.toModel(fullPaperURL, pendingStatus.ReviewStatusId);
-            return fullPaperObject.toResponse();
+            await _unitOfWork.BeginTransactionAsync();
+            try {
+                
+                PaperBase.FullPaperId = 
+                return fullPaperObject.toResponse();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync(); 
+                throw;
+            }
+
         }
     }
 }
