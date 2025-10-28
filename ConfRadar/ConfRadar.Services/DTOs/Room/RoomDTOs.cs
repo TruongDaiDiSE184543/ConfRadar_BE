@@ -41,4 +41,10 @@ namespace ConfRadar.Services.DTOs.Room
         public string ConferenceId { get; set; }
         public string ConferenceName { get; set; }
     }
+
+    public class TimeSpanResponse
+    {
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+    }
 }

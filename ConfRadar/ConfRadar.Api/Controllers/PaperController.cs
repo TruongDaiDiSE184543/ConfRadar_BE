@@ -24,7 +24,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.SubmitAbstract(request, userId);
-            return Ok(ApiResponse<string>.SuccessResponse(result, "hãy truy cập link để thực hiện thanh toán"));
+            return Ok(ApiResponse<string>.SuccessResponse(result, "nộp full paper "));
         }
         [Authorize]
         [HttpPost("submit-fullpaper")]

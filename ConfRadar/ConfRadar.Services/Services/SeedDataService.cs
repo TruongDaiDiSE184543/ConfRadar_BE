@@ -10,12 +10,14 @@ namespace ConfRadar.Services.Services
         //Task SeedTransactionStatusAsync();
         Task SeedPaymentMethodsAsync();
         Task SeedGlobalStatusesAsync();
+        Task SeedConferenceStatusesAsync();
+        Task SeedRankingCategoriesAsync();
+        Task SeedReviewStatusesAsync();
+        Task SeedPaperPhasesAsync();
         //Task SeedTransactionTypeAsync();
         //Task SeedMediaTypesAsync();
-        Task SeedConferenceStatusesAsync();
-        Task SeedPaperPhasesAsync();
         Task SeedCheckInStatusAsync();
-        Task SeedReviewStatusAsync();
+        //Task SeedReviewStatusAsync();
 
     }
     public class SeedDataService : ISeedDataService
@@ -48,6 +50,24 @@ namespace ConfRadar.Services.Services
             }
 
         }
+
+        //public async Task SeedCheckInStatusAsync()
+        //{
+        //    var statusNames = Enum.GetValues<CheckInStatusEnum>()
+        //        .Select(s => s.GetDescription())
+        //        .ToList();
+
+        //    await SeedEntityAsync<CheckinStatus>(
+        //        statusNames,
+        //        _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync,
+        //        _unitOfWork.CheckInStatusRepository.CreateMultipleCheckInStatusesAsync,
+        //        name => new CheckinStatus
+        //        {
+        //            CheckinStatusId = Guid.NewGuid().ToString(),
+        //            CheckinStatusName = name
+        //        });
+        //}
+
         public async Task SeedRolesAsync()
         {
             var roleNames = Enum.GetValues<SystemRoleEnum>().Select(r => r.GetDescription()).ToList();
@@ -87,45 +107,83 @@ namespace ConfRadar.Services.Services
                     MethodName = name,
                 });
         }
+
         public async Task SeedConferenceStatusesAsync()
         {
-            var statusNames = Enum.GetValues<ConferenceStatusEnum>()
-                .Select(s => s.GetDescription())
-                .ToList();
-
-            await SeedEntityAsync<ConferenceStatus>(
+            var statusNames = Enum.GetValues<ConfRadar.Services.Common.ConferenceStatus>().Select(s => s.ToString()).ToList();
+            await SeedEntityAsync<ConfRadar.Repositories.Models.ConferenceStatus>(
                 statusNames,
-                _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync,
-                _unitOfWork.ConferenceStatusRepository.CreateMultipleConferenceStatusAsync,
-                name => new ConferenceStatus
+                _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName,
+                _unitOfWork.ConferenceStatusRepository.CreateMultipleConferenceStatusesAsync,
+                name => new ConfRadar.Repositories.Models.ConferenceStatus
                 {
                     ConferenceStatusId = Guid.NewGuid().ToString(),
                     ConferenceStatusName = name
                 });
         }
 
+        public async Task SeedRankingCategoriesAsync()
+        {
+            var categoryNames = Enum.GetValues<ConfRadar.Services.Common.RankingCategories>().Select(s => s.ToString()).ToList();
+            await SeedEntityAsync<ConfRadar.Repositories.Models.RankingCategory>(
+                categoryNames,
+                _unitOfWork.RankingCategoryRepository.GetRankingCategoryByName,
+                _unitOfWork.RankingCategoryRepository.CreateMultipleRankingCategoriesAsync,
+                name => new ConfRadar.Repositories.Models.RankingCategory
+                {
+                    RankingCategoryId = Guid.NewGuid().ToString(),
+                    RankName = name
+                });
+        }
+
+        //public async Task SeedReviewStatusesAsync()
+        //{
+        //    var statusNames = Enum.GetValues<ConfRadar.Services.Common.ReviewStatus>().Select(s => s.ToString()).ToList();
+        //    await SeedEntityAsync<ConfRadar.Repositories.Models.ReviewStatus>(
+        //        statusNames,
+        //        _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync,
+        //        _unitOfWork.ReviewStatusRepository.CreateMultipleReviewStatusesAsync,
+        //        name => new ConfRadar.Repositories.Models.ReviewStatus
+        //        {
+        //            ReviewStatusId = Guid.NewGuid().ToString(),
+        //            Name = name
+        //        });
+        //}
+
         public async Task SeedPaperPhasesAsync()
         {
-            var phaseNames = Enum.GetValues<PaperPhaseEnum>()
-                .Select(s => s.GetDescription())
-                .ToList();
-
-            await SeedEntityAsync<PaperPhase>(
+            var phaseNames = Enum.GetValues<ConfRadar.Services.Common.PaperPhase>().Select(s => s.ToString()).ToList();
+            await SeedEntityAsync<ConfRadar.Repositories.Models.PaperPhase>(
                 phaseNames,
-                _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync,
+                _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName,
                 _unitOfWork.PaperPhaseRepository.CreateMultiplePaperPhasesAsync,
-                name => new PaperPhase
+                name => new ConfRadar.Repositories.Models.PaperPhase
                 {
                     PaperPhaseId = Guid.NewGuid().ToString(),
                     PhaseName = name
                 });
         }
+
+        //public async Task SeedTransactionStatusAsync()
+        //{
+        //    var statusNames = Enum.GetValues<TransactionStatusEnum>().Select(s => s.GetDescription()).ToList();
+        //    await SeedEntityAsync<TransactionStatus>(
+        //        statusNames,
+        //        _unitOfWork.TransactionStatusRepository.GetTransactionStatusByName,
+        //        _unitOfWork.TransactionStatusRepository.CreateMutipleTransactionStatusesAsync,
+        //        name => new TransactionStatus
+        //        {
+        //            TransactionStatusId = Guid.NewGuid().ToString(),
+        //            StatusName = name,
+        //        });
+        //}
+
+
         public async Task SeedCheckInStatusAsync()
         {
             var statusNames = Enum.GetValues<CheckInStatusEnum>()
                 .Select(s => s.GetDescription())
                 .ToList();
-
             await SeedEntityAsync<CheckinStatus>(
                 statusNames,
                 _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync,
@@ -136,17 +194,18 @@ namespace ConfRadar.Services.Services
                     CheckinStatusName = name
                 });
         }
-        public async Task SeedReviewStatusAsync()
+        
+        public async Task SeedReviewStatusesAsync()
         {
             var statusNames = Enum.GetValues<ReviewStatusEnum>()
                 .Select(s => s.GetDescription())
                 .ToList();
 
-            await SeedEntityAsync<ReviewStatus>(
+            await SeedEntityAsync<Repositories.Models.ReviewStatus>(
                 statusNames,
                 _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync,
                 _unitOfWork.ReviewStatusRepository.CreateMultipleReviewStatusesAsync,
-                name => new ReviewStatus
+                name => new Repositories.Models.ReviewStatus
                 {
                     ReviewStatusId = Guid.NewGuid().ToString(),
                     Name = name

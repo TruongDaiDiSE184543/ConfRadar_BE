@@ -17,6 +17,8 @@ namespace ConfRadar.Services.Services
         Task<List<RoomOccupationSlotResponse>> GetRoomOccupationSlots(string roomId, DateOnly startDate, DateOnly endDate);
         Task<bool> IsRoomAvailable(string roomId, DateOnly date, TimeOnly startTime, TimeOnly endTime);
         Task<bool> IsRoomOccupiedAtTime(string roomId, DateOnly date, TimeOnly time);
+        Task<List<RoomOccupationSlotResponse>> GetSessionsInRoomOnDateAsync(string roomId, DateOnly date);
+        Task<List<TimeSpanResponse>> GetUnoccupiedTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
     }
 
     public class RoomService : IRoomService
@@ -132,9 +134,10 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("End date cannot be before start date");
             }
 
-            // Convert DateOnly to DateTime for comparison (start of the date range)
-            var startDateTime = new DateTime(startDate.Year, startDate.Month, startDate.Day, 0, 0, 0);
-            var endDateTime = new DateTime(endDate.Year, endDate.Month, endDate.Day, 23, 59, 59);
+            // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
+            // Convert DateOnly to DateTime with Unspecified kind for database comparison
+            var startDateTime = DateTime.SpecifyKind(startDate.ToDateTime(new TimeOnly(0, 0, 0)), DateTimeKind.Unspecified);
+            var endDateTime = DateTime.SpecifyKind(endDate.ToDateTime(new TimeOnly(23, 59, 59)), DateTimeKind.Unspecified);
 
             // Query conference sessions that occur in this room within the date range
             var conferenceSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAndDateRangeAsync(roomId, startDateTime, endDateTime);
@@ -147,12 +150,15 @@ namespace ConfRadar.Services.Services
                 conferences = await _unitOfWork.ConferenceRepository.GetConferencesByIdsAsync(conferenceIds);
             }
 
+            // Convert the database times (which are effectively in local timezone due to Unspecified kind) to local time for the response
             var occupationSlots = conferenceSessions.Select(session => new RoomOccupationSlotResponse
             {
                 SessionId = session.ConferenceSessionId,
                 SessionTitle = session.Title,
-                StartTime = session.StartTime!.Value,
-                EndTime = session.EndTime!.Value,
+                StartTime = session.StartTime.HasValue ? 
+                    DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Local) : DateTime.MinValue,
+                EndTime = session.EndTime.HasValue ? 
+                    DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Local) : DateTime.MinValue,
                 ConferenceId = session.ConferenceId!,
                 ConferenceName = conferences.ContainsKey(session.ConferenceId!)
                     ? conferences[session.ConferenceId!].ConferenceName
@@ -177,20 +183,24 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Room with ID {roomId} not found");
             }
 
-            // Convert DateOnly + TimeOnly to DateTime for comparison
+            // Convert DateOnly + TimeOnly to DateTime
             var startDateTime = date.ToDateTime(startTime);
             var endDateTime = date.ToDateTime(endTime);
-
+            
             // Validate time range
             if (endTime <= startTime)
             {
                 throw new BadRequestException("End time must be after start time");
             }
 
+            // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
+            var queryStartDateTime = DateTime.SpecifyKind(startDateTime, DateTimeKind.Unspecified);
+            var queryEndDateTime = DateTime.SpecifyKind(endDateTime, DateTimeKind.Unspecified);
+
             // Check for overlapping sessions in the same room on the same date
             // PostgreSQL optimization: This query efficiently checks for time overlaps
             // Overlap condition: (new_start < existing_end) AND (new_end > existing_start)
-            var overlappingSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOverlappingTimeAsync(roomId, date, startDateTime, endDateTime);
+            var overlappingSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOverlappingTimeAsync(roomId, date, queryStartDateTime, queryEndDateTime);
             var overlappingSession = overlappingSessions.Any();
 
             // If there's an overlapping session, the room is NOT available
@@ -211,15 +221,145 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Room with ID {roomId} not found");
             }
 
-            // Convert DateOnly + TimeOnly to DateTime for comparison
+            // Convert DateOnly + TimeOnly to DateTime
             var checkDateTime = date.ToDateTime(time);
+
+            // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
+            var queryCheckDateTime = DateTime.SpecifyKind(checkDateTime, DateTimeKind.Unspecified);
 
             // Check if there's a session running in this room at the specified time
             // PostgreSQL optimization: Efficient time range check
-            var sessionsAtTime = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAtTimeAsync(roomId, date, checkDateTime);
+            var sessionsAtTime = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAtTimeAsync(roomId, date, queryCheckDateTime);
             var isOccupied = sessionsAtTime.Any();
 
             return isOccupied;
+        }
+
+        /// <summary>
+        /// Get all sessions in a room for a specific date
+        /// </summary>
+        public async Task<List<RoomOccupationSlotResponse>> GetSessionsInRoomOnDateAsync(string roomId, DateOnly date)
+        {
+            // Validate room exists
+            var room = await _unitOfWork.RoomRepository.GetRoomByIdAsync(roomId);
+            if (room == null)
+            {
+                throw new NotFoundException($"Room with ID {roomId} not found");
+            }
+
+            // Get all sessions in the room for the specific date
+            var conferenceSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(roomId, date);
+
+            // Get all associated conferences at once to reduce database calls
+            var conferenceIds = conferenceSessions.Select(cs => cs.ConferenceId).Where(id => !string.IsNullOrEmpty(id)).ToList();
+            var conferences = new Dictionary<string, Conference>();
+            if (conferenceIds.Any())
+            {
+                conferences = await _unitOfWork.ConferenceRepository.GetConferencesByIdsAsync(conferenceIds);
+            }
+
+            // Convert the database times (which are effectively in local timezone due to Unspecified kind) to local time for the response
+            var occupationSlots = conferenceSessions.Select(session => new RoomOccupationSlotResponse
+            {
+                SessionId = session.ConferenceSessionId,
+                SessionTitle = session.Title,
+                StartTime = session.StartTime.HasValue ? 
+                    DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Local) : DateTime.MinValue,
+                EndTime = session.EndTime.HasValue ? 
+                    DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Local) : DateTime.MinValue,
+                ConferenceId = session.ConferenceId!,
+                ConferenceName = conferences.ContainsKey(session.ConferenceId!)
+                    ? conferences[session.ConferenceId!].ConferenceName
+                    : "Unknown Conference"
+            }).ToList();
+
+            return occupationSlots;
+        }
+
+        /// <summary>
+        /// Get all unoccupied time spans in a room for a specific date
+        /// Returns a list of available time slots between 00:00 and 23:59, excluding occupied sessions
+        /// </summary>
+        public async Task<List<TimeSpanResponse>> GetUnoccupiedTimeSpansInRoomOnDateAsync(string roomId, DateOnly date)
+        {
+            // Validate room exists
+            var room = await _unitOfWork.RoomRepository.GetRoomByIdAsync(roomId);
+            if (room == null)
+            {
+                throw new NotFoundException($"Room with ID {roomId} not found");
+            }
+
+            // Get all sessions in the room for the specific date
+            var occupiedSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(roomId, date);
+
+            // Process the occupied sessions, sorting by start time
+            var occupiedTimeSpans = occupiedSessions
+                .Where(s => s.StartTime.HasValue && s.EndTime.HasValue)
+                .Select(s => new
+                {
+                    // Since database values come as Unspecified kind, treat as local time
+                    Start = DateTime.SpecifyKind(s.StartTime.Value, DateTimeKind.Local),
+                    End = DateTime.SpecifyKind(s.EndTime.Value, DateTimeKind.Local)
+                })
+                .OrderBy(s => s.Start)
+                .ToList();
+
+            // Define the full day range (00:00 to 23:59) in local time
+            var dayStart = date.ToDateTime(new TimeOnly(0, 0, 0));
+            var dayEnd = date.ToDateTime(new TimeOnly(23, 59, 59));
+
+            var unoccupiedSpans = new List<TimeSpanResponse>();
+            
+            // If no sessions exist for the day, the entire day is unoccupied
+            if (!occupiedTimeSpans.Any())
+            {
+                unoccupiedSpans.Add(new TimeSpanResponse
+                {
+                    StartTime = TimeOnly.FromDateTime(dayStart),
+                    EndTime = TimeOnly.FromDateTime(dayEnd)
+                });
+                return unoccupiedSpans;
+            }
+
+            // Check for unoccupied time before the first session
+            var firstSessionStart = occupiedTimeSpans.First().Start;
+            if (dayStart < firstSessionStart)
+            {
+                unoccupiedSpans.Add(new TimeSpanResponse
+                {
+                    StartTime = TimeOnly.FromDateTime(dayStart),
+                    EndTime = TimeOnly.FromDateTime(firstSessionStart)
+                });
+            }
+
+            // Check for unoccupied time between sessions
+            for (int i = 0; i < occupiedTimeSpans.Count - 1; i++)
+            {
+                var currentEnd = occupiedTimeSpans[i].End;
+                var nextStart = occupiedTimeSpans[i + 1].Start;
+
+                if (currentEnd < nextStart)
+                {
+                    unoccupiedSpans.Add(new TimeSpanResponse
+                    {
+                        StartTime = TimeOnly.FromDateTime(currentEnd),
+                        EndTime = TimeOnly.FromDateTime(nextStart)
+                    });
+                }
+            }
+
+            // Check for unoccupied time after the last session
+            var lastSessionEnd = occupiedTimeSpans.Last().End;
+            if (lastSessionEnd < dayEnd)
+            {
+                unoccupiedSpans.Add(new TimeSpanResponse
+                {
+                    StartTime = TimeOnly.FromDateTime(lastSessionEnd),
+                    EndTime = TimeOnly.FromDateTime(dayEnd)
+                });
+            }
+
+            return unoccupiedSpans;
         }
     }
 }

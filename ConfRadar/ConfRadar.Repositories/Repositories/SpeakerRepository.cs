@@ -10,7 +10,9 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateSpeakerAsync(Speaker speaker);
         Task<int> UpdateSpeakerAsync(Speaker speaker);
         Task<int> DeleteSpeakerAsync(Speaker speaker);
-        Task<Speaker?> GetSpeakerByIdAsync(string sessionId);
+        Task<Speaker?> GetSpeakerByIdAsync(string speakerId);
+        Task<Speaker?> GetSpeakerBySessionIdAsync(string sessionId);
+        Task<List<Speaker>> GetSpeakersBySessionIdAsync(string sessionId);
         Task<List<Speaker>> GetAllSpeakersAsync();
     }
 
@@ -34,15 +36,27 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<Speaker?> GetSpeakerByIdAsync(string sessionId)
+        public async Task<Speaker?> GetSpeakerByIdAsync(string speakerId)
+        {
+            return await GetByIdAsync(speakerId);
+        }
+
+        public async Task<Speaker?> GetSpeakerBySessionIdAsync(string sessionId)
         {
             return await _context.Speakers
-                .FirstOrDefaultAsync(c => c.ConferenceSessionId == sessionId);
+                .FirstOrDefaultAsync(s => s.ConferenceSessionId == sessionId);
+        }
+
+        public async Task<List<Speaker>> GetSpeakersBySessionIdAsync(string sessionId)
+        {
+            return await _context.Speakers
+                .Where(s => s.ConferenceSessionId == sessionId)
+                .ToListAsync();
         }
 
         public async Task<List<Speaker>> GetAllSpeakersAsync()
         {
-            return await _context.Speakers.ToListAsync();
+            return await GetAllAsync();
         }
     }
 }

@@ -36,8 +36,8 @@ namespace ConfRadar.Services
             services.AddScoped<IGlobalStatusService, GlobalStatusService>();
             services.AddScoped<IPaperService, PaperService>();
             services.AddScoped<ICityService, CityService>();
+            services.AddScoped<IConferenceStatusService, ConferenceStatusService>();
             services.AddScoped<IServiceManager, ServiceManager>();
-
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>

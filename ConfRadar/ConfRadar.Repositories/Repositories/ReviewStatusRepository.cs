@@ -15,6 +15,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<ReviewStatus?> GetReviewStatusByNameAsync(string statusName);
         Task<List<ReviewStatus>> GetAllReviewStatusesAsync();
     }
+
     public class ReviewStatusRepository : GenericRepository<ReviewStatus>, IReviewStatusRepository
     {
         public ReviewStatusRepository(ConfRadarDbContext context) : base(context) { }

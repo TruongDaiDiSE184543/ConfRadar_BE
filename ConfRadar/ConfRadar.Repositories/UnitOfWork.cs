@@ -11,6 +11,10 @@ namespace ConfRadar.Repositories
         IUserRoleRepository UserRoleRepository { get; }
         IUserRefreshTokenRepository UserRefreshTokenRepository { get; }
         IGlobalStatusRepository GlobalStatusRepository { get; }
+        IConferenceStatusRepository ConferenceStatusRepository { get; }
+        IRankingCategoryRepository RankingCategoryRepository { get; }
+        IReviewStatusRepository ReviewStatusRepository { get; }
+        IPaperPhaseRepository PaperPhaseRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
         //ITransactionStatusRepository TransactionStatusRepository { get; }
 
@@ -19,13 +23,15 @@ namespace ConfRadar.Repositories
         //ITransactionTypeRepository TransactionTypeRepository { get; }
         ITransactionRepository TransactionRepository { get; }
         ITicketRepository TicketRepository { get; }
+        ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository { get; }
+        IConferenceSessionRepository ConferenceSessionRepository { get; }
 
         IConferenceRepository ConferenceRepository { get; }
         IConferencePolicyRepository ConferencePolicyRepository { get; }
         IConferenceMediaRepository ConferenceMediaRepository { get; }
         ISponsorRepository SponsorRepository { get; }
         IConferencePriceRepository ConferencePriceRepository { get; }
-        IConferenceSessionRepository ConferenceSessionRepository { get; }
+        IConferenceSessionMediumRepository ConferenceSessionMediumRepository { get; }
         ISpeakerRepository SpeakerRepository { get; }
         IRoomRepository RoomRepository { get; }
         IDestinationRepository DestinationRepository { get; }
@@ -33,13 +39,22 @@ namespace ConfRadar.Repositories
         //IMediaTypeRepository MediaTypeRepository { get; }
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
         ICityRepository CityRepository { get; }
-        IConferenceStatusRepository ConferenceStatusRepository { get; }
-        IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }
-        IPaperPhaseRepository PaperPhaseRepository { get; }
+        IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }     
+        //IConferenceStatusRepository ConferenceStatusRepository { get; }
+        //IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }
+        //IPaperPhaseRepository PaperPhaseRepository { get; }
         ICheckInStatusRepository CheckInStatusRepository { get; }
         IAbstractRepository AbstractRepository { get; }
         IPaperRepository PaperRepository { get; }
-        IReviewStatusRepository ReviewStatusRepository { get; }
+        IResearchConferenceDetailRepository ResearchConferenceDetailRepository { get; }
+        IResearchConferencePhaseRepository ResearchConferencePhaseRepository { get; }
+        IMaterialDownloadRepository MaterialDownloadRepository { get; }
+        IRankingFileUrlRepository RankingFileUrlRepository { get; }
+        IRankingReferenceUrlRepository RankingReferenceUrlRepository { get; }
+        IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository { get; }
+
+        //IPaperRepository PaperRepository { get; }
+        //IReviewStatusRepository ReviewStatusRepository { get; }
         IFullPaperRepository FullPaperRepository { get; }
         IPaperReviewerRepository PaperReviewerRepository { get; }
         ICameraReadyRepository CameraReadyRepository { get; }
@@ -55,12 +70,19 @@ namespace ConfRadar.Repositories
     {
         private ConfRadarDbContext _context;
         private IDbContextTransaction? _transaction;
+        private ITechnicalConferenceDetailRepository _TechnicalConferenceDetailRepository;
         private IUserRepository _UserRepository;
         private IRoleRepository _RoleRepository;
+        private IConferenceSessionRepository _ConferenceSessionRepository;
         private IUserRoleRepository _UserRoleRepository;
         private IUserRefreshTokenRepository _UserRefreshTokenRepository;
         private IGlobalStatusRepository _GlobalStatusRepository;
+        private IConferenceStatusRepository _ConferenceStatusRepository;
+        private IRankingCategoryRepository _RankingCategoryRepository;
+        private IReviewStatusRepository _ReviewStatusRepository;
+        private IPaperPhaseRepository _PaperPhaseRepository;
         private IPaymentMethodRepository _PaymentMethodRepository;
+        private IConferenceSessionMediumRepository _ConferenceSessionMediumRepository;
         //private ITransactionStatusRepository _TransactionStatusRepository;
 
         private IPricePhaseRepository _PricePhaseRepository;
@@ -74,7 +96,7 @@ namespace ConfRadar.Repositories
         private IConferenceMediaRepository _ConferenceMediaRepository;
         private ISponsorRepository _SponsorRepository;
 
-        private IConferenceSessionRepository _ConferenceSessionRepository;
+
         private ISpeakerRepository _SpeakerRepository;
         private IRoomRepository _RoomRepository;
         private IDestinationRepository _DestinationRepository;
@@ -83,31 +105,47 @@ namespace ConfRadar.Repositories
         private IConferenceCategoryRepository _ConferenceCategoryRepository;
 
         private ICityRepository _CityRepository;
-        private IConferenceStatusRepository _ConferenceStatusRepository;
         private IConferenceRefundPolicyRepository _ConferenceRefundPolicyRepository;
-        private IPaperPhaseRepository _PaperPhaseRepository;
         private ICheckInStatusRepository _CheckInStatusRepository;
         private IAbstractRepository _AbstractRepository;
         private IPaperRepository _PaperRepository;
-        private IReviewStatusRepository _ReviewStatusRepository;
+        //private IReviewStatusRepository _ReviewStatusRepository;
         private IFullPaperRepository _FullPaperRepository;
         private IPaperReviewerRepository _PaperReviewerRepository;
         private ICameraReadyRepository _CameraReadyRepository;
         private IRevisionPaperRepository _RevisionPaperRepository;
         private IRevisionPaperSubmissionRepository _RevisionPaperSubmissionRepository;
         private IRevisionSubmissionFeedbackRepository _RevisionSubmissionFeedbackRepository;
+        private IResearchConferenceDetailRepository _ResearchConferenceDetailRepository;
+        private IResearchConferencePhaseRepository _ResearchConferencePhaseRepository;
+        private IMaterialDownloadRepository _MaterialDownloadRepository;
+        private IRankingFileUrlRepository _RankingFileUrlRepository;
+        private IRankingReferenceUrlRepository _RankingReferenceUrlRepository;
+        private IRevisionRoundDeadlineRepository _RevisionRoundDeadlineRepository;
+
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
         }
         public IUserRepository UserRepository => _UserRepository ??= new UserRepository(_context);
+        public ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository => _TechnicalConferenceDetailRepository ??= new TechnicalConferenceDetailRepository(_context);
         public IRoleRepository RoleRepository => _RoleRepository ??= new RoleRepository(_context);
+        public IConferenceSessionRepository ConferenceSessionRepository => _ConferenceSessionRepository ??= new ConferenceSessionRepository(_context);
+        public IConferenceSessionMediumRepository ConferenceSessionMediumRepository => _ConferenceSessionMediumRepository ??= new ConferenceSessionMediumRepository(_context);
         public IUserRefreshTokenRepository UserRefreshTokenRepository => _UserRefreshTokenRepository ??= new UserRefreshTokenRepository(_context);
 
 
         public IUserRoleRepository UserRoleRepository => _UserRoleRepository ??= new UserRoleRepository(_context);
 
         public IGlobalStatusRepository GlobalStatusRepository => _GlobalStatusRepository ??= new GlobalStatusRepository(_context);
+
+        public IConferenceStatusRepository ConferenceStatusRepository => _ConferenceStatusRepository ??= new ConferenceStatusRepository(_context);
+
+        public IRankingCategoryRepository RankingCategoryRepository => _RankingCategoryRepository ??= new RankingCategoryRepository(_context);
+
+        public IReviewStatusRepository ReviewStatusRepository => _ReviewStatusRepository ??= new ReviewStatusRepository(_context);
+
+        public IPaperPhaseRepository PaperPhaseRepository => _PaperPhaseRepository ??= new PaperPhaseRepository(_context);
 
         public IPaymentMethodRepository PaymentMethodRepository => _PaymentMethodRepository ??= new PaymentMethodRepository(_context);
 
@@ -130,7 +168,7 @@ namespace ConfRadar.Repositories
 
 
 
-        public IConferenceSessionRepository ConferenceSessionRepository => _ConferenceSessionRepository ??= new ConferenceSessionRepository(_context);
+       
 
         public ISpeakerRepository SpeakerRepository => _SpeakerRepository ??= new SpeakerRepository(_context);
 
@@ -145,11 +183,9 @@ namespace ConfRadar.Repositories
 
         public ICityRepository CityRepository => _CityRepository ??= new CityRepository(_context);
 
-        public IConferenceStatusRepository ConferenceStatusRepository => _ConferenceStatusRepository ??= new ConferenceStatusRepository(_context);
 
         public IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository => _ConferenceRefundPolicyRepository ??= new ConferenceRefundPolicyRepository(_context);
 
-        public IPaperPhaseRepository PaperPhaseRepository => _PaperPhaseRepository ??= new PaperPhaseRepository(_context);
 
         public ICheckInStatusRepository CheckInStatusRepository => _CheckInStatusRepository ??= new CheckInStatusRepository(_context);
 
@@ -157,7 +193,7 @@ namespace ConfRadar.Repositories
 
         public IPaperRepository PaperRepository => _PaperRepository ??= new PaperRepository(_context);
 
-        public IReviewStatusRepository ReviewStatusRepository => _ReviewStatusRepository ??= new ReviewStatusRepository(_context);
+        //public IReviewStatusRepository ReviewStatusRepository => _ReviewStatusRepository ??= new ReviewStatusRepository(_context);
 
         public IFullPaperRepository FullPaperRepository => _FullPaperRepository ??= new FullPaperRepository(_context);
 
@@ -169,6 +205,18 @@ namespace ConfRadar.Repositories
         public IRevisionPaperSubmissionRepository RevisionPaperSubmissionRepository => _RevisionPaperSubmissionRepository ??= new RevisionPaperSubmissionRepository(_context);
 
         public IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository => _RevisionSubmissionFeedbackRepository ??= new RevisionSubmissionFeedbackRepository(_context);  
+
+        public IResearchConferenceDetailRepository ResearchConferenceDetailRepository => _ResearchConferenceDetailRepository ??= new ResearchConferenceDetailRepository(_context);
+
+        public IResearchConferencePhaseRepository ResearchConferencePhaseRepository => _ResearchConferencePhaseRepository ??= new ResearchConferencePhaseRepository(_context);
+
+        public IMaterialDownloadRepository MaterialDownloadRepository => _MaterialDownloadRepository ??= new MaterialDownloadRepository(_context);
+
+        public IRankingFileUrlRepository RankingFileUrlRepository => _RankingFileUrlRepository ??= new RankingFileUrlRepository(_context);
+
+        public IRankingReferenceUrlRepository RankingReferenceUrlRepository => _RankingReferenceUrlRepository ??= new RankingReferenceUrlRepository(_context);
+
+        public IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository => _RevisionRoundDeadlineRepository ??= new RevisionRoundDeadlineRepository(_context);
 
         public async Task BeginTransactionAsync()
         {
