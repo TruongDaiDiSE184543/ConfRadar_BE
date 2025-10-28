@@ -90,7 +90,7 @@ namespace ConfRadar.Api.Controllers
         #region Step 3: Conference Sessions
 
         [HttpPost("{conferenceId}/sessions")]
-        public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromBody] AddConferenceSessionsRequest request)
+        public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromForm] AddConferenceSessionsRequest request)
         {
             var sessions = await _serviceManager.ConferenceStepService.AddConferenceSessionsAsync(conferenceId, request);
             return Ok(ApiResponse<List<ConferenceSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị được thêm thành công"));

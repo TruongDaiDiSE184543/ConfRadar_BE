@@ -98,9 +98,9 @@ namespace ConfRadar.Repositories
             _context = context;
         }
         public IUserRepository UserRepository => _UserRepository ??= new UserRepository(_context);
-        public ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository => _TechnicalConferenceDetailRepository;
+        public ITechnicalConferenceDetailRepository TechnicalConferenceDetailRepository => _TechnicalConferenceDetailRepository ??= new TechnicalConferenceDetailRepository(_context);
         public IRoleRepository RoleRepository => _RoleRepository ??= new RoleRepository(_context);
-        public IConferenceSessionRepository ConferenceSessionRepository => _ConferenceSessionRepository;
+        public IConferenceSessionRepository ConferenceSessionRepository => _ConferenceSessionRepository ??= new ConferenceSessionRepository(_context);
         public IConferenceSessionMediumRepository ConferenceSessionMediumRepository => _ConferenceSessionMediumRepository ??= new ConferenceSessionMediumRepository(_context);
         public IUserRefreshTokenRepository UserRefreshTokenRepository => _UserRefreshTokenRepository ??= new UserRefreshTokenRepository(_context);
 

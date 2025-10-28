@@ -79,8 +79,8 @@ namespace ConfRadar.Services.Services
 
         private async Task ValidateSessionTimeAvailability(DateTime startTime, DateTime endTime, string roomId, string? sessionIdToExclude = null)
         {
-            var startTimeUtc = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
-            var endTimeUtc = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
+            var startTimeUtc = DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
+            var endTimeUtc = DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
 
             if ((endTimeUtc - startTimeUtc).TotalMinutes < 30)
             {
@@ -362,6 +362,7 @@ namespace ConfRadar.Services.Services
                         endDateTime = endDateTime.AddHours(session.EndTime.Value.Hour).AddMinutes(session.EndTime.Value.Minute);
 
                         await ValidateSessionTimeAvailability(startDateTime, endDateTime, session.RoomId);
+                        
 
                         var conferenceSession = session.ToModel(conferenceId);
                         await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
@@ -700,7 +701,7 @@ namespace ConfRadar.Services.Services
                         {
                             using var stream = sponsor.ImageFile.OpenReadStream();
                             var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(sponsor.ImageFile.FileName);
-                            imageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, sponsor.ImageFile.ContentType);
+                            imageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.sponsorimage.ToString(), uniqueFileName, stream, sponsor.ImageFile.ContentType);
                             imageUrl = _objectStorageSettings.EndPoint + imageUrl;
                         }
 
@@ -743,7 +744,7 @@ namespace ConfRadar.Services.Services
             {
                 using var stream = request.ImageFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.ImageFile.FileName);
-                sponsor.ImageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, request.ImageFile.ContentType);
+                sponsor.ImageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.sponsorimage.ToString(), uniqueFileName, stream, request.ImageFile.ContentType);
                 sponsor.ImageUrl = _objectStorageSettings.EndPoint + sponsor.ImageUrl;
             }
             else if (!string.IsNullOrEmpty(request.ImageUrl))

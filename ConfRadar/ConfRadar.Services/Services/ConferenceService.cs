@@ -210,8 +210,12 @@ namespace ConfRadar.Services.Services
         //                    ConferenceSessionId = Guid.NewGuid().ToString(),
         //                    Title = session.Title,
         //                    Description = session.Description,
-        //                    StartTime = session.StartTime,
-        //                    EndTime = session.EndTime,
+        //                    StartTime = session.StartTime.HasValue ? 
+        //                        (session.StartTime.Value.Kind == DateTimeKind.Unspecified ?
+        //                         session.StartTime.Value : DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Unspecified)) : null,
+        //                    EndTime = session.EndTime.HasValue ?
+        //                        (session.EndTime.Value.Kind == DateTimeKind.Unspecified ?
+        //                         session.EndTime.Value : DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Unspecified)) : null,
         //                    // Date field has been removed, using StartTime and EndTime which contain date and time
         //                    ConferenceId = conferenceId,
         //                    RoomId = session.RoomId // Use existing room ID
@@ -583,10 +587,10 @@ namespace ConfRadar.Services.Services
         //        return; // Skip validation if required fields are missing
         //    }
 
-        //    // Convert to UTC for consistency
-        //    var startTimeUtc = session.StartTime.Value.Kind == DateTimeKind.Unspecified ?
+        //    // Convert to Unspecified for consistency with PostgreSQL timestamp without timezone
+        //    var startTimeUnspecified = session.StartTime.Value.Kind == DateTimeKind.Unspecified ?
         //        session.StartTime.Value : DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Unspecified);
-        //    var endTimeUtc = session.EndTime.Value.Kind == DateTimeKind.Unspecified ?
+        //    var endTimeUnspecified = session.EndTime.Value.Kind == DateTimeKind.Unspecified ?
         //        session.EndTime.Value : DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Unspecified);
 
         //    // Check if session meets minimum duration requirement
@@ -607,11 +611,11 @@ namespace ConfRadar.Services.Services
         //    {
         //        if (!existingSession.StartTime.HasValue || !existingSession.EndTime.HasValue) continue;
 
-        //        // Ensure existing session times are also in UTC for comparison
-        //        var existingStartUtc = existingSession.StartTime.Value.Kind == DateTimeKind.Utc ?
-        //            existingSession.StartTime.Value : DateTime.SpecifyKind(existingSession.StartTime.Value, DateTimeKind.Utc);
-        //        var existingEndUtc = existingSession.EndTime.Value.Kind == DateTimeKind.Utc ?
-        //            existingSession.EndTime.Value : DateTime.SpecifyKind(existingSession.EndTime.Value, DateTimeKind.Utc);
+        //        // Ensure existing session times are in Unspecified for comparison with PostgreSQL timestamp without timezone
+        //        var existingStartUnspecified = existingSession.StartTime.Value.Kind == DateTimeKind.Unspecified ?
+        //            existingSession.StartTime.Value : DateTime.SpecifyKind(existingSession.StartTime.Value, DateTimeKind.Unspecified);
+        //        var existingEndUnspecified = existingSession.EndTime.Value.Kind == DateTimeKind.Unspecified ?
+        //            existingSession.EndTime.Value : DateTime.SpecifyKind(existingSession.EndTime.Value, DateTimeKind.Unspecified);
 
         //        // Calculate session times with interval buffer
         //        var newSessionStartWithBuffer = startTimeUtc.AddHours(-config.SessionIntervalHours);
@@ -970,8 +974,8 @@ namespace ConfRadar.Services.Services
                 
                 var conferencePrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conference.ConferenceId);
                 var haveConferencePrice = conferencePrices.Any();
-                
-                var haveTechnicalDetail = conference.TechnicalConferenceDetail != null;
+
+                var haveTechnicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conference.ConferenceId) != null;
                 
                 var haveSessionMedia = false;
                 var haveSpeakerInSession = false;

@@ -26,7 +26,7 @@ namespace ConfRadar.Services
             services.AddScoped<ITicketService, TicketService>();
             services.AddScoped<IPaymentService, PaymentService>();
 
-            //services.AddScoped<IConferenceService, ConferenceService>();
+            services.AddScoped<IConferenceService, ConferenceService>();
             services.AddScoped<IRoomService, RoomService>();
             services.AddScoped<IDestinationService, DestinationService>();
             services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
@@ -37,7 +37,6 @@ namespace ConfRadar.Services
             services.AddScoped<IPaperService, PaperService>();
             services.AddScoped<ICityService, CityService>();
             services.AddScoped<IServiceManager, ServiceManager>();
-
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>

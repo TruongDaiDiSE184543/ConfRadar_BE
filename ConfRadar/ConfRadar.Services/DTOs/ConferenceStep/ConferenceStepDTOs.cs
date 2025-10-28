@@ -118,7 +118,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class CreateConferenceSessionMediaRequest
     {
-        public IFormFile? MediaFile { get; set; }
+        public IFormFile MediaFile { get; set; }
         public string? MediaUrl { get; set; }
     }
 
@@ -157,7 +157,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Step 5: Conference Media
     public class CreateConferenceMediaRequest
     {
-        public IFormFile? MediaFile { get; set; }
+        public IFormFile MediaFile { get; set; }
         public string? MediaUrl { get; set; }
     }
 
