@@ -271,6 +271,158 @@ namespace ConfRadar.Api.Controllers
             }
             return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy chính sách hoàn trả"));
         }
+        #endregion
+
+        #region Research Conference Step 2: Research Conference Detail
+
+        [HttpPost("{conferenceId}/research/detail")]
+        public async Task<IActionResult> CreateResearchConferenceDetail(string conferenceId, [FromBody] CreateResearchConferenceDetailRequest request)
+        {
+            var detail = await _serviceManager.ConferenceStepService.CreateResearchConferenceDetailAsync(conferenceId, request);
+            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được tạo thành công"));
+        }
+
+        [HttpGet("{conferenceId}/research/detail")]
+        public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
+        {
+            var detail = await _serviceManager.ConferenceStepService.GetResearchConferenceDetailAsync(conferenceId);
+            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được lấy thành công"));
+        }
+
+        [HttpPut("{conferenceId}/research/detail")]
+        public async Task<IActionResult> UpdateResearchConferenceDetail(string conferenceId, [FromBody] UpdateResearchConferenceDetailRequest request)
+        {
+            var detail = await _serviceManager.ConferenceStepService.UpdateResearchConferenceDetailAsync(conferenceId, request);
+            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được cập nhật thành công"));
+        }
+
+        #endregion
+
+        #region Research Conference Step 3: Research Conference Phases
+
+        [HttpPost("{conferenceId}/research/phases")]
+        public async Task<IActionResult> CreateResearchConferencePhase(string conferenceId, [FromBody] CreateResearchConferencePhaseRequest request)
+        {
+            var phase = await _serviceManager.ConferenceStepService.CreateResearchConferencePhaseAsync(conferenceId, request);
+            return Ok(ApiResponse<ResearchConferencePhaseResponse>.SuccessResponse(phase, "Giai đoạn hội nghị nghiên cứu được tạo thành công"));
+        }
+
+        [HttpGet("{conferenceId}/research/phases")]
+        public async Task<IActionResult> GetResearchConferencePhase(string conferenceId)
+        {
+            var phase = await _serviceManager.ConferenceStepService.GetResearchConferencePhaseAsync(conferenceId);
+            return Ok(ApiResponse<ResearchConferencePhaseResponse>.SuccessResponse(phase, "Giai đoạn hội nghị nghiên cứu được lấy thành công"));
+        }
+
+        [HttpPut("research/phases/{phaseId}")]
+        public async Task<IActionResult> UpdateResearchConferencePhase(string phaseId, [FromBody] UpdateResearchConferencePhaseRequest request)
+        {
+            var phase = await _serviceManager.ConferenceStepService.UpdateResearchConferencePhaseAsync(phaseId, request);
+            return Ok(ApiResponse<ResearchConferencePhaseResponse>.SuccessResponse(phase, "Giai đoạn hội nghị nghiên cứu được cập nhật thành công"));
+        }
+
+        #endregion
+
+        #region Research Conference Step 1: Basic Research Conference Creation
+
+        [HttpPost("research/basic")]
+        public async Task<IActionResult> CreateResearchConferenceBasic([FromForm] CreateResearchConferenceBasicRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse<object>.FailResponse("Người dùng chưa xác thực"));
+            }
+
+            var conference = await _serviceManager.ConferenceStepService.CreateResearchConferenceBasicAsync(request, userId);
+            return Ok(ApiResponse<ResearchConferenceBasicStepResponse>.SuccessResponse(conference, "Hội nghị nghiên cứu được tạo thành công"));
+        }
+
+        [HttpGet("{conferenceId}/research/basic")]
+        public async Task<IActionResult> GetResearchConferenceBasic(string conferenceId)
+        {
+            var conference = await _serviceManager.ConferenceStepService.GetResearchConferenceBasicAsync(conferenceId);
+            return Ok(ApiResponse<ResearchConferenceBasicStepResponse>.SuccessResponse(conference, "Thông tin hội nghị nghiên cứu được lấy thành công"));
+        }
+
+        [HttpPut("{conferenceId}/research/basic")]
+        public async Task<IActionResult> UpdateResearchConferenceBasic(string conferenceId, [FromForm] UpdateConferenceBasicRequest request)
+        {
+            var conference = await _serviceManager.ConferenceStepService.UpdateResearchConferenceBasicAsync(conferenceId, request);
+            return Ok(ApiResponse<ResearchConferenceBasicStepResponse>.SuccessResponse(conference, "Thông tin hội nghị nghiên cứu được cập nhật thành công"));
+        }
+
+        #endregion
+
+        #region Research Conference Step 3: Research Conference Sessions (without speakers)
+
+        [HttpPost("{conferenceId}/research/sessions")]
+        public async Task<IActionResult> AddResearchSessions(string conferenceId, [FromForm] AddResearchSessionsRequest request)
+        {
+            var sessions = await _serviceManager.ConferenceStepService.AddResearchSessionsAsync(conferenceId, request);
+            return Ok(ApiResponse<List<ResearchSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị nghiên cứu được thêm thành công"));
+        }
+
+        [HttpGet("{conferenceId}/research/sessions")]
+        public async Task<IActionResult> GetResearchSessions(string conferenceId)
+        {
+            var sessions = await _serviceManager.ConferenceStepService.GetResearchSessionsAsync(conferenceId);
+            return Ok(ApiResponse<List<ResearchSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị nghiên cứu được lấy thành công"));
+        }
+
+        [HttpPut("research/sessions/{sessionId}")]
+        public async Task<IActionResult> UpdateResearchSession(string sessionId, [FromBody] UpdateConferenceSessionRequest request)
+        {
+            var session = await _serviceManager.ConferenceStepService.UpdateResearchSessionAsync(sessionId, request);
+            return Ok(ApiResponse<ResearchSessionWithMediaResponse>.SuccessResponse(session, "Phiên hội nghị nghiên cứu được cập nhật thành công"));
+        }
+
+        [HttpDelete("research/sessions/{sessionId}")]
+        public async Task<IActionResult> DeleteResearchSession(string sessionId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteResearchSessionAsync(sessionId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Phiên hội nghị nghiên cứu được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy phiên hội nghị nghiên cứu"));
+        }
+
+        #endregion
+
+        #region Research Conference Step 7: Ranking Reference URLs
+
+        [HttpPost("{conferenceId}/research/ranking-reference-urls")]
+        public async Task<IActionResult> CreateRankingReferenceUrl(string conferenceId, [FromBody] CreateRankingReferenceUrlRequest request)
+        {
+            var referenceUrl = await _serviceManager.ConferenceStepService.CreateRankingReferenceUrlAsync(conferenceId, request);
+            return Ok(ApiResponse<RankingReferenceUrlResponse>.SuccessResponse(referenceUrl, "URL tham khảo xếp hạng được tạo thành công"));
+        }
+
+        [HttpGet("{conferenceId}/research/ranking-reference-urls")]
+        public async Task<IActionResult> GetRankingReferenceUrls(string conferenceId)
+        {
+            var referenceUrls = await _serviceManager.ConferenceStepService.GetRankingReferenceUrlsByConferenceIdAsync(conferenceId);
+            return Ok(ApiResponse<List<RankingReferenceUrlResponse>>.SuccessResponse(referenceUrls, "URL tham khảo xếp hạng được lấy thành công"));
+        }
+
+        [HttpPut("research/ranking-reference-urls/{referenceUrlId}")]
+        public async Task<IActionResult> UpdateRankingReferenceUrl(string referenceUrlId, [FromBody] UpdateRankingReferenceUrlRequest request)
+        {
+            var referenceUrl = await _serviceManager.ConferenceStepService.UpdateRankingReferenceUrlAsync(referenceUrlId, request);
+            return Ok(ApiResponse<RankingReferenceUrlResponse>.SuccessResponse(referenceUrl, "URL tham khảo xếp hạng được cập nhật thành công"));
+        }
+
+        [HttpDelete("research/ranking-reference-urls/{referenceUrlId}")]
+        public async Task<IActionResult> DeleteRankingReferenceUrl(string referenceUrlId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteRankingReferenceUrlAsync(referenceUrlId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "URL tham khảo xếp hạng được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy URL tham khảo xếp hạng"));
+        }
 
         #endregion
     }

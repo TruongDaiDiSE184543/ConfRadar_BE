@@ -52,6 +52,45 @@ namespace ConfRadar.Services.Services
         Task<List<RefundPolicyResponse>> GetRefundPoliciesAsync(string conferenceId);
         Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request);
         Task<bool> DeleteRefundPolicyAsync(string refundPolicyId);
+
+        // Research Conference Step 1: Basic Research Conference Creation
+        Task<ResearchConferenceBasicStepResponse> CreateResearchConferenceBasicAsync(CreateResearchConferenceBasicRequest request, string userid);
+        Task<ResearchConferenceBasicStepResponse> GetResearchConferenceBasicAsync(string conferenceId);
+        Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request);
+
+        // Research Conference Step 2: Research Conference Detail
+        Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request);
+        Task<ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId);
+        Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request);
+
+        // Research Conference Step 3: Research Conference Phases
+        Task<ResearchConferencePhaseResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhaseRequest request);
+        Task<ResearchConferencePhaseResponse> GetResearchConferencePhaseAsync(string conferenceId);
+        Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request);
+
+        // Research Conference Step 4: Research Conference Sessions (without speakers)
+        Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request);
+        Task<List<ResearchSessionWithMediaResponse>> GetResearchSessionsAsync(string conferenceId);
+        Task<ResearchSessionWithMediaResponse> UpdateResearchSessionAsync(string sessionId, UpdateConferenceSessionRequest request);
+        Task<bool> DeleteResearchSessionAsync(string sessionId);
+
+        // Research Conference Step 5: Material Downloads
+        Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request);
+        Task<List<MaterialDownloadResponse>> GetMaterialDownloadsByConferenceIdAsync(string conferenceId);
+        Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request);
+        Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId);
+
+        // Research Conference Step 6: Ranking File URLs
+        Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request);
+        Task<List<RankingFileUrlResponse>> GetRankingFileUrlsByConferenceIdAsync(string conferenceId);
+        Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request);
+        Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId);
+
+        // Research Conference Step 7: Ranking Reference URLs
+        Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request);
+        Task<List<RankingReferenceUrlResponse>> GetRankingReferenceUrlsByConferenceIdAsync(string conferenceId);
+        Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request);
+        Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId);
     }
 
     public class ConferenceStepService : IConferenceStepService
@@ -833,6 +872,517 @@ namespace ConfRadar.Services.Services
             if (refundPolicy == null) throw new NotFoundException($"Refund policy with ID {refundPolicyId} not found");
 
             return await _unitOfWork.ConferenceRefundPolicyRepository.DeleteConferenceRefundPolicyAsync(refundPolicy) > 0;
+        }
+
+        #endregion
+
+        #region Research Conference Step 1: Basic Research Conference
+
+        public async Task<ResearchConferenceBasicStepResponse> CreateResearchConferenceBasicAsync(CreateResearchConferenceBasicRequest request, string userid)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var category = await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId);
+                if (category == null)
+                {
+                    throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
+                }
+                
+                var bannerExtension = request.BannerImageFile?.ContentType switch
+                {
+                    "image/jpeg" => "jpeg",
+                    "image/gif" => "gif",
+                    "image/png" => "png",
+                    _ => null
+                };
+                request.createdby = userid;
+                
+                if (bannerExtension == null && request.BannerImageFile != null) 
+                    throw new Exception("BannerImageFile extension is not supported");
+                    
+                if (request.BannerImageFile != null)
+                {
+                    using var stream = request.BannerImageFile.OpenReadStream();
+                    var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
+                    request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
+                    request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
+                }
+                
+                if (request.StartDate < DateOnly.FromDateTime(DateTime.Today) &&
+                    request.EndDate < DateOnly.FromDateTime(DateTime.Today) &&
+                    request.TicketSaleEnd < DateOnly.FromDateTime(DateTime.Today) &&
+                    request.TicketSaleStart < DateOnly.FromDateTime(DateTime.Today)
+                    ) 
+                    throw new Exception("Date must be after today");
+                    
+                if (request.StartDate > request.EndDate || request.TicketSaleStart > request.TicketSaleEnd ||
+                    request.TicketSaleEnd > request.StartDate) 
+                    throw new Exception("date start must be after dateend the same with ticketsale and ticketsale end must be before date start ");
+                    
+                if (request.TotalSlot < 0) 
+                    throw new Exception("Total slot must be positive");
+                    
+                var vietNamTimeZoneNow = DateOnly.FromDateTime(DateTime.Now);
+                
+                
+                Conference toBeCreatedConference;
+                var confStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
+                toBeCreatedConference = request.ToModel(confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), vietNamTimeZoneNow);
+               
+                await _unitOfWork.ConferenceRepository.CreateConferenceAsync(toBeCreatedConference);
+                // Note: No TechnicalConferenceDetail for research conference
+                
+                await _unitOfWork.CommitAsync();
+                return await GetResearchConferenceBasicAsync(toBeCreatedConference.ConferenceId);
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<ResearchConferenceBasicStepResponse> GetResearchConferenceBasicAsync(string conferenceId)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            return conference.ToResearchResponse();
+        }
+
+        public async Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            conference.ConferenceName = request.ConferenceName ?? conference.ConferenceName;
+            conference.Description = request.Description ?? conference.Description;
+            conference.StartDate = request.StartDate;  // Fixed nullable DateOnly
+            conference.EndDate = request.EndDate;         // Fixed nullable DateOnly
+            conference.TotalSlot = request.TotalSlot ?? conference.TotalSlot;
+            conference.AvailableSlot = request.TotalSlot ?? conference.AvailableSlot; // Update available slot if total is changed
+            conference.Address = request.Address ?? conference.Address;
+            conference.IsInternalHosted = request.IsInternalHosted ?? conference.IsInternalHosted;
+            conference.IsResearchConference = request.IsResearchConference ?? conference.IsResearchConference;
+            conference.ConferenceCategoryId = request.ConferenceCategoryId ?? conference.ConferenceCategoryId;
+            conference.CityId = request.CityId ?? conference.CityId;
+            conference.TicketSaleStart = request.TicketSaleStart ?? conference.TicketSaleStart;
+            conference.TicketSaleEnd = request.TicketSaleEnd ?? conference.TicketSaleEnd;
+
+            if (request.BannerImageFile != null)
+            {
+                using var stream = request.BannerImageFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
+                conference.BannerImageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
+            }
+
+            await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
+            return await GetResearchConferenceBasicAsync(conferenceId);
+        }
+
+        #endregion
+
+        #region Research Conference Step 2: Research Conference Detail
+
+        public async Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var researchDetail = request.ToModel(conferenceId);
+            
+            await _unitOfWork.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(researchDetail);
+            return researchDetail.ToResponse();
+        }
+
+        public async Task<ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId)
+        {
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+            if (researchDetail == null) throw new NotFoundException($"Research conference detail for conference ID {conferenceId} not found");
+
+            return researchDetail.ToResponse();
+        }
+
+        public async Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request)
+        {
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+            if (researchDetail == null) throw new NotFoundException($"Research conference detail for conference ID {conferenceId} not found");
+
+            researchDetail.Name = request.Name ?? researchDetail.Name;
+            researchDetail.PaperFormat = request.PaperFormat ?? researchDetail.PaperFormat;
+            researchDetail.NumberPaperAccept = request.NumberPaperAccept ?? researchDetail.NumberPaperAccept;
+            researchDetail.RevisionAttemptAllowed = request.RevisionAttemptAllowed ?? researchDetail.RevisionAttemptAllowed;
+            researchDetail.RankingDescription = request.RankingDescription ?? researchDetail.RankingDescription;
+            researchDetail.AllowListener = request.AllowListener ?? researchDetail.AllowListener;
+            researchDetail.RankValue = request.RankValue ?? researchDetail.RankValue;
+            researchDetail.RankYear = request.RankYear ?? researchDetail.RankYear;
+            researchDetail.ReviewFee = request.ReviewFee ?? researchDetail.ReviewFee;
+            researchDetail.RankingCategoryId = request.RankingCategoryId ?? researchDetail.RankingCategoryId;
+
+            await _unitOfWork.ResearchConferenceDetailRepository.UpdateResearchConferenceDetailAsync(researchDetail);
+            return researchDetail.ToResponse();
+        }
+
+        #endregion
+
+        #region Research Conference Step 3: Research Conference Phases
+
+        public async Task<ResearchConferencePhaseResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhaseRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var phase = request.ToModel(conferenceId);
+            
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _unitOfWork.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(phase);
+
+                // Create revision round deadlines if provided
+                if (request.RevisionRoundDeadlines != null)
+                {
+                    foreach (var deadline in request.RevisionRoundDeadlines)
+                    {
+                        var revisionRoundDeadline = deadline.ToModel(phase.ResearchConferencePhaseId);
+                        await _unitOfWork.RevisionRoundDeadlineRepository.CreateCsAsync(revisionRoundDeadline);
+                    }
+                }
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+
+            return phase.ToResponse();
+        }
+
+        public async Task<ResearchConferencePhaseResponse> GetResearchConferencePhaseAsync(string conferenceId)
+        {
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
+            if (phase == null) throw new NotFoundException($"Research conference phase for conference ID {conferenceId} not found");
+
+            return phase.ToResponse();
+        }
+
+        public async Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request)
+        {
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(phaseId);
+            if (phase == null) throw new NotFoundException($"Research conference phase with ID {phaseId} not found");
+
+            phase.RegistrationStartDate = request.RegistrationStartDate ?? phase.RegistrationStartDate;
+            phase.RegistrationEndDate = request.RegistrationEndDate ?? phase.RegistrationEndDate;
+            phase.FullPaperStartDate = request.FullPaperStartDate ?? phase.FullPaperStartDate;
+            phase.FullPaperEndDate = request.FullPaperEndDate ?? phase.FullPaperEndDate;
+            phase.ReviewStartDate = request.ReviewStartDate ?? phase.ReviewStartDate;
+            phase.ReviewEndDate = request.ReviewEndDate ?? phase.ReviewEndDate;
+            phase.ReviseStartDate = request.ReviseStartDate ?? phase.ReviseStartDate;
+            phase.ReviseEndDate = request.ReviseEndDate ?? phase.ReviseEndDate;
+            phase.CameraReadyStartDate = request.CameraReadyStartDate ?? phase.CameraReadyStartDate;
+            phase.CameraReadyEndDate = request.CameraReadyEndDate ?? phase.CameraReadyEndDate;
+            phase.IsWaitlist = request.IsWaitlist ?? phase.IsWaitlist;
+            phase.IsActive = request.IsActive ?? phase.IsActive;
+
+            await _unitOfWork.ResearchConferencePhaseRepository.UpdateResearchConferencePhaseAsync(phase);
+            return phase.ToResponse();
+        }
+
+        #endregion
+
+        #region Research Conference Step 4: Research Conference Sessions (without speakers)
+
+        public async Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var responses = new List<ResearchSessionWithMediaResponse>();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                if (request.Sessions != null)
+                {
+                    foreach (var session in request.Sessions)
+                    {
+                        if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null) 
+                            throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
+                        
+                        if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null) 
+                            throw new NotFoundException($"Room with ID {session.RoomId} not found");
+
+                        // Validate session time availability
+                        var startDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
+                        var endDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
+                        
+                        startDateTime = startDateTime.AddHours(session.StartTime.Value.Hour).AddMinutes(session.StartTime.Value.Minute);
+                        endDateTime = endDateTime.AddHours(session.EndTime.Value.Hour).AddMinutes(session.EndTime.Value.Minute);
+
+                        await ValidateSessionTimeAvailability(startDateTime, endDateTime, session.RoomId);
+                        
+
+                        var conferenceSession = session.ToModel(conferenceId);
+                        await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
+
+                        // Add media for the session (no speakers for research sessions)
+                        if (session.SessionMedias != null)
+                        {
+                            foreach (var mediaRequest in session.SessionMedias)
+                            {
+                                var sessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId);
+                                
+                                if (mediaRequest.MediaFile != null)
+                                {
+                                    using var stream = mediaRequest.MediaFile.OpenReadStream();
+                                    var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(mediaRequest.MediaFile.FileName);
+                                    sessionMedia.MediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
+                                    sessionMedia.MediaUrl = _objectStorageSettings.EndPoint + sessionMedia.MediaUrl;
+                                }
+
+                                await _unitOfWork.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(sessionMedia);
+                            }
+                        }
+
+                        // Get updated session with all details
+                        var createdSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(conferenceSession.ConferenceSessionId);
+                        responses.Add(createdSession.ToResearchResponseWithMedia());
+                    }
+                }
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+
+            return responses;
+        }
+
+        public async Task<List<ResearchSessionWithMediaResponse>> GetResearchSessionsAsync(string conferenceId)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+            var responses = new List<ResearchSessionWithMediaResponse>();
+
+            foreach (var session in sessions)
+            {
+                responses.Add(session.ToResearchResponseWithMedia());
+            }
+
+            return responses;
+        }
+
+        public async Task<ResearchSessionWithMediaResponse> UpdateResearchSessionAsync(string sessionId, UpdateConferenceSessionRequest request)
+        {
+            var session = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
+            if (session == null) throw new NotFoundException($"Conference session with ID {sessionId} not found");
+
+            var newStartTime = request.StartTime ?? TimeOnly.FromDateTime( session.StartTime.Value);
+            var newEndTime = request.EndTime ?? TimeOnly.FromDateTime( session.EndTime.Value);
+            var newDate = request.Date ?? session.SessionDate;
+            var newRoomId = request.RoomId ?? session.RoomId;
+
+            if (newStartTime == null || newEndTime == null || newDate == null || newRoomId == null) 
+                throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
+
+            // Validate session time availability
+            var startDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
+            var endDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
+            
+            startDateTime = startDateTime.AddHours(newStartTime.Hour).AddMinutes(newStartTime.Minute);
+            endDateTime = endDateTime.AddHours(newEndTime.Hour).AddMinutes(newEndTime.Minute);
+
+            await ValidateSessionTimeAvailability(startDateTime, endDateTime, newRoomId, sessionId);
+
+            session.Title = request.Title ?? session.Title;
+            session.Description = request.Description ?? session.Description;
+            session.StartTime = startDateTime;
+            session.EndTime = endDateTime;
+            session.SessionDate = newDate;
+            session.RoomId = newRoomId;
+
+            await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
+
+            var updatedSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
+            return updatedSession.ToResearchResponseWithMedia();
+        }
+
+        public async Task<bool> DeleteResearchSessionAsync(string sessionId)
+        {
+            var session = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(sessionId);
+            if (session == null) throw new NotFoundException($"Conference session with ID {sessionId} not found");
+
+            // Delete all media associated with this session (no speakers for research sessions)
+            var mediaList = await _unitOfWork.ConferenceSessionMediumRepository.GetMediaBySessionIdAsync(sessionId);
+            foreach (var media in mediaList)
+            {
+                await _unitOfWork.ConferenceSessionMediumRepository.DeleteConferenceSessionMediumAsync(media);
+            }
+
+            return await _unitOfWork.ConferenceSessionRepository.DeleteConferenceSessionAsync(session) > 0;
+        }
+
+        #endregion
+
+        #region Research Conference Step 5: Material Downloads
+
+        public async Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var materialDownload = request.ToModel(conferenceId);
+
+            // Handle file upload if provided
+            if (request.File != null)
+            {
+                using var stream = request.File.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
+                materialDownload.FileName = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
+            }
+
+            await _unitOfWork.MaterialDownloadRepository.CreateMaterialDownloadAsync(materialDownload);
+            return materialDownload.ToResponse();
+        }
+
+        public async Task<List<MaterialDownloadResponse>> GetMaterialDownloadsByConferenceIdAsync(string conferenceId)
+        {
+            var materials = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conferenceId);
+            return materials.Select(m => m.ToResponse()).ToList();
+        }
+
+        public async Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request)
+        {
+            var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
+            if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
+
+            if (!string.IsNullOrEmpty(request.FileName)) materialDownload.FileName = request.FileName;
+            if (!string.IsNullOrEmpty(request.FileDescription)) materialDownload.FileDescription = request.FileDescription;
+
+            // Handle file upload if provided
+            if (request.File != null)
+            {
+                using var stream = request.File.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
+                materialDownload.FileName = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
+            }
+
+            await _unitOfWork.MaterialDownloadRepository.UpdateMaterialDownloadAsync(materialDownload);
+            return materialDownload.ToResponse();
+        }
+
+        public async Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId)
+        {
+            var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
+            if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
+
+            return await _unitOfWork.MaterialDownloadRepository.DeleteMaterialDownloadAsync(materialDownload) > 0;
+        }
+
+        #endregion
+
+        #region Research Conference Step 6: Ranking File URLs
+
+        public async Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var rankingFileUrl = request.ToModel(conferenceId);
+
+            // Handle file upload if provided
+            if (request.File != null)
+            {
+                using var stream = request.File.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
+                rankingFileUrl.FileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.rankingfile.ToString(), uniqueFileName, stream, request.File.ContentType);
+                rankingFileUrl.FileUrl = _objectStorageSettings.EndPoint + rankingFileUrl.FileUrl;
+            }
+
+            await _unitOfWork.RankingFileUrlRepository.CreateRankingFileUrlAsync(rankingFileUrl);
+            return rankingFileUrl.ToResponse();
+        }
+
+        public async Task<List<RankingFileUrlResponse>> GetRankingFileUrlsByConferenceIdAsync(string conferenceId)
+        {
+            var fileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
+            return fileUrls.Select(f => f.ToResponse()).ToList();
+        }
+
+        public async Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request)
+        {
+            var rankingFileUrl = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlByIdAsync(rankingFileUrlId);
+            if (rankingFileUrl == null) throw new NotFoundException($"Ranking file URL with ID {rankingFileUrlId} not found");
+
+            if (!string.IsNullOrEmpty(request.FileUrl)) rankingFileUrl.FileUrl = request.FileUrl;
+
+            // Handle file upload if provided
+            if (request.File != null)
+            {
+                using var stream = request.File.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
+                rankingFileUrl.FileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.rankingfile.ToString(), uniqueFileName, stream, request.File.ContentType);
+                rankingFileUrl.FileUrl = _objectStorageSettings.EndPoint + rankingFileUrl.FileUrl;
+            }
+
+            await _unitOfWork.RankingFileUrlRepository.UpdateRankingFileUrlAsync(rankingFileUrl);
+            return rankingFileUrl.ToResponse();
+        }
+
+        public async Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId)
+        {
+            var rankingFileUrl = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlByIdAsync(rankingFileUrlId);
+            if (rankingFileUrl == null) throw new NotFoundException($"Ranking file URL with ID {rankingFileUrlId} not found");
+
+            return await _unitOfWork.RankingFileUrlRepository.DeleteRankingFileUrlAsync(rankingFileUrl) > 0;
+        }
+
+        #endregion
+
+        #region Research Conference Step 7: Ranking Reference URLs
+
+        public async Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var rankingReferenceUrl = request.ToModel(conferenceId);
+
+            await _unitOfWork.RankingReferenceUrlRepository.CreateRankingReferenceUrlAsync(rankingReferenceUrl);
+            return rankingReferenceUrl.ToResponse();
+        }
+
+        public async Task<List<RankingReferenceUrlResponse>> GetRankingReferenceUrlsByConferenceIdAsync(string conferenceId)
+        {
+            var referenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conferenceId);
+            return referenceUrls.Select(r => r.ToResponse()).ToList();
+        }
+
+        public async Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request)
+        {
+            var rankingReferenceUrl = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlByIdAsync(referenceUrlId);
+            if (rankingReferenceUrl == null) throw new NotFoundException($"Ranking reference URL with ID {referenceUrlId} not found");
+
+            if (!string.IsNullOrEmpty(request.ReferenceUrl)) rankingReferenceUrl.ReferenceUrl = request.ReferenceUrl;
+
+            await _unitOfWork.RankingReferenceUrlRepository.UpdateRankingReferenceUrlAsync(rankingReferenceUrl);
+            return rankingReferenceUrl.ToResponse();
+        }
+
+        public async Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId)
+        {
+            var rankingReferenceUrl = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlByIdAsync(referenceUrlId);
+            if (rankingReferenceUrl == null) throw new NotFoundException($"Ranking reference URL with ID {referenceUrlId} not found");
+
+            return await _unitOfWork.RankingReferenceUrlRepository.DeleteRankingReferenceUrlAsync(rankingReferenceUrl) > 0;
         }
 
         #endregion
