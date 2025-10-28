@@ -678,7 +678,7 @@ namespace ConfRadar.Services.Services
                     }
                     var conferenceMedia = new ConferenceMedium { ConferenceMediaId = Guid.NewGuid().ToString(), ConferenceMediaUrl = mediaUrl, ConferenceId = conferenceId, };
                     await _unitOfWork.ConferenceMediaRepository.CreateConferenceMediaAsync(conferenceMedia);
-                    responses.Add(new ConferenceMediaResponse { MediaId = conferenceMedia.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(conferenceMedia.ConferenceMediaUrl)});
+                    responses.Add(new ConferenceMediaResponse { MediaId = conferenceMedia.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(conferenceMedia.ConferenceMediaUrl) });
                 }
                 await _unitOfWork.CommitAsync();
             }catch (Exception e)
@@ -691,7 +691,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferenceMediaResponse>> GetConferenceMediaAsync(string conferenceId)
         {
             var media = await _unitOfWork.ConferenceMediaRepository.GetMediaByConferenceIdAsync(conferenceId);
-            return media.Select(m => new ConferenceMediaResponse { MediaId = m.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl)}).ToList();
+            return media.Select(m => new ConferenceMediaResponse { MediaId = m.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl) }).ToList();
         }
 
         public async Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request)

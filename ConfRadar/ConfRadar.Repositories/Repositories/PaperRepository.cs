@@ -2,11 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -16,6 +11,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdatePaperAsync(Paper paper);
         Task<bool> DeletePaperAsync(Paper paper);
         Task<Paper?> GetPaperByIdAsync(string paperId);
+        Task<Paper?> GetPaperByPaperIdAndUserIdAsync(string paperId, string userId);
+
         Task<List<Paper>> GetAllPapersAsync();
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
@@ -39,7 +36,10 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<Paper?> GetPaperByIdAsync(string paperId)
         {
-            return await GetByIdAsync(paperId);
+            return await _context.Papers
+                .Include(p => p.Conference)
+                .ThenInclude(p => p.ResearchConferenceDetail)
+                .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
 
         public async Task<List<Paper>> GetAllPapersAsync()
@@ -47,6 +47,9 @@ namespace ConfRadar.Repositories.Repositories
             return await GetAllAsync();
         }
 
-       
+        public async Task<Paper?> GetPaperByPaperIdAndUserIdAsync(string paperId, string userId)
+        {
+            return await _context.Papers.Include(p => p.Presenter).FirstOrDefaultAsync(p => p.PaperId == paperId && p.PresenterId == userId);
+        }
     }
 }

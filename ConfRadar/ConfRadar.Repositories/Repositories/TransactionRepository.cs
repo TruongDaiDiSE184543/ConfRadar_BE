@@ -23,7 +23,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Transaction>> GetOwnTransactionByUserId(string userId)
         {
             return await _context.Transactions
-                .Include(x=>x.PaymentMethod).
+                .Include(x => x.PaymentMethod).
                 Where(x => x.UserId == userId).ToListAsync();
         }
     }

@@ -40,6 +40,9 @@ namespace ConfRadar.Repositories
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
         ICityRepository CityRepository { get; }
         IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }     
+        //IConferenceStatusRepository ConferenceStatusRepository { get; }
+        //IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }
+        //IPaperPhaseRepository PaperPhaseRepository { get; }
         ICheckInStatusRepository CheckInStatusRepository { get; }
         IAbstractRepository AbstractRepository { get; }
         IPaperRepository PaperRepository { get; }
@@ -50,6 +53,14 @@ namespace ConfRadar.Repositories
         IRankingReferenceUrlRepository RankingReferenceUrlRepository { get; }
         IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository { get; }
 
+        //IPaperRepository PaperRepository { get; }
+        //IReviewStatusRepository ReviewStatusRepository { get; }
+        IFullPaperRepository FullPaperRepository { get; }
+        IPaperReviewerRepository PaperReviewerRepository { get; }
+        ICameraReadyRepository CameraReadyRepository { get; }
+        IRevisionPaperRepository RevisionPaperRepository { get; }
+        IRevisionPaperSubmissionRepository RevisionPaperSubmissionRepository { get; }
+        IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -98,6 +109,13 @@ namespace ConfRadar.Repositories
         private ICheckInStatusRepository _CheckInStatusRepository;
         private IAbstractRepository _AbstractRepository;
         private IPaperRepository _PaperRepository;
+        //private IReviewStatusRepository _ReviewStatusRepository;
+        private IFullPaperRepository _FullPaperRepository;
+        private IPaperReviewerRepository _PaperReviewerRepository;
+        private ICameraReadyRepository _CameraReadyRepository;
+        private IRevisionPaperRepository _RevisionPaperRepository;
+        private IRevisionPaperSubmissionRepository _RevisionPaperSubmissionRepository;
+        private IRevisionSubmissionFeedbackRepository _RevisionSubmissionFeedbackRepository;
         private IResearchConferenceDetailRepository _ResearchConferenceDetailRepository;
         private IResearchConferencePhaseRepository _ResearchConferencePhaseRepository;
         private IMaterialDownloadRepository _MaterialDownloadRepository;
@@ -173,7 +191,20 @@ namespace ConfRadar.Repositories
 
         public IAbstractRepository AbstractRepository => _AbstractRepository ??= new AbstractRepository(_context);
 
-        public IPaperRepository PaperRepository => _PaperRepository ??= new PaperRepository(_context);  
+        public IPaperRepository PaperRepository => _PaperRepository ??= new PaperRepository(_context);
+
+        //public IReviewStatusRepository ReviewStatusRepository => _ReviewStatusRepository ??= new ReviewStatusRepository(_context);
+
+        public IFullPaperRepository FullPaperRepository => _FullPaperRepository ??= new FullPaperRepository(_context);
+
+        public IPaperReviewerRepository PaperReviewerRepository => _PaperReviewerRepository ??= new PaperReviewerRepository(_context);
+
+        public ICameraReadyRepository CameraReadyRepository => _CameraReadyRepository ??= new CameraReadyRepository(_context);
+        public IRevisionPaperRepository RevisionPaperRepository => _RevisionPaperRepository ??= new RevisionPaperRepository(_context);
+
+        public IRevisionPaperSubmissionRepository RevisionPaperSubmissionRepository => _RevisionPaperSubmissionRepository ??= new RevisionPaperSubmissionRepository(_context);
+
+        public IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository => _RevisionSubmissionFeedbackRepository ??= new RevisionSubmissionFeedbackRepository(_context);  
 
         public IResearchConferenceDetailRepository ResearchConferenceDetailRepository => _ResearchConferenceDetailRepository ??= new ResearchConferenceDetailRepository(_context);
 
