@@ -114,5 +114,14 @@ namespace ConfRadar.Api.Controllers
             }
             return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
         }
+
+        // NEW ENDPOINT 7: Get detailed research conference data
+        [HttpGet("research-detail/{conferenceId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
+        {
+            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId);
+            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully"));
+        }
     }
 }

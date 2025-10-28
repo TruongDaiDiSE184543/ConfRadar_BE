@@ -1,3 +1,4 @@
+using ConfRadar.Services.DTOs.ConferenceStep;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.Conference
@@ -170,6 +171,54 @@ namespace ConfRadar.Services.DTOs.Conference
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
         public List<ConferenceSessionWithSpeakersResponse>? Sessions { get; set; }
+        public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
+    }
+
+    public class ResearchConferenceDetailResponse
+    {
+        public string? ConferenceId { get; set; }
+        public string? ConferenceName { get; set; }
+        public string? Description { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public int? TotalSlot { get; set; }
+        public int? AvailableSlot { get; set; }
+        public string? Address { get; set; }
+        public string? BannerImageUrl { get; set; }
+        public DateOnly? CreatedAt { get; set; }
+        public DateOnly? TicketSaleStart { get; set; }
+        public DateOnly? TicketSaleEnd { get; set; }
+        public bool? IsInternalHosted { get; set; }
+        public bool? IsResearchConference { get; set; }
+        public string? CityId { get; set; }
+        public string? ConferenceCategoryId { get; set; }
+        public string? ConferenceStatusId { get; set; }
+        
+        // Research Conference Detail specific fields
+        public string? Name { get; set; }
+        public string? PaperFormat { get; set; }
+        public int? NumberPaperAccept { get; set; }
+        public int? RevisionAttemptAllowed { get; set; }
+        public string? RankingDescription { get; set; }
+        public bool? AllowListener { get; set; }
+        public string? RankValue { get; set; }
+        public int? RankYear { get; set; }
+        public decimal? ReviewFee { get; set; }
+        public string? RankingCategoryId { get; set; }
+        public string? RankingCategoryName { get; set; }
+        
+        // Research Conference related data
+        public List<RankingFileUrlResponse>? RankingFileUrls { get; set; }
+        public List<MaterialDownloadResponse>? MaterialDownloads { get; set; }
+        public List<RankingReferenceUrlResponse>? RankingReferenceUrls { get; set; }
+        public ResearchConferencePhaseResponse? ResearchPhase { get; set; }
+        public List<ResearchSessionWithMediaResponse>? ResearchSessions { get; set; }
+        
+        // Shared tables data (same as technical conference)
+        public List<ConferencePolicyResponse>? Policies { get; set; }
+        public List<SponsorResponse>? Sponsors { get; set; }
+        public List<RefundPolicyResponse>? RefundPolicies { get; set; }
+        public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
     }
 
