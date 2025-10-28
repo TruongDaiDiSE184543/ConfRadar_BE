@@ -41,6 +41,15 @@ namespace ConfRadar.Services.Services
         
         // NEW ENDPOINT 7: Get detailed research conference data
         Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId);
+        
+        // NEW ENDPOINT 8: Get research conference step completion status
+        Task<PagedResult<DTOs.Conference.ResearchConferenceStepCompletionStatusResponse>> GetResearchConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
+        
+        // NEW ENDPOINT 9: Check if technical conference has completed a specific step
+        Task<bool> CheckTechnicalConferenceStepCompletionAsync(string conferenceId, string step);
+        
+        // NEW ENDPOINT 10: Check if research conference has completed a specific step
+        Task<bool> CheckResearchConferenceStepCompletionAsync(string conferenceId, string step);
     }
 
     public class ConferenceService : IConferenceService
@@ -753,6 +762,247 @@ namespace ConfRadar.Services.Services
                     }).ToList()
                 }).ToList()
             };
+        }
+
+        public async Task<PagedResult<DTOs.Conference.ResearchConferenceStepCompletionStatusResponse>> GetResearchConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
+        {
+            // Only get research conferences
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Where(c => c.IsResearchConference == true);
+
+            // Apply filters
+            if (!string.IsNullOrEmpty(searchKeyword))
+            {
+                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.Contains(searchKeyword));
+            }
+
+            if (!string.IsNullOrEmpty(cityId))
+            {
+                query = query.Where(c => c.CityId == cityId);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(c => c.StartDate >= startDate);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(c => c.EndDate <= endDate);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var pagedConferences = await query
+                .OrderBy(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var responses = new List<DTOs.Conference.ResearchConferenceStepCompletionStatusResponse>();
+
+            foreach (var conference in pagedConferences)
+            {
+                // Check each step completion status for research conferences
+                var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conference.ConferenceId);
+                var haveResearchConferenceDetail = researchDetail != null;
+
+                var materialDownloads = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conference.ConferenceId);
+                var haveMaterialDownload = materialDownloads.Any();
+
+                var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conference.ConferenceId);
+                var haveRankingFileUrl = rankingFileUrls.Any();
+
+                var rankingReferenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conference.ConferenceId);
+                var haveRankingReferenceUrl = rankingReferenceUrls.Any();
+
+                var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conference.ConferenceId);
+                var haveResearchPhase = researchPhase != null;
+
+                var researchSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conference.ConferenceId);
+                var haveResearchSession = researchSessions.Any();
+
+                var haveResearchSessionMedia = false;
+                foreach (var session in researchSessions)
+                {
+                    var sessionMedia = await _unitOfWork.ConferenceSessionMediumRepository.GetMediaBySessionIdAsync(session.ConferenceSessionId);
+                    if (sessionMedia.Any())
+                    {
+                        haveResearchSessionMedia = true;
+                        break;
+                    }
+                }
+
+                var policies = await _unitOfWork.ConferencePolicyRepository.GetPoliciesByConferenceIdAsync(conference.ConferenceId);
+                var havePolicy = policies.Any();
+
+                var sponsors = await _unitOfWork.SponsorRepository.GetSponsorsByConferenceIdAsync(conference.ConferenceId);
+                var haveSponsor = sponsors.Any();
+
+                var conferencePrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conference.ConferenceId);
+                var haveConferencePrice = conferencePrices.Any();
+
+                var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conference.ConferenceId);
+                var haveRefundPolicy = refundPolicies.Any();
+
+                var conferenceMedia = await _unitOfWork.ConferenceMediaRepository.GetMediaByConferenceIdAsync(conference.ConferenceId);
+                var haveConferenceMedia = conferenceMedia.Any();
+
+                responses.Add(new DTOs.Conference.ResearchConferenceStepCompletionStatusResponse
+                {
+                    ConferenceId = conference.ConferenceId,
+                    ConferenceName = conference.ConferenceName,
+                    IsResearch = true, // Always true for research conferences
+                    HaveResearchConferenceDetail = haveResearchConferenceDetail,
+                    HaveMaterialDownload = haveMaterialDownload,
+                    HaveRankingFileUrl = haveRankingFileUrl,
+                    HaveRankingReferenceUrl = haveRankingReferenceUrl,
+                    HaveResearchPhase = haveResearchPhase,
+                    HaveResearchSession = haveResearchSession,
+                    HaveResearchSessionMedia = haveResearchSessionMedia,
+                    HavePolicy = havePolicy,
+                    HaveSponsor = haveSponsor,
+                    HaveConferencePrice = haveConferencePrice,
+                    HaveRefundPolicy = haveRefundPolicy,
+                    HaveConferenceMedia = haveConferenceMedia,
+                    StartDate = conference.StartDate,
+                    EndDate = conference.EndDate,
+                    CityId = conference.CityId,
+                    ConferenceCategoryId = conference.ConferenceCategoryId,
+                    ConferenceStatusId = conference.ConferenceStatusId
+                });
+            }
+
+            return new PagedResult<DTOs.Conference.ResearchConferenceStepCompletionStatusResponse>
+            {
+                Items = responses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<bool> CheckTechnicalConferenceStepCompletionAsync(string conferenceId, string step)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null)
+            {
+                return false;
+            }
+
+            // Only check for technical conferences
+            if (conference.IsResearchConference == true)
+            {
+                return false;
+            }
+
+            switch (step.ToLower())
+            {
+                case "technicalconference":
+                    // This is always true as the conference exists
+                    return true;
+                case "technicalconferencedetail":
+                    var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
+                    return technicalDetail != null;
+                case "policy":
+                    var policies = await _unitOfWork.ConferencePolicyRepository.GetPoliciesByConferenceIdAsync(conferenceId);
+                    return policies.Any();
+                case "sponsor":
+                    var sponsors = await _unitOfWork.SponsorRepository.GetSponsorsByConferenceIdAsync(conferenceId);
+                    return sponsors.Any();
+                case "session":
+                    var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+                    return sessions.Any();
+                case "sessionmedia":
+                    var sessionsForMedia = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+                    foreach (var session in sessionsForMedia)
+                    {
+                        var sessionMedia = await _unitOfWork.ConferenceSessionMediumRepository.GetMediaBySessionIdAsync(session.ConferenceSessionId);
+                        if (sessionMedia.Any())
+                            return true;
+                    }
+                    return false;
+                case "speaker":
+                    var sessionsForSpeakers = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+                    foreach (var session in sessionsForSpeakers)
+                    {
+                        var speakers = await _unitOfWork.SpeakerRepository.GetSpeakersBySessionIdAsync(session.ConferenceSessionId);
+                        if (speakers.Any())
+                            return true;
+                    }
+                    return false;
+                case "price":
+                    var prices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
+                    return prices.Any();
+                default:
+                    return false;
+            }
+        }
+
+        public async Task<bool> CheckResearchConferenceStepCompletionAsync(string conferenceId, string step)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null)
+            {
+                return false;
+            }
+
+            // Only check for research conferences
+            if (conference.IsResearchConference != true)
+            {
+                return false;
+            }
+
+            switch (step.ToLower())
+            {
+                case "researchconference":
+                    // This is always true as the conference exists
+                    return true;
+                case "researchconferencedetail":
+                    var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+                    return researchDetail != null;
+                case "materialdownload":
+                    var materialDownloads = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conferenceId);
+                    return materialDownloads.Any();
+                case "rankingfileurl":
+                    var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
+                    return rankingFileUrls.Any();
+                case "rankingreferenceurl":
+                    var rankingReferenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conferenceId);
+                    return rankingReferenceUrls.Any();
+                case "researchphase":
+                    var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
+                    return researchPhase != null;
+                case "researchsession":
+                    var researchSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+                    return researchSessions.Any();
+                case "researchsessionmedia":
+                    var researchSessionsForMedia = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+                    foreach (var session in researchSessionsForMedia)
+                    {
+                        var sessionMedia = await _unitOfWork.ConferenceSessionMediumRepository.GetMediaBySessionIdAsync(session.ConferenceSessionId);
+                        if (sessionMedia.Any())
+                            return true;
+                    }
+                    return false;
+                case "policy":
+                    var policies = await _unitOfWork.ConferencePolicyRepository.GetPoliciesByConferenceIdAsync(conferenceId);
+                    return policies.Any();
+                case "sponsor":
+                    var sponsors = await _unitOfWork.SponsorRepository.GetSponsorsByConferenceIdAsync(conferenceId);
+                    return sponsors.Any();
+                case "price":
+                    var prices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
+                    return prices.Any();
+                case "refundpolicy":
+                    var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conferenceId);
+                    return refundPolicies.Any();
+                case "conferencemedia":
+                    var conferenceMedia = await _unitOfWork.ConferenceMediaRepository.GetMediaByConferenceIdAsync(conferenceId);
+                    return conferenceMedia.Any();
+                default:
+                    return false;
+            }
         }
     }
 }

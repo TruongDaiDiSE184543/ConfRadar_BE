@@ -123,5 +123,38 @@ namespace ConfRadar.Api.Controllers
             var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId);
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully"));
         }
+
+        // NEW ENDPOINT 8: Get research conferences with step completion status
+        [HttpGet("research-step-completion-status")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetResearchConferencesStepCompletionStatus(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchKeyword = null,
+            [FromQuery] string? cityId = null,
+            [FromQuery] DateOnly? startDate = null,
+            [FromQuery] DateOnly? endDate = null)
+        {
+            var conferences = await _serviceManager.ConferenceService.GetResearchConferencesStepCompletionStatusAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
+            return Ok(ApiResponse<PagedResult<ResearchConferenceStepCompletionStatusResponse>>.SuccessResponse(conferences, "Research conference step completion status retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 9: Check if technical conference has completed a specific step
+        [HttpGet("check-technical-step-completion")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CheckTechnicalConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
+        {
+            var result = await _serviceManager.ConferenceService.CheckTechnicalConferenceStepCompletionAsync(conferenceId, step);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Technical conference step completion status retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 10: Check if research conference has completed a specific step
+        [HttpGet("check-research-step-completion")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CheckResearchConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
+        {
+            var result = await _serviceManager.ConferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, step);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Research conference step completion status retrieved successfully"));
+        }
     }
 }

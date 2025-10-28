@@ -284,6 +284,35 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceStatusId { get; set; }
     }
     
+    public class ResearchConferenceStepCompletionStatusResponse
+    {
+        public string? ConferenceId { get; set; }
+        public string? ConferenceName { get; set; }
+        public bool IsResearch { get; set; } // Always true for research conferences
+        public bool HaveResearchConferenceDetail { get; set; }
+        public bool HaveMaterialDownload { get; set; }
+        public bool HaveRankingFileUrl { get; set; }
+        public bool HaveRankingReferenceUrl { get; set; }
+        public bool HaveResearchPhase { get; set; }
+        public bool HaveResearchSession { get; set; }
+        public bool HaveResearchSessionMedia { get; set; }
+        public bool HavePolicy { get; set; }
+        public bool HaveSponsor { get; set; }
+        public bool HaveConferencePrice { get; set; }
+        public bool HaveRefundPolicy { get; set; }
+        public bool HaveConferenceMedia { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public string? CityId { get; set; }
+        public string? ConferenceCategoryId { get; set; }
+        public string? ConferenceStatusId { get; set; }
+    }
+
+    public class CheckStepCompletionRequest
+    {
+        public string? Step { get; set; }
+    }
+    
     public class ApproveConferenceRequest
     {
         [MaxLength(1000)]
