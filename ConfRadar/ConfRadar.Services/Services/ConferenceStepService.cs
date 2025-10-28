@@ -46,6 +46,12 @@ namespace ConfRadar.Services.Services
         Task<List<SponsorResponse>> GetConferenceSponsorsAsync(string conferenceId);
         Task<SponsorResponse> UpdateSponsorAsync(string sponsorId, UpdateSponsorRequest request);
         Task<bool> DeleteSponsorAsync(string sponsorId);
+
+        // Step 7: Add Refund Policies
+        Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request);
+        Task<List<RefundPolicyResponse>> GetRefundPoliciesAsync(string conferenceId);
+        Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request);
+        Task<bool> DeleteRefundPolicyAsync(string refundPolicyId);
     }
 
     public class ConferenceStepService : IConferenceStepService
@@ -762,6 +768,71 @@ namespace ConfRadar.Services.Services
             if (sponsor == null) throw new NotFoundException($"Conference sponsor with ID {sponsorId} not found");
 
             return await _unitOfWork.SponsorRepository.DeleteSponsorAsync(sponsor) > 0;
+        }
+
+        #endregion
+
+        #region Step 7: Refund Policies
+
+        public async Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var responses = new List<RefundPolicyResponse>();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                if (request.RefundPolicies != null)
+                {
+                    foreach (var refundPolicy in request.RefundPolicies)
+                    {
+                        var refundPolicyModel = refundPolicy.ToModel(conferenceId);
+                        await _unitOfWork.ConferenceRefundPolicyRepository.CreateConferenceRefundPolicyAsync(refundPolicyModel);
+                        responses.Add(refundPolicyModel.ToResponse());
+                    }
+                }
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+
+            return responses;
+        }
+
+        public async Task<List<RefundPolicyResponse>> GetRefundPoliciesAsync(string conferenceId)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conferenceId);
+            return refundPolicies.Select(rp => rp.ToResponse()).ToList();
+        }
+
+        public async Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request)
+        {
+            var refundPolicy = await _unitOfWork.ConferenceRefundPolicyRepository.GetConferenceRefundPolicyByIdAsync(refundPolicyId);
+            if (refundPolicy == null) throw new NotFoundException($"Refund policy with ID {refundPolicyId} not found");
+
+            if (request.PercentRefund.HasValue) refundPolicy.PercentRefund = request.PercentRefund;
+            if (request.RefundDeadline.HasValue) refundPolicy.RefundDeadline = request.RefundDeadline;
+            if (request.RefundOrder.HasValue) refundPolicy.RefundOrder = request.RefundOrder;
+
+            await _unitOfWork.ConferenceRefundPolicyRepository.UpdateConferenceRefundPolicyAsync(refundPolicy);
+            return refundPolicy.ToResponse();
+        }
+
+        public async Task<bool> DeleteRefundPolicyAsync(string refundPolicyId)
+        {
+            var refundPolicy = await _unitOfWork.ConferenceRefundPolicyRepository.GetConferenceRefundPolicyByIdAsync(refundPolicyId);
+            if (refundPolicy == null) throw new NotFoundException($"Refund policy with ID {refundPolicyId} not found");
+
+            return await _unitOfWork.ConferenceRefundPolicyRepository.DeleteConferenceRefundPolicyAsync(refundPolicy) > 0;
         }
 
         #endregion

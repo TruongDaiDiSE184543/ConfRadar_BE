@@ -284,5 +284,29 @@ namespace ConfRadar.Services.Mappers
                 ImageUrl = model.ImageUrl
             };
         }
+        
+        // Refund Policy Mappers
+        public static RefundPolicy ToModel(this CreateRefundPolicyRequest request, string conferenceId)
+        {
+            return new RefundPolicy
+            {
+                RefundPolicyId = Guid.NewGuid().ToString(),
+                PercentRefund = request.PercentRefund,
+                RefundDeadline = request.RefundDeadline,
+                RefundOrder = request.RefundOrder,
+                ConferenceId = conferenceId
+            };
+        }
+
+        public static RefundPolicyResponse ToResponse(this RefundPolicy model)
+        {
+            return new RefundPolicyResponse
+            {
+                RefundPolicyId = model.RefundPolicyId,
+                PercentRefund = model.PercentRefund,
+                RefundDeadline = model.RefundDeadline,
+                RefundOrder = model.RefundOrder
+            };
+        }
     }
 }

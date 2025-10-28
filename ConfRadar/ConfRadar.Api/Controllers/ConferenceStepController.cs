@@ -237,5 +237,41 @@ namespace ConfRadar.Api.Controllers
         }
 
         #endregion
+
+        #region Step 7: Refund Policies
+
+        [HttpPost("{conferenceId}/refund-policies")]
+        public async Task<IActionResult> AddRefundPolicies(string conferenceId, [FromBody] AddRefundPoliciesRequest request)
+        {
+            var refundPolicies = await _serviceManager.ConferenceStepService.AddRefundPoliciesAsync(conferenceId, request);
+            return Ok(ApiResponse<List<RefundPolicyResponse>>.SuccessResponse(refundPolicies, "Chính sách hoàn trả được thêm thành công"));
+        }
+
+        [HttpGet("{conferenceId}/refund-policies")]
+        public async Task<IActionResult> GetRefundPolicies(string conferenceId)
+        {
+            var refundPolicies = await _serviceManager.ConferenceStepService.GetRefundPoliciesAsync(conferenceId);
+            return Ok(ApiResponse<List<RefundPolicyResponse>>.SuccessResponse(refundPolicies, "Chính sách hoàn trả được lấy thành công"));
+        }
+
+        [HttpPut("refund-policies/{refundPolicyId}")]
+        public async Task<IActionResult> UpdateRefundPolicy(string refundPolicyId, [FromBody] UpdateRefundPolicyRequest request)
+        {
+            var refundPolicy = await _serviceManager.ConferenceStepService.UpdateRefundPolicyAsync(refundPolicyId, request);
+            return Ok(ApiResponse<RefundPolicyResponse>.SuccessResponse(refundPolicy, "Chính sách hoàn trả được cập nhật thành công"));
+        }
+
+        [HttpDelete("refund-policies/{refundPolicyId}")]
+        public async Task<IActionResult> DeleteRefundPolicy(string refundPolicyId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteRefundPolicyAsync(refundPolicyId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Chính sách hoàn trả được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy chính sách hoàn trả"));
+        }
+
+        #endregion
     }
 }

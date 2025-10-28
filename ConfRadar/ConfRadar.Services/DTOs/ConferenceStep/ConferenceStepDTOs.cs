@@ -422,4 +422,43 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public List<SpeakerResponse>? Speakers { get; set; }
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
+    
+    // Step 7: Refund Policies
+    public class CreateRefundPolicyRequest
+    {
+        [Required(ErrorMessage = "Phần trăm hoàn trả là bắt buộc")]
+        [Range(0, 100, ErrorMessage = "Phần trăm hoàn trả phải từ 0 đến 100")]
+        public int? PercentRefund { get; set; }
+
+        [Required(ErrorMessage = "Ngày hết hạn hoàn trả là bắt buộc")]
+        public DateOnly? RefundDeadline { get; set; }
+
+        [Required(ErrorMessage = "Thứ tự hoàn trả là bắt buộc")]
+        public int? RefundOrder { get; set; }
+    }
+
+    public class AddRefundPoliciesRequest
+    {
+        public List<CreateRefundPolicyRequest>? RefundPolicies { get; set; }
+    }
+
+    public class UpdateRefundPolicyRequest
+    {
+        [Range(0, 100, ErrorMessage = "Phần trăm hoàn trả phải từ 0 đến 100")]
+        public int? PercentRefund { get; set; }
+
+        [Required(ErrorMessage = "Ngày hết hạn hoàn trả là bắt buộc")]
+        public DateOnly? RefundDeadline { get; set; }
+
+        [Required(ErrorMessage = "Thứ tự hoàn trả là bắt buộc")]
+        public int? RefundOrder { get; set; }
+    }
+
+    public class RefundPolicyResponse
+    {
+        public string? RefundPolicyId { get; set; }
+        public int? PercentRefund { get; set; }
+        public DateOnly? RefundDeadline { get; set; }
+        public int? RefundOrder { get; set; }
+    }
 }
