@@ -54,8 +54,15 @@ namespace ConfRadar.Services.Common
         sponsorimage,
         speakerimage,
 
-        abstractfile
-        
+        abstractfile,
+        rankingreference,
+        rankingfile,
+        fullpaperfile,
+        revisionpaperfile,
+        camerareadyfile,
+        materialdownload,
+        feedbackmaterial
+
     }
 
     public enum ConferenceStatus

@@ -422,4 +422,380 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public List<SpeakerResponse>? Speakers { get; set; }
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
+    
+    // Step 7: Refund Policies
+    public class CreateRefundPolicyRequest
+    {
+        [Required(ErrorMessage = "Phần trăm hoàn trả là bắt buộc")]
+        [Range(0, 100, ErrorMessage = "Phần trăm hoàn trả phải từ 0 đến 100")]
+        public int? PercentRefund { get; set; }
+
+        [Required(ErrorMessage = "Ngày hết hạn hoàn trả là bắt buộc")]
+        public DateOnly? RefundDeadline { get; set; }
+
+        [Required(ErrorMessage = "Thứ tự hoàn trả là bắt buộc")]
+        public int? RefundOrder { get; set; }
+    }
+
+    public class AddRefundPoliciesRequest
+    {
+        public List<CreateRefundPolicyRequest>? RefundPolicies { get; set; }
+    }
+
+    public class UpdateRefundPolicyRequest
+    {
+        [Range(0, 100, ErrorMessage = "Phần trăm hoàn trả phải từ 0 đến 100")]
+        public int? PercentRefund { get; set; }
+
+        [Required(ErrorMessage = "Ngày hết hạn hoàn trả là bắt buộc")]
+        public DateOnly? RefundDeadline { get; set; }
+
+        [Required(ErrorMessage = "Thứ tự hoàn trả là bắt buộc")]
+        public int? RefundOrder { get; set; }
+    }
+
+    public class RefundPolicyResponse
+    {
+        public string? RefundPolicyId { get; set; }
+        public int? PercentRefund { get; set; }
+        public DateOnly? RefundDeadline { get; set; }
+        public int? RefundOrder { get; set; }
+    }
+    
+    // Research Conference DTOs
+    // Step 1: Research Conference Basic Information (without target audience)
+    public class CreateResearchConferenceBasicRequest
+    {
+        [Required(ErrorMessage = "Tên hội nghị là bắt buộc")]
+        [MaxLength(255)]
+        public string ConferenceName { get; set; }
+
+        [MaxLength(500)]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
+        public DateOnly StartDate { get; set; }
+
+        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
+        public DateOnly EndDate { get; set; }
+        [Required(ErrorMessage = "Tổng số slot là bắt buộc")]
+        public int TotalSlot { get; set; }
+
+        [MaxLength(255)]
+        public string? Address { get; set; }
+
+        public IFormFile BannerImageFile { get; set; }
+        public string? bannerImageFileUrl { get; set; }
+
+        [Required(ErrorMessage = "Bạn cần xác định hội nghị này do nội bộ tổ chức hay không")]
+        public bool? IsInternalHosted { get; set; }
+        [Required(ErrorMessage = "Đây có phải là hội nghị nghiên cứu không?")]
+
+        public bool? IsResearchConference { get; set; }
+
+        [Required(ErrorMessage = "ID danh mục là bắt buộc")]
+        [MaxLength(50)]
+        public string ConferenceCategoryId { get; set; }
+
+        [Required(ErrorMessage = "ID thành phố là bắt buộc")]
+        public string CityId { get; set; }
+        [Required(ErrorMessage = "Ngày bắt đầu bán vé là bắt buộc")]
+        public DateOnly TicketSaleStart { get; set; }
+        [Required(ErrorMessage = "Ngày kết thúc bán vé là bắt buộc")]
+        public DateOnly TicketSaleEnd { get; set; }
+        public string? createdby { get; set; }
+        // Note: No target audience for research conference
+    }
+
+    // Step 3: Research Conference Sessions (without speakers)
+    public class CreateResearchSessionRequest
+    {
+        [Required(ErrorMessage = "Tiêu đề phiên là bắt buộc")]
+        [MaxLength(50)]
+        public string Title { get; set; }
+
+        [MaxLength(500)]
+        public string? Description { get; set; }
+        [Required(ErrorMessage = "Thời gian bắt đầu là bắt buộc")]
+        public TimeOnly? StartTime { get; set; }
+        [Required(ErrorMessage = "Thời gian kết thúc là bắt buộc")]
+        public TimeOnly? EndTime { get; set; }
+        [Required(ErrorMessage = "Ngày diễn ra phiên là bắt buộc")]
+        public DateOnly? Date { get; set; }
+
+        [Required(ErrorMessage = "ID phòng là bắt buộc cho phiên")]
+
+        public string? RoomId { get; set; }
+        // Note: No speakers for research conference sessions
+        public List<CreateConferenceSessionMediaRequest> SessionMedias { get; set; }
+    }
+
+    public class AddResearchSessionsRequest
+    {
+        public List<CreateResearchSessionRequest>? Sessions { get; set; }
+    }
+
+    // Response DTOs for Research Conference
+    public class ResearchConferenceBasicStepResponse
+    {
+        public string? conferenceId { get; set; }
+        public string? ConferenceName { get; set; }
+
+        public string? Description { get; set; }
+
+        public DateOnly? StartDate { get; set; }
+
+        public DateOnly? EndDate { get; set; }
+        public int? TotalSlot { get; set; }
+        public int? AvailableSlot { get; set; }
+        public string? Address { get; set; }
+
+        public string? bannerImageFileUrl { get; set; }
+
+        public bool? IsInternalHosted { get; set; }
+
+        public bool? IsResearchConference { get; set; }
+        public string? ConferenceCategoryId { get; set; }
+
+        public string? CityId { get; set; }
+        public DateOnly? createdAt { get; set; }
+        public DateOnly? TicketSaleStart { get; set; }
+        public DateOnly? TicketSaleEnd { get; set; }
+        public string? createdby { get; set; }
+        // Note: No target audience for research conference
+    }
+
+    public class ResearchSessionWithMediaResponse
+    {
+        public string ConferenceSessionId { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public TimeOnly? EndTime { get; set; }
+        public DateOnly? Date { get; set; }
+        public string? ConferenceId { get; set; }
+        public string? RoomId { get; set; }
+        // Note: No speakers for research conference
+        public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
+    }
+    
+    // Research Conference Step 2: Research Conference Detail
+    public class CreateResearchConferenceDetailRequest
+    {
+        [MaxLength(255)]
+        public string? Name { get; set; }
+
+        [MaxLength(1000)]
+        public string? PaperFormat { get; set; }
+
+        public int? NumberPaperAccept { get; set; }
+
+        public int? RevisionAttemptAllowed { get; set; }
+
+        [MaxLength(1000)]
+        public string? RankingDescription { get; set; }
+
+        public bool? AllowListener { get; set; }
+
+        [MaxLength(50)]
+        public string? RankValue { get; set; }
+
+        public int? RankYear { get; set; }
+
+        public decimal? ReviewFee { get; set; }
+
+        [MaxLength(50)]
+        public string? RankingCategoryId { get; set; }
+    }
+
+    public class UpdateResearchConferenceDetailRequest
+    {
+        [MaxLength(255)]
+        public string? Name { get; set; }
+
+        [MaxLength(1000)]
+        public string? PaperFormat { get; set; }
+
+        public int? NumberPaperAccept { get; set; }
+
+        public int? RevisionAttemptAllowed { get; set; }
+
+        [MaxLength(1000)]
+        public string? RankingDescription { get; set; }
+
+        public bool? AllowListener { get; set; }
+
+        [MaxLength(50)]
+        public string? RankValue { get; set; }
+
+        public int? RankYear { get; set; }
+
+        public decimal? ReviewFee { get; set; }
+
+        [MaxLength(50)]
+        public string? RankingCategoryId { get; set; }
+    }
+
+    public class ResearchConferenceDetailResponse
+    {
+        public string? ConferenceId { get; set; }
+        public string? Name { get; set; }
+        public string? PaperFormat { get; set; }
+        public int? NumberPaperAccept { get; set; }
+        public int? RevisionAttemptAllowed { get; set; }
+        public string? RankingDescription { get; set; }
+        public bool? AllowListener { get; set; }
+        public string? RankValue { get; set; }
+        public int? RankYear { get; set; }
+        public decimal? ReviewFee { get; set; }
+        public string? RankingCategoryId { get; set; }
+        public string? RankingCategoryName { get; set; }
+    }
+
+    // Research Conference Step 4: Research Conference Phases and Revision Round Deadlines
+    public class CreateResearchConferencePhaseRequest
+    {
+        public DateOnly? RegistrationStartDate { get; set; }
+        public DateOnly? RegistrationEndDate { get; set; }
+        public DateOnly? FullPaperStartDate { get; set; }
+        public DateOnly? FullPaperEndDate { get; set; }
+        public DateOnly? ReviewStartDate { get; set; }
+        public DateOnly? ReviewEndDate { get; set; }
+        public DateOnly? ReviseStartDate { get; set; }
+        public DateOnly? ReviseEndDate { get; set; }
+        public DateOnly? CameraReadyStartDate { get; set; }
+        public DateOnly? CameraReadyEndDate { get; set; }
+        public bool? IsWaitlist { get; set; }
+        public bool? IsActive { get; set; }
+        public List<CreateRevisionRoundDeadlineRequest>? RevisionRoundDeadlines { get; set; }
+    }
+
+    public class CreateRevisionRoundDeadlineRequest
+    {
+        public DateOnly? EndDate { get; set; }
+        public int? RoundNumber { get; set; }
+    }
+
+    public class UpdateResearchConferencePhaseRequest
+    {
+        public DateOnly? RegistrationStartDate { get; set; }
+        public DateOnly? RegistrationEndDate { get; set; }
+        public DateOnly? FullPaperStartDate { get; set; }
+        public DateOnly? FullPaperEndDate { get; set; }
+        public DateOnly? ReviewStartDate { get; set; }
+        public DateOnly? ReviewEndDate { get; set; }
+        public DateOnly? ReviseStartDate { get; set; }
+        public DateOnly? ReviseEndDate { get; set; }
+        public DateOnly? CameraReadyStartDate { get; set; }
+        public DateOnly? CameraReadyEndDate { get; set; }
+        public bool? IsWaitlist { get; set; }
+        public bool? IsActive { get; set; }
+    }
+
+    public class UpdateRevisionRoundDeadlineRequest
+    {
+        public DateOnly? EndDate { get; set; }
+        public int? RoundNumber { get; set; }
+    }
+
+    public class ResearchConferencePhaseResponse
+    {
+        public string? ResearchConferencePhaseId { get; set; }
+        public string? ConferenceId { get; set; }
+        public DateOnly? RegistrationStartDate { get; set; }
+        public DateOnly? RegistrationEndDate { get; set; }
+        public DateOnly? FullPaperStartDate { get; set; }
+        public DateOnly? FullPaperEndDate { get; set; }
+        public DateOnly? ReviewStartDate { get; set; }
+        public DateOnly? ReviewEndDate { get; set; }
+        public DateOnly? ReviseStartDate { get; set; }
+        public DateOnly? ReviseEndDate { get; set; }
+        public DateOnly? CameraReadyStartDate { get; set; }
+        public DateOnly? CameraReadyEndDate { get; set; }
+        public bool? IsWaitlist { get; set; }
+        public bool? IsActive { get; set; }
+        public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
+    }
+
+    public class RevisionRoundDeadlineResponse
+    {
+        public string? RevisionRoundDeadlineId { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public int? RoundNumber { get; set; }
+        public string? ResearchConferencePhaseId { get; set; }
+    }
+
+    // Research Conference Step 5: Material Downloads
+    public class CreateMaterialDownloadRequest
+    {
+        [MaxLength(255)]
+        [Required(ErrorMessage = "Tên file là bắt buộc")]
+        public string? FileName { get; set; }
+
+        [MaxLength(1000)]
+        public string? FileDescription { get; set; }
+
+        public IFormFile? File { get; set; }
+    }
+
+    public class UpdateMaterialDownloadRequest
+    {
+
+        [MaxLength(1000)]
+        public string? FileDescription { get; set; }
+
+        public IFormFile? File { get; set; }
+    }
+
+    public class MaterialDownloadResponse
+    {
+        public string? MaterialDownloadId { get; set; }
+        public string? FileName { get; set; }
+        public string? FileDescription { get; set; }
+        public string? FileUrl { get; set; }
+    }
+
+    // Research Conference Step 6: Ranking File URLs
+    public class CreateRankingFileUrlRequest
+    {
+        [MaxLength(1000)]
+        [Required(ErrorMessage = "URL tệp là bắt buộc")]
+        public string? FileUrl { get; set; }
+
+        public IFormFile? File { get; set; }
+    }
+
+    public class UpdateRankingFileUrlRequest
+    {
+        [MaxLength(1000)]
+        public string? FileUrl { get; set; }
+
+        public IFormFile? File { get; set; }
+    }
+
+    public class RankingFileUrlResponse
+    {
+        public string? RankingFileUrlId { get; set; }
+        public string? FileUrl { get; set; }
+    }
+
+    // Research Conference Step 7: Ranking Reference URLs
+    public class CreateRankingReferenceUrlRequest
+    {
+        [MaxLength(1000)]
+        [Required(ErrorMessage = "URL tham khảo là bắt buộc")]
+        public string? ReferenceUrl { get; set; }
+    }
+
+    public class UpdateRankingReferenceUrlRequest
+    {
+        [MaxLength(1000)]
+        public string? ReferenceUrl { get; set; }
+    }
+
+    public class RankingReferenceUrlResponse
+    {
+        public string? ReferenceUrlId { get; set; }
+        public string? ReferenceUrl { get; set; }
+    }
 }

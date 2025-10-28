@@ -42,7 +42,13 @@ namespace ConfRadar.Repositories
         IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }     
         ICheckInStatusRepository CheckInStatusRepository { get; }
         IAbstractRepository AbstractRepository { get; }
-        IPaperRepository PaperRepository { get; }       
+        IPaperRepository PaperRepository { get; }
+        IResearchConferenceDetailRepository ResearchConferenceDetailRepository { get; }
+        IResearchConferencePhaseRepository ResearchConferencePhaseRepository { get; }
+        IMaterialDownloadRepository MaterialDownloadRepository { get; }
+        IRankingFileUrlRepository RankingFileUrlRepository { get; }
+        IRankingReferenceUrlRepository RankingReferenceUrlRepository { get; }
+        IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -92,6 +98,12 @@ namespace ConfRadar.Repositories
         private ICheckInStatusRepository _CheckInStatusRepository;
         private IAbstractRepository _AbstractRepository;
         private IPaperRepository _PaperRepository;
+        private IResearchConferenceDetailRepository _ResearchConferenceDetailRepository;
+        private IResearchConferencePhaseRepository _ResearchConferencePhaseRepository;
+        private IMaterialDownloadRepository _MaterialDownloadRepository;
+        private IRankingFileUrlRepository _RankingFileUrlRepository;
+        private IRankingReferenceUrlRepository _RankingReferenceUrlRepository;
+        private IRevisionRoundDeadlineRepository _RevisionRoundDeadlineRepository;
 
         public UnitOfWork(ConfRadarDbContext context)
         {
@@ -162,6 +174,18 @@ namespace ConfRadar.Repositories
         public IAbstractRepository AbstractRepository => _AbstractRepository ??= new AbstractRepository(_context);
 
         public IPaperRepository PaperRepository => _PaperRepository ??= new PaperRepository(_context);  
+
+        public IResearchConferenceDetailRepository ResearchConferenceDetailRepository => _ResearchConferenceDetailRepository ??= new ResearchConferenceDetailRepository(_context);
+
+        public IResearchConferencePhaseRepository ResearchConferencePhaseRepository => _ResearchConferencePhaseRepository ??= new ResearchConferencePhaseRepository(_context);
+
+        public IMaterialDownloadRepository MaterialDownloadRepository => _MaterialDownloadRepository ??= new MaterialDownloadRepository(_context);
+
+        public IRankingFileUrlRepository RankingFileUrlRepository => _RankingFileUrlRepository ??= new RankingFileUrlRepository(_context);
+
+        public IRankingReferenceUrlRepository RankingReferenceUrlRepository => _RankingReferenceUrlRepository ??= new RankingReferenceUrlRepository(_context);
+
+        public IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository => _RevisionRoundDeadlineRepository ??= new RevisionRoundDeadlineRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

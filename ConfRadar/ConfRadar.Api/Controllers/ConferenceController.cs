@@ -19,92 +19,7 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
-        //[Authorize(Roles = "Conference Organizer")]
-        //[HttpPost]
-        //public async Task<IActionResult> CreateConference([FromForm] CreateConferenceRequest request)
-        //{
-        //    try
-        //    {
-        //        var conferenceId = await _serviceManager.ConferenceService.CreateConferenceAsync(request);
-        //        return Ok(ApiResponse<string>.SuccessResponse(conferenceId, "Conference created successfully"));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
-        //    }
-        //}
-
-        //[Authorize(Roles = "Conference Organizer")]
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateConference(string id, [FromBody] UpdateConferenceRequest request)
-        //{
-        //    try
-        //    {
-        //        var result = await _serviceManager.ConferenceService.UpdateConferenceAsync(request, id);
-        //        if (result > 0)
-        //        {
-        //            return Ok(ApiResponse<object>.SuccessResponse(null, "Conference updated successfully"));
-        //        }
-        //        return NotFound(ApiResponse<object>.FailResponse("Conference not found"));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
-        //    }
-        //}
-
-        //[Authorize(Roles = "Conference Organizer")]
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteConference(string id)
-        //{
-        //    try
-        //    {
-        //        var result = await _serviceManager.ConferenceService.DeleteConferenceAsync(id);
-        //        if (result > 0)
-        //        {
-        //            return Ok(ApiResponse<object>.SuccessResponse(null, "Conference deleted successfully"));
-        //        }
-        //        return NotFound(ApiResponse<object>.FailResponse("Conference not found"));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
-        //    }
-        //}
-
-        //[HttpGet("{id}")]
-        //[AllowAnonymous]
-        //public async Task<IActionResult> GetConference(string id)
-        //{
-        //    try
-        //    {
-        //        var conference = await _serviceManager.ConferenceService.GetConferenceByIdAsync(id);
-        //        if (conference != null)
-        //        {
-        //            return Ok(ApiResponse<ConferenceResponse>.SuccessResponse(conference, "Conference retrieved successfully"));
-        //        }
-        //        return NotFound(ApiResponse<object>.FailResponse("Conference not found"));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
-        //    }
-        //}
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public async Task<IActionResult> GetAllConferences()
-        //{
-        //    try
-        //    {
-        //        var conferences = await _serviceManager.ConferenceService.GetAllConferencesAsync();
-        //        return Ok(ApiResponse<List<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
-        //    }
-        //}
+        
         
         //[HttpGet("view-registered-users-for-conference")]
         //public async Task<IActionResult> ViewRegisteredUsersInAConference(string conferenceId)
@@ -173,6 +88,73 @@ namespace ConfRadar.Api.Controllers
         {
             var conferences = await _serviceManager.ConferenceService.GetConferencesStepCompletionStatusAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
             return Ok(ApiResponse<PagedResult<ConferenceStepCompletionStatusResponse>>.SuccessResponse(conferences, "Conference step completion status retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 5: Get all pending conferences
+        [HttpGet("pending-conferences")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetPendingConferences(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchKeyword = null)
+        {
+            var conferences = await _serviceManager.ConferenceService.GetPendingConferencesAsync(page, pageSize, searchKeyword);
+            return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Pending conferences retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
+        [HttpPut("approve-conference/{conferenceId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ApproveConference(string conferenceId, [FromBody] ApproveConferenceRequest request)
+        {
+            var result = await _serviceManager.ConferenceService.ApproveConferenceAsync(conferenceId, request);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Conference approved successfully"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
+        }
+
+        // NEW ENDPOINT 7: Get detailed research conference data
+        [HttpGet("research-detail/{conferenceId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
+        {
+            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId);
+            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 8: Get research conferences with step completion status
+        [HttpGet("research-step-completion-status")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetResearchConferencesStepCompletionStatus(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchKeyword = null,
+            [FromQuery] string? cityId = null,
+            [FromQuery] DateOnly? startDate = null,
+            [FromQuery] DateOnly? endDate = null)
+        {
+            var conferences = await _serviceManager.ConferenceService.GetResearchConferencesStepCompletionStatusAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
+            return Ok(ApiResponse<PagedResult<ResearchConferenceStepCompletionStatusResponse>>.SuccessResponse(conferences, "Research conference step completion status retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 9: Check if technical conference has completed a specific step
+        [HttpGet("check-technical-step-completion")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CheckTechnicalConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
+        {
+            var result = await _serviceManager.ConferenceService.CheckTechnicalConferenceStepCompletionAsync(conferenceId, step);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Technical conference step completion status retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 10: Check if research conference has completed a specific step
+        [HttpGet("check-research-step-completion")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CheckResearchConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
+        {
+            var result = await _serviceManager.ConferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, step);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Research conference step completion status retrieved successfully"));
         }
     }
 }

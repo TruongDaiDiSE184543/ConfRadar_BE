@@ -17,8 +17,8 @@ namespace ConfRadar.Services
         public IConferenceCategoryService ConferenceCategoryService { get; }
         public IGlobalStatusService GlobalStatusService { get; }
         public IPaperService PaperService { get; }
-        public ICityService CityService { get; }    
-
+        public ICityService CityService { get; }
+        public IConferenceStatusService ConferenceStatusService { get; }
     }
 
     public class ServiceManager : IServiceManager
@@ -38,6 +38,7 @@ namespace ConfRadar.Services
         private readonly IGlobalStatusService _globalStatusService;
         private readonly IPaperService _paperService;
         private readonly ICityService _cityService;
+        private readonly IConferenceStatusService _conferenceStatusService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -51,9 +52,9 @@ namespace ConfRadar.Services
             IConferenceStepService conferenceStepService,
             IConferenceCategoryService conferenceCategoryService,
             IGlobalStatusService globalStatusService,
-
             IPaperService paperService,
-            ICityService cityService)
+            ICityService cityService,
+            IConferenceStatusService conferenceStatusService)
         {
             _authService = authService;
             _momoService = momoService;
@@ -69,6 +70,7 @@ namespace ConfRadar.Services
             _globalStatusService = globalStatusService;
             _paperService = paperService;
             _cityService = cityService;
+            _conferenceStatusService = conferenceStatusService;
         }
 
         public IAuthService AuthService => _authService;
@@ -88,6 +90,8 @@ namespace ConfRadar.Services
         public IPaperService PaperService => _paperService;
 
         public ICityService CityService => _cityService;
+
+        public IConferenceStatusService ConferenceStatusService => _conferenceStatusService;
     }
 
 }
