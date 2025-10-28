@@ -7,7 +7,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreatePaperReviewerAsync(PaperReviewer paperReviewer);
         Task<int> UpdatePaperReviewerAsync(PaperReviewer paperReviewer);
         Task<bool> DeletePaperReviewerAsync(PaperReviewer paperReviewer);
-        Task<PaperReviewer?> GetPaperReviewerByIdAsync(string? userId, string? paperId);
+        Task<PaperReviewer?> GetPaperReviewersByPaperIdAndUserIdAsync(string? userId, string? paperId);
         Task<List<PaperReviewer>> GetAllPaperReviewersAsync();
         Task<List<PaperReviewer>> GetPaperReviewersByPaperIdAsync(string paperId);
         Task<List<PaperReviewer>> GetPaperReviewersByUserIdAsync(string userId);

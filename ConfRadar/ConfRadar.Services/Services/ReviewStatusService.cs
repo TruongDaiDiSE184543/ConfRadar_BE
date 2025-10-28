@@ -23,7 +23,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<List<ReviewStatus>> GetAllReviewStatuses()
         {
-            return await _unitOfWork.ReviewStatusRepository.GetAllReviewStatusAsync();
+            return await _unitOfWork.ReviewStatusRepository.GetAllReviewStatusesAsync();
         }
 
         public async Task<ReviewStatus> GetReviewStatusById(string id)
@@ -33,7 +33,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<ReviewStatus> GetReviewStatusByName(string name)
         {
-            return await _unitOfWork.ReviewStatusRepository.GetReviewStatusByName(name);
+            return await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(name);
         }
 
         public async Task<bool> IsTransitionValid(string currentStatus, string toStatus)

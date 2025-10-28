@@ -57,16 +57,10 @@ namespace ConfRadar.Repositories
         IFullPaperRepository FullPaperRepository { get; }
         IRevisionPaperRepository RevisionPaperRepository { get; }
         ICameraReadyRepository CameraReadyRepository { get; }
-
-        //IPaperRepository PaperRepository { get; }
-        //IReviewStatusRepository ReviewStatusRepository { get; }
-        IFullPaperRepository FullPaperRepository { get; }
-        IPaperReviewerRepository PaperReviewerRepository { get; }
-        ICameraReadyRepository CameraReadyRepository { get; }
-        IRevisionPaperRepository RevisionPaperRepository { get; }
         IRevisionPaperSubmissionRepository RevisionPaperSubmissionRepository { get; }
         IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository { get; }
         IRevisionPaperReviewRepository RevisionPaperReviewRepository { get; }
+        IFullPaperReviewRepository FullPaperReviewRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -129,12 +123,9 @@ namespace ConfRadar.Repositories
         private IRankingReferenceUrlRepository _RankingReferenceUrlRepository;
         private IRevisionRoundDeadlineRepository _RevisionRoundDeadlineRepository;
         private IPaperAuthorRepository _PaperAuthorRepository;
-        private IPaperReviewerRepository _PaperReviewerRepository;
-        private IFullPaperRepository _FullPaperRepository;
-        private IRevisionPaperRepository _RevisionPaperRepository;
-        private ICameraReadyRepository _CameraReadyRepository;
 
         private IRevisionPaperReviewRepository _RevisionPaperReviewRepository;
+        private IFullPaperReviewRepository _FullPaperReviewRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -231,15 +222,9 @@ namespace ConfRadar.Repositories
         public IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository => _RevisionRoundDeadlineRepository ??= new RevisionRoundDeadlineRepository(_context);
 
         public IPaperAuthorRepository PaperAuthorRepository => _PaperAuthorRepository ??= new PaperAuthorRepository(_context);
-
-        public IPaperReviewerRepository PaperReviewerRepository => _PaperReviewerRepository ??= new PaperReviewerRepository(_context);
-
-        public IFullPaperRepository FullPaperRepository => _FullPaperRepository ??= new FullPaperRepository(_context);
-
-        public IRevisionPaperRepository RevisionPaperRepository => _RevisionPaperRepository ??= new RevisionPaperRepository(_context);
-
-        public ICameraReadyRepository CameraReadyRepository => _CameraReadyRepository ??= new CameraReadyRepository(_context);
         public IRevisionPaperReviewRepository RevisionPaperReviewRepository => _RevisionPaperReviewRepository ??= new RevisionPaperReviewRepository(_context);
+
+        public IFullPaperReviewRepository FullPaperReviewRepository => _FullPaperReviewRepository ??= new FullPaperReviewRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

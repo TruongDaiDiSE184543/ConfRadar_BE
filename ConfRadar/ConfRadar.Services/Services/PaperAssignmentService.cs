@@ -103,7 +103,7 @@ namespace ConfRadar.Services.Services
 
             // Check if the user is already assigned to this paper as a reviewer
             var existingPaperReviewer = await _unitOfWork.PaperReviewerRepository
-                .GetPaperReviewerByIdAsync(request.UserId, request.PaperId);
+                .GetPaperReviewersByPaperIdAndUserIdAsync(request.UserId, request.PaperId);
 
             if (existingPaperReviewer != null)
             {

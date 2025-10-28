@@ -4,10 +4,13 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
 using ConfRadar.Services.DTOs.FullPaper;
 using ConfRadar.Services.DTOs.RevisionPaper;
+using ConfRadar.Services.DTOs.Paper;
+using ConfRadar.Services.DTOs.FullPaperReview;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using static ConfRadar.Services.Common.AppSettingConfig;
+using ReviewStatus = ConfRadar.Repositories.Models.ReviewStatus;
 
 namespace ConfRadar.Services.Services
 {
@@ -23,7 +26,12 @@ namespace ConfRadar.Services.Services
         Task<int> CreateRevisionSubmissionResponse(CreateRevisionPaperSubmissionResponse request,string userId);
         Task<int> CreateRevisionReview(CreateRevisionPaperReviewRequest request, string userId);
         Task<List<RevisionPaperReviewResponse>> ListRevisionPaperReview(ListRevisionPaperReviewRequest request, string userId);
-
+        Task<string> CreateCameraReady(CreateCameraReadyRequest request, string userId);
+        Task<int> UpdateCameraReady(UpdateCameraReadyRequest request, string userId);
+        Task<string> SubmitReviewForFullPaper(CreateFullPaperReviewRequest request, string userId);
+        Task<List<FullPaperReviewResponse>> GetFullPaperReviewsByFullPaperId(string fullPaperId);
+        Task<int> DecideFullPaperReviewStatus(UpdateFullPaperReviewStatusRequest request, string userId);
+        Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);
     }
     public class PaperService : IPaperService
     {
@@ -119,7 +127,7 @@ namespace ConfRadar.Services.Services
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken + Path.GetExtension(request.FullPaperFile.FileName);
                 fullPaperURL = _objectStorageSettings.Value.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.fullpaperfile.ToString(),uniqueFileName,stream,request.FullPaperFile.ContentType);
             }
-            var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByName("Pending");
+            var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync("Pending");
             var fullPaperObject = request.toModel(fullPaperURL, pendingStatus.ReviewStatusId);
             await _unitOfWork.BeginTransactionAsync();
             try {
@@ -253,7 +261,7 @@ namespace ConfRadar.Services.Services
                         CameraReadyUrl = null,
                     };
                     paper.CameraReadyId = cameraReady.CameraReadyId;
-                    await _unitOfWork.CameraReadyRepository.CreateAsync(cameraReady);
+                    await _unitOfWork.CameraReadyRepository.CreateCameraReadyAsync(cameraReady);
                     break;
                 case ReviewStatusEnum.Rejected:
 
@@ -310,7 +318,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Bạn không có quyền nộp revision cho bài báo này");
             }
-            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionByIdAsync(request.RevisionPaperId);
+            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
             if (revisionPaper == null)
             {
                 throw new BadRequestException($"Revision paper id {request.RevisionPaperId} không tìm thấy trong hệ thống");
@@ -444,7 +452,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm bạn với id {userId} được chấm bài {request.PaperId} trong hệ thống");
             }
-            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionByIdAsync(request.RevisionPaperId);
+            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
             if (revisionPaper == null)
             {
                 throw new NotFoundException($"Không tìm thấy revision paper {request.RevisionPaperId} trong hệ thống");
@@ -507,7 +515,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Paper đang không ở trong trạng thái revise");
             }
-            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionByIdAsync(request.RevisionPaperId);
+            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
             if (revisionPaper == null)
             {
                 throw new NotFoundException($"Không tìm thấy  revision paper {request.RevisionPaperId} trong hệ thống");
@@ -538,7 +546,7 @@ namespace ConfRadar.Services.Services
                     GlobalStatusId = pendingGlobalStatus.GlobalStatusId,
                     CameraReadyUrl = null,
                 };
-                await _unitOfWork.CameraReadyRepository.CreateAsync(cameraReadyObj);
+                await _unitOfWork.CameraReadyRepository.CreateCameraReadyAsync(cameraReadyObj);
                 paper.CameraReadyId = cameraReadyObj.CameraReadyId;
                 paper.PaperPhaseId = paperPhase.PaperPhaseId;
 
@@ -592,6 +600,431 @@ namespace ConfRadar.Services.Services
                 RevisionPaperId = x.RevisionPaperId,
             }).ToList();
             return listRevisionPaperReviewResponse;
+        }
+
+        public async Task<string> CreateCameraReady(CreateCameraReadyRequest request, string userId)
+        {
+            // Validate that the paper exists
+            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
+            if (paper == null)
+            {
+                throw new BadRequestException($"Paper with ID {request.PaperId} does not exist.");
+            }
+
+            // Check if paper already has a camera ready
+            if (!string.IsNullOrEmpty(paper.CameraReadyId))
+            {
+                throw new BadRequestException($"Paper with ID {request.PaperId} already has a camera ready record.");
+            }
+
+            // Validate that the user is the presenter of the paper
+            if (paper.PresenterId != userId)
+            {
+                throw new BadRequestException("You are not authorized to create camera ready for this paper.");
+            }
+
+            // Validation: Paper must have either:
+            // 1. RevisionPaper with GlobalStatus = "Accepted", OR
+            // 2. FullPaper with ReviewStatus = "Accepted"
+            bool isValidPaper = false;
+
+            if (!string.IsNullOrEmpty(paper.RevisionPaperId))
+            {
+                // Check if RevisionPaper exists and has GlobalStatus = "Accepted"
+                var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
+                if (revisionPaper != null && revisionPaper.GlobalStatus != null)
+                {
+                    var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+                    if (revisionPaper.GlobalStatusId == acceptedGlobalStatus.GlobalStatusId)
+                    {
+                        isValidPaper = true;
+                    }
+                }
+            }
+            else if (!string.IsNullOrEmpty(paper.FullPaperId))
+            {
+                // Check if FullPaper exists and has ReviewStatus = "Accepted"
+                var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId);
+                if (fullPaper != null && fullPaper.ReviewStatus != null)
+                {
+                    var acceptedReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Accepted.GetDescription());
+                    if (fullPaper.ReviewStatusId == acceptedReviewStatus.ReviewStatusId)
+                    {
+                        isValidPaper = true;
+                    }
+                }
+            }
+
+            if (!isValidPaper)
+            {
+                throw new BadRequestException("Paper must have either an accepted revision paper or an accepted full paper to create camera ready.");
+            }
+
+            // Upload camera ready file
+            string cameraReadyFileUrl = string.Empty;
+            if (request.CameraReadyFile != null)
+            {
+                if (request.CameraReadyFile.ContentType == null)
+                {
+                    throw new BadRequestException("Content type is null");
+                }
+
+                using var stream = request.CameraReadyFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.CameraReadyFile.FileName);
+                var baseUri = _objectStorageSettings.Value.EndPoint;
+                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.camerareadyfile.ToString(), uniqueFileName, stream, request.CameraReadyFile.ContentType);
+                cameraReadyFileUrl = baseUri + objectStorageFileUrl;
+            }
+
+            // Get Pending GlobalStatus
+            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+
+            // Create CameraReady record
+            var cameraReady = new CameraReady
+            {
+                CameraReadyId = Guid.NewGuid().ToString(),
+                GlobalStatusId = pendingGlobalStatus.GlobalStatusId,
+                CameraReadyUrl = cameraReadyFileUrl,
+            };
+
+            // Save CameraReady
+            await _unitOfWork.CameraReadyRepository.CreateCameraReadyAsync(cameraReady);
+
+            // Update Paper with CameraReadyId
+            paper.CameraReadyId = cameraReady.CameraReadyId;
+            
+            // Update paper phase to CameraReady
+            var cameraReadyPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
+            if (cameraReadyPhase != null)
+            {
+                paper.PaperPhaseId = cameraReadyPhase.PaperPhaseId;
+            }
+
+            await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+
+            return cameraReady.CameraReadyId;
+        }
+
+        public async Task<int> UpdateCameraReady(UpdateCameraReadyRequest request, string userId)
+        {
+            // Validate that the camera ready exists
+            var cameraReady = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(request.CameraReadyId);
+            if (cameraReady == null)
+            {
+                throw new BadRequestException($"Camera ready with ID {request.CameraReadyId} does not exist.");
+            }
+
+            // Validate that the camera ready is in "Pending" status
+            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+            if (cameraReady.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
+            {
+                throw new BadRequestException("Camera ready must be in pending status to be updated.");
+            }
+
+            // Find the paper associated with this camera ready
+            var paper = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(request.CameraReadyId);
+            if (paper == null)
+            {
+                throw new BadRequestException($"Paper associated with camera ready ID {request.CameraReadyId} does not exist.");
+            }
+
+            // Validate that the user is a head reviewer of the paper
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(paper.PaperId, userId);
+            if (paperReviewer == null)
+            {
+                throw new BadRequestException("You are not a reviewer of this paper.");
+            }
+
+            if (paperReviewer.IsHeadReviewer != true)
+            {
+                throw new BadRequestException("Only head reviewers can update camera ready.");
+            }
+
+            // Upload new camera ready file
+            if (request.CameraReadyFile != null)
+            {
+                if (request.CameraReadyFile.ContentType == null)
+                {
+                    throw new BadRequestException("Content type is null");
+                }
+
+                using var stream = request.CameraReadyFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.CameraReadyFile.FileName);
+                var baseUri = _objectStorageSettings.Value.EndPoint;
+                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.camerareadyfile.ToString(), uniqueFileName, stream, request.CameraReadyFile.ContentType);
+                cameraReady.CameraReadyUrl = baseUri + objectStorageFileUrl;
+            }
+
+            // Update CameraReady
+            return await _unitOfWork.CameraReadyRepository.UpdateCameraReadyAsync(cameraReady);
+        }
+
+        public async Task<string> SubmitReviewForFullPaper(CreateFullPaperReviewRequest request, string userId)
+        {
+            // Validate that the user exists and has reviewer role
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            if (user == null)
+            {
+                throw new BadRequestException($"User with ID {userId} does not exist.");
+            }
+
+            // Check if user is a reviewer (either Local Reviewer or External Reviewer)
+            var localReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("Local Reviewer");
+            var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("External Reviewer");
+
+            if (localReviewerRole == null || externalReviewerRole == null)
+            {
+                throw new BadRequestException("Reviewer roles do not exist in the system.");
+            }
+
+            var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userId);
+            var hasReviewerRole = userRoles.Any(ur => ur.RoleId == localReviewerRole.RoleId || ur.RoleId == externalReviewerRole.RoleId);
+
+            if (!hasReviewerRole)
+            {
+                throw new BadRequestException("User must have Local Reviewer or External Reviewer role to submit a review.");
+            }
+
+            // Validate that the full paper exists
+            var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(request.FullPaperId);
+            if (fullPaper == null)
+            {
+                throw new BadRequestException($"Full paper with ID {request.FullPaperId} does not exist.");
+            }
+
+            // Validate that the user is assigned as a reviewer to this paper
+            var paper = await _unitOfWork.PaperRepository.GetPaperByFullPaperIdAsync(request.FullPaperId);
+            if (paper == null)
+            {
+                throw new BadRequestException($"Paper associated with full paper ID {request.FullPaperId} does not exist.");
+            }
+
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(paper.PaperId, userId);
+            if (paperReviewer == null)
+            {
+                throw new BadRequestException("You are not assigned as a reviewer to this paper.");
+            }
+
+            // Check if the user has already submitted a review for this full paper
+            var existingReview = await _unitOfWork.FullPaperReviewRepository.GetFullPaperReviewByFullPaperIdAndReviewerIdAsync(request.FullPaperId, userId);
+            if (existingReview != null)
+            {
+                throw new BadRequestException("You have already submitted a review for this full paper.");
+            }
+
+            // Validate that the full paper is in "Pending" review status
+            var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
+            if (pendingReviewStatus == null)
+            {
+                throw new BadRequestException("Pending review status does not exist in the system.");
+            }
+
+            if (fullPaper.ReviewStatusId != pendingReviewStatus.ReviewStatusId)
+            {
+                throw new BadRequestException("Full paper must be in Pending status to submit a review.");
+            }
+
+            // Upload feedback material file if provided
+            string feedbackMaterialUrl = string.Empty;
+            if (request.FeedbackMaterialFile != null)
+            {
+                if (request.FeedbackMaterialFile.ContentType == null)
+                {
+                    throw new BadRequestException("Content type is null");
+                }
+
+                using var stream = request.FeedbackMaterialFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.FeedbackMaterialFile.FileName);
+                var baseUri = _objectStorageSettings.Value.EndPoint;
+                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.feedbackmaterial.ToString(), uniqueFileName, stream, request.FeedbackMaterialFile.ContentType);
+                feedbackMaterialUrl = baseUri + objectStorageFileUrl;
+            }
+
+            // Create the full paper review
+            var fullPaperReview = new FullPaperReview
+            {
+                FullPaperReviewId = Guid.NewGuid().ToString(),
+                FullPaperId = request.FullPaperId,
+                ReviewerId = userId,
+                ReviewStatusId = pendingReviewStatus.ReviewStatusId,
+                Note = request.Note,
+                FeedbackToAuthor = request.FeedbackToAuthor,
+                FeedbackMaterialUrl = feedbackMaterialUrl,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.FullPaperReviewRepository.CreateFullPaperReviewAsync(fullPaperReview);
+
+            return fullPaperReview.FullPaperReviewId;
+        }
+
+        public async Task<List<FullPaperReviewResponse>> GetFullPaperReviewsByFullPaperId(string fullPaperId)
+        {
+            // Validate that the full paper exists
+            var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(fullPaperId);
+            if (fullPaper == null)
+            {
+                throw new BadRequestException($"Full paper with ID {fullPaperId} does not exist.");
+            }
+
+            // Get all reviews for this full paper
+            var fullPaperReviews = await _unitOfWork.FullPaperReviewRepository.GetFullPaperReviewsByFullPaperIdAsync(fullPaperId);
+
+            // Convert to response objects
+            var fullPaperReviewResponses = fullPaperReviews.Select(review => new FullPaperReviewResponse
+            {
+                FullPaperReviewId = review.FullPaperReviewId,
+                GlobalStatusId = review.ReviewStatusId,
+                GlobalStatusName = review.ReviewStatus?.Name,
+                Note = review.Note,
+                CreatedAt = review.CreatedAt,
+                FeedbackToAuthor = review.FeedbackToAuthor,
+                FeedbackMaterialUrl = review.FeedbackMaterialUrl,
+                ReviewerId = review.ReviewerId,
+                ReviewerName = review.Reviewer?.FullName,
+                ReviewerAvatarUrl = review.Reviewer?.AvatarUrl,
+                FullPaperId = review.FullPaperId
+            }).ToList();
+
+            return fullPaperReviewResponses;
+        }
+
+        public async Task<int> DecideFullPaperReviewStatus(UpdateFullPaperReviewStatusRequest request, string userId)
+        {
+            // Validate that the full paper review exists
+            var fullPaperReview = await _unitOfWork.FullPaperReviewRepository.GetFullPaperReviewByIdAsync(request.FullPaperReviewId);
+            if (fullPaperReview == null)
+            {
+                throw new BadRequestException($"Full paper review with ID {request.FullPaperReviewId} does not exist.");
+            }
+
+            // Validate that the full paper review is in "Pending" status
+            var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
+            if (pendingReviewStatus == null)
+            {
+                throw new BadRequestException("Pending review status does not exist in the system.");
+            }
+
+            if (fullPaperReview.ReviewStatusId != pendingReviewStatus.ReviewStatusId)
+            {
+                throw new BadRequestException("Full paper review must be in Pending status to update its status.");
+            }
+
+            // Validate that the user is a head reviewer for the paper associated with this full paper
+            var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(fullPaperReview.FullPaperId);
+            if (fullPaper == null)
+            {
+                throw new BadRequestException($"Full paper with ID {fullPaperReview.FullPaperId} does not exist.");
+            }
+
+            var paper = await _unitOfWork.PaperRepository.GetPaperByFullPaperIdAsync(fullPaper.FullPaperId);
+            if (paper == null)
+            {
+                throw new BadRequestException($"Paper associated with full paper ID {fullPaper.FullPaperId} does not exist.");
+            }
+
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(paper.PaperId, userId);
+            if (paperReviewer == null)
+            {
+                throw new BadRequestException("You are not assigned as a reviewer to this paper.");
+            }
+
+            if (paperReviewer.IsHeadReviewer != true)
+            {
+                throw new BadRequestException("Only head reviewers can decide the status of full paper reviews.");
+            }
+
+            // Update the review status based on the request
+            ReviewStatus? newReviewStatus = null;
+            switch (request.Statusreview.Name)
+            {
+                case "Accepted":
+                    newReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Accepted.GetDescription());
+                    break;
+                case "Rejected":
+                    newReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Rejected.GetDescription());
+                    break;
+                case "Revise":
+                    newReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Revise.GetDescription());
+                    break;
+                default:
+                    throw new BadRequestException("Invalid global status for full paper review.");
+            }
+
+            if (newReviewStatus == null)
+            {
+                throw new BadRequestException($"{request.Statusreview.Name} review status does not exist in the system.");
+            }
+
+            fullPaperReview.ReviewStatusId = newReviewStatus.ReviewStatusId;
+
+            return await _unitOfWork.FullPaperReviewRepository.UpdateFullPaperReviewAsync(fullPaperReview);
+        }
+
+        public async Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId)
+        {
+            // Validate that the camera ready exists
+            var cameraReady = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(request.CameraReadyId);
+            if (cameraReady == null)
+            {
+                throw new BadRequestException($"Camera ready with ID {request.CameraReadyId} does not exist.");
+            }
+
+            // Validate that the camera ready is in "Pending" status
+            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+            if (pendingGlobalStatus == null)
+            {
+                throw new BadRequestException("Pending global status does not exist in the system.");
+            }
+
+            if (cameraReady.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
+            {
+                throw new BadRequestException("Camera ready must be in Pending status to update its status.");
+            }
+
+            // Validate that the user is a head reviewer for the paper associated with this camera ready
+            var paper = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(request.CameraReadyId);
+            if (paper == null)
+            {
+                throw new BadRequestException($"Paper associated with camera ready ID {request.CameraReadyId} does not exist.");
+            }
+
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(paper.PaperId, userId);
+            if (paperReviewer == null)
+            {
+                throw new BadRequestException("You are not assigned as a reviewer to this paper.");
+            }
+
+            if (paperReviewer.IsHeadReviewer != true)
+            {
+                throw new BadRequestException("Only head reviewers can decide the status of camera ready submissions.");
+            }
+
+            // Update the camera ready status based on the request
+            GlobalStatus? newGlobalStatus = null;
+            switch (request.GlobalStatus)
+            {
+                case GlobalStatusEnum.Accepted:
+                    newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+                    break;
+                case GlobalStatusEnum.Rejected:
+                    newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+                    break;
+                case GlobalStatusEnum.Pending:
+                    newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+                    break;
+                default:
+                    throw new BadRequestException("Invalid global status for camera ready.");
+            }
+
+            if (newGlobalStatus == null)
+            {
+                throw new BadRequestException($"{request.GlobalStatus.GetDescription()} global status does not exist in the system.");
+            }
+
+            cameraReady.GlobalStatusId = newGlobalStatus.GlobalStatusId;
+
+            return await _unitOfWork.CameraReadyRepository.UpdateCameraReadyAsync(cameraReady);
         }
     }
 }
