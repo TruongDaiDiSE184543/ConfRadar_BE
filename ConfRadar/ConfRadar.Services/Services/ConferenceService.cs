@@ -28,6 +28,15 @@ namespace ConfRadar.Services.Services
 
         // Endpoint 4: Get conferences with step completion status
         Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
+        
+        // NEW ENDPOINT 5: Get all pending conferences
+        Task<PagedResult<ConferenceResponse>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null);
+        
+        // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
+        Task<bool> ApproveConferenceAsync(string conferenceId, ApproveConferenceRequest request);
+        
+        // Helper method: Update conference status
+        Task<bool> UpdateConferenceStatusAsync(string conferenceId, string newStatusName, string? reason = null);
     }
 
     public class ConferenceService : IConferenceService
@@ -36,6 +45,7 @@ namespace ConfRadar.Services.Services
         private readonly IObjectStorageFileService _objectStorageFileService;
         private readonly ITokenService _tokenService;
         private readonly ISystemConfigurationService _systemConfigurationService;
+
         private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
 
         public ConferenceService(IUnitOfWork unitOfWork, IObjectStorageFileService objectStorageFileService, ITokenService tokenService, ISystemConfigurationService systemConfigurationService, IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings)
@@ -464,6 +474,107 @@ namespace ConfRadar.Services.Services
                 Page = page,
                 PageSize = pageSize
             };
+        }
+
+        // NEW ENDPOINTS IMPLEMENTATION 5 & 6
+
+        public async Task<PagedResult<ConferenceResponse>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null)
+        {
+            // Get the "Pending" status ID first
+            var allStatuses = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
+            var pendingStatus = allStatuses.FirstOrDefault(s => s.ConferenceStatusName == "Pending");
+            
+            if (pendingStatus == null)
+            {
+                return new PagedResult<ConferenceResponse>
+                {
+                    Items = new List<ConferenceResponse>(),
+                    TotalCount = 0,
+                    Page = page,
+                    PageSize = pageSize
+                };
+            }
+
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Where(c => c.ConferenceStatusId == pendingStatus.ConferenceStatusId);
+
+            // Apply search filter if provided
+            if (!string.IsNullOrEmpty(searchKeyword))
+            {
+                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.Contains(searchKeyword));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var pagedConferences = await query
+                .OrderBy(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var responses = pagedConferences.Select(conference => new ConferenceResponse
+            {
+                ConferenceId = conference.ConferenceId,
+                ConferenceName = conference.ConferenceName,
+                Description = conference.Description,
+                StartDate = conference.StartDate,
+                EndDate = conference.EndDate,
+                TotalSlot = conference.TotalSlot,
+                AvailableSlot = conference.AvailableSlot,
+                Address = conference.Address,
+                BannerImageUrl = conference.BannerImageUrl,
+                CreatedAt = conference.CreatedAt,
+                TicketSaleStart = conference.TicketSaleStart,
+                TicketSaleEnd = conference.TicketSaleEnd,
+                IsInternalHosted = conference.IsInternalHosted,
+                IsResearchConference = conference.IsResearchConference,
+                CityId = conference.CityId,
+                ConferenceCategoryId = conference.ConferenceCategoryId,
+                ConferenceStatusId = conference.ConferenceStatusId
+            }).ToList();
+
+            return new PagedResult<ConferenceResponse>
+            {
+                Items = responses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<bool> ApproveConferenceAsync(string conferenceId, ApproveConferenceRequest request)
+        {
+            // Change conference status from Pending to Rejected
+            if (request.IsApprove == false) return await UpdateConferenceStatusAsync(conferenceId, "Rejected", request.Reason);
+            // Change conference status from Pending to Preparing
+            return await UpdateConferenceStatusAsync(conferenceId, "Preparing", request.Reason);
+        }
+
+        public async Task<bool> UpdateConferenceStatusAsync(string conferenceId, string newStatusName, string? reason = null)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null)
+            {
+                return false;
+            }
+
+            // Get the new status by name
+            var allStatuses = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
+            var newStatus = allStatuses.FirstOrDefault(s => s.ConferenceStatusName == newStatusName);
+                
+            if (newStatus == null)
+            {
+                return false;
+            }
+
+            // Update the conference status
+            conference.ConferenceStatusId = newStatus.ConferenceStatusId;
+            
+            // Here we could use the reason parameter in the future to store in a history/timeline table
+            // For now, we're just keeping the field for future use as requested
+
+            await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
+            return true;
         }
     }
 }

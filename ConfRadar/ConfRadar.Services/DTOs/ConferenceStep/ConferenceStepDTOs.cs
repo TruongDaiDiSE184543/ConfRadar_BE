@@ -740,8 +740,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateMaterialDownloadRequest
     {
-        [MaxLength(255)]
-        public string? FileName { get; set; }
 
         [MaxLength(1000)]
         public string? FileDescription { get; set; }

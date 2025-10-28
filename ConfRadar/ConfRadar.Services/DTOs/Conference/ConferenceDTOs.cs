@@ -234,4 +234,11 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
     }
+    
+    public class ApproveConferenceRequest
+    {
+        [MaxLength(1000)]
+        public string? Reason { get; set; }
+        public Boolean? IsApprove { get; set; }
+    }
 }

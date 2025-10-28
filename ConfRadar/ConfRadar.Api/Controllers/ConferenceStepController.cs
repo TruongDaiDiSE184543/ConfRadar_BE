@@ -323,6 +323,78 @@ namespace ConfRadar.Api.Controllers
 
         #endregion
 
+        #region Research Conference Step 5: Material Downloads
+
+        [HttpPost("{conferenceId}/research/materials")]
+        public async Task<IActionResult> CreateMaterialDownload(string conferenceId, [FromForm] CreateMaterialDownloadRequest request)
+        {
+            var material = await _serviceManager.ConferenceStepService.CreateMaterialDownloadAsync(conferenceId, request);
+            return Ok(ApiResponse<MaterialDownloadResponse>.SuccessResponse(material, "Tài liệu tải về được tạo thành công"));
+        }
+
+        [HttpGet("{conferenceId}/research/materials")]
+        public async Task<IActionResult> GetMaterialDownloads(string conferenceId)
+        {
+            var materials = await _serviceManager.ConferenceStepService.GetMaterialDownloadsByConferenceIdAsync(conferenceId);
+            return Ok(ApiResponse<List<MaterialDownloadResponse>>.SuccessResponse(materials, "Tài liệu tải về được lấy thành công"));
+        }
+
+        [HttpPut("research/materials/{materialDownloadId}")]
+        public async Task<IActionResult> UpdateMaterialDownload(string materialDownloadId, [FromForm] UpdateMaterialDownloadRequest request)
+        {
+            var material = await _serviceManager.ConferenceStepService.UpdateMaterialDownloadAsync(materialDownloadId, request);
+            return Ok(ApiResponse<MaterialDownloadResponse>.SuccessResponse(material, "Tài liệu tải về được cập nhật thành công"));
+        }
+
+        [HttpDelete("research/materials/{materialDownloadId}")]
+        public async Task<IActionResult> DeleteMaterialDownload(string materialDownloadId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteMaterialDownloadAsync(materialDownloadId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Tài liệu tải về được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy tài liệu tải về"));
+        }
+
+        #endregion
+
+        #region Research Conference Step 6: Ranking File URLs
+
+        [HttpPost("{conferenceId}/research/ranking-file-urls")]
+        public async Task<IActionResult> CreateRankingFileUrl(string conferenceId, [FromForm] CreateRankingFileUrlRequest request)
+        {
+            var fileUrl = await _serviceManager.ConferenceStepService.CreateRankingFileUrlAsync(conferenceId, request);
+            return Ok(ApiResponse<RankingFileUrlResponse>.SuccessResponse(fileUrl, "URL tệp xếp hạng được tạo thành công"));
+        }
+
+        [HttpGet("{conferenceId}/research/ranking-file-urls")]
+        public async Task<IActionResult> GetRankingFileUrls(string conferenceId)
+        {
+            var fileUrls = await _serviceManager.ConferenceStepService.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
+            return Ok(ApiResponse<List<RankingFileUrlResponse>>.SuccessResponse(fileUrls, "URL tệp xếp hạng được lấy thành công"));
+        }
+
+        [HttpPut("research/ranking-file-urls/{rankingFileUrlId}")]
+        public async Task<IActionResult> UpdateRankingFileUrl(string rankingFileUrlId, [FromForm] UpdateRankingFileUrlRequest request)
+        {
+            var fileUrl = await _serviceManager.ConferenceStepService.UpdateRankingFileUrlAsync(rankingFileUrlId, request);
+            return Ok(ApiResponse<RankingFileUrlResponse>.SuccessResponse(fileUrl, "URL tệp xếp hạng được cập nhật thành công"));
+        }
+
+        [HttpDelete("research/ranking-file-urls/{rankingFileUrlId}")]
+        public async Task<IActionResult> DeleteRankingFileUrl(string rankingFileUrlId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteRankingFileUrlAsync(rankingFileUrlId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "URL tệp xếp hạng được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy URL tệp xếp hạng"));
+        }
+
+        #endregion
+
         #region Research Conference Step 1: Basic Research Conference Creation
 
         [HttpPost("research/basic")]

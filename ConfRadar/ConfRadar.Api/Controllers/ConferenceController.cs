@@ -89,5 +89,30 @@ namespace ConfRadar.Api.Controllers
             var conferences = await _serviceManager.ConferenceService.GetConferencesStepCompletionStatusAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
             return Ok(ApiResponse<PagedResult<ConferenceStepCompletionStatusResponse>>.SuccessResponse(conferences, "Conference step completion status retrieved successfully"));
         }
+
+        // NEW ENDPOINT 5: Get all pending conferences
+        [HttpGet("pending-conferences")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetPendingConferences(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchKeyword = null)
+        {
+            var conferences = await _serviceManager.ConferenceService.GetPendingConferencesAsync(page, pageSize, searchKeyword);
+            return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Pending conferences retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
+        [HttpPut("approve-conference/{conferenceId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ApproveConference(string conferenceId, [FromBody] ApproveConferenceRequest request)
+        {
+            var result = await _serviceManager.ConferenceService.ApproveConferenceAsync(conferenceId, request);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Conference approved successfully"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
+        }
     }
 }

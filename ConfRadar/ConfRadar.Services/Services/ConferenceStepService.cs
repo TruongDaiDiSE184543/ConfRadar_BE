@@ -1246,7 +1246,7 @@ namespace ConfRadar.Services.Services
             {
                 using var stream = request.File.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
-                materialDownload.FileName = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
+                materialDownload.FileName = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
             }
 
             await _unitOfWork.MaterialDownloadRepository.CreateMaterialDownloadAsync(materialDownload);
@@ -1264,7 +1264,7 @@ namespace ConfRadar.Services.Services
             var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
             if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
 
-            if (!string.IsNullOrEmpty(request.FileName)) materialDownload.FileName = request.FileName;
+            
             if (!string.IsNullOrEmpty(request.FileDescription)) materialDownload.FileDescription = request.FileDescription;
 
             // Handle file upload if provided
