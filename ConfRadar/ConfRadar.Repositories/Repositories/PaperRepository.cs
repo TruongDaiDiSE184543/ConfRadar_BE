@@ -12,6 +12,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<bool> DeletePaperAsync(Paper paper);
         Task<Paper?> GetPaperByIdAsync(string paperId);
         Task<Paper?> GetPaperByPaperIdAndUserIdAsync(string paperId, string userId);
+        Task<Paper?> GetPaperByCameraReadyIdAsync(string cameraReadyId);
+        Task<Paper?> GetPaperByFullPaperIdAsync(string fullPaperId);
 
         Task<List<Paper>> GetAllPapersAsync();
     }
@@ -50,6 +52,20 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByPaperIdAndUserIdAsync(string paperId, string userId)
         {
             return await _context.Papers.Include(p => p.Presenter).FirstOrDefaultAsync(p => p.PaperId == paperId && p.PresenterId == userId);
+        }
+
+        public async Task<Paper?> GetPaperByCameraReadyIdAsync(string cameraReadyId)
+        {
+            return await _context.Papers
+                .Include(p => p.Presenter)
+                .FirstOrDefaultAsync(p => p.CameraReadyId == cameraReadyId);
+        }
+
+        public async Task<Paper?> GetPaperByFullPaperIdAsync(string fullPaperId)
+        {
+            return await _context.Papers
+                .Include(p => p.Presenter)
+                .FirstOrDefaultAsync(p => p.FullPaperId == fullPaperId);
         }
     }
 }

@@ -1,22 +1,13 @@
-﻿using ConfRadar.Repositories.Base;
+using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
 {
-    public interface IFullPaperRepository
-    {
-        Task<int> CreateFullPaperAsync(FullPaper fullPaper);
-        Task<int> UpdateFullPaperAsync(FullPaper fullPaper);
-        Task<bool> DeleteFullPaperAsync(FullPaper fullPaper);
-        Task<FullPaper?> GetFullPaperByIdAsync(string fullPaperId);
-        Task<List<FullPaper>> GetAllFullPapersAsync();
-    }
     public class FullPaperRepository : GenericRepository<FullPaper>, IFullPaperRepository
     {
-        public FullPaperRepository(ConfRadarDbContext context) : base(context)
-        {
-        }
+        public FullPaperRepository(ConfRadarDbContext context) : base(context) { }
 
         public async Task<int> CreateFullPaperAsync(FullPaper fullPaper)
         {
@@ -43,5 +34,4 @@ namespace ConfRadar.Repositories.Repositories
             return await GetAllAsync();
         }
     }
-
 }

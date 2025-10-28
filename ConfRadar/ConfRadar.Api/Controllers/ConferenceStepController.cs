@@ -21,7 +21,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         #region Step 1: Basic Conference Creation
-
+        [Authorize("Conference Organizer, Collaborator")]
         [HttpPost("basic")]
         public async Task<IActionResult> CreateConferenceBasic([FromForm] CreateTechnicalConferenceBasicRequest request)
         {

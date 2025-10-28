@@ -14,4 +14,18 @@ namespace ConfRadar.Services.DTOs.Abstract
         [EnumDataType(typeof(PaymentMethodEnum))]
         public PaymentMethodEnum PaymentMethod { get; set; }
     }
+
+    public class CreateFullPaperRequest
+    {
+        [Required]
+        public IFormFile FullPaperFile { get; set; }
+        [Required]
+        public string PaperId { get; set; }
+    }
+
+    public class FullPaperResponse
+    {
+        public string? ReviewStatus { get; set; }
+        public string? FullPaperURL {  get; set; }
+    }
 }

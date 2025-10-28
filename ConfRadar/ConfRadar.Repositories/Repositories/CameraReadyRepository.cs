@@ -1,21 +1,27 @@
-﻿using ConfRadar.Repositories.Base;
+using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
 {
-    public interface ICameraReadyRepository
-    {
-        Task<CameraReady?> GetCameraReadyByIdAsync(string cameraReadyId);
-        Task<int> CreateAsync(CameraReady cameraReady);
-        Task<int> UpdateAsync(CameraReady cameraReady);
-        Task<bool> DeleteAsync(CameraReady cameraReady);
-    }
     public class CameraReadyRepository : GenericRepository<CameraReady>, ICameraReadyRepository
     {
+        public CameraReadyRepository(ConfRadarDbContext context) : base(context) { }
 
-        public CameraReadyRepository(ConfRadarDbContext context) : base(context)
+        public async Task<int> CreateCameraReadyAsync(CameraReady cameraReady)
         {
+            return await CreateAsync(cameraReady);
+        }
+
+        public async Task<int> UpdateCameraReadyAsync(CameraReady cameraReady)
+        {
+            return await UpdateAsync(cameraReady);
+        }
+
+        public async Task<bool> DeleteCameraReadyAsync(CameraReady cameraReady)
+        {
+            return await RemoveAsync(cameraReady);
         }
 
         public async Task<CameraReady?> GetCameraReadyByIdAsync(string cameraReadyId)
@@ -23,19 +29,9 @@ namespace ConfRadar.Repositories.Repositories
             return await GetByIdAsync(cameraReadyId);
         }
 
-        public async Task<int> CreateAsync(CameraReady cameraReady)
+        public async Task<List<CameraReady>> GetAllCameraReadysAsync()
         {
-            return await CreateAsync(cameraReady);
-        }
-
-        public async Task<int> UpdateAsync(CameraReady cameraReady)
-        {
-            return await UpdateAsync(cameraReady);
-        }
-
-        public async Task<bool> DeleteAsync(CameraReady cameraReady)
-        {
-            return await RemoveAsync(cameraReady);
+            return await GetAllAsync();
         }
     }
 }

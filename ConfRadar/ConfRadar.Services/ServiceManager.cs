@@ -5,6 +5,8 @@ namespace ConfRadar.Services
     public interface IServiceManager
     {
         public IAuthService AuthService { get; }
+        public IReviewStatusService ReviewStatusService { get; }
+        public IRankingCategoryService RankingCategoryService { get; }
         public IMomoService MomoService { get; }
         public ITicketService TicketService { get; }
         public IPaymentService PaymentService { get; }
@@ -17,6 +19,10 @@ namespace ConfRadar.Services
         public IConferenceCategoryService ConferenceCategoryService { get; }
         public IGlobalStatusService GlobalStatusService { get; }
         public IPaperService PaperService { get; }
+        public IPaperAssignmentService PaperAssignmentService { get; }
+        public IFullPaperService FullPaperService { get; }
+        public IRevisionPaperService RevisionPaperService { get; }
+        public ICameraReadyService CameraReadyService { get; }
         public ICityService CityService { get; }
         public IConferenceStatusService ConferenceStatusService { get; }
         //public ICityService CityService { get; }
@@ -26,8 +32,10 @@ namespace ConfRadar.Services
     public class ServiceManager : IServiceManager
     {
         private readonly IAuthService _authService;
+        private readonly IRankingCategoryService _rankingCategoryService;
 
         private readonly IMomoService _momoService;
+        private readonly IReviewStatusService _reviewStatusService;
         private readonly ITicketService _ticketService;
         private readonly IPaymentService _paymentService;
         private readonly IConferenceService _conferenceService;
@@ -39,6 +47,10 @@ namespace ConfRadar.Services
         private readonly IConferenceCategoryService _conferenceCategoryService;
         private readonly IGlobalStatusService _globalStatusService;
         private readonly IPaperService _paperService;
+        private readonly IPaperAssignmentService _paperAssignmentService;
+        private readonly IFullPaperService _fullPaperService;
+        private readonly IRevisionPaperService _revisionPaperService;
+        private readonly ICameraReadyService _cameraReadyService;
         private readonly ICityService _cityService;
         private readonly IConferenceStatusService _conferenceStatusService;
 
@@ -48,6 +60,7 @@ namespace ConfRadar.Services
             IPaymentService paymentService,
             IConferenceService conferenceService,
             IRoomService roomService,
+            IReviewStatusService reviewStatusService,
             IDestinationService destinationService,
             ISystemConfigurationService systemConfigurationService,
             IConferencePriceTicketService conferencePriceTicketService,
@@ -55,6 +68,11 @@ namespace ConfRadar.Services
             IConferenceCategoryService conferenceCategoryService,
             IGlobalStatusService globalStatusService,
             IPaperService paperService,
+            IPaperAssignmentService paperAssignmentService,
+            IFullPaperService fullPaperService,
+            IRevisionPaperService revisionPaperService,
+            ICameraReadyService cameraReadyService,
+            IRankingCategoryService rankingCategoryService,
             ICityService cityService,
             IConferenceStatusService conferenceStatusService)
         {
@@ -70,7 +88,12 @@ namespace ConfRadar.Services
             _conferenceStepService = conferenceStepService;
             _conferenceCategoryService = conferenceCategoryService;
             _globalStatusService = globalStatusService;
+            _rankingCategoryService = rankingCategoryService;
             _paperService = paperService;
+            _paperAssignmentService = paperAssignmentService;
+            _fullPaperService = fullPaperService;
+            _revisionPaperService = revisionPaperService;
+            _cameraReadyService = cameraReadyService;
             _cityService = cityService;
             _conferenceStatusService = conferenceStatusService;
         }
@@ -78,8 +101,10 @@ namespace ConfRadar.Services
         public IAuthService AuthService => _authService;
         public IMomoService MomoService => _momoService;
         public ITicketService TicketService => _ticketService;
+        public IReviewStatusService ReviewStatusService => _reviewStatusService;
         public IPaymentService PaymentService => _paymentService;
         public IConferenceService ConferenceService => _conferenceService;
+        public IRankingCategoryService RankingCategoryService => _rankingCategoryService;
         public IRoomService RoomService => _roomService;
         public IDestinationService DestinationService => _destinationService;
         public ISystemConfigurationService SystemConfigurationService => _systemConfigurationService;
@@ -90,10 +115,15 @@ namespace ConfRadar.Services
         public IGlobalStatusService GlobalStatusService => _globalStatusService;
 
         public IPaperService PaperService => _paperService;
+        public IPaperAssignmentService PaperAssignmentService => _paperAssignmentService;
+        public IFullPaperService FullPaperService => _fullPaperService;
+        public IRevisionPaperService RevisionPaperService => _revisionPaperService;
+        public ICameraReadyService CameraReadyService => _cameraReadyService;
 
         public ICityService CityService => _cityService;
 
         public IConferenceStatusService ConferenceStatusService => _conferenceStatusService;
+
     }
 
 }

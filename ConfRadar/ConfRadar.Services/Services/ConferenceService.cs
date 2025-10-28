@@ -142,7 +142,7 @@ namespace ConfRadar.Services.Services
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.Contains(searchKeyword));
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
             if (!string.IsNullOrEmpty(cityId))
@@ -230,6 +230,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.Speakers)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.ConferenceSessionMedia)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) // Include room information
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
@@ -262,6 +264,13 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
+                RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                {
+                    RefundPolicyId = rp.RefundPolicyId,
+                    PercentRefund = rp.PercentRefund,
+                    RefundDeadline = rp.RefundDeadline,
+                    RefundOrder = rp.RefundOrder
+                }).ToList(),
                 Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
                 {
                     PolicyId = p.PolicyId,
@@ -284,6 +293,13 @@ namespace ConfRadar.Services.Services
                     SessionDate = cs.SessionDate,
                     ConferenceId = cs.ConferenceId,
                     RoomId = cs.RoomId,
+                    Room = cs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information
+                    {
+                        RoomId = cs.Room.RoomId,
+                        Number = cs.Room.Number,
+                        DisplayName = cs.Room.DisplayName,
+                        DestinationId = cs.Room.DestinationId
+                    } : null,
                     Speakers = cs.Speakers?.Select(s => new DTOs.Conference.SpeakerResponse
                     {
                         SpeakerId = s.SpeakerId,
@@ -296,6 +312,11 @@ namespace ConfRadar.Services.Services
                         ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
                         ConferenceSessionMediaUrl = csm.MediaUrl
                     }).ToList()
+                }).ToList(),
+                ConferenceMedia = conference.ConferenceMedia?.Select(cfm => new DTOs.Conference.ConferenceMediaResponse
+                {
+                    MediaId = cfm.ConferenceMediaId,
+                    MediaUrl = cfm.ConferenceMediaUrl
                 }).ToList(),
                 ConferencePrices = conference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
                 {
@@ -328,7 +349,7 @@ namespace ConfRadar.Services.Services
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.Contains(searchKeyword));
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
             if (!string.IsNullOrEmpty(cityId))
@@ -391,7 +412,7 @@ namespace ConfRadar.Services.Services
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.Contains(searchKeyword));
+                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
             if (!string.IsNullOrEmpty(cityId))
@@ -514,7 +535,7 @@ namespace ConfRadar.Services.Services
             // Apply search filter if provided
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.Contains(searchKeyword));
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
             var totalCount = await query.CountAsync();
@@ -601,6 +622,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cp => cp.PricePhases)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) // Include room information
                 .Include(c => c.Sponsors)
                 .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
@@ -657,24 +680,24 @@ namespace ConfRadar.Services.Services
                 RankingCategoryName = researchDetail?.RankingCategory?.RankName,
                 
                 // Research Conference related data
-                RankingFileUrls = rankingFileUrls?.Select(r => new RankingFileUrlResponse
+                RankingFileUrls = rankingFileUrls?.Select(r => new DTOs.Conference.RankingFileUrlResponse
                 {
                     RankingFileUrlId = r.RankingFileUrlId,
                     FileUrl = r.FileUrl
                 }).ToList(),
-                MaterialDownloads = materialDownloads?.Select(m => new MaterialDownloadResponse
+                MaterialDownloads = materialDownloads?.Select(m => new DTOs.Conference.MaterialDownloadResponse
                 {
                     MaterialDownloadId = m.MaterialDownloadId,
                     FileName = m.FileName,
                     FileDescription = m.FileDescription,
                     FileUrl = m.FileName
                 }).ToList(),
-                RankingReferenceUrls = rankingReferenceUrls?.Select(r => new RankingReferenceUrlResponse
+                RankingReferenceUrls = rankingReferenceUrls?.Select(r => new DTOs.Conference.RankingReferenceUrlResponse
                 {
                     ReferenceUrlId = r.ReferenceUrlId,
                     ReferenceUrl = r.ReferenceUrl
                 }).ToList(),
-                ResearchPhase = researchPhase != null ? new ResearchConferencePhaseResponse
+                ResearchPhase = researchPhase != null ? new DTOs.Conference.ResearchConferencePhaseResponse
                 {
                     ResearchConferencePhaseId = researchPhase.ResearchConferencePhaseId,
                     ConferenceId = researchPhase.ConferenceId,
@@ -690,7 +713,7 @@ namespace ConfRadar.Services.Services
                     CameraReadyEndDate = researchPhase.CameraReadyEndDate,
                     IsWaitlist = researchPhase.IsWaitlist,
                     IsActive = researchPhase.IsActive,
-                    RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new RevisionRoundDeadlineResponse
+                    RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                     {
                         RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
                         EndDate = r.EndDate,
@@ -698,7 +721,7 @@ namespace ConfRadar.Services.Services
                         ResearchConferencePhaseId = r.ResearchConferencePhaseId
                     }).ToList()
                 } : null,
-                ResearchSessions = researchSessions?.Select(rs => new ResearchSessionWithMediaResponse
+                ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
                 {
                     ConferenceSessionId = rs.ConferenceSessionId,
                     Title = rs.Title,
@@ -708,11 +731,18 @@ namespace ConfRadar.Services.Services
                     Date = rs.SessionDate,
                     ConferenceId = rs.ConferenceId,
                     RoomId = rs.RoomId,
-                    // Note: No speakers for research sessions
-                    SessionMedia = rs.ConferenceSessionMedia?.Select(csm => new DTOs.ConferenceStep.ConferenceSessionMediaResponse
+                    Room = rs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information for research sessions
                     {
-                        MediaId = csm.ConferenceSessionMediaId,
-                        MediaUrl = csm.MediaUrl
+                        RoomId = rs.Room.RoomId,
+                        Number = rs.Room.Number,
+                        DisplayName = rs.Room.DisplayName,
+                        DestinationId = rs.Room.DestinationId
+                    } : null,
+                    // Note: No speakers for research sessions
+                    SessionMedia = rs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
+                    {
+                        ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
+                        ConferenceSessionMediaUrl = csm.MediaUrl
                     }).ToList()
                 }).ToList(),
                 
@@ -729,14 +759,14 @@ namespace ConfRadar.Services.Services
                     Name = s.Name,
                     ImageUrl = s.ImageUrl
                 }).ToList(),
-                RefundPolicies = conference.RefundPolicies?.Select(rp => new RefundPolicyResponse
+                RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                 {
                     RefundPolicyId = rp.RefundPolicyId,
                     PercentRefund = rp.PercentRefund,
                     RefundDeadline = rp.RefundDeadline,
                     RefundOrder = rp.RefundOrder
                 }).ToList(),
-                ConferenceMedia = conference.ConferenceMedia?.Select(cm => new ConferenceMediaResponse
+                ConferenceMedia = conference.ConferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
                 {
                     MediaId = cm.ConferenceMediaId,
                     MediaUrl = cm.ConferenceMediaUrl
@@ -773,7 +803,7 @@ namespace ConfRadar.Services.Services
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.Contains(searchKeyword));
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
             if (!string.IsNullOrEmpty(cityId))
