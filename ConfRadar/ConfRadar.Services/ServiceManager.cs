@@ -19,6 +19,7 @@ namespace ConfRadar.Services
         public IConferenceCategoryService ConferenceCategoryService { get; }
         public IGlobalStatusService GlobalStatusService { get; }
         public IPaperService PaperService { get; }
+        public IPaperAssignmentService PaperAssignmentService { get; }
         public ICityService CityService { get; }
         public IConferenceStatusService ConferenceStatusService { get; }
     }
@@ -41,6 +42,7 @@ namespace ConfRadar.Services
         private readonly IConferenceCategoryService _conferenceCategoryService;
         private readonly IGlobalStatusService _globalStatusService;
         private readonly IPaperService _paperService;
+        private readonly IPaperAssignmentService _paperAssignmentService;
         private readonly ICityService _cityService;
         private readonly IConferenceStatusService _conferenceStatusService;
 
@@ -58,6 +60,7 @@ namespace ConfRadar.Services
             IConferenceCategoryService conferenceCategoryService,
             IGlobalStatusService globalStatusService,
             IPaperService paperService,
+            IPaperAssignmentService paperAssignmentService,
             IRankingCategoryService rankingCategoryService,
             ICityService cityService,
             IConferenceStatusService conferenceStatusService)
@@ -76,6 +79,7 @@ namespace ConfRadar.Services
             _globalStatusService = globalStatusService;
             _rankingCategoryService = rankingCategoryService;
             _paperService = paperService;
+            _paperAssignmentService = paperAssignmentService;
             _cityService = cityService;
             _conferenceStatusService = conferenceStatusService;
         }
@@ -97,6 +101,7 @@ namespace ConfRadar.Services
         public IGlobalStatusService GlobalStatusService => _globalStatusService;
 
         public IPaperService PaperService => _paperService;
+        public IPaperAssignmentService PaperAssignmentService => _paperAssignmentService;
 
         public ICityService CityService => _cityService;
 

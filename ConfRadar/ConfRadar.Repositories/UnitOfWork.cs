@@ -49,6 +49,8 @@ namespace ConfRadar.Repositories
         IRankingFileUrlRepository RankingFileUrlRepository { get; }
         IRankingReferenceUrlRepository RankingReferenceUrlRepository { get; }
         IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository { get; }
+        IPaperAuthorRepository PaperAuthorRepository { get; }
+        IPaperReviewerRepository PaperReviewerRepository { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -104,6 +106,8 @@ namespace ConfRadar.Repositories
         private IRankingFileUrlRepository _RankingFileUrlRepository;
         private IRankingReferenceUrlRepository _RankingReferenceUrlRepository;
         private IRevisionRoundDeadlineRepository _RevisionRoundDeadlineRepository;
+        private IPaperAuthorRepository _PaperAuthorRepository;
+        private IPaperReviewerRepository _PaperReviewerRepository;
 
         public UnitOfWork(ConfRadarDbContext context)
         {
@@ -186,6 +190,10 @@ namespace ConfRadar.Repositories
         public IRankingReferenceUrlRepository RankingReferenceUrlRepository => _RankingReferenceUrlRepository ??= new RankingReferenceUrlRepository(_context);
 
         public IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository => _RevisionRoundDeadlineRepository ??= new RevisionRoundDeadlineRepository(_context);
+
+        public IPaperAuthorRepository PaperAuthorRepository => _PaperAuthorRepository ??= new PaperAuthorRepository(_context);
+
+        public IPaperReviewerRepository PaperReviewerRepository => _PaperReviewerRepository ??= new PaperReviewerRepository(_context);
 
         public async Task BeginTransactionAsync()
         {
