@@ -168,6 +168,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
         public string? TargetAudience { get; set; } // Technical conference detail
+        public List<RefundPolicyResponse>? RefundPolicies { get; set; }
         public List<ConferenceMediaResponse>? ConferenceMedia {  get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }

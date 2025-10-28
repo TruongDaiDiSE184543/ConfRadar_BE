@@ -2,6 +2,7 @@
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,8 @@ namespace ConfRadar.Services.Services
     public interface IPaperService
     {
         Task<string> SubmitAbstract(CreateAbstractRequest request, string userId);
+        Task<FullPaperResponse> SubmitFullPaper (CreateFullPaperRequest request, string userId);
+
     }
     public class PaperService : IPaperService 
     {
@@ -92,6 +95,23 @@ namespace ConfRadar.Services.Services
 
             var result = await _momoService.ProcessPaymentForAbstract(request,conferencePrice.ConferenceId,userId, finalPrice, paymentMethod.PaymentMethodId, sessionIdsList, abstractFileUrl, $"Thanh toán abstract");
             return result;
+        }
+
+        public async Task<FullPaperResponse> SubmitFullPaper(CreateFullPaperRequest request, string userId)
+        {
+            if (request.PaperId == null) throw new Exception("Cần có paperid để nộp fullpaper");
+            var PaperBase = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
+            string fullPaperURL = string.Empty;
+            if(request.FullPaperFile != null)
+            {
+                if (request.FullPaperFile.ContentType == null) throw new Exception("Không có dữ liệu file đầu vào để nộp");
+                using var stream = request.FullPaperFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken + Path.GetExtension(request.FullPaperFile.FileName);
+                fullPaperURL = _objectStorageSettings.Value.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.fullpaperfile.ToString(),uniqueFileName,stream,request.FullPaperFile.ContentType);
+            }
+            var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByName("Pending");
+            var fullPaperObject = request.toModel(fullPaperURL, pendingStatus.ReviewStatusId);
+            return fullPaperObject.toResponse();
         }
     }
 }

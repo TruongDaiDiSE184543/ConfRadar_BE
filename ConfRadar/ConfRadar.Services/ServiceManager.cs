@@ -5,6 +5,7 @@ namespace ConfRadar.Services
     public interface IServiceManager
     {
         public IAuthService AuthService { get; }
+        public IReviewStatusService ReviewStatusService { get; }
         public IRankingCategoryService RankingCategoryService { get; }
         public IMomoService MomoService { get; }
         public ITicketService TicketService { get; }
@@ -28,6 +29,7 @@ namespace ConfRadar.Services
         private readonly IRankingCategoryService _rankingCategoryService;
 
         private readonly IMomoService _momoService;
+        private readonly IReviewStatusService _reviewStatusService;
         private readonly ITicketService _ticketService;
         private readonly IPaymentService _paymentService;
         private readonly IConferenceService _conferenceService;
@@ -48,6 +50,7 @@ namespace ConfRadar.Services
             IPaymentService paymentService,
             IConferenceService conferenceService,
             IRoomService roomService,
+            IReviewStatusService reviewStatusService,
             IDestinationService destinationService,
             ISystemConfigurationService systemConfigurationService,
             IConferencePriceTicketService conferencePriceTicketService,
@@ -80,6 +83,7 @@ namespace ConfRadar.Services
         public IAuthService AuthService => _authService;
         public IMomoService MomoService => _momoService;
         public ITicketService TicketService => _ticketService;
+        public IReviewStatusService ReviewStatusService => _reviewStatusService;
         public IPaymentService PaymentService => _paymentService;
         public IConferenceService ConferenceService => _conferenceService;
         public IRankingCategoryService RankingCategoryService => _rankingCategoryService;
@@ -97,6 +101,7 @@ namespace ConfRadar.Services
         public ICityService CityService => _cityService;
 
         public IConferenceStatusService ConferenceStatusService => _conferenceStatusService;
+
     }
 
 }

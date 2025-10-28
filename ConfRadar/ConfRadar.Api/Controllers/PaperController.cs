@@ -24,11 +24,11 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<string>.SuccessResponse(result, "hãy truy cập link để thực hiện thanh toán"));
         }
         [HttpPost("submit-fullpaper")]
-        public async Task<IActionResult> SubmitFullPaper([FromForm] CreateAbstractRequest request)
+        public async Task<IActionResult> SubmitFullPaper([FromForm] CreateFullPaperRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.SubmitAbstract(request, userId);
-            return Ok(ApiResponse<string>.SuccessResponse(result, "nộp full paper "));
+            var result = await _serviceManager.PaperService.SubmitFullPaper(request, userId);
+            return Ok(ApiResponse<FullPaperResponse>.SuccessResponse(result, "nộp full paper "));
         }
     }
 }

@@ -264,6 +264,13 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
+                RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                {
+                    RefundPolicyId = rp.RefundPolicyId,
+                    PercentRefund = rp.PercentRefund,
+                    RefundDeadline = rp.RefundDeadline,
+                    RefundOrder = rp.RefundOrder
+                }).ToList(),
                 Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
                 {
                     PolicyId = p.PolicyId,
