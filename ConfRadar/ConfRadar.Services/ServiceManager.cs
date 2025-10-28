@@ -5,6 +5,7 @@ namespace ConfRadar.Services
     public interface IServiceManager
     {
         public IAuthService AuthService { get; }
+        public IRankingCategoryService RankingCategoryService { get; }
         public IMomoService MomoService { get; }
         public ITicketService TicketService { get; }
         public IPaymentService PaymentService { get; }
@@ -24,6 +25,7 @@ namespace ConfRadar.Services
     public class ServiceManager : IServiceManager
     {
         private readonly IAuthService _authService;
+        private readonly IRankingCategoryService _rankingCategoryService;
 
         private readonly IMomoService _momoService;
         private readonly ITicketService _ticketService;
@@ -53,6 +55,7 @@ namespace ConfRadar.Services
             IConferenceCategoryService conferenceCategoryService,
             IGlobalStatusService globalStatusService,
             IPaperService paperService,
+            IRankingCategoryService rankingCategoryService,
             ICityService cityService,
             IConferenceStatusService conferenceStatusService)
         {
@@ -68,6 +71,7 @@ namespace ConfRadar.Services
             _conferenceStepService = conferenceStepService;
             _conferenceCategoryService = conferenceCategoryService;
             _globalStatusService = globalStatusService;
+            _rankingCategoryService = rankingCategoryService;
             _paperService = paperService;
             _cityService = cityService;
             _conferenceStatusService = conferenceStatusService;
@@ -78,6 +82,7 @@ namespace ConfRadar.Services
         public ITicketService TicketService => _ticketService;
         public IPaymentService PaymentService => _paymentService;
         public IConferenceService ConferenceService => _conferenceService;
+        public IRankingCategoryService RankingCategoryService => _rankingCategoryService;
         public IRoomService RoomService => _roomService;
         public IDestinationService DestinationService => _destinationService;
         public ISystemConfigurationService SystemConfigurationService => _systemConfigurationService;

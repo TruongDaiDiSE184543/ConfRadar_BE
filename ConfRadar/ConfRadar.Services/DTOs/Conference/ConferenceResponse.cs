@@ -168,6 +168,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
         public string? TargetAudience { get; set; } // Technical conference detail
+        public List<ConferenceMediaResponse>? ConferenceMedia {  get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
         public List<ConferenceSessionWithSpeakersResponse>? Sessions { get; set; }
@@ -236,6 +237,14 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ImageUrl { get; set; }
     }
 
+    public class RoomInfoResponse
+    {
+        public string RoomId { get; set; } = string.Empty;
+        public string? Number { get; set; }
+        public string? DisplayName { get; set; }
+        public string? DestinationId { get; set; }
+    }
+
     public class ConferenceSessionWithSpeakersResponse
     {
         public string ConferenceSessionId { get; set; } = string.Empty;
@@ -246,6 +255,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public DateOnly? SessionDate { get; set; }
         public string? ConferenceId { get; set; }
         public string? RoomId { get; set; }
+        public RoomInfoResponse? Room { get; set; } // Include room information
         public List<SpeakerResponse>? Speakers { get; set; }
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
@@ -318,5 +328,81 @@ namespace ConfRadar.Services.DTOs.Conference
         [MaxLength(1000)]
         public string? Reason { get; set; }
         public Boolean? IsApprove { get; set; }
+    }
+
+    // Additional DTOs for research conference related functionality
+    public class RefundPolicyResponse
+    {
+        public string? RefundPolicyId { get; set; }
+        public int? PercentRefund { get; set; }
+        public DateOnly? RefundDeadline { get; set; }
+        public int? RefundOrder { get; set; }
+    }
+
+    public class ConferenceMediaResponse
+    {
+        public string MediaId { get; set; } = string.Empty;
+        public string? MediaUrl { get; set; }
+    }
+
+    public class RankingFileUrlResponse
+    {
+        public string? RankingFileUrlId { get; set; }
+        public string? FileUrl { get; set; }
+    }
+
+    public class MaterialDownloadResponse
+    {
+        public string? MaterialDownloadId { get; set; }
+        public string? FileName { get; set; }
+        public string? FileDescription { get; set; }
+        public string? FileUrl { get; set; }
+    }
+
+    public class RankingReferenceUrlResponse
+    {
+        public string? ReferenceUrlId { get; set; }
+        public string? ReferenceUrl { get; set; }
+    }
+
+    public class ResearchConferencePhaseResponse
+    {
+        public string? ResearchConferencePhaseId { get; set; }
+        public string? ConferenceId { get; set; }
+        public DateOnly? RegistrationStartDate { get; set; }
+        public DateOnly? RegistrationEndDate { get; set; }
+        public DateOnly? FullPaperStartDate { get; set; }
+        public DateOnly? FullPaperEndDate { get; set; }
+        public DateOnly? ReviewStartDate { get; set; }
+        public DateOnly? ReviewEndDate { get; set; }
+        public DateOnly? ReviseStartDate { get; set; }
+        public DateOnly? ReviseEndDate { get; set; }
+        public DateOnly? CameraReadyStartDate { get; set; }
+        public DateOnly? CameraReadyEndDate { get; set; }
+        public bool? IsWaitlist { get; set; }
+        public bool? IsActive { get; set; }
+        public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
+    }
+
+    public class RevisionRoundDeadlineResponse
+    {
+        public string? RevisionRoundDeadlineId { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public int? RoundNumber { get; set; }
+        public string? ResearchConferencePhaseId { get; set; }
+    }
+
+    public class ResearchSessionWithMediaResponse
+    {
+        public string ConferenceSessionId { get; set; } = string.Empty;
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public TimeOnly? EndTime { get; set; }
+        public DateOnly? Date { get; set; }
+        public string? ConferenceId { get; set; }
+        public string? RoomId { get; set; }
+        public RoomInfoResponse? Room { get; set; } // Include room information
+        public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
 }
