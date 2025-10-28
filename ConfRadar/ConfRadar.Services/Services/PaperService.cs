@@ -114,8 +114,9 @@ namespace ConfRadar.Services.Services
             var fullPaperObject = request.toModel(fullPaperURL, pendingStatus.ReviewStatusId);
             await _unitOfWork.BeginTransactionAsync();
             try {
-                
-                PaperBase.FullPaperId = 
+                await _unitOfWork.FullPaperRepository.CreateFullPaperAsync(fullPaperObject);
+                PaperBase.FullPaperId = fullPaperObject.FullPaperId;
+                await _unitOfWork.CommitAsync();
                 return fullPaperObject.toResponse();
             }
             catch (Exception ex)
