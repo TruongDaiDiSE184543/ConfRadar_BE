@@ -67,7 +67,8 @@ namespace ConfRadar.Services.Common
         speakermedia,
         //abstractfile,
         //fullpaperfile,
-        //revisionpaperfile
+        //revisionpaperfile,
+        revisionpaperreviewfile
 
     }
 

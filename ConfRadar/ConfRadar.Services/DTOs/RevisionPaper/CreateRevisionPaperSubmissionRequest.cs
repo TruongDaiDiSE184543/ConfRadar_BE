@@ -71,5 +71,8 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
         [Required(ErrorMessage = "RevisionPaperId là bắt buộc")]
         public string? RevisionPaperId { get; set; }
 
+        [Required(ErrorMessage = "PaperId là bắt buộc")]
+
+        public string PaperId { get; set; }
     }
 }
