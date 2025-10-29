@@ -48,6 +48,11 @@ namespace ConfRadar.Services.Services
         Task<int> UpdateCameraReady(UpdateCameraReadyRequest request, string userId);
        
         Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);
+
+
+
+        Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases();
+
     }
     public class PaperService : IPaperService
     {
@@ -299,7 +304,7 @@ namespace ConfRadar.Services.Services
 
             var currentFullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.FullPaper.GetDescription());
             var cameraReadyPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
-            var revisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revision.GetDescription());
+            var revisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobal = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
 
@@ -382,7 +387,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> CreateRevisionPaperSubmission(CreateRevisionPaperSubmissionRequest request, string userId)
         {
-            var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revision.GetDescription());
+            var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (currentRevisePhase == null || pendingGlobalStatus ==null)
@@ -550,7 +555,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
             }
-            var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revision.GetDescription());
+            var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {
@@ -609,7 +614,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> DecideReviseStatus(UpdateRevisionStatusRequest request, string userId)
         {
-            var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revision.GetDescription());
+            var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
@@ -1155,6 +1160,11 @@ namespace ConfRadar.Services.Services
             }
             var listAbstract = await _unitOfWork.AbstractRepository.GetAllPendingAbstractsAsync(pendingGlobalStatus.GlobalStatusId);
             return listAbstract;
+        }
+
+        public async Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases()
+        {
+           return await _unitOfWork.PaperPhaseRepository.GetAllPaperPhasesAsync();
         }
     }
 }

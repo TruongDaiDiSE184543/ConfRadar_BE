@@ -152,7 +152,7 @@ namespace ConfRadar.Services.Services
 
         public async Task SeedPaperPhasesAsync()
         {
-            var phaseNames = Enum.GetValues<ConfRadar.Services.Common.PaperPhase>().Select(s => s.ToString()).ToList();
+            var phaseNames = Enum.GetValues<ConfRadar.Services.Common.PaperPhaseEnum>().Select(s => s.ToString()).ToList();
             await SeedEntityAsync<ConfRadar.Repositories.Models.PaperPhase>(
                 phaseNames,
                 _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName,
