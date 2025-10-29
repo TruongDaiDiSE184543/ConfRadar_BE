@@ -39,6 +39,7 @@ namespace ConfRadar.Services.Services
         Task<int> CreateRevisionSubmissionResponse(CreateRevisionPaperSubmissionResponse request,string userId);
         Task<int> CreateRevisionReview(CreateRevisionPaperReviewRequest request, string userId);
         Task<List<RevisionPaperReviewResponse>> ListRevisionPaperReview(ListRevisionPaperReviewRequest request, string userId);
+        Task<List<PapersAssignedToReviewerResponse>> GetAllAssignedPapersToAReviewer(string userId, string conferenceId);
 
 
 
@@ -47,6 +48,8 @@ namespace ConfRadar.Services.Services
         Task<int> UpdateCameraReady(UpdateCameraReadyRequest request, string userId);
        
         Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);
+        Task <List<Paper>> GetSubmittedPaper(string userId);
+        Task<PaperDetailReponse> getPaperDetail(string paperId);
     }
     public class PaperService : IPaperService
     {
@@ -1157,7 +1160,52 @@ namespace ConfRadar.Services.Services
         }
 
        
+        public async Task <List<PapersAssignedToReviewerResponse>> GetAllAssignedPapersToAReviewer(string userId, string conferenceId)
+        {
+            List<PaperReviewer> paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
+            var paperId = paperReviewers.Select(s => s.PaperId);
+            List<Paper> Assignedpapers = new List<Paper>();
+            foreach (string pId in paperId)
+            {
+                var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(pId);
+                if (paper == null && paper.ConferenceId == conferenceId) Assignedpapers.Add(paper); 
+            }
+            var result = Assignedpapers.Select( s => new PapersAssignedToReviewerResponse
+            {
+                Paper = s,
+                phaseName = s.PaperPhase.PhaseName
+            }).ToList();
+            return result;
+        }
 
-      
+        public async Task<List<Paper>> GetSubmittedPaper(string userId)
+        {
+            var AuthorPaper = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByUserIdAsync(userId);
+            List<Paper> submittedPaper = null;
+            foreach (PaperAuthor pa in AuthorPaper)
+            {
+                Paper p = await _unitOfWork.PaperRepository.GetPaperByIdAsync(pa.PaperId);
+                if (p != null) submittedPaper.Add(p);
+            }
+            return submittedPaper;
+        }
+
+        public async Task<PaperDetailReponse> getPaperDetail(string paperId)
+        {
+            var paper =await _unitOfWork.PaperRepository.GetPaperByIdAsync(paperId);
+            if (paper == null) throw new Exception($"Không tìm thấy {paperId}");
+            
+            return new PaperDetailReponse
+            {
+                PaperId = paperId,
+                currentPhase = paper.PaperPhase,
+                Abstract = paper.AbstractId != null ? await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId): null,
+                FullPaper = paper.FullPaperId != null ? await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) : null,
+                RevisionPaper = paper.RevisionPaperId != null ? await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId) : null,
+                CameraReady = paper.CameraReadyId != null ? await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(paper.CameraReadyId) : null,
+            };
+        }
+
+
     }
 }

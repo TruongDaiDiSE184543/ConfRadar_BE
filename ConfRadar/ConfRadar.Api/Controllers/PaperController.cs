@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Mappers;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -145,7 +148,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPost("submit-fullpaper-review")]
-        [Authorize(Roles = "Local Reviewer,External Reviewer")]
+        //[Authorize(Roles = "Local Reviewer,External Reviewer")]
         public async Task<IActionResult> SubmitReviewForFullPaper([FromForm] CreateFullPaperReviewRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -171,12 +174,36 @@ namespace ConfRadar.Api.Controllers
         //}
 
         [HttpPut("decide-camera-ready-status")]
-        [Authorize(Roles = "Conference Organizer")]
+        
         public async Task<IActionResult> DecideCameraReadyStatus([FromBody] UpdateCameraReadyStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.DecideCameraReadyStatus(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Camera ready status decided successfully"));
+        }
+
+        [HttpGet("get-assigned-papers")]
+        public async Task<IActionResult> GetAssignedPaperToReviewer([FromBody] string conferenceId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.GetAllAssignedPapersToAReviewer(userId,conferenceId);
+            return Ok(ApiResponse<List<PapersAssignedToReviewerResponse>>.SuccessResponse(result, "Lấy thành công papers đã assigned cho reviewer"));
+        }
+
+        [HttpGet("get-all-submitted-papers-for-customer")]
+        public async Task<IActionResult> getSubmittedPapers()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+           var result = await _serviceManager.PaperService.GetSubmittedPaper(userId);
+            return Ok(ApiResponse<List<Paper>>.SuccessResponse(result, "Lấy thành công paper mà user đã nộp"));
+        }
+
+        [HttpGet("get-paper-detail")]
+        public async Task<IActionResult> getPaperDetail(string paperId)
+        {
+            
+            var result = await _serviceManager.PaperService.getPaperDetail(paperId);
+            return Ok(ApiResponse<PaperDetailReponse>.SuccessResponse(result, "Lấy detail paper thành công"));
         }
     }
 }
