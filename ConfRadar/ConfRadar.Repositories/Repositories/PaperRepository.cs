@@ -14,7 +14,6 @@ namespace ConfRadar.Repositories.Repositories
         Task<Paper?> GetPaperByPaperIdAndUserIdAsync(string paperId, string userId);
         Task<Paper?> GetPaperByCameraReadyIdAsync(string cameraReadyId);
         Task<Paper?> GetPaperByFullPaperIdAsync(string fullPaperId);
-
         Task<List<Paper>> GetAllPapersAsync();
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
@@ -67,5 +66,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.Presenter)
                 .FirstOrDefaultAsync(p => p.FullPaperId == fullPaperId);
         }
+
+       
     }
 }
