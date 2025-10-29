@@ -200,7 +200,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("get-assigned-papers")]
-        public async Task<IActionResult> GetAssignedPaperToReviewer([FromBody] string conferenceId)
+        public async Task<IActionResult> GetAssignedPaperToReviewer( string conferenceId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.GetAllAssignedPapersToAReviewer(userId,conferenceId);
