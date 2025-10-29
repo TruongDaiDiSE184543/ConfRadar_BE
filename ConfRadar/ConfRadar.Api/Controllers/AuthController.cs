@@ -111,7 +111,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<ListUserDetailForAdminAndOrganizerResponse>.SuccessResponse(result, $"Danh sách người dùng:"));
         }
 
-        //[Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpPost("create-collaborator-account")]
         public async Task<IActionResult> CreateCollaboratorAccount([FromBody] CreateCollaboratorAccountRequest request)
         {
