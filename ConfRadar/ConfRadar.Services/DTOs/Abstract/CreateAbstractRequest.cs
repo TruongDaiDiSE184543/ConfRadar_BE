@@ -10,6 +10,7 @@ namespace ConfRadar.Services.DTOs.Abstract
         public IFormFile AbstractFile { get; set; }
         [Required(ErrorMessage = "Paper id bắt buộc")]
         public string PaperId { get; set; }
+        public List<string> CoAuthorId { get; set; }
     }
 
 

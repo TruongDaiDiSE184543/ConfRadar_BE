@@ -18,7 +18,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await CreateAsync(paperAuthor);
         }
-
+        public async Task<int> CreateMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthor)
+        {
+            await _context.PaperAuthors.AddRangeAsync(paperAuthor);
+            return await _context.SaveChangesAsync();
+        }
         public async Task<int> UpdatePaperAuthorAsync(PaperAuthor paperAuthor)
         {
             return await UpdateAsync(paperAuthor);

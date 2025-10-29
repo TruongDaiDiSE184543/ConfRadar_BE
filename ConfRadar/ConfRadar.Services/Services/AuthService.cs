@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.DTO.User;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
@@ -28,6 +29,9 @@ namespace ConfRadar.Services.Services
         Task<UserDetailResponse> ViewUserDetail(string userId);
         Task<ListUserDetailForAdminAndOrganizerResponse> ListUserForAdminAndOrganizer();
         Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request);
+
+        Task<List<AvailableCustomerResponse>> GetAvailableCustomer();
+
     }
     public class AuthService : IAuthService
     {
@@ -497,6 +501,11 @@ namespace ConfRadar.Services.Services
             }
             await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName,request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
+        }
+
+        public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
+        {
+            return await _unitOfWork.UserRepository.GetAvailalbeCustomer();
         }
     }
 }

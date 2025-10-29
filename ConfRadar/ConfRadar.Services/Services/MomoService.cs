@@ -81,6 +81,7 @@ namespace ConfRadar.Services.Services
                 ConferencePriceId = request.ConferencePriceId,
                 ConferenceSessionIds = sessionIds,
                 ConferenceId = conferencePrice.ConferenceId,
+                
             };
 
             var transacJson = JsonSerializer.Serialize(transactionData);
@@ -95,6 +96,8 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Giá hội nghị với id {request.ConferencePriceId} không tìm thấy");
             }
+
+          
             if (conferencePrice.Conference.IsResearchConference == false)
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference");
@@ -151,6 +154,7 @@ namespace ConfRadar.Services.Services
                 ConferencePriceId = conferencePriceId,
                 ConferenceSessionIds = conferenceSessionIds,
                 ConferenceId = conferenceId,
+               
             };
             var transacJson = JsonSerializer.Serialize(transactionData);
             await _redisService.SetStringAsync(ticketId, transacJson, TimeSpan.FromMinutes(120));
@@ -267,6 +271,7 @@ namespace ConfRadar.Services.Services
                 };
                 ticketObj.UserCheckIns.Add(userCheckInObj);
             }
+
             await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
             await _redisService.DeleteKeyAsync(transacDataHolder.TicketId);
 
@@ -345,12 +350,14 @@ namespace ConfRadar.Services.Services
                 CreatedAt = ExtensionHelper.GetVietnamTime(),
                 PaperPhaseId = currentPaperPhase.PaperPhaseId,
             };
+           
             await _unitOfWork.BeginTransactionAsync();
             try
             {
               
                 await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
+               
                 await _unitOfWork.CommitAsync(); 
                 await _redisService.DeleteKeyAsync(data.orderId);
             }
