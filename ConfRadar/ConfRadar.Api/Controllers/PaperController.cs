@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ConfRadar.Repositories.DTO.Abstract;
 using ConfRadar.Repositories.DTO.User;
+using ConfRadar.Repositories.Models;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -193,6 +194,12 @@ namespace ConfRadar.Api.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.DecideCameraReadyStatus(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Camera ready status decided successfully"));
+        }
+        [HttpGet("list-paper-phases")]
+        public async Task<IActionResult> GetListPaperPhase()
+        {
+            var result = await _serviceManager.PaperService.GetListPaperPhases();
+            return Ok(ApiResponse<List<PaperPhase>>.SuccessResponse(result, "Danh sách các paper phase"));
         }
     }
 }

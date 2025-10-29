@@ -90,6 +90,7 @@ namespace ConfRadar.Services.Services
         }
         public async Task<string> CreatePaymentForAbstract(CreatePaperPaymentRequest request, string userId)
         {
+
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
             if (conferencePrice == null)
             {
