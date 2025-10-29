@@ -215,12 +215,13 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<Paper>>.SuccessResponse(result, "Lấy thành công paper mà user đã nộp"));
         }
 
-        [HttpGet("get-paper-detail")]
+        [HttpGet("get-paper-detail-customer")]
         public async Task<IActionResult> getPaperDetail(string paperId)
         {
-            
+
             var result = await _serviceManager.PaperService.getPaperDetail(paperId);
             return Ok(ApiResponse<PaperDetailReponse>.SuccessResponse(result, "Lấy detail paper thành công"));
+        }
         [HttpGet("list-paper-phases")]
         public async Task<IActionResult> GetListPaperPhase()
         {
