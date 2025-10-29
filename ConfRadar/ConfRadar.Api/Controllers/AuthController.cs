@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
@@ -118,5 +119,12 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.AuthService.CreateCollaboratorAccount(request);
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo account cho collaborator"));
         }
+        [HttpGet("list-all-reviewers")]
+        public async Task<IActionResult> ListAllReviewer()
+        {
+            var result = await _serviceManager.AuthService.ListAllReviewer();
+            return Ok(ApiResponse<List<ReviewerDetailResponse>>.SuccessResponse(result, $"Danh sách reviewer"));
+        }
+
     }
 }
