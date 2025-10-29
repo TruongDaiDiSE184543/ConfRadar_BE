@@ -87,36 +87,6 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper với id {request.PaperId} trong hệ thống");
             }
-
-
-            var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
-            bool isSubmitterReviewerInThisConf = submitterReviewContracts
-                .Any(pr => pr.Paper!.ConferenceId == paper.ConferenceId);
-            if (isSubmitterReviewerInThisConf)
-            {
-                throw new BadRequestException("Người nộp paper đang là reviewer của hội nghị này, không thể nộp bài.");
-            }
-            foreach (var coauthorId in request.CoAuthorId)
-            {
-                if (coauthorId == userId)
-                {
-                    throw new BadRequestException("Bạn không thể thêm chính mình làm co-author.");
-                }
-
-                var coauthorReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(coauthorId);
-                bool isCoauthorReviewerInThisConf = coauthorReviewContracts
-                    .Any(pr => pr.Paper!.ConferenceId == paper.ConferenceId);
-
-                if (isCoauthorReviewerInThisConf == true)
-                {
-                    throw new BadRequestException($"Người dùng {coauthorId} đang là reviewer của hội nghị này, không thể thêm làm co-author.");
-                }
-            }
-
-
-
-
-
             if (paper.PaperPhaseId != paperPhase.PaperPhaseId)
             {
                 throw new BadRequestException($"Paper hiện tại không đang trong quá trình gửi abstract");
@@ -125,6 +95,32 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Bạn không có quyền sỡ hữu bài báo này");
             }
+
+            var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
+            foreach (var coauthorId in request.CoAuthorId)
+            {
+                if (coauthorId == userId)
+                {
+                    throw new BadRequestException("Bạn không thể thêm chính mình làm co-author.");
+                }
+
+                bool isCoauthorReviewerInPaperReviewer = submitterReviewContracts
+                    .Any(pr => pr.UserId == coauthorId);
+                var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(coauthorId, paper.Conference!.ConferenceId);
+                
+                if (reviewerContractFound != null)
+                {
+                    if (reviewerContractFound.IsActive ==true)
+                    {
+                        throw new BadRequestException($"Co author với id {coauthorId} hiện đang có hợp đồng reviewer");
+                    }
+                }
+                if (isCoauthorReviewerInPaperReviewer == true)
+                {
+                    throw new BadRequestException($"Người dùng {coauthorId} đang là reviewer của bài báo này, không thể thêm làm co-author.");
+                }
+            }
+
             if (paper.AbstractId != null)
             {
                 throw new BadRequestException("Paper này đã có abstract được nộp rồi");
