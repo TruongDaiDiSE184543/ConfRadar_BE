@@ -157,7 +157,6 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy abstract paper với id {request.AbstractId} trong hệ thống");
             }
-
             if (abstractPaper.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
                 throw new BadRequestException($"Abstract hiện tại không đang trong trạng thái pending, vui lòng thử lại sau");
