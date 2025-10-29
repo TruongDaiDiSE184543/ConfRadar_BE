@@ -1233,7 +1233,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<PaperDetailReponse> getPaperDetail(string paperId)
         {
-            // Use the new repository method to get paper with phase information
+            // Use the repository method to get paper with its phase
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdWithPhaseAsync(paperId);
             
             if (paper == null) 
@@ -1241,10 +1241,19 @@ namespace ConfRadar.Services.Services
                 throw new Exception($"Không tìm thấy paper với id {paperId}");
             }
             
+            // Create a minimal PaperPhase object to avoid circular references during serialization
+            // The original PaperPhase entity might have its Papers collection loaded, causing cycles
+            var currentPhase = paper.PaperPhase != null ? new PaperPhase
+            {
+                PaperPhaseId = paper.PaperPhase.PaperPhaseId,
+                PhaseName = paper.PaperPhase.PhaseName,
+                // Papers collection is intentionally left empty to avoid cycles
+            } : null;
+            
             return new PaperDetailReponse
             {
                 PaperId = paperId,
-                currentPhase = paper.PaperPhase, // Now should be safe to access
+                currentPhase = currentPhase, // Use the safe version to avoid cycles
                 Abstract = paper.AbstractId != null ? await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId): null,
                 FullPaper = paper.FullPaperId != null ? await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) : null,
                 RevisionPaper = paper.RevisionPaperId != null ? await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId) : null,

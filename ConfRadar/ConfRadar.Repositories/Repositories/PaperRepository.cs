@@ -73,8 +73,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
                 .Include(p => p.PaperPhase)
-                .Include(p => p.Conference)
-                .Include(p => p.Presenter)
+                .Include(p => p.CameraReady)
                 .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
 
