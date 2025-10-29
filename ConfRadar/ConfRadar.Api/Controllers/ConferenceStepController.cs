@@ -10,7 +10,7 @@ namespace ConfRadar.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Conference Organizer")]
+    //[Authorize(Roles = "Conference Organizer")]
     public class ConferenceStepController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
@@ -21,7 +21,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         #region Step 1: Basic Conference Creation
-        [Authorize("Conference Organizer, Collaborator")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         [HttpPost("basic")]
         public async Task<IActionResult> CreateConferenceBasic([FromForm] CreateTechnicalConferenceBasicRequest request)
         {
@@ -43,6 +43,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("{conferenceId}/basic")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceBasic(string conferenceId, [FromForm] UpdateConferenceBasicRequest request)
         {
             var conference = await _serviceManager.ConferenceStepService.UpdateConferenceBasicAsync(conferenceId, request);
@@ -53,7 +54,9 @@ namespace ConfRadar.Api.Controllers
 
         #region Step 2: Conference Prices
 
+
         [HttpPost("{conferenceId}/prices")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferencePrices(string conferenceId, [FromBody] AddConferencePricesRequest request)
         {
             var prices = await _serviceManager.ConferenceStepService.AddConferencePricesAsync(conferenceId, request);
@@ -68,6 +71,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("prices/{priceId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferencePrice(string priceId, [FromBody] UpdateConferencePriceRequest request)
         {
             var price = await _serviceManager.ConferenceStepService.UpdateConferencePriceAsync(priceId, request);
@@ -75,6 +79,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("prices/{priceId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferencePrice(string priceId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId);
@@ -88,6 +93,7 @@ namespace ConfRadar.Api.Controllers
         #endregion
 
         #region Step 3: Conference Sessions
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
 
         [HttpPost("{conferenceId}/sessions")]
         public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromForm] AddConferenceSessionsRequest request)
@@ -104,6 +110,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("sessions/{sessionId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceSession(string sessionId, [FromBody] UpdateConferenceSessionRequest request)
         {
             var session = await _serviceManager.ConferenceStepService.UpdateConferenceSessionAsync(sessionId, request);
@@ -111,6 +118,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("sessions/{sessionId}/speaker")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateSpeaker(string sessionId, [FromBody] UpdateSpeakerRequest request)
         {
             var speaker = await _serviceManager.ConferenceStepService.UpdateSpeakerAsync(sessionId, request);
@@ -118,6 +126,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("sessions/{sessionId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferenceSession(string sessionId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteConferenceSessionAsync(sessionId);
@@ -133,6 +142,7 @@ namespace ConfRadar.Api.Controllers
         #region Step 4: Conference Policies
 
         [HttpPost("{conferenceId}/policies")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferencePolicies(string conferenceId, [FromBody] AddConferencePoliciesRequest request)
         {
             var policies = await _serviceManager.ConferenceStepService.AddConferencePoliciesAsync(conferenceId, request);
@@ -147,6 +157,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("policies/{policyId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferencePolicy(string policyId, [FromBody] UpdateConferencePolicyRequest request)
         {
             var policy = await _serviceManager.ConferenceStepService.UpdateConferencePolicyAsync(policyId, request);
@@ -154,6 +165,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("policies/{policyId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferencePolicy(string policyId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteConferencePolicyAsync(policyId);
@@ -169,6 +181,7 @@ namespace ConfRadar.Api.Controllers
         #region Step 5: Conference Media
 
         [HttpPost("{conferenceId}/media")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferenceMedia(string conferenceId, [FromForm] AddConferenceMediaRequest request)
         {
             var media = await _serviceManager.ConferenceStepService.AddConferenceMediaAsync(conferenceId, request);
@@ -183,6 +196,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("media/{mediaId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceMedia(string mediaId, [FromForm] UpdateConferenceMediaRequest request)
         {
             var media = await _serviceManager.ConferenceStepService.UpdateConferenceMediaAsync(mediaId, request);
@@ -190,6 +204,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("media/{mediaId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferenceMedia(string mediaId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteConferenceMediaAsync(mediaId);
@@ -205,6 +220,7 @@ namespace ConfRadar.Api.Controllers
         #region Step 6: Conference Sponsors
 
         [HttpPost("{conferenceId}/sponsors")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferenceSponsors(string conferenceId, [FromForm] AddConferenceSponsorsRequest request)
         {
             var sponsors = await _serviceManager.ConferenceStepService.AddConferenceSponsorsAsync(conferenceId, request);
@@ -219,6 +235,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("sponsors/{sponsorId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateSponsor(string sponsorId, [FromForm] UpdateSponsorRequest request)
         {
             var sponsor = await _serviceManager.ConferenceStepService.UpdateSponsorAsync(sponsorId, request);
@@ -226,6 +243,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("sponsors/{sponsorId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteSponsor(string sponsorId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteSponsorAsync(sponsorId);
@@ -239,6 +257,7 @@ namespace ConfRadar.Api.Controllers
         #endregion
 
         #region Step 7: Refund Policies
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
 
         [HttpPost("{conferenceId}/refund-policies")]
         public async Task<IActionResult> AddRefundPolicies(string conferenceId, [FromBody] AddRefundPoliciesRequest request)
@@ -255,6 +274,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("refund-policies/{refundPolicyId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateRefundPolicy(string refundPolicyId, [FromBody] UpdateRefundPolicyRequest request)
         {
             var refundPolicy = await _serviceManager.ConferenceStepService.UpdateRefundPolicyAsync(refundPolicyId, request);
@@ -262,6 +282,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("refund-policies/{refundPolicyId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteRefundPolicy(string refundPolicyId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteRefundPolicyAsync(refundPolicyId);
@@ -276,6 +297,7 @@ namespace ConfRadar.Api.Controllers
         #region Research Conference Step 2: Research Conference Detail
 
         [HttpPost("{conferenceId}/research/detail")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateResearchConferenceDetail(string conferenceId, [FromBody] CreateResearchConferenceDetailRequest request)
         {
             var detail = await _serviceManager.ConferenceStepService.CreateResearchConferenceDetailAsync(conferenceId, request);
@@ -283,6 +305,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("{conferenceId}/research/detail")]
+
         public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
         {
             var detail = await _serviceManager.ConferenceStepService.GetResearchConferenceDetailAsync(conferenceId);
@@ -290,6 +313,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("{conferenceId}/research/detail")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateResearchConferenceDetail(string conferenceId, [FromBody] UpdateResearchConferenceDetailRequest request)
         {
             var detail = await _serviceManager.ConferenceStepService.UpdateResearchConferenceDetailAsync(conferenceId, request);
@@ -301,6 +325,7 @@ namespace ConfRadar.Api.Controllers
         #region Research Conference Step 3: Research Conference Phases
 
         [HttpPost("{conferenceId}/research/phases")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateResearchConferencePhase(string conferenceId, [FromBody] CreateResearchConferencePhaseRequest request)
         {
             var phase = await _serviceManager.ConferenceStepService.CreateResearchConferencePhaseAsync(conferenceId, request);
@@ -315,6 +340,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("research/phases/{phaseId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateResearchConferencePhase(string phaseId, [FromBody] UpdateResearchConferencePhaseRequest request)
         {
             var phase = await _serviceManager.ConferenceStepService.UpdateResearchConferencePhaseAsync(phaseId, request);
@@ -326,6 +352,7 @@ namespace ConfRadar.Api.Controllers
         #region Research Conference Step 5: Material Downloads
 
         [HttpPost("{conferenceId}/research/materials")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateMaterialDownload(string conferenceId, [FromForm] CreateMaterialDownloadRequest request)
         {
             var material = await _serviceManager.ConferenceStepService.CreateMaterialDownloadAsync(conferenceId, request);
@@ -340,6 +367,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("research/materials/{materialDownloadId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateMaterialDownload(string materialDownloadId, [FromForm] UpdateMaterialDownloadRequest request)
         {
             var material = await _serviceManager.ConferenceStepService.UpdateMaterialDownloadAsync(materialDownloadId, request);
@@ -347,6 +375,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("research/materials/{materialDownloadId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DeleteMaterialDownload(string materialDownloadId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteMaterialDownloadAsync(materialDownloadId);
@@ -362,6 +391,7 @@ namespace ConfRadar.Api.Controllers
         #region Research Conference Step 6: Ranking File URLs
 
         [HttpPost("{conferenceId}/research/ranking-file-urls")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateRankingFileUrl(string conferenceId, [FromForm] CreateRankingFileUrlRequest request)
         {
             var fileUrl = await _serviceManager.ConferenceStepService.CreateRankingFileUrlAsync(conferenceId, request);
@@ -376,6 +406,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("research/ranking-file-urls/{rankingFileUrlId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateRankingFileUrl(string rankingFileUrlId, [FromForm] UpdateRankingFileUrlRequest request)
         {
             var fileUrl = await _serviceManager.ConferenceStepService.UpdateRankingFileUrlAsync(rankingFileUrlId, request);
@@ -383,6 +414,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("research/ranking-file-urls/{rankingFileUrlId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DeleteRankingFileUrl(string rankingFileUrlId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteRankingFileUrlAsync(rankingFileUrlId);
@@ -398,6 +430,7 @@ namespace ConfRadar.Api.Controllers
         #region Research Conference Step 1: Basic Research Conference Creation
 
         [HttpPost("research/basic")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateResearchConferenceBasic([FromForm] CreateResearchConferenceBasicRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -418,6 +451,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("{conferenceId}/research/basic")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateResearchConferenceBasic(string conferenceId, [FromForm] UpdateConferenceBasicRequest request)
         {
             var conference = await _serviceManager.ConferenceStepService.UpdateResearchConferenceBasicAsync(conferenceId, request);
@@ -426,9 +460,10 @@ namespace ConfRadar.Api.Controllers
 
         #endregion
 
-        #region Research Conference Step 3: Research Conference Sessions (without speakers)
+        #region Research Conference Step 4: Research Conference Sessions (without speakers)
 
         [HttpPost("{conferenceId}/research/sessions")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> AddResearchSessions(string conferenceId, [FromForm] AddResearchSessionsRequest request)
         {
             var sessions = await _serviceManager.ConferenceStepService.AddResearchSessionsAsync(conferenceId, request);
@@ -443,6 +478,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("research/sessions/{sessionId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateResearchSession(string sessionId, [FromBody] UpdateConferenceSessionRequest request)
         {
             var session = await _serviceManager.ConferenceStepService.UpdateResearchSessionAsync(sessionId, request);
@@ -450,6 +486,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("research/sessions/{sessionId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DeleteResearchSession(string sessionId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteResearchSessionAsync(sessionId);
@@ -465,6 +502,7 @@ namespace ConfRadar.Api.Controllers
         #region Research Conference Step 7: Ranking Reference URLs
 
         [HttpPost("{conferenceId}/research/ranking-reference-urls")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateRankingReferenceUrl(string conferenceId, [FromBody] CreateRankingReferenceUrlRequest request)
         {
             var referenceUrl = await _serviceManager.ConferenceStepService.CreateRankingReferenceUrlAsync(conferenceId, request);
@@ -479,6 +517,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpPut("research/ranking-reference-urls/{referenceUrlId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateRankingReferenceUrl(string referenceUrlId, [FromBody] UpdateRankingReferenceUrlRequest request)
         {
             var referenceUrl = await _serviceManager.ConferenceStepService.UpdateRankingReferenceUrlAsync(referenceUrlId, request);
@@ -486,6 +525,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpDelete("research/ranking-reference-urls/{referenceUrlId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DeleteRankingReferenceUrl(string referenceUrlId)
         {
             var result = await _serviceManager.ConferenceStepService.DeleteRankingReferenceUrlAsync(referenceUrlId);

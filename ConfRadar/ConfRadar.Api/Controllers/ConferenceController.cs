@@ -19,27 +19,27 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
-        
-        
+
+
         //[HttpGet("view-registered-users-for-conference")]
         //public async Task<IActionResult> ViewRegisteredUsersInAConference(string conferenceId)
         //{
         //    var userList = await _serviceManager.TicketService.GetTicketListByConferenceId(conferenceId);
         //    return Ok(ApiResponse<List<PaidTicketResponse>>.SuccessResponse(userList, "data retrieved"));
         //}
-        
+
         [HttpGet("paginated-conferences")]
         public async Task<IActionResult> GetAllConferencesWithPagination([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var conferences = await _serviceManager.ConferenceService.GetAllConferencesPaginatedAsync(page, pageSize);
             return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
         }
-        
+
         // NEW ENDPOINT 1: Get all conferences with their price phases (with pagination/filtering)
         [HttpGet("conferences-with-prices")]
         [AllowAnonymous]
         public async Task<IActionResult> GetConferencesWithPrices(
-            [FromQuery] int page = 1, 
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchKeyword = null,
             [FromQuery] string? cityId = null,
@@ -49,7 +49,7 @@ namespace ConfRadar.Api.Controllers
             var conferences = await _serviceManager.ConferenceService.GetConferencesWithPricesAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
             return Ok(ApiResponse<PagedResult<ConferenceWithPricesResponse>>.SuccessResponse(conferences, "Conferences with prices retrieved successfully"));
         }
-        
+
         // NEW ENDPOINT 2: Get detailed technical conference data
         [HttpGet("technical-detail/{conferenceId}")]
         [AllowAnonymous]
@@ -58,13 +58,12 @@ namespace ConfRadar.Api.Controllers
             var conferenceDetail = await _serviceManager.ConferenceService.GetTechnicalConferenceDetailAsync(conferenceId);
             return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully"));
         }
-        
+
         // NEW ENDPOINT 3: Get conferences by status ID with filtering
         [HttpGet("by-status/{conferenceStatusId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetConferencesByStatus(
             string conferenceStatusId,
-            [FromQuery] int page = 1, 
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchKeyword = null,
             [FromQuery] string? cityId = null,
@@ -74,12 +73,12 @@ namespace ConfRadar.Api.Controllers
             var conferences = await _serviceManager.ConferenceService.GetConferencesByStatusAsync(conferenceStatusId, page, pageSize, searchKeyword, cityId, startDate, endDate);
             return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
         }
-        
+
         // NEW ENDPOINT 4: Get conferences with step completion status
         [HttpGet("step-completion-status")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> GetConferencesStepCompletionStatus(
-            [FromQuery] int page = 1, 
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchKeyword = null,
             [FromQuery] string? cityId = null,
@@ -92,9 +91,9 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 5: Get all pending conferences
         [HttpGet("pending-conferences")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> GetPendingConferences(
-            [FromQuery] int page = 1, 
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchKeyword = null)
         {
@@ -104,7 +103,7 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
         [HttpPut("approve-conference/{conferenceId}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> ApproveConference(string conferenceId, [FromBody] ApproveConferenceRequest request)
         {
             var result = await _serviceManager.ConferenceService.ApproveConferenceAsync(conferenceId, request);
@@ -126,9 +125,9 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 8: Get research conferences with step completion status
         [HttpGet("research-step-completion-status")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> GetResearchConferencesStepCompletionStatus(
-            [FromQuery] int page = 1, 
+            [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchKeyword = null,
             [FromQuery] string? cityId = null,
@@ -141,7 +140,7 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 9: Check if technical conference has completed a specific step
         [HttpGet("check-technical-step-completion")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CheckTechnicalConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
         {
             var result = await _serviceManager.ConferenceService.CheckTechnicalConferenceStepCompletionAsync(conferenceId, step);
@@ -150,7 +149,7 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 10: Check if research conference has completed a specific step
         [HttpGet("check-research-step-completion")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CheckResearchConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
         {
             var result = await _serviceManager.ConferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, step);
