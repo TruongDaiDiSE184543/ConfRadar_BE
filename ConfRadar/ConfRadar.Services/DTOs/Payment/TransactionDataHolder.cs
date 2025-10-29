@@ -7,6 +7,7 @@
         public string PaymentMethodId { get; set; }
         public string ConferencePriceId { get; set; }
         public string ConferenceId { get; set; }
+        public string PaymentLockKey { get; set; }
         public List<string> ConferenceSessionIds { get; set; }
        
     }

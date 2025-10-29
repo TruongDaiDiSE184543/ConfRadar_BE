@@ -1,14 +1,17 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class PaperAuthor
 {
-    public string? UserId { get; set; }
+    public string UserId { get; set; } = null!;
 
-    public string? PaperId { get; set; }
+    public string PaperId { get; set; } = null!;
 
     public bool? IsPresenter { get; set; }
 
-    public virtual Paper? Paper { get; set; }
+    public virtual Paper Paper { get; set; } = null!;
 
-    public virtual User? User { get; set; }
+    public virtual User User { get; set; } = null!;
 }
