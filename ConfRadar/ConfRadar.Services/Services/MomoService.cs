@@ -90,11 +90,34 @@ namespace ConfRadar.Services.Services
         }
         public async Task<string> CreatePaymentForAbstract(CreatePaperPaymentRequest request, string userId)
         {
-
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
             if (conferencePrice == null)
             {
                 throw new BadRequestException($"Giá hội nghị với id {request.ConferencePriceId} không tìm thấy");
+            }
+
+            var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
+            bool isSubmitterReviewerInThisConf = submitterReviewContracts
+                .Any(pr => pr.Paper!.ConferenceId == conferencePrice.ConferenceId);
+            if (isSubmitterReviewerInThisConf)
+            {
+                throw new BadRequestException("Người nộp paper đang là reviewer của hội nghị này, không thể nộp bài.");
+            }
+            foreach (var coauthorId in request.CoAuthorUserId)
+            {
+                if (coauthorId == userId)
+                {
+                    throw new BadRequestException("Bạn không thể thêm chính mình làm co-author.");
+                }
+
+                var coauthorReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(coauthorId);
+                bool isCoauthorReviewerInThisConf = coauthorReviewContracts
+                    .Any(pr => pr.Paper!.ConferenceId == conferencePrice.ConferenceId);
+
+                if (isCoauthorReviewerInThisConf==true)
+                {
+                    throw new BadRequestException($"Người dùng {coauthorId} đang là reviewer của hội nghị này, không thể thêm làm co-author.");
+                }
             }
             if (conferencePrice.Conference.IsResearchConference == false)
             {
