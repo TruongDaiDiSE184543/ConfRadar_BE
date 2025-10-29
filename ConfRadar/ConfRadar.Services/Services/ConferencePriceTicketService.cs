@@ -1,4 +1,5 @@
 using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferencePriceTicket;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ namespace ConfRadar.Services.Services
         Task<List<ConferencePriceTicketListResponse>> GetConferencePriceTicketListAsync(ConferencePriceTicketSearchRequest request);
         Task<ConferencePriceTicketDetailResponse> GetConferencePriceTicketDetailAsync(string priceId);
         Task<int> GetTotalConferencePriceTicketCountAsync(ConferencePriceTicketSearchRequest request);
+        Task<ConferencePrice> GetConferencePriceByUserIdAndConferencePrice(string userId, string conferenceId);
     }
 
     public class ConferencePriceTicketService : IConferencePriceTicketService
@@ -232,6 +234,21 @@ namespace ConfRadar.Services.Services
 
             // Prepend the base URL from configuration
             return _objectStorageSettings.EndPoint?.TrimEnd('/') + "/" + url.TrimStart('/');
+        }
+
+        public async Task<ConferencePrice> GetConferencePriceByUserIdAndConferencePrice(string userId, string conferenceId)
+        {
+            // Find ticket purchased by the user for the specific conference
+            // Join: User -> Ticket -> ConferencePrice -> Conference
+            var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
+            
+            if (ticket == null)
+            {
+                return null; // No ticket found for this user and conference
+            }
+
+            // Return the associated conference price
+            return ticket.ConferencePrice;
         }
     }
 }

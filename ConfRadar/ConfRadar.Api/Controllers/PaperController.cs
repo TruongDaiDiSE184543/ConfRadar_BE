@@ -211,7 +211,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> getSubmittedPapers()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-           var result = await _serviceManager.PaperService.GetSubmittedPaper(userId);
+            var result = await _serviceManager.PaperService.GetSubmittedPaper(userId);
             return Ok(ApiResponse<List<Paper>>.SuccessResponse(result, "Lấy thành công paper mà user đã nộp"));
         }
 
@@ -222,6 +222,7 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.getPaperDetail(paperId);
             return Ok(ApiResponse<PaperDetailReponse>.SuccessResponse(result, "Lấy detail paper thành công"));
         }
+
         [HttpGet("list-paper-phases")]
         public async Task<IActionResult> GetListPaperPhase()
         {

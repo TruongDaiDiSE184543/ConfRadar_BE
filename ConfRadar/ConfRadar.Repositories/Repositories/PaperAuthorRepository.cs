@@ -57,5 +57,14 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(pa => pa.UserId == userId)
                 .ToListAsync();
         }
+
+        public async Task<List<Paper>> GetPapersByUserIdAsync(string userId)
+        {
+            return await _context.Set<PaperAuthor>()
+                .Include(pa => pa.Paper)
+                .Where(pa => pa.UserId == userId)
+                .Select(pa => pa.Paper)
+                .ToListAsync();
+        }
     }
 }

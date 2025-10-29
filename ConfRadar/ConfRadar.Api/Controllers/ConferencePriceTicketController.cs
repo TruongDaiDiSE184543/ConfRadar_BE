@@ -1,7 +1,9 @@
-using ConfRadar.Api.Responses;
+﻿using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.ConferencePriceTicket;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -64,6 +66,14 @@ namespace ConfRadar.Api.Controllers
             {
                 return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
             }
+        }
+
+        [HttpGet("has-conference-price")]
+        public async Task<IActionResult> GetBoughtConferenicePrice([FromBody] string conferenceId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            var result = _serviceManager.ConferencePriceTicketService.GetConferencePriceByUserIdAndConferencePrice(userId, conferenceId);
+            return Ok(ApiResponse<Task<ConferencePrice>>.SuccessResponse(result, "lấy conferenceprice của user trong một conference"));
         }
     }
 }

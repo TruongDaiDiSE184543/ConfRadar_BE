@@ -12,5 +12,6 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperReviewer>> GetPaperReviewersByPaperIdAsync(string paperId);
         Task<List<PaperReviewer>> GetPaperReviewersByUserIdAsync(string userId);
         Task<List<PaperReviewer>> GetHeadReviewersByPaperIdAsync(string paperId);
+        Task<List<PaperReviewer>> GetPaperReviewersByUserIdAndConferenceIdAsync(string userId, string conferenceId);
     }
 }

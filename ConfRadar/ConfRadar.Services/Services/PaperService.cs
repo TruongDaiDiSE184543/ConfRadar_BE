@@ -1206,43 +1206,45 @@ namespace ConfRadar.Services.Services
        
         public async Task <List<PapersAssignedToReviewerResponse>> GetAllAssignedPapersToAReviewer(string userId, string conferenceId)
         {
-            List<PaperReviewer> paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
-            var paperId = paperReviewers.Select(s => s.PaperId);
-            List<Paper> Assignedpapers = new List<Paper>();
-            foreach (string pId in paperId)
-            {
-                var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(pId);
-                if (paper == null && paper.ConferenceId == conferenceId) Assignedpapers.Add(paper); 
-            }
-            var result = Assignedpapers.Select( s => new PapersAssignedToReviewerResponse
+            // Use the new repository method to get paper reviewers for user and conference
+            var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAndConferenceIdAsync(userId, conferenceId);
+            
+            var assignedPapers = paperReviewers
+                .Where(pr => pr.Paper != null)
+                .Select(pr => pr.Paper)
+                .ToList();
+            
+            var result = assignedPapers.Select(s => new PapersAssignedToReviewerResponse
             {
                 Paper = s,
-                phaseName = s.PaperPhase.PhaseName
+                phaseName = s.PaperPhase?.PhaseName
             }).ToList();
+            
             return result;
         }
 
         public async Task<List<Paper>> GetSubmittedPaper(string userId)
         {
-            var AuthorPaper = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByUserIdAsync(userId);
-            List<Paper> submittedPaper = null;
-            foreach (PaperAuthor pa in AuthorPaper)
-            {
-                Paper p = await _unitOfWork.PaperRepository.GetPaperByIdAsync(pa.PaperId);
-                if (p != null) submittedPaper.Add(p);
-            }
-            return submittedPaper;
+            // Use the new repository method to get papers by user ID in a single query
+            var submittedPapers = await _unitOfWork.PaperAuthorRepository.GetPapersByUserIdAsync(userId);
+            
+            return submittedPapers;
         }
 
         public async Task<PaperDetailReponse> getPaperDetail(string paperId)
         {
-            var paper =await _unitOfWork.PaperRepository.GetPaperByIdAsync(paperId);
-            if (paper == null) throw new Exception($"Không tìm thấy {paperId}");
+            // Use the new repository method to get paper with phase information
+            var paper = await _unitOfWork.PaperRepository.GetPaperByIdWithPhaseAsync(paperId);
+            
+            if (paper == null) 
+            {
+                throw new Exception($"Không tìm thấy paper với id {paperId}");
+            }
             
             return new PaperDetailReponse
             {
                 PaperId = paperId,
-                currentPhase = paper.PaperPhase,
+                currentPhase = paper.PaperPhase, // Now should be safe to access
                 Abstract = paper.AbstractId != null ? await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId): null,
                 FullPaper = paper.FullPaperId != null ? await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) : null,
                 RevisionPaper = paper.RevisionPaperId != null ? await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId) : null,
