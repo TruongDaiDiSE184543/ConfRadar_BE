@@ -13,7 +13,7 @@ namespace ConfRadar.Services.DTOs.Payment
     {
         [Required(ErrorMessage = "Conference Price id bắt buộc")]
         public string ConferencePriceId { get; set; }
-        public List<string> CoAuthorUserId { get; set; }
+    
         //[Required(ErrorMessage = "Payment method bắt buộc")]
         //[EnumDataType(typeof(PaymentMethodEnum))]
         //public PaymentMethodEnum PaymentMethod { get; set; }

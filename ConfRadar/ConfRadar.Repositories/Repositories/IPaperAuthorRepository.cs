@@ -11,5 +11,6 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperAuthor>> GetAllPaperAuthorsAsync();
         Task<List<PaperAuthor>> GetPaperAuthorsByPaperIdAsync(string paperId);
         Task<List<PaperAuthor>> GetPaperAuthorsByUserIdAsync(string userId);
+        Task<int> CreateMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthor);
     }
 }

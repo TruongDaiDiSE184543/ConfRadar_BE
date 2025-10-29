@@ -74,6 +74,7 @@ namespace ConfRadar.Services.Services
         {
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
+
             if (paperPhase == null || pendingGlobalStatus== null) 
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái tương ứng trong hệ thống");
@@ -83,6 +84,36 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper với id {request.PaperId} trong hệ thống");
             }
+
+
+            var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
+            bool isSubmitterReviewerInThisConf = submitterReviewContracts
+                .Any(pr => pr.Paper!.ConferenceId == paper.ConferenceId);
+            if (isSubmitterReviewerInThisConf)
+            {
+                throw new BadRequestException("Người nộp paper đang là reviewer của hội nghị này, không thể nộp bài.");
+            }
+            foreach (var coauthorId in request.CoAuthorId)
+            {
+                if (coauthorId == userId)
+                {
+                    throw new BadRequestException("Bạn không thể thêm chính mình làm co-author.");
+                }
+
+                var coauthorReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(coauthorId);
+                bool isCoauthorReviewerInThisConf = coauthorReviewContracts
+                    .Any(pr => pr.Paper!.ConferenceId == paper.ConferenceId);
+
+                if (isCoauthorReviewerInThisConf == true)
+                {
+                    throw new BadRequestException($"Người dùng {coauthorId} đang là reviewer của hội nghị này, không thể thêm làm co-author.");
+                }
+            }
+
+
+
+
+
             if (paper.PaperPhaseId != paperPhase.PaperPhaseId)
             {
                 throw new BadRequestException($"Paper hiện tại không đang trong quá trình gửi abstract");
@@ -115,13 +146,35 @@ namespace ConfRadar.Services.Services
                 GlobalStatusId = pendingGlobalStatus.GlobalStatusId,
             };
             paper.AbstractId = abstractObj.AbstractId;
+
+
+            List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
+            foreach (var coAuthor in request.CoAuthorId)
+            {
+                var paperAuthorObj = new PaperAuthor()
+                {
+                    IsPresenter = false,
+                    UserId = coAuthor,
+                    PaperId = request.PaperId,
+                };
+                paperAuthorList.Add(paperAuthorObj);
+            }
+            var presenterPaperAuthor = new PaperAuthor()
+            {
+                IsPresenter = true,
+                UserId = userId,
+                PaperId = request.PaperId
+            };
+            paperAuthorList.Add(presenterPaperAuthor);
+
             int finalResult;
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 var result1 = await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
                 var result2 =  await _unitOfWork.AbstractRepository.CreateAbstractAsync(abstractObj);
-                finalResult = result1 + result2;
+                var result3 = await _unitOfWork.PaperAuthorRepository.CreateMutiplePaperAuthorAsync(paperAuthorList);
+                finalResult = result1 + result2 + result3;
                 await _unitOfWork.CommitAsync();
             }
             catch (Exception ex)
