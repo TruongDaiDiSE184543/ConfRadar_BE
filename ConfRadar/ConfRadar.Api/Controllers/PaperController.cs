@@ -126,7 +126,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<RevisionPaperReviewResponse>>.SuccessResponse(result, "Danh sách paper reviewer trong revise phase"));
         }
 
-        [HttpPost("create-camera-ready")]
+        [HttpPost("submit-camera-ready")]
         [Authorize]
         public async Task<IActionResult> CreateCameraReady([FromForm] CreateCameraReadyRequest request)
         {
@@ -144,7 +144,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<int>.SuccessResponse(result, "Camera ready updated successfully"));
         }
 
-        [HttpPost("submit-review-for-full-paper")]
+        [HttpPost("submit-fullpaper-review")]
         [Authorize(Roles = "Local Reviewer,External Reviewer")]
         public async Task<IActionResult> SubmitReviewForFullPaper([FromForm] CreateFullPaperReviewRequest request)
         {
