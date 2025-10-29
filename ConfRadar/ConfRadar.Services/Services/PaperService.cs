@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.DTO.Abstract;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
@@ -19,7 +20,7 @@ namespace ConfRadar.Services.Services
     {
         Task<int> SubmitAbstract(CreateAbstractRequest request, string userId);
         Task<int> DecideAbstractPaperStatus(UpdateAbstractPaperStatusRequest request, string userId);
-
+        Task<List<PendingAbstractResponse>> GetListPendingAbstract();
 
         //Task<FullPaperResponse> SubmitFullPaper (CreateFullPaperRequest request, string userId);
         Task<int> SubmitFullPaper(CreateFullPaperRequest request, string userId);
@@ -156,20 +157,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy abstract paper với id {request.AbstractId} trong hệ thống");
             }
-
             if (abstractPaper.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
                 throw new BadRequestException($"Abstract hiện tại không đang trong trạng thái pending, vui lòng thử lại sau");
-            }
-            var paperReviewerList = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
-            if (paperReviewerList == null || paperReviewerList.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các danh sách gán reviewer cho bài báo này");
-            }
-            var headPaperReviewer = paperReviewerList.FirstOrDefault(x => x.IsHeadReviewer == true && x.UserId == userId);
-            if (headPaperReviewer == null)
-            {
-                throw new NotFoundException($"Không tìm thấy bạn là head reviewer trong danh sách  reviewer cho bài báo này.");
             }
             int result = 0;
             await _unitOfWork.BeginTransactionAsync();
@@ -1156,8 +1146,15 @@ namespace ConfRadar.Services.Services
             return await _unitOfWork.CameraReadyRepository.UpdateCameraReadyAsync(cameraReady);
         }
 
-       
-
-      
+        public async Task<List<PendingAbstractResponse>> GetListPendingAbstract()
+        {
+            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+            if (pendingGlobalStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
+            var listAbstract = await _unitOfWork.AbstractRepository.GetAllPendingAbstractsAsync(pendingGlobalStatus.GlobalStatusId);
+            return listAbstract;
+        }
     }
 }
