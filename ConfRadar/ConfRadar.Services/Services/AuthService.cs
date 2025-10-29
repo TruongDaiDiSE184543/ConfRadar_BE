@@ -31,6 +31,7 @@ namespace ConfRadar.Services.Services
         Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request);
 
         Task<List<AvailableCustomerResponse>> GetAvailableCustomer();
+        Task<List<ReviewerDetailResponse>> ListAllReviewer();
 
     }
     public class AuthService : IAuthService
@@ -506,6 +507,25 @@ namespace ConfRadar.Services.Services
         public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
         {
             return await _unitOfWork.UserRepository.GetAvailalbeCustomer();
+        }
+
+        public async Task<List<ReviewerDetailResponse>> ListAllReviewer()
+        {
+            var localReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
+            if (localReviewerRole == null)
+            {
+                throw new NotFoundException("Local reviewer role không tìm thấy trong hệ thống");
+            }
+            var localReviewerList = await _unitOfWork.UserRepository.GetReviewerList(localReviewerRole.RoleId);
+            var result = localReviewerList.Select(x => new ReviewerDetailResponse()
+            {
+                UserId = x.UserId,
+                Email = x.Email,
+                PhoneNumber = x.PhoneNumber,
+                AvatarUrl = x.AvatarUrl,
+                FullName = x.FullName,
+            }).ToList();
+            return result;
         }
     }
 }

@@ -21,6 +21,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<User?> GetUserByName(string name);
         Task<User?> GetUserByUserId(string userId);
         Task<List<User>> GetListUser();
+        Task<List<User>> GetReviewerList(string localReviewerRoleId);
 
         Task<List<AvailableCustomerResponse>> GetAvailalbeCustomer();
 
@@ -57,6 +58,16 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Users
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
+                .ToListAsync();
+        }
+
+        public async Task<List<User>> GetReviewerList(string localReviewerRoleId)
+        {
+            return await _context.Users
+                .Include(u => u.ReviewerContracts)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => u.UserRoles.Any(ur => ur.RoleId == localReviewerRoleId) || u.ReviewerContracts.Any(rc => rc.IsActive == true))
                 .ToListAsync();
         }
 
