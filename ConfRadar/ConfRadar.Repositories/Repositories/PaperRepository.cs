@@ -15,6 +15,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Paper?> GetPaperByCameraReadyIdAsync(string cameraReadyId);
         Task<Paper?> GetPaperByFullPaperIdAsync(string fullPaperId);
         Task<List<Paper>> GetAllPapersAsync();
+        Task<Paper?> GetPaperByIdWithPhaseAsync(string paperId);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -65,6 +66,15 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Papers
                 .Include(p => p.Presenter)
                 .FirstOrDefaultAsync(p => p.FullPaperId == fullPaperId);
+        }
+
+        public async Task<Paper?> GetPaperByIdWithPhaseAsync(string paperId)
+        {
+            return await _context.Papers
+                .Include(p => p.PaperPhase)
+                .Include(p => p.Conference)
+                .Include(p => p.Presenter)
+                .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
 
        
