@@ -8,6 +8,7 @@
         public string ConferencePriceId { get; set; }
         public string ConferenceId { get; set; }
         public List<string> ConferenceSessionIds { get; set; }
+       
     }
     //public class TransactionResearchConferenceAbstractDataHolder
     //{

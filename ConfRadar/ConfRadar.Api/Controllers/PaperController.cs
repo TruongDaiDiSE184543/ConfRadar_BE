@@ -12,6 +12,9 @@ using System.Security.Claims;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Mappers;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using ConfRadar.Repositories.DTO.Abstract;
+using ConfRadar.Repositories.DTO.User;
+using ConfRadar.Repositories.Models;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -33,13 +36,27 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.SubmitAbstract(request,userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã nộp abstract thành công"));
         }
-        [Authorize]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpPut("decide-abstract-paper-status")]
         public async Task<IActionResult> DecideAbstractPaperStatus([FromBody] UpdateAbstractPaperStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.DecideAbstractPaperStatus(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã quyết định abstract thành công"));
+        }
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpGet("list-pending-abstract")]
+        public async Task<IActionResult> ListPendingAbstract()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.GetListPendingAbstract();
+            return Ok(ApiResponse<List<PendingAbstractResponse>>.SuccessResponse(result, "danh sách pending abstract"));
+        }
+        [HttpGet("list-available-customers")]
+        public async Task<IActionResult> ListAvailableCustomer()
+        {
+            var result = await _serviceManager.AuthService.GetAvailableCustomer();
+            return Ok(ApiResponse<List<AvailableCustomerResponse>>.SuccessResponse(result, "danh sách các người dùng"));
         }
 
 
@@ -204,6 +221,11 @@ namespace ConfRadar.Api.Controllers
             
             var result = await _serviceManager.PaperService.getPaperDetail(paperId);
             return Ok(ApiResponse<PaperDetailReponse>.SuccessResponse(result, "Lấy detail paper thành công"));
+        [HttpGet("list-paper-phases")]
+        public async Task<IActionResult> GetListPaperPhase()
+        {
+            var result = await _serviceManager.PaperService.GetListPaperPhases();
+            return Ok(ApiResponse<List<PaperPhase>>.SuccessResponse(result, "Danh sách các paper phase"));
         }
     }
 }

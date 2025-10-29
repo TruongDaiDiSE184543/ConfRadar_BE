@@ -31,13 +31,13 @@ namespace ConfRadar.Services.Common
         Customer
     }
 
-    public enum PaperPhase
-    {
-        Abstract,
-        FullPaper,
-        Revise,
-        CameraReady
-    }
+    //public enum PaperPhase
+    //{
+    //    Abstract,
+    //    FullPaper,
+    //    Revise,
+    //    CameraReady
+    //}
     public enum GenderTypeEnum
     {
         Male,
@@ -154,15 +154,14 @@ namespace ConfRadar.Services.Common
         [Description("Abstract")]
         Abstract,
 
-        [Description("Full Paper")]
+        [Description("FullPaper")]
         FullPaper,
 
-        [Description("Revision")]
-        Revision,
+        [Description("Revise")]
+        Revise,
 
-        [Description("Camera Ready")]
+        [Description("CameraReady")]
         CameraReady
-
     }
     public enum CheckInStatusEnum
     {
