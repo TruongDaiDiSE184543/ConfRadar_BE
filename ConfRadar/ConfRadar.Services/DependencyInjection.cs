@@ -42,6 +42,7 @@ namespace ConfRadar.Services
             services.AddScoped<ICameraReadyService, CameraReadyService>();
             services.AddScoped<ICityService, CityService>();
             services.AddScoped<IConferenceStatusService, ConferenceStatusService>();
+            services.AddScoped<IReviewStatusService, ReviewStatusService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
