@@ -17,7 +17,7 @@ namespace ConfRadar.Services.Services
         Task<string> HandleMomoPaymentWithTechConf(CreateTechPaymentRequest request, string userId);
         Task VerifyMomoPaymentDataForTechConference(MomoPaymentCallBackResponse data);
         Task VerifyMomoPaymentDataForResearchConferenceAbstractSubmission(MomoPaymentCallBackResponse data);
-        Task<string> ProcessPaymentForAbstract(CreateAbstractRequest request, string conferenceId, string userId, long amount, string paymentMethodId, List<string> conferenceSessionIds, string abstractUrl, string orderInfo);
+        Task<string> CreatePaymentForAbstract(CreatePaperPaymentRequest request, string userId);
     }
     public class MomoService : IMomoService
     {
@@ -73,7 +73,7 @@ namespace ConfRadar.Services.Services
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.MoMo.GetDescription());
             var sessionIds = conferencePrice.Conference!.ConferenceSessions.Select(s => s.ConferenceSessionId).ToList();
             var ticketId = Guid.NewGuid().ToString();
-            var transactionData = new TransactionTechDataHolder
+            var transactionData = new TransactionDataHolder
             {
                 TicketId = null,
                 UserId = user.UserId,
@@ -88,17 +88,68 @@ namespace ConfRadar.Services.Services
             var result = await CreateMomoPayment(ticketId, finalAmount, $"Trả phí cho {conferencePrice.Conference?.ConferenceName}", _momoSettings.Value.IpnTech, _momoSettings.Value.TechRedirectUrl);
             return result.payUrl;
         }
-        public async Task<string> ProcessPaymentForAbstract(CreateAbstractRequest request, string conferenceId, string userId, long amount, string paymentMethodId, List<string> conferenceSessionIds, string abstractUrl, string orderInfo)
+        public async Task<string> CreatePaymentForAbstract(CreatePaperPaymentRequest request, string userId)
+        {
+            var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
+            if (conferencePrice == null)
+            {
+                throw new BadRequestException($"Giá hội nghị với id {request.ConferencePriceId} không tìm thấy");
+            }
+            if (conferencePrice.Conference.IsResearchConference == false)
+            {
+                throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference");
+            }
+            if (conferencePrice.IsAuthor == false)
+            {
+                throw new BadRequestException($"Giá vé hiện tại không dành cho tác giả, xin hãy chọn mức giá khác");
+            }
+            if (conferencePrice.Conference.IsInternalHosted == false)
+            {
+                throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference tổ chức bởi confradar");
+            }
+            if (conferencePrice.AvailableSlot <= 0)
+            {
+                throw new BadRequestException($"Hiện tại slot cho research conference đã hết");
+            }
+            var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.MoMo.GetDescription());
+            if (paymentMethod == null)
+            {
+                throw new NotFoundException($"Phương thức thanh toán không thể tìm thấy trong hệ thống");
+            }
+            decimal applyPercent = 0;
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            var validPhases = conferencePrice.PricePhases
+            .Where(p => p.StartDate <= dateNow && p.EndDate >= dateNow)
+            .OrderBy(p => p.StartDate)
+            .ToList();
+
+            if (!validPhases.Any())
+            {
+                throw new BadRequestException("Hiện tại không có phase hợp lệ để nộp abstract");
+            }
+            var currentPhase = validPhases.FirstOrDefault(p => p.AvailableSlot > 0);
+            if (currentPhase == null)
+            {
+                throw new BadRequestException("Tất cả các phase hợp lệ hiện tại đã hết slot");
+            }
+            var sessionIdsList = conferencePrice.Conference.ConferenceSessions.Select(cs => cs.ConferenceSessionId).ToList();
+            applyPercent = currentPhase.ApplyPercent ?? 0;
+
+            var finalPrice = (long)(conferencePrice.TicketPrice - (conferencePrice.TicketPrice * applyPercent / 100));
+
+            var result = await ProcessPaymentForAbstract(request.ConferencePriceId, conferencePrice.ConferenceId, userId, finalPrice, paymentMethod.PaymentMethodId, sessionIdsList, $"Thanh toán abstract");
+            return result;
+        }
+        public async Task<string> ProcessPaymentForAbstract(string conferencePriceId, string conferenceId, string userId, long amount, string paymentMethodId, List<string> conferenceSessionIds, string orderInfo)
         {
             var ticketId = Guid.NewGuid().ToString();
-            var transactionData = new TransactionResearchConferenceAbstractDataHolder()
+            var transactionData = new TransactionDataHolder()
             {
                 TicketId = ticketId,
                 UserId = userId,
                 PaymentMethodId = paymentMethodId,
-                ConferencePriceId = request.ConferencePriceId,
+                ConferencePriceId = conferencePriceId,
                 ConferenceSessionIds = conferenceSessionIds,
-                AbstractUrl = abstractUrl,
                 ConferenceId = conferenceId,
             };
             var transacJson = JsonSerializer.Serialize(transactionData);
@@ -108,7 +159,6 @@ namespace ConfRadar.Services.Services
         }
         private async Task<MomoCreatePaymentResponse> CreateMomoPayment(string orderId, long amount, string orderInfo, string ipnUrl, string redirectUrl)
         {
-
             var rawSignature = "accessKey=" + _momoSettings.Value.AccessKey + "&amount=" + amount +
                 "&extraData=" + _momoSettings.Value.ExtraData + "&ipnUrl=" + ipnUrl + "&orderId=" +
                 orderId + "&orderInfo=" + orderInfo + "&partnerCode=" + _momoSettings.Value.PartnerCode +
@@ -172,7 +222,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("data is not valid");
             }
             var transac = await _redisService.GetStringAsync(data.orderId);
-            var transacDataHolder = JsonSerializer.Deserialize<TransactionTechDataHolder>(transac, new JsonSerializerOptions()
+            var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,
             });
@@ -223,25 +273,32 @@ namespace ConfRadar.Services.Services
         }
         public async Task VerifyMomoPaymentDataForResearchConferenceAbstractSubmission(MomoPaymentCallBackResponse data)
         {
-            var result = VerifyMomoPaymentData(data);
-            if (!result)
-            {
-                throw new BadRequestException("payment data is not valid");
-            }
+            
             var transacKey = await _redisService.KeyExistsAsync(data.orderId);
             if (!transacKey)
             {
-                throw new BadRequestException("data is not valid");
+                throw new NotFoundException("Dữ liệu không tìm thấy");
+            }
+            var result = VerifyMomoPaymentData(data);
+            if (!result)
+            {
+                throw new BadRequestException("Dữ liệu payment không khả dụng");
             }
             var dateNow = ExtensionHelper.GetVietnamDate();
             var timeNow = ExtensionHelper.GetVietnamTime();
             var transac = await _redisService.GetStringAsync(data.orderId);
-            var transacDataHolder = JsonSerializer.Deserialize<TransactionResearchConferenceAbstractDataHolder>(transac, new JsonSerializerOptions()
+            var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,
             });
 
             var checkInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Pending.GetDescription());
+            var globalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+            var currentPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
+            if (checkInStatus==null || globalStatus==null || currentPaperPhase == null)
+            {
+                throw new NotFoundException($"Lỗi không tìm thấy các trạng thái tương ứng trong hệ thống");
+            }
             var ticketObj = new Ticket()
             {
                 TicketId = transacDataHolder.TicketId,
@@ -280,28 +337,31 @@ namespace ConfRadar.Services.Services
                 };
                 ticketObj.UserCheckIns.Add(userCheckInObj);
             }
-            var globalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            var currentPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
-            var abstractId = Guid.NewGuid().ToString();
-            var abstractObj = new Abstract()
-            {
-                AbstractId = abstractId,
-                AbstractUrl = transacDataHolder.AbstractUrl,
-                GlobalStatusId = globalStatus.GlobalStatusId,
-            };
-            await _unitOfWork.AbstractRepository.CreateAbstractAsync(abstractObj);
             var paperObj = new Paper()
             {
                 PaperId = Guid.NewGuid().ToString(),
                 PresenterId = transacDataHolder.UserId,
-                AbstractId = abstractId,
                 ConferenceId = transacDataHolder.ConferenceId,
                 CreatedAt = ExtensionHelper.GetVietnamTime(),
                 PaperPhaseId = currentPaperPhase.PaperPhaseId,
             };
-            await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
-            await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
-            await _redisService.DeleteKeyAsync(transacDataHolder.TicketId);
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+              
+                await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
+                await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
+                await _unitOfWork.CommitAsync(); 
+                await _redisService.DeleteKeyAsync(data.orderId);
+            }
+            catch(Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+            
         }
+
+       
     }
 }

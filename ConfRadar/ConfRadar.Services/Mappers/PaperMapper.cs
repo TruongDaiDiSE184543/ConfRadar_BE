@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Abstract;
+using ConfRadar.Services.DTOs.FullPaper;
 using System;
 using System.Collections.Generic;
 using System.Linq;

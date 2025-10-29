@@ -10,8 +10,10 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
 {
     public class ListRevisionPaperReviewRequest
     {
-        public string? RevisionPaperId { get; set; }
-        public string? PaperId { get; set; }
+        [Required(ErrorMessage = "RevisionPaperId là bắt buộc")]
+        public string RevisionPaperId { get; set; }
+        [Required(ErrorMessage = "PaperId là bắt buộc")]
+        public string PaperId { get; set; }
         
     }
     public class RevisionPaperReviewResponse

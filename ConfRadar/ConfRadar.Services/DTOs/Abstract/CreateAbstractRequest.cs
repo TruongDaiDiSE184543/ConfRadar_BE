@@ -8,20 +8,12 @@ namespace ConfRadar.Services.DTOs.Abstract
     {
         [Required(ErrorMessage = "Abstract file bắt buộc")]
         public IFormFile AbstractFile { get; set; }
-        [Required(ErrorMessage = "Conference Price id bắt buộc")]
-        public string ConferencePriceId { get; set; }
-        [Required(ErrorMessage = "Payment method bắt buộc")]
-        [EnumDataType(typeof(PaymentMethodEnum))]
-        public PaymentMethodEnum PaymentMethod { get; set; }
-    }
-
-    public class CreateFullPaperRequest
-    {
-        [Required]
-        public IFormFile FullPaperFile { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Paper id bắt buộc")]
         public string PaperId { get; set; }
     }
+
+
+   
 
     public class FullPaperResponse
     {

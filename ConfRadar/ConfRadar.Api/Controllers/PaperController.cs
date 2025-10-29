@@ -21,22 +21,42 @@ namespace ConfRadar.Api.Controllers
         {
             _serviceManager = serviceManager;
         }
+
         [Authorize]
         [HttpPost("submit-abstract")]
         public async Task<IActionResult> SubmitAbstract([FromForm]CreateAbstractRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.SubmitAbstract(request,userId);
-            return Ok(ApiResponse<string>.SuccessResponse(result, "hãy truy cập link để thực hiện thanh toán"));
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã nộp abstract thành công"));
         }
+        [Authorize]
+        [HttpPut("decide-abstract-paper-status")]
+        public async Task<IActionResult> DecideAbstractPaperStatus([FromBody] UpdateAbstractPaperStatusRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.DecideAbstractPaperStatus(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã quyết định abstract thành công"));
+        }
+
+
+        [Authorize]
         [HttpPost("submit-fullpaper")]
         public async Task<IActionResult> SubmitFullPaper([FromForm] CreateFullPaperRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.SubmitFullPaper(request, userId);
-            return Ok(ApiResponse<FullPaperResponse>.SuccessResponse(result, "nộp full paper "));
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công full paper"));
         }
-        
+        [Authorize]
+        [HttpPut("decide-fullpaper-status")]
+        public async Task<IActionResult> DecideFullPaperStatus([FromBody] UpdateFullPaperStatusRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công full paper status"));
+        }
+
         [HttpPost("assign-author-to-paper")]
         [Authorize(Roles = "Customer")]
         public async Task<IActionResult> AssignAuthorToPaper([FromBody] AssignAuthorToPaperRequest request)
@@ -52,23 +72,9 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperAssignmentService.AssignReviewerToPaper(request);
             return Ok(ApiResponse<string>.SuccessResponse(result, "Reviewer assigned to paper successfully"));
         }
-        [Authorize]
-        [HttpPost("submit-fullpaper")]
-        public async Task<IActionResult> SubmitFullPaper([FromForm] UpdateFullPaperRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.UpdateFullPaper(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công full paper"));
-        }
-        [Authorize]
-        [HttpPut("decide-fullpaper-status")]
-        public async Task<IActionResult> DecideFullPaperStatus([FromBody] UpdateFullPaperStatusRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideFullPaperStatus(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công full paper status"));
+        
 
-        }
+
         [Authorize]
         [HttpPost("submit-paper-revision")]
         public async Task<IActionResult> SubmitPaperRevision([FromForm] CreateRevisionPaperSubmissionRequest request)
@@ -155,14 +161,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<FullPaperReviewResponse>>.SuccessResponse(result, "Full paper reviews retrieved successfully"));
         }
 
-        [HttpPut("decide-fullpaper-review-status")]
-        [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> DecideFullPaperReviewStatus([FromBody] UpdateFullPaperReviewStatusRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideFullPaperReviewStatus(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Full paper review status decided successfully"));
-        }
+        //[HttpPut("decide-fullpaper-review-status")]
+        //[Authorize(Roles = "Conference Organizer")]
+        //public async Task<IActionResult> DecideFullPaperReviewStatus([FromBody] UpdateFullPaperReviewStatusRequest request)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request, userId);
+        //    return Ok(ApiResponse<int>.SuccessResponse(result, "Full paper review status decided successfully"));
+        //}
 
         [HttpPut("decide-camera-ready-status")]
         [Authorize(Roles = "Conference Organizer")]

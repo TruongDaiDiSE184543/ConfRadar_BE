@@ -4,15 +4,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.FullPaper
 {
-    public class UpdateFullPaperRequest
+    public class CreateFullPaperRequest
     {
-        [Required(ErrorMessage = "Paper id là bắt buộc")]
-        public string PaperId { get; set; } = null!;
-        [Required(ErrorMessage = "Full Paper id là bắt buộc")]
-        public string FullPaperId { get; set; }
-        [Required(ErrorMessage = "Gửi file là bắt buộc")]
-        public IFormFile? FullPaperFile { get; set; }
-
+        [Required(ErrorMessage ="Full paper file là bắt buộc")]
+        public IFormFile FullPaperFile { get; set; }
+        [Required(ErrorMessage ="Paper id là bắt buộc")]
+        public string PaperId { get; set; }
     }
     public class UpdateFullPaperStatusRequest
     {
