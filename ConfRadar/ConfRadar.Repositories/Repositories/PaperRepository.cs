@@ -16,6 +16,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Paper?> GetPaperByFullPaperIdAsync(string fullPaperId);
         Task<List<Paper>> GetAllPapersAsync();
         Task<Paper?> GetPaperByIdWithPhaseAsync(string paperId);
+        Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -78,5 +79,11 @@ namespace ConfRadar.Repositories.Repositories
         }
 
        
+        public async Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId)
+        {
+            return await _context.Papers
+               .Include(p => p.Conference)
+               .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId && p.PresenterId == userId);
+        }
     }
 }

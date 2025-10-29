@@ -61,6 +61,7 @@ namespace ConfRadar.Repositories
         IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository { get; }
         IRevisionPaperReviewRepository RevisionPaperReviewRepository { get; }
         IFullPaperReviewRepository FullPaperReviewRepository { get; }
+        IReviewerContractRepository ReviewerContractRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -126,6 +127,7 @@ namespace ConfRadar.Repositories
 
         private IRevisionPaperReviewRepository _RevisionPaperReviewRepository;
         private IFullPaperReviewRepository _FullPaperReviewRepository;
+        private IReviewerContractRepository _ReviewerContractRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -225,6 +227,8 @@ namespace ConfRadar.Repositories
         public IRevisionPaperReviewRepository RevisionPaperReviewRepository => _RevisionPaperReviewRepository ??= new RevisionPaperReviewRepository(_context);
 
         public IFullPaperReviewRepository FullPaperReviewRepository => _FullPaperReviewRepository ??= new FullPaperReviewRepository(_context);
+
+        public IReviewerContractRepository ReviewerContractRepository => _ReviewerContractRepository ??= new ReviewerContractRepository(_context);  
 
         public async Task BeginTransactionAsync()
         {

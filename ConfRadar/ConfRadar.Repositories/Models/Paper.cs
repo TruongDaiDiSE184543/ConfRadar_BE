@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class Paper
 {
@@ -23,6 +26,8 @@ public partial class Paper
     public virtual CameraReady? CameraReady { get; set; }
 
     public virtual Conference? Conference { get; set; }
+
+    public virtual ICollection<PaperAuthor> PaperAuthors { get; set; } = new List<PaperAuthor>();
 
     public virtual PaperPhase? PaperPhase { get; set; }
 
