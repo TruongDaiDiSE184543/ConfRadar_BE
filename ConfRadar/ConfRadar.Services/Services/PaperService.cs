@@ -160,13 +160,8 @@ namespace ConfRadar.Services.Services
                 };
                 paperAuthorList.Add(paperAuthorObj);
             }
-            var presenterPaperAuthor = new PaperAuthor()
-            {
-                IsPresenter = true,
-                UserId = userId,
-                PaperId = request.PaperId
-            };
-            paperAuthorList.Add(presenterPaperAuthor);
+            
+            
 
             int finalResult;
             await _unitOfWork.BeginTransactionAsync();
@@ -467,6 +462,31 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Bạn không có quyền nộp revision cho bài báo này");
             }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            string revisionDeadlineId = string.Empty; 
+            var researchConferencePhasesFound = paper.Conference.ResearchConferencePhases;
+            foreach(var phase in researchConferencePhasesFound)
+            {
+                if (phase.ReviseStartDate != null && phase.ReviseEndDate != null && dateNow >= phase.ReviseStartDate && dateNow <= phase.ReviseEndDate)
+                {
+                    foreach(var deadline in phase.RevisionRoundDeadlines)
+                    {
+                        if (deadline.EndDate != null && dateNow <= deadline.EndDate)
+                        {
+                            revisionDeadlineId = deadline.RevisionRoundDeadlineId;
+                            break;
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(revisionDeadlineId))
+                    {
+                        break;
+                    }
+                }
+            }
+            if (string.IsNullOrEmpty(revisionDeadlineId))
+            {
+                throw new NotFoundException($"Không thể tìm thấy bất cứ hạn chót revision trong hệ thống vui lòng liên hệ conference organizer để xử lí");
+            }
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -520,7 +540,7 @@ namespace ConfRadar.Services.Services
                 {
                     RevisionPaperSubmissionId = Guid.NewGuid().ToString(),
                     RevisionPaperId = revisionPaper.RevisionPaperId,
-                    RevisionDeadlineRoundId = request.RevisionDeadlineRoundId,
+                    RevisionDeadlineRoundId = revisionDeadlineId,
                     RevisionPaperUrl = revisionFileUrl,
                 };
 
