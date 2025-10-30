@@ -33,5 +33,14 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await GetAllAsync();
         }
+
+        public async Task<RevisionPaper> GetDetailRevisionPaper(string revisionPaperId)
+        {
+            return await _context.RevisionPapers.Where(rvp => rvp.RevisionPaperId == revisionPaperId)
+                .Include(rvp => rvp.RevisionPaperSubmissions).ThenInclude(rps => rps.RevisionDeadlineRound)
+                .Include(rvp => rvp.RevisionPaperSubmissions).ThenInclude(rps => rps.RevisionSubmissionFeedbacks)
+                .Include(rvp => rvp.RevisionPaperReviews)
+                .FirstOrDefaultAsync();
+        }
     }
 }

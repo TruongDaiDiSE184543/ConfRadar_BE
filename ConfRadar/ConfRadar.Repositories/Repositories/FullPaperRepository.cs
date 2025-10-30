@@ -2,6 +2,7 @@ using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -26,12 +27,19 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<FullPaper?> GetFullPaperByIdAsync(string fullPaperId)
         {
-            return await GetByIdAsync(fullPaperId);
+            return await _context.FullPapers.Where(fp => fp.FullPaperId == fullPaperId).Include(fp => fp.ReviewStatus).FirstOrDefaultAsync();
         }
 
         public async Task<List<FullPaper>> GetAllFullPapersAsync()
         {
             return await GetAllAsync();
         }
+
+        public async Task<List<FullPaper>> GetFullPaperByStatusName(string status)
+        {
+            return await _context.FullPapers.Where(fp => fp.ReviewStatus.Name == status).ToListAsync();
+        }
+
+      
     }
 }

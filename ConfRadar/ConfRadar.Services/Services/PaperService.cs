@@ -50,12 +50,14 @@ namespace ConfRadar.Services.Services
        
         Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);
         Task <List<Paper>> GetSubmittedPaper(string userId);
-        Task<PaperDetailReponse> getPaperDetail(string paperId);
+        Task<PaperDetailResponseDto> getPaperDetail(string paperId);
 
 
 
         Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases();
-
+        Task<List<Paper>> GetAssignedPapersByReviewerId(string userId);
+        Task<List<CameraReady>> ListPendingCameraReady();
+        Task<List<FullPaper>> ListPendingfullpaper();
     }
     public class PaperService : IPaperService
     {
@@ -1231,33 +1233,120 @@ namespace ConfRadar.Services.Services
             return submittedPapers;
         }
 
-        public async Task<PaperDetailReponse> getPaperDetail(string paperId)
+        public async Task<PaperDetailResponseDto> getPaperDetail(string paperId)
         {
-            // Use the repository method to get paper with its phase
+            // Step 1: Fetch the main Paper entity. This is our starting point.
+            // We get Phase and CameraReady here because they are included in the repo method.
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdWithPhaseAsync(paperId);
-            
-            if (paper == null) 
+
+            if (paper == null)
             {
-                throw new Exception($"Không tìm thấy paper với id {paperId}");
+                throw new KeyNotFoundException($"Không tìm thấy paper với id {paperId}");
             }
-            
-            // Create a minimal PaperPhase object to avoid circular references during serialization
-            // The original PaperPhase entity might have its Papers collection loaded, causing cycles
-            var currentPhase = paper.PaperPhase != null ? new PaperPhase
+
+            // Step 2: Prepare all other data fetching tasks to run IN PARALLEL.
+            // If an ID is null, we create a completed task that returns null instantly.
+            var abstractTask = paper.AbstractId != null
+                ? _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId) // Note: Ensure this includes GlobalStatus
+                : Task.FromResult<ConfRadar.Repositories.Models.Abstract>(null);
+
+            var fullPaperTask = paper.FullPaperId != null
+                ? _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) // Note: Ensure this includes ReviewStatus
+                : Task.FromResult<ConfRadar.Repositories.Models.FullPaper>(null);
+
+            var revisionPaperTask = paper.RevisionPaperId != null
+                ? _unitOfWork.RevisionPaperRepository.GetDetailRevisionPaper(paper.RevisionPaperId)
+                : Task.FromResult<ConfRadar.Repositories.Models.RevisionPaper>(null);
+
+            // Step 3: Execute all tasks concurrently and wait for them all to finish.
+            await Task.WhenAll(abstractTask, fullPaperTask, revisionPaperTask);
+
+            // Step 4: Get the results from the now-completed tasks.
+            var abstractEntity = await abstractTask;
+            var fullPaperEntity = await fullPaperTask;
+            var revisionPaperEntity = await revisionPaperTask;
+
+            // Step 5: Map all the fetched entities into our clean DTO response model.
+            var response = new PaperDetailResponseDto
             {
-                PaperPhaseId = paper.PaperPhase.PaperPhaseId,
-                PhaseName = paper.PaperPhase.PhaseName,
-                // Papers collection is intentionally left empty to avoid cycles
-            } : null;
-            
-            return new PaperDetailReponse
+                PaperId = paper.PaperId,
+
+                // Map properties we already have from the initial query
+                CurrentPhase = paper.PaperPhase != null ? new PaperPhaseDto
+                {
+                    PaperPhaseId = paper.PaperPhase.PaperPhaseId,
+                    PhaseName = paper.PaperPhase.PhaseName
+                } : null,
+
+                CameraReady = paper.CameraReady != null ? new CameraReadyDto
+                {
+                    CameraReadyId = paper.CameraReady.CameraReadyId,
+                    FileUrl = paper.CameraReady.CameraReadyUrl,
+                    Status = paper.CameraReady.GlobalStatus?.Name // Safe navigation
+                } : null,
+
+                // Map the result from the parallel tasks
+                Abstract = abstractEntity != null ? new AbstractDto
+                {
+                    AbstractId = abstractEntity.AbstractId,
+                    FileUrl = abstractEntity.AbstractUrl,
+                    Status = abstractEntity.GlobalStatus?.Name
+                } : null,
+
+                FullPaper = fullPaperEntity != null ? new FullPaperDto
+                {
+                    FullPaperId = fullPaperEntity.FullPaperId,
+                    FileUrl = fullPaperEntity.FullPaperUrl,
+                    ReviewStatus = fullPaperEntity.ReviewStatus?.Name
+                } : null,
+
+                // Use a helper method for complex mapping to keep this clean
+                RevisionPaper = revisionPaperEntity != null
+                    ? MapRevisionToDto(revisionPaperEntity)
+                    : null
+            };
+
+            return response;
+        }
+
+        private RevisionPaperDto MapRevisionToDto(ConfRadar.Repositories.Models.RevisionPaper entity)
+        {
+            if (entity == null) return null;
+
+            return new RevisionPaperDto
             {
-                PaperId = paperId,
-                currentPhase = currentPhase, // Use the safe version to avoid cycles
-                Abstract = paper.AbstractId != null ? await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId): null,
-                FullPaper = paper.FullPaperId != null ? await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) : null,
-                RevisionPaper = paper.RevisionPaperId != null ? await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId) : null,
-                CameraReady = paper.CameraReadyId != null ? await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(paper.CameraReadyId) : null,
+                RevisionPaperId = entity.RevisionPaperId,
+                RevisionRound = entity.RevisionRound,
+                OverallStatus = entity.GlobalStatus?.Name,
+
+                Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDto
+                {
+                    ReviewId = review.RevisionPaperReviewId,
+                    Note = review.Note,
+                    FeedBackToAuthor = review.FeedbackToAuthor,
+                    FeedbackMaterialURL = review.FeedbackMaterialUrl,
+                    ReviewedAt = review.CreatedAt ?? default // Use default if nullable
+                }).ToList() ?? new List<RevisionReviewDto>(),
+
+                Submissions = entity.RevisionPaperSubmissions?.Select(sub => new RevisionSubmissionDto
+                {
+                    SubmissionId = sub.RevisionPaperSubmissionId,
+                    FileUrl = sub.RevisionPaperUrl,
+                    revisionDeadline = sub.RevisionDeadlineRound != null ? new RevisionDeadline
+                    {
+                        // You will need to adjust these properties based on your actual RevisionRoundDeadline model
+                        RoundNumher = sub.RevisionDeadlineRound.RoundNumber,
+                        Deadline = sub.RevisionDeadlineRound.EndDate
+                    } : null,
+                    Feedbacks = sub.RevisionSubmissionFeedbacks?.Select(fb => new FeedbackDto
+                    {
+                        FeedbackId = fb.RevisionSubmissionFeedbackId,
+                        FeedBack = fb.Feedback,
+                        Response = fb.Response,
+                        Order = fb.SortOrder ?? 0,
+                        CreatedAt = fb.CreatedAt ?? default
+                    }).ToList() ?? new List<FeedbackDto>()
+                }).ToList() ?? new List<RevisionSubmissionDto>()
             };
         }
 
@@ -1276,6 +1365,33 @@ namespace ConfRadar.Services.Services
         public async Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases()
         {
            return await _unitOfWork.PaperPhaseRepository.GetAllPaperPhasesAsync();
+        }
+
+        public async Task<List<Paper>> GetAssignedPapersByReviewerId(string userId)
+        {
+            //var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetAllPaperReviewersAsync();
+            //List<string?> paperIds = paperReviewer.Where( p => p.UserId == userId).Select(s => s.PaperId).ToList();
+            //var AssignedPapers = new List<Paper>();
+            //foreach (string p in paperIds)
+            //{
+            //    if (p != null) AssignedPapers.Add(await _unitOfWork.PaperRepository.GetPaperByIdAsync(p));
+            //}
+            var AssignedPapers = await _unitOfWork.PaperReviewerRepository.getAllAssignedPapers(userId);
+            return AssignedPapers;
+        }
+
+        public async Task<List<CameraReady>> ListPendingCameraReady()
+        {
+            var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+            List<CameraReady> pendingCameraready = await _unitOfWork.CameraReadyRepository.GetCameraBystatusName(pendingStatus!.Name!);
+            return pendingCameraready;
+        }
+
+        public async Task<List<FullPaper>> ListPendingfullpaper()
+        {
+            var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
+            List<FullPaper> pendingFullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByStatusName(pendingStatus!.Name!);
+            return pendingFullPaper;
         }
     }
 }
