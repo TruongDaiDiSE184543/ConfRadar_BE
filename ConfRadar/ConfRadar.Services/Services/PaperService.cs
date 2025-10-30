@@ -1281,6 +1281,9 @@ namespace ConfRadar.Services.Services
                 throw new KeyNotFoundException($"Không tìm thấy paper với id {paperId}");
             }
 
+            var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(paper.ConferenceId);
+            var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(paper.ConferenceId);
+
             // Step 2: Prepare all other data fetching tasks to run IN PARALLEL.
             // If an ID is null, we create a completed task that returns null instantly.
             //var abstractTask = paper.AbstractId != null
@@ -1331,7 +1334,9 @@ namespace ConfRadar.Services.Services
                 {
                     CameraReadyId = paper.CameraReady.CameraReadyId,
                     FileUrl = paper.CameraReady.CameraReadyUrl,
-                    Status = paper.CameraReady.GlobalStatus?.Name // Safe navigation
+                    Status = paper.CameraReady.GlobalStatus?.Name, // Safe navigation
+                    CameraReadyStartDate = researchConferencePhase?.CameraReadyStartDate,
+                    CameraReadyEndDate = researchConferencePhase?.CameraReadyEndDate,
                 } : null,
 
                 // Map the result from the parallel tasks
@@ -1339,26 +1344,30 @@ namespace ConfRadar.Services.Services
                 {
                     AbstractId = abstractEntity.AbstractId,
                     FileUrl = abstractEntity.AbstractUrl,
-                    Status = abstractEntity.GlobalStatus?.Name
+                    Status = abstractEntity.GlobalStatus?.Name,
+                    RegistrationStart = researchConferencePhase?.RegistrationStartDate,
+                    RegistrationEnd = researchConferencePhase?.RegistrationEndDate,
                 } : null,
 
                 FullPaper = fullPaperEntity != null ? new FullPaperDtoDetail
                 {
                     FullPaperId = fullPaperEntity.FullPaperId,
                     FileUrl = fullPaperEntity.FullPaperUrl,
-                    ReviewStatus = fullPaperEntity.ReviewStatus?.Name
+                    ReviewStatus = fullPaperEntity.ReviewStatus?.Name,
+                    FullPaperStartDate = researchConferencePhase?.FullPaperStartDate,
+                    FullPaperEndDate = researchConferencePhase?.FullPaperEndDate,
                 } : null,
 
                 // Use a helper method for complex mapping to keep this clean
                 RevisionPaper = revisionPaperEntity != null
-                    ? MapRevisionToDto(revisionPaperEntity)
+                    ? MapRevisionToDto(revisionPaperEntity, researchConferencePhase,roundDeadline)
                     : null
             };
 
             return response;
         }
 
-        private RevisionPaperDtoDetail MapRevisionToDto(ConfRadar.Repositories.Models.RevisionPaper entity)
+        private RevisionPaperDtoDetail MapRevisionToDto(ConfRadar.Repositories.Models.RevisionPaper entity, ResearchConferencePhase phase, List<RevisionRoundDeadline> deadlines)
         {
             if (entity == null) return null;
 
@@ -1367,6 +1376,13 @@ namespace ConfRadar.Services.Services
                 RevisionPaperId = entity.RevisionPaperId,
                 RevisionRound = entity.RevisionRound,
                 OverallStatus = entity.GlobalStatus?.Name,
+                ReviewStartDate = phase?.ReviewStartDate,
+                ReviewEndDate = phase?.ReviewEndDate,
+                revisionDeadline = deadlines?.Select(d => new RevisionDeadlineDetail
+                {
+                    RoundNumher = d.RoundNumber,
+                    Deadline = d?.EndDate,
+                }).ToList(),
 
                 Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
                 {
@@ -1381,12 +1397,6 @@ namespace ConfRadar.Services.Services
                 {
                     SubmissionId = sub.RevisionPaperSubmissionId,
                     FileUrl = sub.RevisionPaperUrl,
-                    revisionDeadline = sub.RevisionDeadlineRound != null ? new RevisionDeadlineDetail
-                    {
-                        // You will need to adjust these properties based on your actual RevisionRoundDeadline model
-                        RoundNumher = sub.RevisionDeadlineRound.RoundNumber,
-                        Deadline = sub.RevisionDeadlineRound.EndDate
-                    } : null,
                     Feedbacks = sub.RevisionSubmissionFeedbacks?.Select(fb => new FeedbackDtoDetail
                     {
                         FeedbackId = fb.RevisionSubmissionFeedbackId,
