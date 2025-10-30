@@ -1283,25 +1283,37 @@ namespace ConfRadar.Services.Services
 
             // Step 2: Prepare all other data fetching tasks to run IN PARALLEL.
             // If an ID is null, we create a completed task that returns null instantly.
-            var abstractTask = paper.AbstractId != null
-                ? _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId) // Note: Ensure this includes GlobalStatus
-                : Task.FromResult<ConfRadar.Repositories.Models.Abstract>(null);
+            //var abstractTask = paper.AbstractId != null
+            //    ? _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId) // Note: Ensure this includes GlobalStatus
+            //    : Task.FromResult<ConfRadar.Repositories.Models.Abstract>(null);
 
-            var fullPaperTask = paper.FullPaperId != null
-                ? _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) // Note: Ensure this includes ReviewStatus
-                : Task.FromResult<ConfRadar.Repositories.Models.FullPaper>(null);
+            //var fullPaperTask = paper.FullPaperId != null
+            //    ? _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) // Note: Ensure this includes ReviewStatus
+            //    : Task.FromResult<ConfRadar.Repositories.Models.FullPaper>(null);
 
-            var revisionPaperTask = paper.RevisionPaperId != null
-                ? _unitOfWork.RevisionPaperRepository.GetDetailRevisionPaper(paper.RevisionPaperId)
-                : Task.FromResult<ConfRadar.Repositories.Models.RevisionPaper>(null);
+            //var revisionPaperTask = paper.RevisionPaperId != null
+            //    ? _unitOfWork.RevisionPaperRepository.GetDetailRevisionPaper(paper.RevisionPaperId)
+            //    : Task.FromResult<ConfRadar.Repositories.Models.RevisionPaper>(null);
 
-            // Step 3: Execute all tasks concurrently and wait for them all to finish.
-            await Task.WhenAll(abstractTask, fullPaperTask, revisionPaperTask);
+            //// Step 3: Execute all tasks concurrently and wait for them all to finish.
+            //await Task.WhenAll(abstractTask, fullPaperTask, revisionPaperTask);
 
-            // Step 4: Get the results from the now-completed tasks.
-            var abstractEntity = await abstractTask;
-            var fullPaperEntity = await fullPaperTask;
-            var revisionPaperEntity = await revisionPaperTask;
+            //// Step 4: Get the results from the now-completed tasks.
+            //var abstractEntity = await abstractTask;
+            //var fullPaperEntity = await fullPaperTask;
+            //var revisionPaperEntity = await revisionPaperTask;
+
+            var abstractEntity = paper.AbstractId != null
+      ? await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId)
+      : null;
+
+            var fullPaperEntity = paper.FullPaperId != null
+                ? await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId)
+                : null;
+
+            var revisionPaperEntity = paper.RevisionPaperId != null
+                ? await _unitOfWork.RevisionPaperRepository.GetDetailRevisionPaper(paper.RevisionPaperId)
+                : null;
 
             // Step 5: Map all the fetched entities into our clean DTO response model.
             var response = new PaperDetailResponseDtoDetail
