@@ -35,6 +35,11 @@ namespace ConfRadar.Repositories.Repositories
             return await GetAllAsync();
         }
 
+        public async Task<List<Paper>> getAllAssignedPapers(string userId)
+        {
+            return await _context.PaperReviewers.Where(p => p.UserId == userId && p.Paper != null).Select(p => p.Paper!).ToListAsync();
+        }
+
         public async Task<List<PaperReviewer>> GetPaperReviewersByPaperIdAsync(string paperId)
         {
             return await _context.Set<PaperReviewer>()

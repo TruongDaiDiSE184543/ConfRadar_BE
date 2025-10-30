@@ -33,5 +33,9 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await GetAllAsync();
         }
+        public async Task<List<CameraReady>> GetCameraBystatusName(string status)
+        {
+            return await _context.CameraReadies.Include(c => c.GlobalStatus).Where(c => c.GlobalStatus.Name == status).ToListAsync();
+        }
     }
 }
