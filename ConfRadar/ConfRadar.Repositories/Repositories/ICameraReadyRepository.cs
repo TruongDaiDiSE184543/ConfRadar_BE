@@ -9,5 +9,6 @@ namespace ConfRadar.Repositories.Repositories
         Task<bool> DeleteCameraReadyAsync(CameraReady cameraReady);
         Task<CameraReady?> GetCameraReadyByIdAsync(string cameraReadyId);
         Task<List<CameraReady>> GetAllCameraReadysAsync();
+        Task<List<CameraReady>> GetCameraBystatusName(string status);
     }
 }

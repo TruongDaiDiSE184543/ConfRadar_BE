@@ -9,5 +9,6 @@ namespace ConfRadar.Repositories.Repositories
         Task<bool> DeleteFullPaperAsync(FullPaper fullPaper);
         Task<FullPaper?> GetFullPaperByIdAsync(string fullPaperId);
         Task<List<FullPaper>> GetAllFullPapersAsync();
+        Task<List<FullPaper>> GetFullPaperByStatusName(string status);
     }
 }

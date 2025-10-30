@@ -199,12 +199,27 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<int>.SuccessResponse(result, "Camera ready status decided successfully"));
         }
 
+        //[HttpGet("get-assigned-papers-by-conferenceId")]
+        //public async Task<IActionResult> GetAssignedPaperToReviewer( string conferenceId)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var result = await _serviceManager.PaperService.GetAllAssignedPapersToAReviewer(userId,conferenceId);
+        //    return Ok(ApiResponse<List<PapersAssignedToReviewerResponse>>.SuccessResponse(result, "Lấy thành công papers đã assigned cho reviewer"));
+        //}
+
         [HttpGet("get-assigned-papers")]
-        public async Task<IActionResult> GetAssignedPaperToReviewer( string conferenceId)
+        public async Task<IActionResult> GetAssignedPapersByReviewerId()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.GetAllAssignedPapersToAReviewer(userId,conferenceId);
-            return Ok(ApiResponse<List<PapersAssignedToReviewerResponse>>.SuccessResponse(result, "Lấy thành công papers đã assigned cho reviewer"));
+            var result = await _serviceManager.PaperService.GetAssignedPapersByReviewerId(userId);
+            return Ok(ApiResponse<List<Paper>>.SuccessResponse(result,"Lấy thành công những paper được assigned theo reviewerId"));
+        }
+
+        [HttpGet("get-pending-cameraready")]
+        public async Task<IActionResult> GetPendingCameraReady()
+        {
+            var result = await _serviceManager.PaperService.ListPendingCameraReady();
+            return Ok(ApiResponse<List<CameraReady>>.SuccessResponse(result, "Lấy thành công pending cameraready"));
         }
 
         [HttpGet("get-all-submitted-papers-for-customer")]
@@ -220,7 +235,7 @@ namespace ConfRadar.Api.Controllers
         {
 
             var result = await _serviceManager.PaperService.getPaperDetail(paperId);
-            return Ok(ApiResponse<PaperDetailReponse>.SuccessResponse(result, "Lấy detail paper thành công"));
+            return Ok(ApiResponse<PaperDetailResponseDtoDetail>.SuccessResponse(result, "Lấy detail paper thành công"));
         }
 
         [HttpGet("list-paper-phases")]
@@ -229,6 +244,15 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.GetListPaperPhases();
             return Ok(ApiResponse<List<PaperPhase>>.SuccessResponse(result, "Danh sách các paper phase"));
         }
+
+
+        [HttpGet("get-pending-fullpaper")]
+        public async Task<IActionResult> GetPendingfullpaper()
+        {
+            var result = await _serviceManager.PaperService.ListPendingfullpaper();
+            return Ok(ApiResponse<List<FullPaper>>.SuccessResponse(result, "Lấy thành công pending fullpaper"));
+        }
+
         [HttpGet("list-all-papers")]
         public async Task<IActionResult> GetListAllPaper()
         {
@@ -251,6 +275,8 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper chưa được phân reviewer"));
         }
 
+
+       
 
     }
 }

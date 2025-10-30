@@ -9,5 +9,6 @@ namespace ConfRadar.Repositories.Repositories
         Task<bool> DeleteRevisionPaperAsync(RevisionPaper revisionPaper);
         Task<RevisionPaper?> GetRevisionPaperByIdAsync(string revisionPaperId);
         Task<List<RevisionPaper>> GetAllRevisionPapersAsync();
+        Task<RevisionPaper> GetDetailRevisionPaper(string revisionPaperId);
     }
 }
