@@ -77,4 +77,6 @@ namespace ConfRadar.Services.DTOs.Paper
 
 
 
+   
+
 }

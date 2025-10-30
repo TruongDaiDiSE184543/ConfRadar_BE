@@ -1,7 +1,7 @@
 ﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
-using ConfRadar.Repositories.DTO.Abstract;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Shared.DTO.Abstract;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories

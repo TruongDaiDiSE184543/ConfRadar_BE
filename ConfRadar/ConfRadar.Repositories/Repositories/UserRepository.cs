@@ -1,7 +1,7 @@
 ﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
-using ConfRadar.Repositories.DTO.User;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Shared.DTO.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
@@ -23,7 +23,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<User>> GetListUser();
         Task<List<User>> GetReviewerList(string localReviewerRoleId);
 
-        Task<List<AvailableCustomerResponse>> GetAvailalbeCustomer();
+        Task<List<AvailableCustomerResponse>> GetAvailableCustomer();
 
 
 
@@ -39,7 +39,7 @@ namespace ConfRadar.Repositories.Repositories
             return await CreateAsync(user);
         }
 
-        public async Task<List<AvailableCustomerResponse>> GetAvailalbeCustomer()
+        public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
         {
             var listCustomer = await (from u in _context.Users
                                       where !_context.PaperReviewers.Any(pr => pr.UserId == u.UserId) && u.IsActive ==true && u.IsEmailConfirmed == true
