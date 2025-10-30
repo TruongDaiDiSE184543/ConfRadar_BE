@@ -186,12 +186,15 @@ namespace ConfRadar.Repositories.Repositories
                     foreach (var rs in revisionSubmissions)
                     {
                         rs.RevisionSubmissionFeedbacks = await _context.RevisionSubmissionFeedbacks
+                            .Include(fb=>fb.User)
                             .Where(fb => fb.RevisionPaperSubmissionId == rs.RevisionPaperSubmissionId)
                             .OrderBy(fb => fb.SortOrder)
                             .Select(fb => new RevisionPaperSubmissionFeedBackForReviewerResponse
                             {
                                 RevisionSubmissionFeedbackId = fb.RevisionSubmissionFeedbackId,
-                                PresenterId = fb.UserId,
+                                UserId = fb.UserId,
+                                FullName = fb.User != null ? fb.User.FullName : null,
+                                AvatarUrl = fb.User!=null ? fb.User.AvatarUrl : null,
                                 Feedback = fb.Feedback,
                                 Response = fb.Response,
                                 SortOrder = fb.SortOrder,
