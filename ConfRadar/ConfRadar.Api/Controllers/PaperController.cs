@@ -235,7 +235,7 @@ namespace ConfRadar.Api.Controllers
         {
 
             var result = await _serviceManager.PaperService.getPaperDetail(paperId);
-            return Ok(ApiResponse<PaperDetailResponseDto>.SuccessResponse(result, "Lấy detail paper thành công"));
+            return Ok(ApiResponse<PaperDetailResponseDtoDetail>.SuccessResponse(result, "Lấy detail paper thành công"));
         }
 
         [HttpGet("list-paper-phases")]
@@ -245,12 +245,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<PaperPhase>>.SuccessResponse(result, "Danh sách các paper phase"));
         }
 
+
         [HttpGet("get-pending-fullpaper")]
         public async Task<IActionResult> GetPendingfullpaper()
         {
             var result = await _serviceManager.PaperService.ListPendingfullpaper();
             return Ok(ApiResponse<List<FullPaper>>.SuccessResponse(result, "Lấy thành công pending fullpaper"));
         }
+
         [HttpGet("list-all-papers")]
         public async Task<IActionResult> GetListAllPaper()
         {
@@ -258,5 +260,6 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<PaperDetailResponseDTO>>.SuccessResponse(result, "Danh sách các paper"));
         }
        
+
     }
 }
