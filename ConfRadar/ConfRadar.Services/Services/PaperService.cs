@@ -57,8 +57,8 @@ namespace ConfRadar.Services.Services
 
         Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases();
         Task<List<Paper>> GetAssignedPapersByReviewerId(string userId);
-        Task<List<CameraReady>> ListPendingCameraReady();
-        Task<List<FullPaper>> ListPendingfullpaper();
+        Task<List<CameraReadyDtoDetail>> ListPendingCameraReady();
+        Task<List<FullPaperDto>> ListPendingfullpaper();
 
 
         Task<List<PaperDetailResponseDTO>> GetListAllPaper();
@@ -1430,18 +1430,40 @@ namespace ConfRadar.Services.Services
             return AssignedPapers;
         }
 
-        public async Task<List<CameraReady>> ListPendingCameraReady()
+        public async Task<List<CameraReadyDtoDetail>> ListPendingCameraReady()
         {
             var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             List<CameraReady> pendingCameraready = await _unitOfWork.CameraReadyRepository.GetCameraBystatusName(pendingStatus!.Name!);
-            return pendingCameraready;
+            List<CameraReadyDtoDetail> result = new List<CameraReadyDtoDetail>();
+            foreach (CameraReady c in pendingCameraready)
+            {
+                CameraReadyDtoDetail responseDTO = new CameraReadyDtoDetail
+                {
+                    CameraReadyId = c?.CameraReadyId,
+                    FileUrl = c?.CameraReadyUrl,
+                    Status = c?.GlobalStatus.Name
+                };
+                result.Add(responseDTO);
+            }
+            return result;
         }
 
-        public async Task<List<FullPaper>> ListPendingfullpaper()
+        public async Task<List<FullPaperDto>> ListPendingfullpaper()
         {
             var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
             List<FullPaper> pendingFullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByStatusName(pendingStatus!.Name!);
-            return pendingFullPaper;
+            List<FullPaperDto> result = new List<FullPaperDto>();
+            foreach(FullPaper fp in pendingFullPaper)
+            {
+                FullPaperDto fullPaperDto = new FullPaperDto
+                {
+                    FullPaperId = fp?.FullPaperId,
+                    FileUrl = fp?.FullPaperUrl,
+                    ReviewStatus = fp?.ReviewStatus.Name,
+                };
+                result.Add(fullPaperDto);
+            }
+            return result;
         }
         public async Task<List<PaperDetailResponseDTO>> GetListAllPaper()
         {
