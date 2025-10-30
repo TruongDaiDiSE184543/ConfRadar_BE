@@ -430,10 +430,11 @@ namespace ConfRadar.Services.Services
                     default:
                         throw new BadRequestException("Trạng thái không khả dụng");
                 }
-                result += await _unitOfWork.FullPaperRepository.UpdateFullPaperAsync(fullPaper);
-                result += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+                result  += await _unitOfWork.FullPaperRepository.UpdateFullPaperAsync(fullPaper);
+                result +=  await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+                _unitOfWork.CommitAsync();
 
-                await _unitOfWork.CommitAsync();
+                //await _unitOfWork.CommitAsync();
             }
             catch(Exception ex)
             {
@@ -579,7 +580,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy revision paper submission id {request.RevisionPaperSubmissionId} trong hệ thống");
             }
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(request.PaperId, userId);
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId,request.PaperId);
             if (paperReviewer == null)
             {
                 throw new NotFoundException($"Không tìm thấy user với id {userId} trong hệ thống assign cho bài báo {request.PaperId}");
@@ -652,7 +653,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không thể gửi review vì paper đang không trong trạng thái revise");
             }
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(request.PaperId, userId);
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
             if (paperReviewer == null)
             {
                 throw new NotFoundException($"Không tìm bạn với id {userId} được chấm bài {request.PaperId} trong hệ thống");
@@ -738,7 +739,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Paper {request.PaperId} không thuộc revision paper {request.RevisionPaperId}");
             }
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(request.PaperId, userId);
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
             if (paperReviewer == null )
             {
                 throw new NotFoundException($"Bạn không có quyền hạn để quyết định bài báo này");
@@ -786,7 +787,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy  paper {request.PaperId} trong hệ thống");
             }
             
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(request.PaperId, userId);
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
             if (paperReviewer == null)
             {
                 throw new NotFoundException($"Bạn không có quyền hạn để truy cập bài báo này");
@@ -944,7 +945,7 @@ namespace ConfRadar.Services.Services
             }
 
             // Validate that the user is a head reviewer of the paper
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(paper.PaperId, userId);
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId,paper.PaperId);
             if (paperReviewer == null)
             {
                 throw new BadRequestException("You are not a reviewer of this paper.");
@@ -1205,7 +1206,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Paper associated with camera ready ID {request.CameraReadyId} does not exist.");
             }
 
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(paper.PaperId, userId);
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paper.PaperId);
             if (paperReviewer == null)
             {
                 throw new BadRequestException("You are not assigned as a reviewer to this paper.");
