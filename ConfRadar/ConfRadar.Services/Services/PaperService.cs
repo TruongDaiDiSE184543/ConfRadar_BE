@@ -1014,7 +1014,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Paper associated with full paper ID {request.FullPaperId} does not exist.");
             }
 
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(paper.PaperId, userId);
+            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId,paper.PaperId);
             if (paperReviewer == null)
             {
                 throw new BadRequestException("You are not assigned as a reviewer to this paper.");
@@ -1054,6 +1054,7 @@ namespace ConfRadar.Services.Services
                 var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.feedbackmaterial.ToString(), uniqueFileName, stream, request.FeedbackMaterialFile.ContentType);
                 feedbackMaterialUrl = baseUri + objectStorageFileUrl;
             }
+            var decideStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(request.reviewStatus.GetDescription());
 
             // Create the full paper review
             var fullPaperReview = new FullPaperReview
@@ -1061,11 +1062,11 @@ namespace ConfRadar.Services.Services
                 FullPaperReviewId = Guid.NewGuid().ToString(),
                 FullPaperId = request.FullPaperId,
                 ReviewerId = userId,
-                ReviewStatusId = pendingReviewStatus.ReviewStatusId,
+                ReviewStatusId = decideStatus.ReviewStatusId,
                 Note = request.Note,
                 FeedbackToAuthor = request.FeedbackToAuthor,
                 FeedbackMaterialUrl = feedbackMaterialUrl,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow,DateTimeKind.Unspecified),
             };
 
             await _unitOfWork.FullPaperReviewRepository.CreateFullPaperReviewAsync(fullPaperReview);

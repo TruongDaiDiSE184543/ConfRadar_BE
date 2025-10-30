@@ -18,8 +18,8 @@ namespace ConfRadar.Services.DTOs.FullPaperReview
         public string FeedbackToAuthor { get; set; }
 
         [Required(ErrorMessage = "GlobalStatus is required")]
-        [EnumDataType(typeof(GlobalStatusEnum), ErrorMessage = "Global status is required")]
-        public GlobalStatusEnum GlobalStatus { get; set; }
+        [EnumDataType(typeof(ReviewStatusEnum), ErrorMessage = "Review status is required")]
+        public ReviewStatusEnum reviewStatus { get; set; }
     }
 
     public class UpdateFullPaperReviewStatusRequest
