@@ -196,7 +196,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.DecideCameraReadyStatus(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Camera ready status decided successfully"));
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã update status của camera ready thành công"));
         }
 
         //[HttpGet("get-assigned-papers-by-conferenceId")]
@@ -219,7 +219,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetPendingCameraReady()
         {
             var result = await _serviceManager.PaperService.ListPendingCameraReady();
-            return Ok(ApiResponse<List<CameraReady>>.SuccessResponse(result, "Lấy thành công pending cameraready"));
+            return Ok(ApiResponse<List<CameraReadyDtoDetail>>.SuccessResponse(result, "Lấy thành công pending cameraready"));
         }
 
         [HttpGet("get-all-submitted-papers-for-customer")]
@@ -250,7 +250,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetPendingfullpaper()
         {
             var result = await _serviceManager.PaperService.ListPendingfullpaper();
-            return Ok(ApiResponse<List<FullPaper>>.SuccessResponse(result, "Lấy thành công pending fullpaper"));
+            return Ok(ApiResponse<List<FullPaperDto>>.SuccessResponse(result, "Lấy thành công pending fullpaper"));
         }
 
         [HttpGet("list-all-papers")]
