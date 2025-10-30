@@ -1,10 +1,10 @@
 ﻿using ConfRadar.Repositories;
-using ConfRadar.Repositories.DTO.User;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using ConfRadar.Shared.DTO.User;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
 using System.Data;
@@ -506,7 +506,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
         {
-            return await _unitOfWork.UserRepository.GetAvailalbeCustomer();
+            return await _unitOfWork.UserRepository.GetAvailableCustomer();
         }
 
         public async Task<List<ReviewerDetailResponse>> ListAllReviewer()

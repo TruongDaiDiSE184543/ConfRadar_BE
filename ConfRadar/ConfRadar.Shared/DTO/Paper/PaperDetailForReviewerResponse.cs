@@ -1,0 +1,65 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConfRadar.Shared.DTO.Paper
+{
+    public class PaperDetailForReviewerResponse
+    {
+        public bool IsHeadReviewer { get; set; }
+        public FullPaperDetailForReviewerResponse FullPaper { get; set; }
+        public RevisonPaperForReviewerResponse RevisionPaper { get; set; }
+
+    }
+    public class FullPaperDetailForReviewerResponse()
+    {
+        public string? FullPaperId { get; set; } = null!;
+        public string? ReviewStatusId { get; set; }
+        public string? ReviewStatusName { get; set; }
+        public string? FullPaperUrl { get; set; }
+    }
+    public class RevisonPaperForReviewerResponse()
+    {
+        public string RevisionPaperId { get; set; } = null!;
+
+        public int? RevisionRound { get; set; }
+        public string? GlobalStatusId { get; set; }
+        public string? GlobalStatusName { get; set; }
+
+        public List<RevisionPaperSubmissionForReviewerResponse> RevisionPaperSubmissions { get; set; }
+    }
+    public class RevisionPaperSubmissionForReviewerResponse
+    {
+        public string RevisionPaperSubmissionId { get; set; } = null!;
+
+        public string? RevisionPaperUrl { get; set; }
+
+        public string? RevisionPaperId { get; set; }
+
+        public string? RevisionDeadlineRoundId { get; set; }
+        public DateOnly? EndDate { get; set; }
+
+        public int? RoundNumber { get; set; }
+
+        public List<RevisionPaperSubmissionFeedBackForReviewerResponse> RevisionSubmissionFeedbacks { get; set; } 
+    }
+    public class RevisionPaperSubmissionFeedBackForReviewerResponse
+    {
+        public string RevisionSubmissionFeedbackId { get; set; } = null!;
+
+        public string? PresenterId { get; set; }
+
+        public string? Feedback { get; set; }
+
+        public string? Response { get; set; }
+
+        public int? SortOrder { get; set; }
+
+        public DateTime? CreatedAt { get; set; }
+
+
+
+    }
+}

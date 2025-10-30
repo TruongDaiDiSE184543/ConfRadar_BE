@@ -1,20 +1,20 @@
 ﻿using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Abstract;
 using ConfRadar.Services.DTOs.FullPaper;
-using ConfRadar.Services.DTOs.RevisionPaper;
-using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.DTOs.FullPaperReview;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using ConfRadar.Repositories.Models;
+using ConfRadar.Services.DTOs.Paper;
+using ConfRadar.Services.DTOs.RevisionPaper;
 using ConfRadar.Services.Mappers;
+using ConfRadar.Shared.DTO.Abstract;
+using ConfRadar.Shared.DTO.Paper;
+using ConfRadar.Shared.DTO.User;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-using ConfRadar.Repositories.DTO.Abstract;
-using ConfRadar.Repositories.DTO.User;
-using ConfRadar.Repositories.Models;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -259,6 +259,23 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.GetListAllPaper();
             return Ok(ApiResponse<List<PaperDetailResponseDTO>>.SuccessResponse(result, "Danh sách các paper"));
         }
+
+        [HttpGet("list-unassign-abstract")]
+        public async Task<IActionResult> GetUnassignAbstractList()
+        {
+            var result = await _serviceManager.PaperService.GetUnassignAbstractList();
+            return Ok(ApiResponse<List<UnAssignAbstractResponse>>.SuccessResponse(result, "Danh sách các paper chưa được phân reviewer"));
+        }
+        [Authorize]
+        [HttpGet("paper-detail-for-reviewer")]
+        public async Task<IActionResult> GetPaperDetailForReviewer(string paperId)
+       {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.GetPaperDetailForReviewer(paperId,userId);
+            return Ok(ApiResponse<PaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper chưa được phân reviewer"));
+        }
+
+
        
 
     }

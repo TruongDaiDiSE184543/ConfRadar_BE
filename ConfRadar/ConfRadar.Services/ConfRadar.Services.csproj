@@ -39,6 +39,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ConfRadar.Repositories\ConfRadar.Repositories.csproj" />
+    <ProjectReference Include="..\ConfRadar.Shared\ConfRadar.Shared.csproj" />
   </ItemGroup>
 
 </Project>

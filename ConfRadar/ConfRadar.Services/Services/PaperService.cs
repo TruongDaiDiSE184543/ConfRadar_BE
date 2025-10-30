@@ -1,5 +1,4 @@
 ﻿using ConfRadar.Repositories;
-using ConfRadar.Repositories.DTO.Abstract;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
@@ -9,6 +8,8 @@ using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.DTOs.RevisionPaper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using ConfRadar.Shared.DTO.Abstract;
+using ConfRadar.Shared.DTO.Paper;
 using Microsoft.Extensions.Options;
 using static ConfRadar.Services.Common.AppSettingConfig;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -61,6 +62,8 @@ namespace ConfRadar.Services.Services
 
 
         Task<List<PaperDetailResponseDTO>> GetListAllPaper();
+        Task<List<UnAssignAbstractResponse>> GetUnassignAbstractList();
+        Task<PaperDetailForReviewerResponse> GetPaperDetailForReviewer(string paperId,string userId);
 
 
     }
@@ -580,6 +583,11 @@ namespace ConfRadar.Services.Services
             if (paperReviewer == null)
             {
                 throw new NotFoundException($"Không tìm thấy user với id {userId} trong hệ thống assign cho bài báo {request.PaperId}");
+            }
+            if (paperReviewer.IsHeadReviewer == false)
+            {
+                throw new NotFoundException($"Chức năng này chỉ dành cho head reviewer.");
+
             }
             var feedBackList = new List<RevisionSubmissionFeedback>();
             foreach(var feedback in request.Feedbacks)
@@ -1496,6 +1504,25 @@ namespace ConfRadar.Services.Services
             }
             return result;
 
+        }
+
+        public async Task<List<UnAssignAbstractResponse>> GetUnassignAbstractList()
+        {
+           var unassignAbstract = await _unitOfWork.PaperRepository.GetUnAssignAbstract();
+            return unassignAbstract;
+
+        }
+
+        public async Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
+        {
+            var paperReviewerCheck = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paperId);
+            if (paperReviewerCheck == null)
+            {
+                throw new BadRequestException("Bạn không có quyền hạn để xem paper này");
+
+            }
+            var result = await _unitOfWork.PaperRepository.GetPaperDetailForReviewer(paperId, userId);
+            return result;
         }
     }
 }

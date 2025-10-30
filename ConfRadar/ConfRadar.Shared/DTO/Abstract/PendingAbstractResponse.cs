@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConfRadar.Repositories.DTO.Abstract
+namespace ConfRadar.Shared.DTO.Abstract
 {
     public class PendingAbstractResponse
     {

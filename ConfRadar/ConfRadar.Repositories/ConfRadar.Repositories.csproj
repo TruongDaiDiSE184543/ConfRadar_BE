@@ -25,4 +25,8 @@
     <Folder Include="Models\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ConfRadar.Shared\ConfRadar.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
