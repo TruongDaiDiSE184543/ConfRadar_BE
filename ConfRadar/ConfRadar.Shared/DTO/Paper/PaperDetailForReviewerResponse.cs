@@ -49,8 +49,9 @@ namespace ConfRadar.Shared.DTO.Paper
     {
         public string RevisionSubmissionFeedbackId { get; set; } = null!;
 
-        public string? PresenterId { get; set; }
-
+        public string? UserId { get; set; }
+        public string? FullName { get; set; }
+        public string? AvatarUrl { get; set; }
         public string? Feedback { get; set; }
 
         public string? Response { get; set; }
