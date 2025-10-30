@@ -269,10 +269,10 @@ namespace ConfRadar.Api.Controllers
         [Authorize]
         [HttpGet("paper-detail-for-reviewer")]
         public async Task<IActionResult> GetPaperDetailForReviewer(string paperId)
-       {
+        {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.GetPaperDetailForReviewer(paperId,userId);
-            return Ok(ApiResponse<PaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper chưa được phân reviewer"));
+            return Ok(ApiResponse<PaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper"));
         }
 
 
