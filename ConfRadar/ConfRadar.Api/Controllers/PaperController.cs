@@ -250,7 +250,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetPendingfullpaper()
         {
             var result = await _serviceManager.PaperService.ListPendingfullpaper();
-            return Ok(ApiResponse<List<FullPaperDto>>.SuccessResponse(result, "Lấy thành công pending fullpaper"));
+            return Ok(ApiResponse<List<FullPaperDtoDetail>>.SuccessResponse(result, "Lấy thành công pending fullpaper"));
         }
 
         [HttpGet("list-all-papers")]

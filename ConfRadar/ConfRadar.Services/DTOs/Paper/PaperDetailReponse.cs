@@ -46,6 +46,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string FullPaperId { get; set; }
         public string FileUrl { get; set; }
         public string ReviewStatus { get; set; } // The name of the ReviewStatus, e.g., "Under Review"
+        public string RootPaperId { get; set; }
     }
 
     /// <summary>
@@ -56,6 +57,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string CameraReadyId { get; set; }
         public string FileUrl { get; set; }
         public string Status { get; set; } // The name of the GlobalStatus
+        public string RootPaperId { get; set; }
     }
 
     /// <summary>
