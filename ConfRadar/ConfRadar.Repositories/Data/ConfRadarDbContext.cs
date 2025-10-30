@@ -574,7 +574,8 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 
         modelBuilder.Entity<PaperReviewer>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => new { e.UserId, e.PaperId });
+            //entity.HasNoKey();
 
             entity.Property(e => e.PaperId).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);

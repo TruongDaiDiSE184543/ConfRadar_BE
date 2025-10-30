@@ -3,6 +3,7 @@ using System;
 using ConfRadar.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ConfRadar.Repositories.Migrations
 {
     [DbContext(typeof(ConfRadarDbContext))]
-    partial class ConfRadarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251030113350_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -734,20 +737,20 @@ namespace ConfRadar.Repositories.Migrations
 
             modelBuilder.Entity("ConfRadar.Repositories.Models.PaperReviewer", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<bool?>("IsHeadReviewer")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PaperId")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<bool?>("IsHeadReviewer")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("UserId", "PaperId");
+                    b.Property<string>("UserId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasIndex("PaperId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("PaperReviewers");
                 });
@@ -2123,15 +2126,11 @@ namespace ConfRadar.Repositories.Migrations
                     b.HasOne("ConfRadar.Repositories.Models.Paper", "Paper")
                         .WithMany()
                         .HasForeignKey("PaperId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("FK_PaperReviewers_PaperId");
 
                     b.HasOne("ConfRadar.Repositories.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("FK_PaperReviewers_UserId");
 
                     b.Navigation("Paper");

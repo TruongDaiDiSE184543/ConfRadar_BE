@@ -5,7 +5,7 @@
 namespace ConfRadar.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class ChangeTimestampsToTimezoneAware : Migration
+    public partial class AddPrimaryKeyToPaperReviewer : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

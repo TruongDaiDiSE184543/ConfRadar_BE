@@ -28,15 +28,15 @@ using (var scope = app.Services.CreateScope())
     //await seedDataService.SeedConferenceStatusesAsync();
     //await seedDataService.SeedPaperPhasesAsync();
     //await seedDataService.SeedCheckInStatusAsync(); 
-    await seedDataService.SeedRolesAsync();
-    await seedDataService.SeedGlobalStatusesAsync();
-    //await seedDataService.SeedTransactionStatusAsync();
-    await seedDataService.SeedPaymentMethodsAsync();
-    //await seedDataService.SeedTransactionTypeAsync();
-    await seedDataService.SeedConferenceStatusesAsync();
-    await seedDataService.SeedPaperPhasesAsync();
-    await seedDataService.SeedCheckInStatusAsync();
-    await seedDataService.SeedReviewStatusesAsync();
+    //await seedDataService.SeedRolesAsync();
+    //await seedDataService.SeedGlobalStatusesAsync();
+    ////await seedDataService.SeedTransactionStatusAsync();
+    //await seedDataService.SeedPaymentMethodsAsync();
+    ////await seedDataService.SeedTransactionTypeAsync();
+    //await seedDataService.SeedConferenceStatusesAsync();
+    //await seedDataService.SeedPaperPhasesAsync();
+    //await seedDataService.SeedCheckInStatusAsync();
+    //await seedDataService.SeedReviewStatusesAsync();
 }
 app.UseCors("AllowAll");
 app.UseSwagger();
