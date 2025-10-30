@@ -8,20 +8,21 @@ namespace ConfRadar.Services.DTOs.Paper
     /// The main response object containing the complete detail of a paper.
     /// This is the top-level DTO that your API endpoint will return.
     /// </summary>
-    public class PaperDetailResponseDto
+    public class PaperDetailResponseDtoDetail
     {
         public string PaperId { get; set; }
-        public PaperPhaseDto? CurrentPhase { get; set; }
-        public AbstractDto? Abstract { get; set; }
-        public FullPaperDto? FullPaper { get; set; }
-        public RevisionPaperDto? RevisionPaper { get; set; }
-        public CameraReadyDto? CameraReady { get; set; }
+        public PaperPhaseDtoDetail? CurrentPhase { get; set; }
+        public AbstractDtoDetail? Abstract { get; set; }
+        public FullPaperDtoDetail? FullPaper { get; set; }
+        public RevisionPaperDtoDetail? RevisionPaper { get; set; }
+        public CameraReadyDtoDetail? CameraReady { get; set; }
     }
+
 
     /// <summary>
     /// Represents the current phase of the paper submission process.
     /// </summary>
-    public class PaperPhaseDto
+    public class PaperPhaseDtoDetail
     {
         public string PaperPhaseId { get; set; }
         public string PhaseName { get; set; }
@@ -30,7 +31,7 @@ namespace ConfRadar.Services.DTOs.Paper
     /// <summary>
     /// Represents the details of the submitted abstract.
     /// </summary>
-    public class AbstractDto
+    public class AbstractDtoDetail
     {
         public string AbstractId { get; set; }
         public string FileUrl { get; set; } // Assuming a 'Content' property exists on the entity
@@ -40,7 +41,7 @@ namespace ConfRadar.Services.DTOs.Paper
     /// <summary>
     /// Represents the details of the submitted full paper.
     /// </summary>
-    public class FullPaperDto
+    public class FullPaperDtoDetail
     {
         public string FullPaperId { get; set; }
         public string FileUrl { get; set; }
@@ -50,7 +51,7 @@ namespace ConfRadar.Services.DTOs.Paper
     /// <summary>
     /// Represents the details of the camera-ready version of the paper.
     /// </summary>
-    public class CameraReadyDto
+    public class CameraReadyDtoDetail
     {
         public string CameraReadyId { get; set; }
         public string FileUrl { get; set; }
@@ -60,30 +61,30 @@ namespace ConfRadar.Services.DTOs.Paper
     /// <summary>
     /// Contains all information related to the revision process of a paper.
     /// </summary>
-    public class RevisionPaperDto
+    public class RevisionPaperDtoDetail
     {
         public string RevisionPaperId { get; set; }
         public int? RevisionRound {  get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
-        public List<RevisionSubmissionDto> Submissions { get; set; } = new List<RevisionSubmissionDto>();
-        public List<RevisionReviewDto> Reviews { get; set; } = new List<RevisionReviewDto>();
+        public List<RevisionSubmissionDtoDetail> Submissions { get; set; } = new List<RevisionSubmissionDtoDetail>();
+        public List<RevisionReviewDtoDetail> Reviews { get; set; } = new List<RevisionReviewDtoDetail>();
     }
 
     /// <summary>
     /// Represents a single submission within a revision round.
     /// </summary>
-    public class RevisionSubmissionDto
+    public class RevisionSubmissionDtoDetail
     {
         public string SubmissionId { get; set; }
         public string FileUrl { get; set; }
-        public RevisionDeadline revisionDeadline { get; set; }
-        public List<FeedbackDto> Feedbacks { get; set; } = new List<FeedbackDto>();
+        public RevisionDeadlineDetail revisionDeadline { get; set; }
+        public List<FeedbackDtoDetail> Feedbacks { get; set; } = new List<FeedbackDtoDetail>();
     }
 
     /// <summary>
     /// Represents a review provided for a revision.
     /// </summary>
-    public class RevisionReviewDto
+    public class RevisionReviewDtoDetail
     {
         public string ReviewId { get; set; }
         public string Note { get; set; }
@@ -95,7 +96,7 @@ namespace ConfRadar.Services.DTOs.Paper
     /// <summary>
     /// Represents feedback on a specific revision submission.
     /// </summary>
-    public class FeedbackDto
+    public class FeedbackDtoDetail
     {
         public string FeedbackId { get; set; }
         public string FeedBack { get; set; }
@@ -103,9 +104,72 @@ namespace ConfRadar.Services.DTOs.Paper
         public int Order {  get; set; }
         public DateTime CreatedAt { get; set; }
     }
-    public class RevisionDeadline
+    public class RevisionDeadlineDetail
     {
         public int? RoundNumher { get; set; } // e.g., "Revision Round 1"
         public DateOnly? Deadline { get; set; }
     }
+
+
+    public class PaperDetailResponseDTO
+    {
+        public string PaperId { get; set; }
+        public PaperPhaseResponseDTO currentPhase { get; set; }
+        public AbstractResponseDTO? Abstract { get; set; }
+        public FullPaperResponseDTO? FullPaper { get; set; }
+        public RevisionPaperResponseDTO? RevisionPaper { get; set; }
+        public CameraReadyResponseDTO? CameraReady { get; set; }
+    }
+
+    public class PaperPhaseResponseDTO
+    {
+        public string PaperPhaseId { get; set; } = null!;
+
+        public string? PhaseName { get; set; }
+
+    }
+    public class AbstractResponseDTO
+    {
+        public string AbstractId { get; set; } = null!;
+
+        public string? GlobalStatusId { get; set; }
+        public string GlobalStatusName { get; set; }
+        public string? AbstractUrl { get; set; }
+
+    }
+    public class FullPaperResponseDTO
+    {
+        public string FullPaperId { get; set; } = null!;
+
+        public string? ReviewStatusId { get; set; }
+        public string? ReviewStatusName { get; set; }
+
+        public string? FullPaperUrl { get; set; }
+
+
+    }
+    public class RevisionPaperResponseDTO
+    {
+        public string RevisionPaperId { get; set; } = null!;
+
+        public int? RevisionRound { get; set; }
+
+        public string? GlobalStatusId { get; set; }
+        public string? GlobalStatusName { get; set; }
+
+
+    }
+    public class CameraReadyResponseDTO
+    {
+        public string CameraReadyId { get; set; } = null!;
+
+        public string? GlobalStatusId { get; set; }
+        public string? GlobalStatusName { get; set; }
+        public string? CameraReadyUrl { get; set; }
+
+    }
+
+
+
 }
+

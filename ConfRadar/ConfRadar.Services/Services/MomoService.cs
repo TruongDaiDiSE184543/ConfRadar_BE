@@ -5,6 +5,7 @@ using ConfRadar.Services.DTOs.Abstract;
 using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.Exceptions;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Data;
 using System.Text;
 using System.Text.Json;
@@ -393,12 +394,20 @@ namespace ConfRadar.Services.Services
                 CreatedAt = ExtensionHelper.GetVietnamTime(),
                 PaperPhaseId = currentPaperPhase.PaperPhaseId,
             };
-           
+            var presenterPaperAuthor = new PaperAuthor()
+            {
+                IsPresenter = true,
+                UserId = transacDataHolder.UserId,
+                PaperId = paperObj.PaperId
+                
+            };
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-              
+                
                 await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
+                await _unitOfWork.PaperAuthorRepository.CreatePaperAuthorAsync(presenterPaperAuthor);
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
                
                 await _unitOfWork.CommitAsync(); 

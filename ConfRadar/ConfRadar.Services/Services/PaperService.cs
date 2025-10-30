@@ -50,7 +50,7 @@ namespace ConfRadar.Services.Services
        
         Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);
         Task <List<Paper>> GetSubmittedPaper(string userId);
-        Task<PaperDetailResponseDto> getPaperDetail(string paperId);
+        Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId);
 
 
 
@@ -58,6 +58,11 @@ namespace ConfRadar.Services.Services
         Task<List<Paper>> GetAssignedPapersByReviewerId(string userId);
         Task<List<CameraReady>> ListPendingCameraReady();
         Task<List<FullPaper>> ListPendingfullpaper();
+
+
+        Task<List<PaperDetailResponseDTO>> GetListAllPaper();
+
+
     }
     public class PaperService : IPaperService
     {
@@ -160,13 +165,8 @@ namespace ConfRadar.Services.Services
                 };
                 paperAuthorList.Add(paperAuthorObj);
             }
-            var presenterPaperAuthor = new PaperAuthor()
-            {
-                IsPresenter = true,
-                UserId = userId,
-                PaperId = request.PaperId
-            };
-            paperAuthorList.Add(presenterPaperAuthor);
+            
+            
 
             int finalResult;
             await _unitOfWork.BeginTransactionAsync();
@@ -174,7 +174,11 @@ namespace ConfRadar.Services.Services
             {
                 var result1 = await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
                 var result2 =  await _unitOfWork.AbstractRepository.CreateAbstractAsync(abstractObj);
-                var result3 = await _unitOfWork.PaperAuthorRepository.CreateMutiplePaperAuthorAsync(paperAuthorList);
+                var result3 = 0;
+                if (paperAuthorList.Count > 0)
+                {
+                    result3 = await _unitOfWork.PaperAuthorRepository.CreateMutiplePaperAuthorAsync(paperAuthorList);
+                }
                 finalResult = result1 + result2 + result3;
                 await _unitOfWork.CommitAsync();
             }
@@ -463,6 +467,31 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Bạn không có quyền nộp revision cho bài báo này");
             }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            string revisionDeadlineId = string.Empty; 
+            var researchConferencePhasesFound = paper.Conference.ResearchConferencePhases;
+            foreach(var phase in researchConferencePhasesFound)
+            {
+                if (phase.ReviseStartDate != null && phase.ReviseEndDate != null && dateNow >= phase.ReviseStartDate && dateNow <= phase.ReviseEndDate)
+                {
+                    foreach(var deadline in phase.RevisionRoundDeadlines)
+                    {
+                        if (deadline.EndDate != null && dateNow <= deadline.EndDate)
+                        {
+                            revisionDeadlineId = deadline.RevisionRoundDeadlineId;
+                            break;
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(revisionDeadlineId))
+                    {
+                        break;
+                    }
+                }
+            }
+            if (string.IsNullOrEmpty(revisionDeadlineId))
+            {
+                throw new NotFoundException($"Không thể tìm thấy bất cứ hạn chót revision trong hệ thống vui lòng liên hệ conference organizer để xử lí");
+            }
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -516,7 +545,7 @@ namespace ConfRadar.Services.Services
                 {
                     RevisionPaperSubmissionId = Guid.NewGuid().ToString(),
                     RevisionPaperId = revisionPaper.RevisionPaperId,
-                    RevisionDeadlineRoundId = request.RevisionDeadlineRoundId,
+                    RevisionDeadlineRoundId = revisionDeadlineId,
                     RevisionPaperUrl = revisionFileUrl,
                 };
 
@@ -1233,7 +1262,7 @@ namespace ConfRadar.Services.Services
             return submittedPapers;
         }
 
-        public async Task<PaperDetailResponseDto> getPaperDetail(string paperId)
+        public async Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId)
         {
             // Step 1: Fetch the main Paper entity. This is our starting point.
             // We get Phase and CameraReady here because they are included in the repo method.
@@ -1267,18 +1296,18 @@ namespace ConfRadar.Services.Services
             var revisionPaperEntity = await revisionPaperTask;
 
             // Step 5: Map all the fetched entities into our clean DTO response model.
-            var response = new PaperDetailResponseDto
+            var response = new PaperDetailResponseDtoDetail
             {
                 PaperId = paper.PaperId,
 
                 // Map properties we already have from the initial query
-                CurrentPhase = paper.PaperPhase != null ? new PaperPhaseDto
+                CurrentPhase = paper.PaperPhase != null ? new PaperPhaseDtoDetail
                 {
                     PaperPhaseId = paper.PaperPhase.PaperPhaseId,
                     PhaseName = paper.PaperPhase.PhaseName
                 } : null,
 
-                CameraReady = paper.CameraReady != null ? new CameraReadyDto
+                CameraReady = paper.CameraReady != null ? new CameraReadyDtoDetail
                 {
                     CameraReadyId = paper.CameraReady.CameraReadyId,
                     FileUrl = paper.CameraReady.CameraReadyUrl,
@@ -1286,14 +1315,14 @@ namespace ConfRadar.Services.Services
                 } : null,
 
                 // Map the result from the parallel tasks
-                Abstract = abstractEntity != null ? new AbstractDto
+                Abstract = abstractEntity != null ? new AbstractDtoDetail
                 {
                     AbstractId = abstractEntity.AbstractId,
                     FileUrl = abstractEntity.AbstractUrl,
                     Status = abstractEntity.GlobalStatus?.Name
                 } : null,
 
-                FullPaper = fullPaperEntity != null ? new FullPaperDto
+                FullPaper = fullPaperEntity != null ? new FullPaperDtoDetail
                 {
                     FullPaperId = fullPaperEntity.FullPaperId,
                     FileUrl = fullPaperEntity.FullPaperUrl,
@@ -1309,44 +1338,44 @@ namespace ConfRadar.Services.Services
             return response;
         }
 
-        private RevisionPaperDto MapRevisionToDto(ConfRadar.Repositories.Models.RevisionPaper entity)
+        private RevisionPaperDtoDetail MapRevisionToDto(ConfRadar.Repositories.Models.RevisionPaper entity)
         {
             if (entity == null) return null;
 
-            return new RevisionPaperDto
+            return new RevisionPaperDtoDetail
             {
                 RevisionPaperId = entity.RevisionPaperId,
                 RevisionRound = entity.RevisionRound,
                 OverallStatus = entity.GlobalStatus?.Name,
 
-                Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDto
+                Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
                 {
                     ReviewId = review.RevisionPaperReviewId,
                     Note = review.Note,
                     FeedBackToAuthor = review.FeedbackToAuthor,
                     FeedbackMaterialURL = review.FeedbackMaterialUrl,
                     ReviewedAt = review.CreatedAt ?? default // Use default if nullable
-                }).ToList() ?? new List<RevisionReviewDto>(),
+                }).ToList() ?? new List<RevisionReviewDtoDetail>(),
 
-                Submissions = entity.RevisionPaperSubmissions?.Select(sub => new RevisionSubmissionDto
+                Submissions = entity.RevisionPaperSubmissions?.Select(sub => new RevisionSubmissionDtoDetail
                 {
                     SubmissionId = sub.RevisionPaperSubmissionId,
                     FileUrl = sub.RevisionPaperUrl,
-                    revisionDeadline = sub.RevisionDeadlineRound != null ? new RevisionDeadline
+                    revisionDeadline = sub.RevisionDeadlineRound != null ? new RevisionDeadlineDetail
                     {
                         // You will need to adjust these properties based on your actual RevisionRoundDeadline model
                         RoundNumher = sub.RevisionDeadlineRound.RoundNumber,
                         Deadline = sub.RevisionDeadlineRound.EndDate
                     } : null,
-                    Feedbacks = sub.RevisionSubmissionFeedbacks?.Select(fb => new FeedbackDto
+                    Feedbacks = sub.RevisionSubmissionFeedbacks?.Select(fb => new FeedbackDtoDetail
                     {
                         FeedbackId = fb.RevisionSubmissionFeedbackId,
                         FeedBack = fb.Feedback,
                         Response = fb.Response,
                         Order = fb.SortOrder ?? 0,
                         CreatedAt = fb.CreatedAt ?? default
-                    }).ToList() ?? new List<FeedbackDto>()
-                }).ToList() ?? new List<RevisionSubmissionDto>()
+                    }).ToList() ?? new List<FeedbackDtoDetail>()
+                }).ToList() ?? new List<RevisionSubmissionDtoDetail>()
             };
         }
 
@@ -1366,6 +1395,7 @@ namespace ConfRadar.Services.Services
         {
            return await _unitOfWork.PaperPhaseRepository.GetAllPaperPhasesAsync();
         }
+
 
         public async Task<List<Paper>> GetAssignedPapersByReviewerId(string userId)
         {
@@ -1392,6 +1422,80 @@ namespace ConfRadar.Services.Services
             var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
             List<FullPaper> pendingFullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByStatusName(pendingStatus!.Name!);
             return pendingFullPaper;
+        }
+        public async Task<List<PaperDetailResponseDTO>> GetListAllPaper()
+        {
+            var papers = await _unitOfWork.PaperRepository.GetAllPapersAsync();
+            var result = new List<PaperDetailResponseDTO>();
+
+            foreach (var p in papers)
+            {
+                Abstract abstractEntity = null;
+                if (p.AbstractId != null)
+                {
+                    abstractEntity = await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(p.AbstractId);
+                }
+
+                FullPaper fullPaperEntity = null;
+                if (p.FullPaperId != null)
+                {
+                    fullPaperEntity = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(p.FullPaperId);
+                }
+
+                RevisionPaper revisionEntity = null;
+                if (p.RevisionPaperId != null)
+                {
+                    revisionEntity = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(p.RevisionPaperId);
+                }
+
+                CameraReady cameraReadyEntity = null;
+                if (p.CameraReadyId != null)
+                {
+                    cameraReadyEntity = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(p.CameraReadyId);
+                }
+
+                var paperDto = new PaperDetailResponseDTO
+                {
+                    PaperId = p.PaperId,
+                    currentPhase = new PaperPhaseResponseDTO
+                    {
+                        PaperPhaseId = p.PaperPhase?.PaperPhaseId ?? "",
+                        PhaseName = p.PaperPhase?.PhaseName
+                    },
+                    Abstract = abstractEntity != null ? new AbstractResponseDTO
+                    {
+                        AbstractId = abstractEntity.AbstractId,
+                        GlobalStatusId = abstractEntity.GlobalStatusId,
+                        GlobalStatusName = abstractEntity.GlobalStatus?.Name,
+                        AbstractUrl = abstractEntity.AbstractUrl
+                    } : null,
+                    FullPaper = fullPaperEntity != null ? new FullPaperResponseDTO
+                    {
+                        FullPaperId = fullPaperEntity.FullPaperId,
+                        ReviewStatusId = fullPaperEntity.ReviewStatusId,
+                        ReviewStatusName = fullPaperEntity.ReviewStatus?.Name,
+                        FullPaperUrl = fullPaperEntity.FullPaperUrl
+                    } : null,
+                    RevisionPaper = revisionEntity != null ? new RevisionPaperResponseDTO
+                    {
+                        RevisionPaperId = revisionEntity.RevisionPaperId,
+                        RevisionRound = revisionEntity.RevisionRound,
+                        GlobalStatusId = revisionEntity.GlobalStatusId,
+                        GlobalStatusName = revisionEntity.GlobalStatus?.Name
+                    } : null,
+                    CameraReady = cameraReadyEntity != null ? new CameraReadyResponseDTO
+                    {
+                        CameraReadyId = cameraReadyEntity.CameraReadyId,
+                        GlobalStatusId = cameraReadyEntity.GlobalStatusId,
+                        GlobalStatusName = cameraReadyEntity.GlobalStatus?.Name,
+                        CameraReadyUrl = cameraReadyEntity.CameraReadyUrl
+                    } : null
+                };
+
+                result.Add(paperDto);
+            }
+            return result;
+
         }
     }
 }
