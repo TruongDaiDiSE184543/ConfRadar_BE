@@ -164,7 +164,7 @@ namespace ConfRadar.Repositories.Repositories
                 };
                 if (paperDetailResponse.IsHeadReviewer)
                 {
-                    var fullPaperReviewerList = await _context.FullPaperReviews.Where(fp => fp.FullPaperId == result.f.FullPaperId).ToListAsync();
+                    var fullPaperReviewerList = await _context.FullPaperReviews.Where(fp => fp.FullPaperId == result.f.FullPaperId).GroupBy(fp => fp.ReviewerId).Select(g => g.First()).ToListAsync();
                     //paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
 
                     if (fullPaperReviewerList.Count == paperReviewerList.Count)
@@ -297,7 +297,7 @@ namespace ConfRadar.Repositories.Repositories
                 
                 if (paperDetailResponse.IsHeadReviewer)
                 {
-                    var fullRevisionPaperReviewList = await _context.RevisionPaperReviews.Where(rpr => rpr.RevisionPaperId == result.r.RevisionPaperId).ToListAsync();
+                    var fullRevisionPaperReviewList = await _context.RevisionPaperReviews.Where(rpr => rpr.RevisionPaperId == result.r.RevisionPaperId).GroupBy(rpr=>rpr.ReviewerId).Select(g=>g.First()).ToListAsync();
                     //var paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
 
                     if (fullRevisionPaperReviewList.Count == paperReviewerList.Count)
