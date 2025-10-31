@@ -844,27 +844,28 @@ namespace ConfRadar.Services.Services
             // 2. FullPaper with ReviewStatus = "Accepted"
             bool isValidPaper = false;
 
-            if (!string.IsNullOrEmpty(paper.RevisionPaperId))
+            
+             if (!string.IsNullOrEmpty(paper.FullPaperId))
             {
-                // Check if RevisionPaper exists and has GlobalStatus = "Accepted"
-                var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
-                if (revisionPaper != null && revisionPaper.GlobalStatus != null)
+                // Check if FullPaper exists and has ReviewStatus = "Accepted"
+                var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId);
+                if (fullPaper != null && fullPaper.ReviewStatus.ReviewStatusId != null)
                 {
-                    var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-                    if (revisionPaper.GlobalStatusId == acceptedGlobalStatus.GlobalStatusId)
+                    var acceptedReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Accepted.GetDescription());
+                    if (fullPaper.ReviewStatusId == acceptedReviewStatus.ReviewStatusId)
                     {
                         isValidPaper = true;
                     }
                 }
             }
-            else if (!string.IsNullOrEmpty(paper.FullPaperId))
+            else if (!string.IsNullOrEmpty(paper.RevisionPaperId))
             {
-                // Check if FullPaper exists and has ReviewStatus = "Accepted"
-                var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId);
-                if (fullPaper != null && fullPaper.ReviewStatus != null)
+                // Check if RevisionPaper exists and has GlobalStatus = "Accepted"
+                var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
+                if (revisionPaper != null && revisionPaper.GlobalStatusId != null)
                 {
-                    var acceptedReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Accepted.GetDescription());
-                    if (fullPaper.ReviewStatusId == acceptedReviewStatus.ReviewStatusId)
+                    var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+                    if (revisionPaper.GlobalStatusId == acceptedGlobalStatus.GlobalStatusId)
                     {
                         isValidPaper = true;
                     }
