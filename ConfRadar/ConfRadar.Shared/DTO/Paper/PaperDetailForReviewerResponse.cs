@@ -13,21 +13,23 @@ namespace ConfRadar.Shared.DTO.Paper
         public RevisonPaperForReviewerResponse RevisionPaper { get; set; }
 
     }
-    public class FullPaperDetailForReviewerResponse()
+    public class FullPaperDetailForReviewerResponse
     {
         public string? FullPaperId { get; set; } = null!;
         public string? ReviewStatusId { get; set; }
         public string? ReviewStatusName { get; set; }
         public string? FullPaperUrl { get; set; }
+        public bool? IsAllSubmittedFullPaperReview { get; set; }
     }
-    public class RevisonPaperForReviewerResponse()
+    public class RevisonPaperForReviewerResponse
     {
         public string RevisionPaperId { get; set; } = null!;
 
         public int? RevisionRound { get; set; }
         public string? GlobalStatusId { get; set; }
         public string? GlobalStatusName { get; set; }
-
+        public bool? IsAllSubmittedRevisionPaperReview { get; set; }
+        public bool? IsAnsweredAllDiscussion { get; set; }
         public List<RevisionPaperSubmissionForReviewerResponse> RevisionPaperSubmissions { get; set; }
     }
     public class RevisionPaperSubmissionForReviewerResponse
@@ -44,6 +46,7 @@ namespace ConfRadar.Shared.DTO.Paper
         public int? RoundNumber { get; set; }
 
         public List<RevisionPaperSubmissionFeedBackForReviewerResponse> RevisionSubmissionFeedbacks { get; set; } 
+        public List<RevisionPaperReviewForReviewerResponse> RevisionPaperReviews { get; set; }  
     }
     public class RevisionPaperSubmissionFeedBackForReviewerResponse
     {
@@ -61,6 +64,21 @@ namespace ConfRadar.Shared.DTO.Paper
         public DateTime? CreatedAt { get; set; }
 
 
+
+    }
+    public class RevisionPaperReviewForReviewerResponse
+    {
+        public string RevisionPaperReviewId { get; set; } = null!;
+        public string? GlobalStatusId { get; set; }
+        public string? GlobalStatusName { get; set; }
+        public string? Note { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string? FeedbackToAuthor { get; set; }
+        public string? FeedbackMaterialUrl { get; set; }
+        public string? ReviewerId { get; set; }
+        public string? ReviewerName { get; set; }
+        public string? ReviewerAvatarUrl { get; set; }
+        public string? RevisionPaperId { get; set; }
 
     }
 }

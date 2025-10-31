@@ -432,7 +432,7 @@ namespace ConfRadar.Services.Services
                 }
                 result  += await _unitOfWork.FullPaperRepository.UpdateFullPaperAsync(fullPaper);
                 result +=  await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
-                _unitOfWork.CommitAsync();
+                await _unitOfWork.CommitAsync();
 
                 //await _unitOfWork.CommitAsync();
             }
@@ -471,6 +471,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Bạn không có quyền nộp revision cho bài báo này");
             }
+       
             var dateNow = ExtensionHelper.GetVietnamDate();
             string revisionDeadlineId = string.Empty; 
             var researchConferencePhasesFound = paper.Conference.ResearchConferencePhases;
@@ -483,6 +484,7 @@ namespace ConfRadar.Services.Services
                         if (deadline.EndDate != null && dateNow <= deadline.EndDate)
                         {
                             revisionDeadlineId = deadline.RevisionRoundDeadlineId;
+                            
                             break;
                         }
                     }
@@ -523,6 +525,14 @@ namespace ConfRadar.Services.Services
                         throw new BadRequestException($"Revision paper id {paper.RevisionPaperId} không tìm thấy trong hệ thống");
                     }
                     revisionPaper.RevisionRound = revisionPaper.RevisionRound  + 1;
+                    if (!string.IsNullOrEmpty(revisionDeadlineId))
+                    {
+                        var revisionPaperSubmissionFound = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByRevisionPaperIdAndDeadlineId(paper.RevisionPaperId, revisionDeadlineId);
+                        if (revisionPaperSubmissionFound != null)
+                        {
+                            throw new BadRequestException($"Bạn đã nộp cho lần deadline {revisionPaperSubmissionFound.RevisionDeadlineRound?.EndDate} này ");
+                        }
+                    }
                 }
 
                 var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
@@ -631,7 +641,6 @@ namespace ConfRadar.Services.Services
                 revisionSubmissionFeedback.Response = response.Response;
                 feedBackList.Add(revisionSubmissionFeedback);
             }
-
             return await _unitOfWork.RevisionSubmissionFeedbackRepository.UpdateMultipleFeedbacksAsync(feedBackList);
         }
 
@@ -1067,7 +1076,7 @@ namespace ConfRadar.Services.Services
                 Note = request.Note,
                 FeedbackToAuthor = request.FeedbackToAuthor,
                 FeedbackMaterialUrl = feedbackMaterialUrl,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow,DateTimeKind.Unspecified),
+                CreatedAt = ExtensionHelper.GetVietnamTime(),
             };
 
             await _unitOfWork.FullPaperReviewRepository.CreateFullPaperReviewAsync(fullPaperReview);

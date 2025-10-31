@@ -123,7 +123,10 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
         {
             var result = await (
-       from p in _context.Papers
+       from p in _context.Papers.Include(p=>p.Conference)
+                                    .ThenInclude(c=>c.ResearchConferencePhases)
+                                        .ThenInclude(rcp=>rcp.RevisionRoundDeadlines)
+
        join a in _context.Abstracts on p.AbstractId equals a.AbstractId
 
        join f in _context.FullPapers.Include(f => f.ReviewStatus) on p.FullPaperId equals f.FullPaperId into fps
@@ -146,7 +149,7 @@ namespace ConfRadar.Repositories.Repositories
             {
                 IsHeadReviewer = result.pr.IsHeadReviewer ?? false
             };
-
+            var paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
             // Check Full Paper
             if (result.f != null)
             {
@@ -157,11 +160,32 @@ namespace ConfRadar.Repositories.Repositories
                     ReviewStatusId = result.f.ReviewStatusId,
                     ReviewStatusName = result.f.ReviewStatus?.Name
                 };
+                if (paperDetailResponse.IsHeadReviewer)
+                {
+                    var fullPaperReviewerList = await _context.FullPaperReviews.Where(fp => fp.FullPaperId == result.f.FullPaperId).ToListAsync();
+                    //paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
+
+                    if (fullPaperReviewerList.Count == paperReviewerList.Count)
+                    {
+                        paperDetailResponse.FullPaper.IsAllSubmittedFullPaperReview = true;
+                    }
+                    else
+                    {
+                        paperDetailResponse.FullPaper.IsAllSubmittedFullPaperReview = false;
+                    }
+                }
+                else
+                {
+                    paperDetailResponse.FullPaper.IsAllSubmittedFullPaperReview = null;
+                }
+
             }
 
             // Check Revision Paper
             if (result.r != null)
             {
+               
+
                 var revisionSubmissionsQuery = _context.RevisionPaperSubmissions
                     .Where(rs => rs.RevisionPaperId == result.r.RevisionPaperId)
                     .Include(rs=>rs.RevisionDeadlineRound)
@@ -202,16 +226,66 @@ namespace ConfRadar.Repositories.Repositories
                             })
                             .ToListAsync();
                     }
+                    paperDetailResponse.RevisionPaper = new RevisonPaperForReviewerResponse
+                    {
+                        RevisionPaperId = result.r.RevisionPaperId,
+                        GlobalStatusId = result.r.GlobalStatusId,
+                        GlobalStatusName = result.r.GlobalStatus?.Name,
+                        RevisionRound = result.r.RevisionRound ?? 0,
+                        RevisionPaperSubmissions = revisionSubmissions
+                    };
+
+                    var allResearchConferencePhases = result.p.Conference?.ResearchConferencePhases;
+                    if (allResearchConferencePhases == null || !allResearchConferencePhases.Any())
+                    {
+                        paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = null;
+                    }
+                    var allPhaseIds = allResearchConferencePhases.Select(p=>p.ResearchConferencePhaseId).ToList();
+
+                    var allDeadlines = await _context.RevisionRoundDeadlines
+                    .Where(r => allPhaseIds.Contains(r.ResearchConferencePhaseId))
+                    .ToListAsync();
+
+                    var allDeadLineIds = allDeadlines.Select(d=>d.RevisionRoundDeadlineId).ToList();
+
+                    var allSubmissions = await _context.RevisionPaperSubmissions
+                    .Where(rps => allDeadLineIds.Contains(rps.RevisionDeadlineRoundId))
+                    .ToListAsync();
+
+                    var allSubmissionIds = allSubmissions.Select(s => s.RevisionPaperSubmissionId).ToList();
+
+                    var allFeedbacks = await _context.RevisionSubmissionFeedbacks
+                    .Where(fb => allSubmissionIds.Contains(fb.RevisionPaperSubmissionId))
+                    .ToListAsync();
+                    bool hasIncompleteDiscussion = allFeedbacks.Any(fb => fb.Feedback == null || fb.Response == null);
+                    paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = !hasIncompleteDiscussion;
+
+                }
+                else
+                {
+                    paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = null;
                 }
 
-                paperDetailResponse.RevisionPaper = new RevisonPaperForReviewerResponse
+                
+                if (paperDetailResponse.IsHeadReviewer)
                 {
-                    RevisionPaperId = result.r.RevisionPaperId,
-                    GlobalStatusId = result.r.GlobalStatusId,
-                    GlobalStatusName = result.r.GlobalStatus?.Name,
-                    RevisionRound = result.r.RevisionRound ?? 0,
-                    RevisionPaperSubmissions = revisionSubmissions
-                };
+                    var fullRevisionPaperReviewList = await _context.RevisionPaperReviews.Where(rpr => rpr.RevisionPaperId == result.r.RevisionPaperId).ToListAsync();
+                    //var paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
+
+                    if (fullRevisionPaperReviewList.Count == paperReviewerList.Count)
+                    {
+                        paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview= true;
+                    }
+                    else
+                    {
+                        paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview = false;
+                    }
+                }
+                else
+                {
+                    paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview = null;
+                }
+
             }
 
             return paperDetailResponse;
