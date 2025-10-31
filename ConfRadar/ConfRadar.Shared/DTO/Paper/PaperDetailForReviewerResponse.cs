@@ -9,8 +9,8 @@ namespace ConfRadar.Shared.DTO.Paper
     public class PaperDetailForReviewerResponse
     {
         public bool IsHeadReviewer { get; set; }
-        public FullPaperDetailForReviewerResponse FullPaper { get; set; }
-        public RevisonPaperForReviewerResponse RevisionPaper { get; set; }
+        public FullPaperDetailForReviewerResponse FullPaper { get; set; } = new();
+        public RevisonPaperForReviewerResponse RevisionPaper { get; set; } = new();
 
     }
     public class FullPaperDetailForReviewerResponse
@@ -30,7 +30,7 @@ namespace ConfRadar.Shared.DTO.Paper
         public string? GlobalStatusName { get; set; }
         public bool? IsAllSubmittedRevisionPaperReview { get; set; }
         public bool? IsAnsweredAllDiscussion { get; set; }
-        public List<RevisionPaperSubmissionForReviewerResponse> RevisionPaperSubmissions { get; set; }
+        public List<RevisionPaperSubmissionForReviewerResponse> RevisionPaperSubmissions { get; set; } = new();
     }
     public class RevisionPaperSubmissionForReviewerResponse
     {
@@ -45,8 +45,8 @@ namespace ConfRadar.Shared.DTO.Paper
 
         public int? RoundNumber { get; set; }
 
-        public List<RevisionPaperSubmissionFeedBackForReviewerResponse> RevisionSubmissionFeedbacks { get; set; } 
-        public List<RevisionPaperReviewForReviewerResponse> RevisionPaperReviews { get; set; }  
+        public List<RevisionPaperSubmissionFeedBackForReviewerResponse> RevisionSubmissionFeedbacks { get; set; } = new();
+        public List<RevisionPaperReviewForReviewerResponse> RevisionPaperReviews { get; set; } = new();
     }
     public class RevisionPaperSubmissionFeedBackForReviewerResponse
     {
