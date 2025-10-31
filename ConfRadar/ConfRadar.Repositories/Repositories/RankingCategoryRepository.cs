@@ -10,7 +10,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<RankingCategory?> GetRankingCategoryByName(string rankName);
         Task<int> CreateMultipleRankingCategoriesAsync(IEnumerable<RankingCategory> rankingCategories);
         Task<int> CreateRankingCategory(RankingCategory rankingCategory);
-        Task<RankingCategory> GetRankingCategoryByIdAsync(string rankingCategoryId);
+        Task<RankingCategory?> GetRankingCategoryByIdAsync(string rankingCategoryId);
         Task<int> UpdateRankingCategoryAsync(RankingCategory rankingCategory);
         Task<bool> DeleteRankingCategoryAsync(RankingCategory rankingCategory);
         Task<List<RankingCategory>> GetAllRankingCategoryAsync();
@@ -36,9 +36,10 @@ namespace ConfRadar.Repositories.Repositories
             return await CreateAsync(rankingCategory);
         }
 
-        public async Task<RankingCategory> GetRankingCategoryByIdAsync(string rankingCategoryId)
+        public async Task<RankingCategory?> GetRankingCategoryByIdAsync(string rankingCategoryId)
         {
-            return await GetByIdAsync(rankingCategoryId);
+            //return await GetByIdAsync(rankingCategoryId);
+            return await _context.RankingCategories.FirstOrDefaultAsync(x => x.RankingCategoryId == rankingCategoryId);
         }
 
         public async Task<int> UpdateRankingCategoryAsync(RankingCategory rankingCategory)

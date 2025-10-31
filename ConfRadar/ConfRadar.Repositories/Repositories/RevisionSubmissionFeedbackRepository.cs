@@ -35,7 +35,9 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<RevisionSubmissionFeedback?> GetFeedbackByIdAsync(string revisionSubmissionFeedbackId)
         {
-            return await GetByIdAsync(revisionSubmissionFeedbackId);
+            //return await GetByIdAsync(revisionSubmissionFeedbackId);
+            return await _context.RevisionSubmissionFeedbacks.FirstOrDefaultAsync(x => x.RevisionSubmissionFeedbackId == revisionSubmissionFeedbackId);
+
         }
     }
 

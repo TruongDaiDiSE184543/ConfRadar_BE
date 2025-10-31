@@ -10,7 +10,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<ConferenceStatus?> GetConferenceStatusByName(string conferenceStatusName);
         Task<int> CreateMultipleConferenceStatusesAsync(IEnumerable<ConferenceStatus> conferenceStatuses);
         Task<int> CreateConferenceStatus(ConferenceStatus conferenceStatus);
-        Task<ConferenceStatus> GetConferenceStatusByIdAsync(string conferenceStatusId);
+        Task<ConferenceStatus?> GetConferenceStatusByIdAsync(string conferenceStatusId);
         Task<int> UpdateConferenceStatusAsync(ConferenceStatus conferenceStatus);
         Task<bool> DeleteConferenceStatusAsync(ConferenceStatus conferenceStatus);
         Task<List<ConferenceStatus>> GetAllConferenceStatusAsync();
@@ -40,9 +40,10 @@ namespace ConfRadar.Repositories.Repositories
             return await CreateAsync(conferenceStatus);
         }
 
-        public async Task<ConferenceStatus> GetConferenceStatusByIdAsync(string conferenceStatusId)
+        public async Task<ConferenceStatus?> GetConferenceStatusByIdAsync(string conferenceStatusId)
         {
-            return await GetByIdAsync(conferenceStatusId);
+            //return await GetByIdAsync(conferenceStatusId);
+            return await _context.ConferenceStatuses.FirstOrDefaultAsync(x => x.ConferenceStatusId == conferenceStatusId);
         }
 
         public async Task<int> UpdateConferenceStatusAsync(ConferenceStatus conferenceStatus)
