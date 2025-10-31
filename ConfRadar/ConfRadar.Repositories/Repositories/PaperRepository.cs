@@ -151,6 +151,7 @@ namespace ConfRadar.Repositories.Repositories
                 FullPaper = new FullPaperDetailForReviewerResponse(),
                 RevisionPaper = new RevisonPaperForReviewerResponse()
             };
+            //đếm trong bản paper reviewer
             var paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
             // Check Full Paper
             if (result.f != null)
@@ -269,7 +270,7 @@ namespace ConfRadar.Repositories.Repositories
                         paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = null;
                     }
                     var allPhaseIds = allResearchConferencePhases.Select(p=>p.ResearchConferencePhaseId).ToList();
-
+                    //load dead line tương ứng với phase
                     var allDeadlines = await _context.RevisionRoundDeadlines
                     .Where(r => allPhaseIds.Contains(r.ResearchConferencePhaseId))
                     .ToListAsync();

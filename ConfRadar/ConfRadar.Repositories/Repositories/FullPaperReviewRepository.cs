@@ -26,7 +26,8 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<FullPaperReview?> GetFullPaperReviewByIdAsync(string fullPaperReviewId)
         {
-            return await GetByIdAsync(fullPaperReviewId);
+            //return await GetByIdAsync(fullPaperReviewId);
+            return await _context.FullPaperReviews.FirstOrDefaultAsync(x => x.FullPaperReviewId == fullPaperReviewId);
         }
 
         public async Task<List<FullPaperReview>> GetAllFullPaperReviewsAsync()

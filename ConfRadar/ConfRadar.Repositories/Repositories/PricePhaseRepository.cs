@@ -24,7 +24,8 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<PricePhase?> GetPricePhaseByPricePhaseId(string pricePhaseId)
         {
-            return await GetByIdAsync(pricePhaseId);
+            //return await GetByIdAsync(pricePhaseId);
+            return await _context.PricePhases.FirstOrDefaultAsync(x => x.PricePhaseId == pricePhaseId);
         }
         public async Task<int> CreatePricePhaseAsync(PricePhase pricePhase)
         {

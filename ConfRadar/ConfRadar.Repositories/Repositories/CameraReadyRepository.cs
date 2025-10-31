@@ -26,7 +26,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<CameraReady?> GetCameraReadyByIdAsync(string cameraReadyId)
         {
-            return await GetByIdAsync(cameraReadyId);
+            return await _context.CameraReadies.FirstOrDefaultAsync(x => x.CameraReadyId == cameraReadyId);
         }
 
         public async Task<List<CameraReady>> GetAllCameraReadysAsync()

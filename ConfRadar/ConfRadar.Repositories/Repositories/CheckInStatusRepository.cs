@@ -36,7 +36,8 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<CheckinStatus?> GetCheckInStatusByIdAsync(string statusId)
         {
-            return await GetByIdAsync(statusId);
+            //return await GetByIdAsync(statusId);
+            return await _context.CheckinStatuses.FirstOrDefaultAsync(x => x.CheckinStatusId == statusId);
         }
 
         public async Task<CheckinStatus?> GetCheckInStatusByNameAsync(string statusName)

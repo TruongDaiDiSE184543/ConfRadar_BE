@@ -69,77 +69,77 @@ namespace ConfRadar.Repositories.Base
             return true;
         }
 
-        public T GetById(int id)
-        {
-            var entity = _context.Set<T>().Find(id);
-            if (entity != null)
-            {
-                _context.Entry(entity).State = EntityState.Detached;
-            }
+        //public T GetById(int id)
+        //{
+        //    var entity = _context.Set<T>().Find(id);
+        //    if (entity != null)
+        //    {
+        //        _context.Entry(entity).State = EntityState.Detached;
+        //    }
 
-            return entity;
+        //    return entity;
 
-        }
+        //}
 
-        public async Task<T> GetByIdAsync(int id)
-        {
-            var entity = await _context.Set<T>().FindAsync(id);
-            if (entity != null)
-            {
-                _context.Entry(entity).State = EntityState.Detached;
-            }
+        //public async Task<T> GetByIdAsync(int id)
+        //{
+        //    var entity = await _context.Set<T>().FindAsync(id);
+        //    if (entity != null)
+        //    {
+        //        _context.Entry(entity).State = EntityState.Detached;
+        //    }
 
-            return entity;
+        //    return entity;
 
-        }
+        //}
 
-        public T GetById(string code)
-        {
-            var entity = _context.Set<T>().Find(code);
-            if (entity != null)
-            {
-                _context.Entry(entity).State = EntityState.Detached;
-            }
+        //public T GetById(string code)
+        //{
+        //    var entity = _context.Set<T>().Find(code);
+        //    if (entity != null)
+        //    {
+        //        _context.Entry(entity).State = EntityState.Detached;
+        //    }
 
-            return entity;
+        //    return entity;
 
-        }
+        //}
 
-        public async Task<T> GetByIdAsync(string code)
-        {
-            var entity = await _context.Set<T>().FindAsync(code);
-            if (entity != null)
-            {
-                _context.Entry(entity).State = EntityState.Detached;
-            }
+        //public async Task<T> GetByIdAsync(string code)
+        //{
+        //    var entity = await _context.Set<T>().FindAsync(code);
+        //    if (entity != null)
+        //    {
+        //        _context.Entry(entity).State = EntityState.Detached;
+        //    }
 
-            return entity;
+        //    return entity;
 
-        }
+        //}
 
-        public T GetById(Guid code)
-        {
-            var entity = _context.Set<T>().Find(code);
-            if (entity != null)
-            {
-                _context.Entry(entity).State = EntityState.Detached;
-            }
+        //public T GetById(Guid code)
+        //{
+        //    var entity = _context.Set<T>().Find(code);
+        //    if (entity != null)
+        //    {
+        //        _context.Entry(entity).State = EntityState.Detached;
+        //    }
 
-            return entity;
+        //    return entity;
 
-        }
+        //}
 
-        public async Task<T> GetByIdAsync(Guid code)
-        {
-            var entity = await _context.Set<T>().FindAsync(code);
-            if (entity != null)
-            {
-                _context.Entry(entity).State = EntityState.Detached;
-            }
+        //public async Task<T> GetByIdAsync(Guid code)
+        //{
+        //    var entity = await _context.Set<T>().FindAsync(code);
+        //    if (entity != null)
+        //    {
+        //        _context.Entry(entity).State = EntityState.Detached;
+        //    }
 
-            return entity;
+        //    return entity;
 
-        }
+        //}
         #region Separating asigned entity and save operators        
 
         public void PrepareCreate(T entity)

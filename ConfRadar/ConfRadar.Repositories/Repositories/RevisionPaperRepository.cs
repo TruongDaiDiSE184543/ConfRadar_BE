@@ -27,6 +27,9 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<RevisionPaper?> GetRevisionPaperByIdAsync(string revisionPaperId)
         {
             return await _context.RevisionPapers.FirstOrDefaultAsync(x => x.RevisionPaperId == revisionPaperId);
+
+
+            //return await GetByIdAsync(revisionPaperId);
         }
 
         public async Task<List<RevisionPaper>> GetAllRevisionPapersAsync()

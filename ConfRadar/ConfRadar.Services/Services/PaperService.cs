@@ -739,6 +739,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Paper đang không ở trong trạng thái revise");
             }
+            //dùng hàm get
             var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
             if (revisionPaper == null)
             {
@@ -763,6 +764,7 @@ namespace ConfRadar.Services.Services
                 switch (request.GlobalStatus)
                 {
                     case GlobalStatusEnum.Accepted:
+                        //update instance get:
                         revisionPaper.GlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
                         paper.PaperPhaseId = cameraReadyPaperPhase.PaperPhaseId;
                         break;
@@ -774,7 +776,7 @@ namespace ConfRadar.Services.Services
                     default:
                         throw new BadRequestException("Trạng thái không khả dụng");
                 }
-
+                //call hàm update
                 var result1 = await _unitOfWork.RevisionPaperRepository.UpdateRevisionPaperAsync(revisionPaper);
                 var result2 = await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
 
