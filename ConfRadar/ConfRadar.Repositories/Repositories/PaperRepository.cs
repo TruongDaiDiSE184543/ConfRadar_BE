@@ -147,7 +147,9 @@ namespace ConfRadar.Repositories.Repositories
 
             var paperDetailResponse = new PaperDetailForReviewerResponse
             {
-                IsHeadReviewer = result.pr.IsHeadReviewer ?? false
+                IsHeadReviewer = result.pr.IsHeadReviewer ?? false,
+                FullPaper = new FullPaperDetailForReviewerResponse(),
+                RevisionPaper = new RevisonPaperForReviewerResponse()
             };
             var paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
             // Check Full Paper
@@ -225,6 +227,32 @@ namespace ConfRadar.Repositories.Repositories
                                 CreatedAt = fb.CreatedAt
                             })
                             .ToListAsync();
+
+                        //load của reviewr con
+                        rs.RevisionPaperReviews = await _context.RevisionPaperReviews
+                                                                                    .Include(rpr => rpr.Reviewer)
+                                                                                    .Include(rpr=>rpr.GlobalStatus)
+                                                                                     .Where(rpr => rpr.RevisionPaperId == rs.RevisionPaperId)
+                                                                                        .OrderBy(rpr => rpr.CreatedAt)
+                        .Select(rpr => new RevisionPaperReviewForReviewerResponse
+                        {
+                        RevisionPaperReviewId = rpr.RevisionPaperReviewId,
+                        GlobalStatusId = rpr.GlobalStatusId,
+                        GlobalStatusName = rpr.GlobalStatus != null ? rpr.GlobalStatus.Name : null,
+                        Note = rpr.Note,
+                        CreatedAt = rpr.CreatedAt,
+                        FeedbackToAuthor = rpr.FeedbackToAuthor,
+                        FeedbackMaterialUrl = rpr.FeedbackMaterialUrl,
+                        ReviewerId = rpr.ReviewerId,
+                        ReviewerName = rpr.Reviewer != null ? rpr.Reviewer.FullName : null,
+                        ReviewerAvatarUrl = rpr.Reviewer != null ? rpr.Reviewer.AvatarUrl : null,
+                        RevisionPaperId = rpr.RevisionPaperId
+                        })
+                        .ToListAsync();
+
+
+
+
                     }
                     paperDetailResponse.RevisionPaper = new RevisonPaperForReviewerResponse
                     {
@@ -249,7 +277,7 @@ namespace ConfRadar.Repositories.Repositories
                     var allDeadLineIds = allDeadlines.Select(d=>d.RevisionRoundDeadlineId).ToList();
 
                     var allSubmissions = await _context.RevisionPaperSubmissions
-                    .Where(rps => allDeadLineIds.Contains(rps.RevisionDeadlineRoundId))
+                    .Where(rps => allDeadLineIds.Contains(rps.RevisionDeadlineRoundId) &&   rps.RevisionPaperId == result.r.RevisionPaperId)
                     .ToListAsync();
 
                     var allSubmissionIds = allSubmissions.Select(s => s.RevisionPaperSubmissionId).ToList();
