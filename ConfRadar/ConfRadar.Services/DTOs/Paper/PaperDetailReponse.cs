@@ -36,6 +36,8 @@ namespace ConfRadar.Services.DTOs.Paper
         public string AbstractId { get; set; }
         public string FileUrl { get; set; } // Assuming a 'Content' property exists on the entity
         public string Status { get; set; } // The name of the GlobalStatus, e.g., "Pending", "Approved"
+        public DateOnly? RegistrationStart {  get; set; }
+        public DateOnly? RegistrationEnd { get; set; }
     }
 
     /// <summary>
@@ -46,6 +48,9 @@ namespace ConfRadar.Services.DTOs.Paper
         public string FullPaperId { get; set; }
         public string FileUrl { get; set; }
         public string ReviewStatus { get; set; } // The name of the ReviewStatus, e.g., "Under Review"
+        public string RootPaperId { get; set; }
+        public DateOnly? FullPaperStartDate { get; set; }
+        public DateOnly? FullPaperEndDate { get; set; }
     }
 
     /// <summary>
@@ -56,6 +61,9 @@ namespace ConfRadar.Services.DTOs.Paper
         public string CameraReadyId { get; set; }
         public string FileUrl { get; set; }
         public string Status { get; set; } // The name of the GlobalStatus
+        public string RootPaperId { get; set; }
+        public DateOnly? CameraReadyStartDate { get; set; }
+        public DateOnly? CameraReadyEndDate { get; set; }
     }
 
     /// <summary>
@@ -66,7 +74,10 @@ namespace ConfRadar.Services.DTOs.Paper
         public string RevisionPaperId { get; set; }
         public int? RevisionRound {  get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
+        public DateOnly? ReviewStartDate { get; set; }
+        public DateOnly? ReviewEndDate { get; set; }
         public List<RevisionSubmissionDtoDetail> Submissions { get; set; } = new List<RevisionSubmissionDtoDetail>();
+        public List<RevisionDeadlineDetail>? revisionDeadline { get; set; }
         public List<RevisionReviewDtoDetail> Reviews { get; set; } = new List<RevisionReviewDtoDetail>();
     }
 
@@ -77,7 +88,6 @@ namespace ConfRadar.Services.DTOs.Paper
     {
         public string SubmissionId { get; set; }
         public string FileUrl { get; set; }
-        public RevisionDeadlineDetail revisionDeadline { get; set; }
         public List<FeedbackDtoDetail> Feedbacks { get; set; } = new List<FeedbackDtoDetail>();
     }
 
