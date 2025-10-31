@@ -106,7 +106,7 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize]
         [HttpPost("submit-paper-revision-feedback")]
-        public async Task<IActionResult> SubmitPaperRevisionFeedback([FromForm] CreateRevisionPaperSubmissionFeedback request)
+        public async Task<IActionResult> SubmitPaperRevisionFeedback([FromBody] CreateRevisionPaperSubmissionFeedback request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.CreateRevisionSubmissionFeedBack(request, userId);
@@ -114,8 +114,8 @@ namespace ConfRadar.Api.Controllers
 
         }
         [Authorize]
-        [HttpPost("submit-paper-revision-response")]
-        public async Task<IActionResult> SubmitPaperRevisionFeedback([FromForm] CreateRevisionPaperSubmissionResponse request)
+        [HttpPut("submit-paper-revision-response")]
+        public async Task<IActionResult> SubmitPaperRevisionFeedback([FromBody] CreateRevisionPaperSubmissionResponse request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.CreateRevisionSubmissionResponse(request, userId);
