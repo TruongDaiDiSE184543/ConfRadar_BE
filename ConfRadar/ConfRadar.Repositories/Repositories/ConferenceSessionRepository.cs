@@ -76,11 +76,11 @@ namespace ConfRadar.Repositories.Repositories
             // to avoid the conversion error. This treats the time as if it has no timezone information, 
             // which matches the database type.
             DateTime queryStartValue, queryEndValue;
-            
+
             // Convert DateTime parameters to Unspecified kind to match the database timestamp without time zone
-            queryStartValue = startDate.Kind == DateTimeKind.Unspecified ? 
+            queryStartValue = startDate.Kind == DateTimeKind.Unspecified ?
                 startDate : DateTime.SpecifyKind(startDate, DateTimeKind.Unspecified);
-            queryEndValue = endDate.Kind == DateTimeKind.Unspecified ? 
+            queryEndValue = endDate.Kind == DateTimeKind.Unspecified ?
                 endDate : DateTime.SpecifyKind(endDate, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
@@ -94,7 +94,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             // Get sessions on the specified date
             // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
-            
+
             // Create start and end times for the date with Unspecified kind
             var startDateTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Unspecified);
             var endDateTime = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Unspecified);
@@ -115,10 +115,10 @@ namespace ConfRadar.Repositories.Repositories
 
             // Convert the time parameters to DateTimeKind.Unspecified to match database format
             DateTime queryStartTime, queryEndTime;
-            
-            queryStartTime = startTime.Kind == DateTimeKind.Unspecified ? 
+
+            queryStartTime = startTime.Kind == DateTimeKind.Unspecified ?
                 startTime : DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
-            queryEndTime = endTime.Kind == DateTimeKind.Unspecified ? 
+            queryEndTime = endTime.Kind == DateTimeKind.Unspecified ?
                 endTime : DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
@@ -138,7 +138,7 @@ namespace ConfRadar.Repositories.Repositories
             var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Unspecified);
 
             // Convert the checkTime parameter to DateTimeKind.Unspecified to match database format
-            var queryCheckTime = checkTime.Kind == DateTimeKind.Unspecified ? 
+            var queryCheckTime = checkTime.Kind == DateTimeKind.Unspecified ?
                 checkTime : DateTime.SpecifyKind(checkTime, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
@@ -170,7 +170,7 @@ namespace ConfRadar.Repositories.Repositories
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
-                             cs.StartTime.HasValue && 
+                             cs.StartTime.HasValue &&
                              cs.EndTime.HasValue &&
                              cs.StartTime >= startDateTime &&
                              cs.StartTime <= endDateTime)

@@ -1,5 +1,4 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
 using Microsoft.AspNetCore.Authorization;

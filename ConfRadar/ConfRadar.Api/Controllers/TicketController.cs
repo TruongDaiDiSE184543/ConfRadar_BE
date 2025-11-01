@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
+using ConfRadar.Shared.DTO.General;
+using ConfRadar.Shared.DTO.Ticket;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -18,11 +19,11 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize]
         [HttpGet("get-own-paid-ticket")]
-        public async Task<IActionResult> GetOwnPaidTicketData()
+        public async Task<IActionResult> GetOwnPaidTicketData([FromQuery] string? keyword,[FromQuery] int? pageNumber = 1,[FromQuery] int? pageSize = 10)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.TicketService.GetTicketsByUserId(userId);
-            return Ok(ApiResponse<List<Ticket>>.SuccessResponse(result, "Retrieve data successfully"));
+            var result = await _serviceManager.TicketService.GetTicketsByUserId(userId,keyword,pageNumber,pageSize);
+            return Ok(ApiResponse<PagedResultResponseDto<CustomerPaidTicketResponse>>.SuccessResponse(result, "Danh sách vé đã chi trả"));
         }
     }
 }

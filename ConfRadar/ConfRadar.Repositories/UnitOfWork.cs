@@ -39,7 +39,7 @@ namespace ConfRadar.Repositories
         //IMediaTypeRepository MediaTypeRepository { get; }
         IConferenceCategoryRepository ConferenceCategoryRepository { get; }
         ICityRepository CityRepository { get; }
-        IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }     
+        IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }
         //IConferenceStatusRepository ConferenceStatusRepository { get; }
         //IConferenceRefundPolicyRepository ConferenceRefundPolicyRepository { get; }
         //IPaperPhaseRepository PaperPhaseRepository { get; }
@@ -173,7 +173,7 @@ namespace ConfRadar.Repositories
 
 
 
-       
+
 
         public ISpeakerRepository SpeakerRepository => _SpeakerRepository ??= new SpeakerRepository(_context);
 
@@ -209,7 +209,7 @@ namespace ConfRadar.Repositories
 
         public IRevisionPaperSubmissionRepository RevisionPaperSubmissionRepository => _RevisionPaperSubmissionRepository ??= new RevisionPaperSubmissionRepository(_context);
 
-        public IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository => _RevisionSubmissionFeedbackRepository ??= new RevisionSubmissionFeedbackRepository(_context);  
+        public IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository => _RevisionSubmissionFeedbackRepository ??= new RevisionSubmissionFeedbackRepository(_context);
 
         public IResearchConferenceDetailRepository ResearchConferenceDetailRepository => _ResearchConferenceDetailRepository ??= new ResearchConferenceDetailRepository(_context);
 
@@ -228,7 +228,7 @@ namespace ConfRadar.Repositories
 
         public IFullPaperReviewRepository FullPaperReviewRepository => _FullPaperReviewRepository ??= new FullPaperReviewRepository(_context);
 
-        public IReviewerContractRepository ReviewerContractRepository => _ReviewerContractRepository ??= new ReviewerContractRepository(_context);  
+        public IReviewerContractRepository ReviewerContractRepository => _ReviewerContractRepository ??= new ReviewerContractRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

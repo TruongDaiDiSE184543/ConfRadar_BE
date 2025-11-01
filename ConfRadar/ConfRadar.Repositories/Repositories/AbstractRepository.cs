@@ -49,24 +49,24 @@ namespace ConfRadar.Repositories.Repositories
             var result = await (
          from a in _context.Abstracts
          join p in _context.Papers on a.AbstractId equals p.AbstractId
-         //join u in _context.Users on p.PresenterId equals u.UserId
+         join pa in _context.PaperAuthors on p.PaperId equals pa.PaperId
+         join u in _context.Users on pa.UserId equals u.UserId
          join c in _context.Conferences on p.ConferenceId equals c.ConferenceId
          join gs in _context.GlobalStatuses on a.GlobalStatusId equals gs.GlobalStatusId
-         where a.GlobalStatusId == pendingGlobalStatusId && p.AbstractId !=null
+         where a.GlobalStatusId == pendingGlobalStatusId && p.AbstractId != null && pa.IsRootAuthor == true
          select new PendingAbstractResponse
          {
              AbstractId = a.AbstractId,
              AbstractUrl = a.AbstractUrl,
              PaperId = p.PaperId,
-             //PresenterId = p.PresenterId,
-             //PresenterName = u.FullName,
-             //AvatarUrl = u.AvatarUrl,
-             ConferenceId = p.ConferenceId, 
+             PresenterId = u.UserId,
+             PresenterName = u.FullName,
+             AvatarUrl = u.AvatarUrl,
+             ConferenceId = p.ConferenceId,
              ConferenceName = c.ConferenceName,
              GlobalStatusId = a.GlobalStatusId,
              GlobalStatusName = gs.Name,
              CreatedAt = p.CreatedAt,
-             
          }).ToListAsync();
 
             return result;

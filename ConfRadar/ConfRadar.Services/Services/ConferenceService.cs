@@ -2,8 +2,6 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Conference;
-using ConfRadar.Services.DTOs.ConferenceStep;
-using ConfRadar.Services.DTOs.Configuration;
 using ConfRadar.Services.DTOs.General;
 using ConfRadar.Services.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +11,7 @@ namespace ConfRadar.Services.Services
 {
     public interface IConferenceService
     {
-        
+
         //Task<List<ConferenceResponse>> GetAllConferencesAsync();
         Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize);
 
@@ -29,25 +27,25 @@ namespace ConfRadar.Services.Services
 
         // Endpoint 4: Get conferences with step completion status
         Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
-        
+
         // NEW ENDPOINT 5: Get all pending conferences
         Task<PagedResult<ConferenceResponse>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null);
-        
+
         // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
         Task<bool> ApproveConferenceAsync(string conferenceId, ApproveConferenceRequest request);
-        
+
         // Helper method: Update conference status
         Task<bool> UpdateConferenceStatusAsync(string conferenceId, string newStatusName, string? reason = null);
-        
+
         // NEW ENDPOINT 7: Get detailed research conference data
         Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId);
-        
+
         // NEW ENDPOINT 8: Get research conference step completion status
         Task<PagedResult<DTOs.Conference.ResearchConferenceStepCompletionStatusResponse>> GetResearchConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
-        
+
         // NEW ENDPOINT 9: Check if technical conference has completed a specific step
         Task<bool> CheckTechnicalConferenceStepCompletionAsync(string conferenceId, string step);
-        
+
         // NEW ENDPOINT 10: Check if research conference has completed a specific step
         Task<bool> CheckResearchConferenceStepCompletionAsync(string conferenceId, string step);
     }
@@ -70,9 +68,9 @@ namespace ConfRadar.Services.Services
             _objectStorageSettings = objectStorageSettings.Value;
         }
 
-     
 
-       
+
+
 
         ///// <summary>
         ///// Adds the base MinIO URL to a file URL if it's not already a full URL
@@ -90,7 +88,7 @@ namespace ConfRadar.Services.Services
         //    return _objectStorageSettings.EndPoint?.TrimEnd('/') + "/" + url.TrimStart('/');
         //}
 
-     
+
 
         public async Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize)
         {
@@ -445,18 +443,18 @@ namespace ConfRadar.Services.Services
                 // Check each step completion status
                 var policies = await _unitOfWork.ConferencePolicyRepository.GetPoliciesByConferenceIdAsync(conference.ConferenceId);
                 var havePolicy = policies.Any();
-                
+
                 var sponsors = await _unitOfWork.SponsorRepository.GetSponsorsByConferenceIdAsync(conference.ConferenceId);
                 var haveSponsor = sponsors.Any();
-                
+
                 var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conference.ConferenceId);
                 var haveSession = sessions.Any();
-                
+
                 var conferencePrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conference.ConferenceId);
                 var haveConferencePrice = conferencePrices.Any();
 
                 var haveTechnicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conference.ConferenceId) != null;
-                
+
                 var haveSessionMedia = false;
                 var haveSpeakerInSession = false;
 
@@ -517,7 +515,7 @@ namespace ConfRadar.Services.Services
             // Get the "Pending" status ID first
             var allStatuses = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
             var pendingStatus = allStatuses.FirstOrDefault(s => s.ConferenceStatusName == "Pending");
-            
+
             if (pendingStatus == null)
             {
                 return new PagedResult<ConferenceResponse>
@@ -595,7 +593,7 @@ namespace ConfRadar.Services.Services
             // Get the new status by name
             var allStatuses = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
             var newStatus = allStatuses.FirstOrDefault(s => s.ConferenceStatusName == newStatusName);
-                
+
             if (newStatus == null)
             {
                 return false;
@@ -603,7 +601,7 @@ namespace ConfRadar.Services.Services
 
             // Update the conference status
             conference.ConferenceStatusId = newStatus.ConferenceStatusId;
-            
+
             // Here we could use the reason parameter in the future to store in a history/timeline table
             // For now, we're just keeping the field for future use as requested
 
@@ -665,7 +663,7 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
-                
+
                 // Research Conference Detail specific fields
                 Name = researchDetail?.Name,
                 PaperFormat = researchDetail?.PaperFormat,
@@ -678,7 +676,7 @@ namespace ConfRadar.Services.Services
                 ReviewFee = researchDetail?.ReviewFee,
                 RankingCategoryId = researchDetail?.RankingCategoryId,
                 RankingCategoryName = researchDetail?.RankingCategory?.RankName,
-                
+
                 // Research Conference related data
                 RankingFileUrls = rankingFileUrls?.Select(r => new DTOs.Conference.RankingFileUrlResponse
                 {
@@ -745,7 +743,7 @@ namespace ConfRadar.Services.Services
                         ConferenceSessionMediaUrl = csm.MediaUrl
                     }).ToList()
                 }).ToList(),
-                
+
                 // Shared tables data (same as technical conference)
                 Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
                 {

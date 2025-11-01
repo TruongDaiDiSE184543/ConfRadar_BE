@@ -1,5 +1,4 @@
-﻿using ConfRadar.Services.Common;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.Abstract
@@ -14,11 +13,11 @@ namespace ConfRadar.Services.DTOs.Abstract
     }
 
 
-   
+
 
     public class FullPaperResponse
     {
         public string? ReviewStatus { get; set; }
-        public string? FullPaperURL {  get; set; }
+        public string? FullPaperURL { get; set; }
     }
 }

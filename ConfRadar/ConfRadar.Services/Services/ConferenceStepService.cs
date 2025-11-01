@@ -4,7 +4,6 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 
 namespace ConfRadar.Services.Services
@@ -203,7 +202,7 @@ namespace ConfRadar.Services.Services
                     ConferenceId = toBeCreatedConference.ConferenceId,
                     TargetAudience = request.targetAudienceTechnicalConference
                 });
-                
+
                 await _unitOfWork.CommitAsync();
                 return await GetConferenceBasicAsync(toBeCreatedConference.ConferenceId);
             }
@@ -393,21 +392,21 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var session in request.Sessions)
                     {
-                        if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null) 
+                        if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null)
                             throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
-                        
-                        if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null) 
+
+                        if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
                             throw new NotFoundException($"Room with ID {session.RoomId} not found");
 
                         // Validate session time availability
                         var startDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
                         var endDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
-                        
+
                         startDateTime = startDateTime.AddHours(session.StartTime.Value.Hour).AddMinutes(session.StartTime.Value.Minute);
                         endDateTime = endDateTime.AddHours(session.EndTime.Value.Hour).AddMinutes(session.EndTime.Value.Minute);
 
                         await ValidateSessionTimeAvailability(startDateTime, endDateTime, session.RoomId);
-                        
+
 
                         var conferenceSession = session.ToModel(conferenceId);
                         await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
@@ -418,7 +417,7 @@ namespace ConfRadar.Services.Services
                             foreach (var speakerRequest in session.Speaker)
                             {
                                 var speaker = speakerRequest.ToModel(conferenceSession.ConferenceSessionId);
-                                
+
                                 if (speakerRequest.Image != null)
                                 {
                                     using var stream = speakerRequest.Image.OpenReadStream();
@@ -437,7 +436,7 @@ namespace ConfRadar.Services.Services
                             foreach (var mediaRequest in session.SessionMedias)
                             {
                                 var sessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId);
-                                
+
                                 if (mediaRequest.MediaFile != null)
                                 {
                                     using var stream = mediaRequest.MediaFile.OpenReadStream();
@@ -488,18 +487,18 @@ namespace ConfRadar.Services.Services
             var session = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
             if (session == null) throw new NotFoundException($"Conference session with ID {sessionId} not found");
 
-            var newStartTime = request.StartTime ?? TimeOnly.FromDateTime( session.StartTime.Value);
-            var newEndTime = request.EndTime ?? TimeOnly.FromDateTime( session.EndTime.Value);
+            var newStartTime = request.StartTime ?? TimeOnly.FromDateTime(session.StartTime.Value);
+            var newEndTime = request.EndTime ?? TimeOnly.FromDateTime(session.EndTime.Value);
             var newDate = request.Date ?? session.SessionDate;
             var newRoomId = request.RoomId ?? session.RoomId;
 
-            if (newStartTime == null || newEndTime == null || newDate == null || newRoomId == null) 
+            if (newStartTime == null || newEndTime == null || newDate == null || newRoomId == null)
                 throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
 
             // Validate session time availability
             var startDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
             var endDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
-            
+
             startDateTime = startDateTime.AddHours(newStartTime.Hour).AddMinutes(newStartTime.Minute);
             endDateTime = endDateTime.AddHours(newEndTime.Hour).AddMinutes(newEndTime.Minute);
 
@@ -535,7 +534,7 @@ namespace ConfRadar.Services.Services
                     Description = request.Description,
                     ConferenceSessionId = sessionId
                 };
-                
+
                 if (request.Image != null)
                 {
                     using var stream = request.Image.OpenReadStream();
@@ -543,7 +542,7 @@ namespace ConfRadar.Services.Services
                     speaker.Image = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, request.Image.ContentType);
                     speaker.Image = _objectStorageSettings.EndPoint + speaker.Image;
                 }
-                
+
                 await _unitOfWork.SpeakerRepository.CreateSpeakerAsync(speaker);
             }
             else
@@ -559,7 +558,7 @@ namespace ConfRadar.Services.Services
                     speaker.Image = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, request.Image.ContentType);
                     speaker.Image = _objectStorageSettings.EndPoint + speaker.Image;
                 }
-                
+
                 await _unitOfWork.SpeakerRepository.UpdateSpeakerAsync(speaker);
             }
 
@@ -681,7 +680,8 @@ namespace ConfRadar.Services.Services
                     responses.Add(new ConferenceMediaResponse { MediaId = conferenceMedia.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(conferenceMedia.ConferenceMediaUrl) });
                 }
                 await _unitOfWork.CommitAsync();
-            }catch (Exception e)
+            }
+            catch (Exception e)
             {
                 await _unitOfWork.RollbackAsync();
             }
@@ -752,7 +752,7 @@ namespace ConfRadar.Services.Services
 
                         var conferenceSponsor = sponsor.ToModel(conferenceId);
                         conferenceSponsor.ImageUrl = imageUrl;
-                        
+
                         await _unitOfWork.SponsorRepository.CreateSponsorAsync(conferenceSponsor);
                         responses.Add(conferenceSponsor.ToResponse());
                     }
@@ -888,7 +888,7 @@ namespace ConfRadar.Services.Services
                 {
                     throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
                 }
-                
+
                 var bannerExtension = request.BannerImageFile?.ContentType switch
                 {
                     "image/jpeg" => "jpeg",
@@ -897,10 +897,10 @@ namespace ConfRadar.Services.Services
                     _ => null
                 };
                 request.createdby = userid;
-                
-                if (bannerExtension == null && request.BannerImageFile != null) 
+
+                if (bannerExtension == null && request.BannerImageFile != null)
                     throw new Exception("BannerImageFile extension is not supported");
-                    
+
                 if (request.BannerImageFile != null)
                 {
                     using var stream = request.BannerImageFile.OpenReadStream();
@@ -908,31 +908,31 @@ namespace ConfRadar.Services.Services
                     request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
                     request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
                 }
-                
+
                 if (request.StartDate < DateOnly.FromDateTime(DateTime.Today) &&
                     request.EndDate < DateOnly.FromDateTime(DateTime.Today) &&
                     request.TicketSaleEnd < DateOnly.FromDateTime(DateTime.Today) &&
                     request.TicketSaleStart < DateOnly.FromDateTime(DateTime.Today)
-                    ) 
+                    )
                     throw new Exception("Date must be after today");
-                    
+
                 if (request.StartDate > request.EndDate || request.TicketSaleStart > request.TicketSaleEnd ||
-                    request.TicketSaleEnd > request.StartDate) 
+                    request.TicketSaleEnd > request.StartDate)
                     throw new Exception("date start must be after dateend the same with ticketsale and ticketsale end must be before date start ");
-                    
-                if (request.TotalSlot < 0) 
+
+                if (request.TotalSlot < 0)
                     throw new Exception("Total slot must be positive");
-                    
+
                 var vietNamTimeZoneNow = DateOnly.FromDateTime(DateTime.Now);
-                
-                
+
+
                 Conference toBeCreatedConference;
                 var confStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
                 toBeCreatedConference = request.ToModel(confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), vietNamTimeZoneNow);
-               
+
                 await _unitOfWork.ConferenceRepository.CreateConferenceAsync(toBeCreatedConference);
                 // Note: No TechnicalConferenceDetail for research conference
-                
+
                 await _unitOfWork.CommitAsync();
                 return await GetResearchConferenceBasicAsync(toBeCreatedConference.ConferenceId);
             }
@@ -991,7 +991,7 @@ namespace ConfRadar.Services.Services
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
 
             var researchDetail = request.ToModel(conferenceId);
-            
+
             await _unitOfWork.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(researchDetail);
             return researchDetail.ToResponse();
         }
@@ -1034,7 +1034,7 @@ namespace ConfRadar.Services.Services
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
 
             var phase = request.ToModel(conferenceId);
-            
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -1109,21 +1109,21 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var session in request.Sessions)
                     {
-                        if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null) 
+                        if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null)
                             throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
-                        
-                        if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null) 
+
+                        if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
                             throw new NotFoundException($"Room with ID {session.RoomId} not found");
 
                         // Validate session time availability
                         var startDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
                         var endDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
-                        
+
                         startDateTime = startDateTime.AddHours(session.StartTime.Value.Hour).AddMinutes(session.StartTime.Value.Minute);
                         endDateTime = endDateTime.AddHours(session.EndTime.Value.Hour).AddMinutes(session.EndTime.Value.Minute);
 
                         await ValidateSessionTimeAvailability(startDateTime, endDateTime, session.RoomId);
-                        
+
 
                         var conferenceSession = session.ToModel(conferenceId);
                         await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
@@ -1134,7 +1134,7 @@ namespace ConfRadar.Services.Services
                             foreach (var mediaRequest in session.SessionMedias)
                             {
                                 var sessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId);
-                                
+
                                 if (mediaRequest.MediaFile != null)
                                 {
                                     using var stream = mediaRequest.MediaFile.OpenReadStream();
@@ -1185,18 +1185,18 @@ namespace ConfRadar.Services.Services
             var session = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
             if (session == null) throw new NotFoundException($"Conference session with ID {sessionId} not found");
 
-            var newStartTime = request.StartTime ?? TimeOnly.FromDateTime( session.StartTime.Value);
-            var newEndTime = request.EndTime ?? TimeOnly.FromDateTime( session.EndTime.Value);
+            var newStartTime = request.StartTime ?? TimeOnly.FromDateTime(session.StartTime.Value);
+            var newEndTime = request.EndTime ?? TimeOnly.FromDateTime(session.EndTime.Value);
             var newDate = request.Date ?? session.SessionDate;
             var newRoomId = request.RoomId ?? session.RoomId;
 
-            if (newStartTime == null || newEndTime == null || newDate == null || newRoomId == null) 
+            if (newStartTime == null || newEndTime == null || newDate == null || newRoomId == null)
                 throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
 
             // Validate session time availability
             var startDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
             var endDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
-            
+
             startDateTime = startDateTime.AddHours(newStartTime.Hour).AddMinutes(newStartTime.Minute);
             endDateTime = endDateTime.AddHours(newEndTime.Hour).AddMinutes(newEndTime.Minute);
 
@@ -1264,7 +1264,7 @@ namespace ConfRadar.Services.Services
             var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
             if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
 
-            
+
             if (!string.IsNullOrEmpty(request.FileDescription)) materialDownload.FileDescription = request.FileDescription;
 
             // Handle file upload if provided

@@ -16,6 +16,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> DeletePricePhaseAsync(PricePhase pricePhase);
         Task<PricePhase?> GetPricePhaseByIdAsync(string pricePhaseId);
         Task<List<PricePhase>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId);
+        Task<PricePhase?> GetPricePhaseByConferencePriceIdAsync(string conferencePriceId);
         Task<List<PricePhase>> GetAllPricePhasesAsync();
     }
     public class PricePhaseRepository : GenericRepository<PricePhase>, IPricePhaseRepository
@@ -59,6 +60,14 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<PricePhase>> GetAllPricePhasesAsync()
         {
             return await _context.PricePhases.ToListAsync();
+        }
+
+        public async Task<PricePhase?> GetPricePhaseByConferencePriceIdAsync(string conferencePriceId)
+        {
+            return await _context.PricePhases
+                            .Include(pp => pp.ConferencePrice)
+                                .ThenInclude(cp => cp.Conference)
+                            .FirstOrDefaultAsync(pp => pp.ConferencePriceId == conferencePriceId);
         }
     }
 }

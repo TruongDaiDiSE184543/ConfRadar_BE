@@ -1,10 +1,5 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.ConferenceStep;
-using ConfRadar.Services.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Mappers
 {
@@ -87,7 +82,7 @@ namespace ConfRadar.Services.Mappers
             // Convert TimeOnly and DateOnly to DateTime for PostgreSQL timestamp
             var startDateTime = new DateTime(request.Date!.Value.Year, request.Date!.Value.Month, request.Date!.Value.Day);
             var endDateTime = new DateTime(request.Date!.Value.Year, request.Date!.Value.Month, request.Date!.Value.Day);
-            
+
             startDateTime = startDateTime.AddHours(request.StartTime!.Value.Hour).AddMinutes(request.StartTime!.Value.Minute);
             endDateTime = endDateTime.AddHours(request.EndTime!.Value.Hour).AddMinutes(request.EndTime!.Value.Minute);
 
@@ -284,7 +279,7 @@ namespace ConfRadar.Services.Mappers
                 ImageUrl = model.ImageUrl
             };
         }
-        
+
         // Refund Policy Mappers
         public static RefundPolicy ToModel(this CreateRefundPolicyRequest request, string conferenceId)
         {
@@ -308,7 +303,7 @@ namespace ConfRadar.Services.Mappers
                 RefundOrder = model.RefundOrder
             };
         }
-        
+
         // Research Conference Mappers
         public static Conference ToModel(this CreateResearchConferenceBasicRequest request, ConferenceStatus status, DateOnly createdAt)
         {
@@ -366,7 +361,7 @@ namespace ConfRadar.Services.Mappers
             // Convert TimeOnly and DateOnly to DateTime for PostgreSQL timestamp
             var startDateTime = new DateTime(request.Date!.Value.Year, request.Date!.Value.Month, request.Date!.Value.Day);
             var endDateTime = new DateTime(request.Date!.Value.Year, request.Date!.Value.Month, request.Date!.Value.Day);
-            
+
             startDateTime = startDateTime.AddHours(request.StartTime!.Value.Hour).AddMinutes(request.StartTime!.Value.Minute);
             endDateTime = endDateTime.AddHours(request.EndTime!.Value.Hour).AddMinutes(request.EndTime!.Value.Minute);
 
@@ -413,7 +408,7 @@ namespace ConfRadar.Services.Mappers
                 SessionMedia = model.ConferenceSessionMedia?.Select(m => m.ToResponse()).ToList()
             };
         }
-        
+
         // Research Conference Detail Mappers
         public static ResearchConferenceDetail ToModel(this CreateResearchConferenceDetailRequest request, string conferenceId)
         {
@@ -451,7 +446,7 @@ namespace ConfRadar.Services.Mappers
                 RankingCategoryName = model.RankingCategory?.RankName // Include related RankingCategory name
             };
         }
-        
+
         // Research Conference Phase Mappers
         public static ResearchConferencePhase ToModel(this CreateResearchConferencePhaseRequest request, string conferenceId)
         {
@@ -495,7 +490,7 @@ namespace ConfRadar.Services.Mappers
                 RevisionRoundDeadlines = model.RevisionRoundDeadlines?.Select(r => r.ToResponse()).ToList()
             };
         }
-        
+
         // Revision Round Deadline Mappers
         public static RevisionRoundDeadline ToModel(this CreateRevisionRoundDeadlineRequest request, string researchConferencePhaseId)
         {
@@ -518,7 +513,7 @@ namespace ConfRadar.Services.Mappers
                 ResearchConferencePhaseId = model.ResearchConferencePhaseId
             };
         }
-        
+
         // Material Download Mappers
         public static MaterialDownload ToModel(this CreateMaterialDownloadRequest request, string conferenceId)
         {
@@ -541,7 +536,7 @@ namespace ConfRadar.Services.Mappers
                 FileUrl = model.FileName // For file download, the file URL would be constructed based on the filename
             };
         }
-        
+
         // Ranking File URL Mappers
         public static RankingFileUrl ToModel(this CreateRankingFileUrlRequest request, string conferenceId)
         {
@@ -561,7 +556,7 @@ namespace ConfRadar.Services.Mappers
                 FileUrl = model.FileUrl
             };
         }
-        
+
         // Ranking Reference URL Mappers
         public static RankingReferenceUrl ToModel(this CreateRankingReferenceUrlRequest request, string conferenceId)
         {
