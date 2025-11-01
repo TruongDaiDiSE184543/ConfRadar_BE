@@ -194,7 +194,7 @@ namespace ConfRadar.Services.Services
                     CheckinStatusName = name
                 });
         }
-        
+
         public async Task SeedReviewStatusesAsync()
         {
             var statusNames = Enum.GetValues<ReviewStatusEnum>()

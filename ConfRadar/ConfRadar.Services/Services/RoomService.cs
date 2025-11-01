@@ -155,9 +155,9 @@ namespace ConfRadar.Services.Services
             {
                 SessionId = session.ConferenceSessionId,
                 SessionTitle = session.Title,
-                StartTime = session.StartTime.HasValue ? 
+                StartTime = session.StartTime.HasValue ?
                     DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Local) : DateTime.MinValue,
-                EndTime = session.EndTime.HasValue ? 
+                EndTime = session.EndTime.HasValue ?
                     DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Local) : DateTime.MinValue,
                 ConferenceId = session.ConferenceId!,
                 ConferenceName = conferences.ContainsKey(session.ConferenceId!)
@@ -186,7 +186,7 @@ namespace ConfRadar.Services.Services
             // Convert DateOnly + TimeOnly to DateTime
             var startDateTime = date.ToDateTime(startTime);
             var endDateTime = date.ToDateTime(endTime);
-            
+
             // Validate time range
             if (endTime <= startTime)
             {
@@ -263,9 +263,9 @@ namespace ConfRadar.Services.Services
             {
                 SessionId = session.ConferenceSessionId,
                 SessionTitle = session.Title,
-                StartTime = session.StartTime.HasValue ? 
+                StartTime = session.StartTime.HasValue ?
                     DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Local) : DateTime.MinValue,
-                EndTime = session.EndTime.HasValue ? 
+                EndTime = session.EndTime.HasValue ?
                     DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Local) : DateTime.MinValue,
                 ConferenceId = session.ConferenceId!,
                 ConferenceName = conferences.ContainsKey(session.ConferenceId!)
@@ -309,7 +309,7 @@ namespace ConfRadar.Services.Services
             var dayEnd = date.ToDateTime(new TimeOnly(23, 59, 59));
 
             var unoccupiedSpans = new List<TimeSpanResponse>();
-            
+
             // If no sessions exist for the day, the entire day is unoccupied
             if (!occupiedTimeSpans.Any())
             {

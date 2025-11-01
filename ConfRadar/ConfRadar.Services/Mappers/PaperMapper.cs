@@ -1,18 +1,12 @@
 ﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Abstract;
 using ConfRadar.Services.DTOs.FullPaper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Mappers
 {
     public static class PaperMapper
     {
-        public static FullPaper toModel(this CreateFullPaperRequest request,string paperURL,string pendingStatus)
+        public static FullPaper toModel(this CreateFullPaperRequest request, string paperURL, string pendingStatus)
         {
             return new FullPaper
             {

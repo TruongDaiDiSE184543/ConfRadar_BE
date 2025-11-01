@@ -1,18 +1,16 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.RankingCategory;
-using ConfRadar.Services.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConfRadar.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ConferenceRankingController :ControllerBase
+    public class ConferenceRankingController : ControllerBase
     {
         private readonly IServiceManager _services;
-        public ConferenceRankingController (IServiceManager services) => _services = services;
+        public ConferenceRankingController(IServiceManager services) => _services = services;
         [HttpGet("Get-all-ranking-category")]
         public async Task<IActionResult> GetAllRankingCategory()
         {

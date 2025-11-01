@@ -1,4 +1,3 @@
-using ConfRadar.Services.DTOs.ConferenceStep;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.Conference
@@ -169,7 +168,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceStatusId { get; set; }
         public string? TargetAudience { get; set; } // Technical conference detail
         public List<RefundPolicyResponse>? RefundPolicies { get; set; }
-        public List<ConferenceMediaResponse>? ConferenceMedia {  get; set; }
+        public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
         public List<ConferenceSessionWithSpeakersResponse>? Sessions { get; set; }
@@ -195,7 +194,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? CityId { get; set; }
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
-        
+
         // Research Conference Detail specific fields
         public string? Name { get; set; }
         public string? PaperFormat { get; set; }
@@ -208,14 +207,14 @@ namespace ConfRadar.Services.DTOs.Conference
         public decimal? ReviewFee { get; set; }
         public string? RankingCategoryId { get; set; }
         public string? RankingCategoryName { get; set; }
-        
+
         // Research Conference related data
         public List<RankingFileUrlResponse>? RankingFileUrls { get; set; }
         public List<MaterialDownloadResponse>? MaterialDownloads { get; set; }
         public List<RankingReferenceUrlResponse>? RankingReferenceUrls { get; set; }
         public ResearchConferencePhaseResponse? ResearchPhase { get; set; }
         public List<ResearchSessionWithMediaResponse>? ResearchSessions { get; set; }
-        
+
         // Shared tables data (same as technical conference)
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
@@ -294,7 +293,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
     }
-    
+
     public class ResearchConferenceStepCompletionStatusResponse
     {
         public string? ConferenceId { get; set; }
@@ -323,7 +322,7 @@ namespace ConfRadar.Services.DTOs.Conference
     {
         public string? Step { get; set; }
     }
-    
+
     public class ApproveConferenceRequest
     {
         [MaxLength(1000)]

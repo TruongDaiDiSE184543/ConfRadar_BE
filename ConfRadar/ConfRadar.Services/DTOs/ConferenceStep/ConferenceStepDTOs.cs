@@ -43,7 +43,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly TicketSaleStart { get; set; }
         [Required(ErrorMessage = "Ngày kết thúc bán vé là bắt buộc")]
         public DateOnly TicketSaleEnd { get; set; }
-        public string? createdby {  get; set; }
+        public string? createdby { get; set; }
         [Required(ErrorMessage = "Đối tượng mục tiêu là bắt buộc")]
         public string? targetAudienceTechnicalConference { get; set; }
     }
@@ -51,10 +51,10 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Step 2: Price Phase and Conference Prices
     public class CreatePricePhaseRequest
     {
-        [Required(ErrorMessage ="Tên giai đoạn là bắt buộc")]
+        [Required(ErrorMessage = "Tên giai đoạn là bắt buộc")]
         public string PhaseName { get; set; }
 
-        [Required(ErrorMessage ="Phần trăm áp dụng là bắt buộc, công thức là actualprice = ticketprice * applypercent của giai đoạn")]
+        [Required(ErrorMessage = "Phần trăm áp dụng là bắt buộc, công thức là actualprice = ticketprice * applypercent của giai đoạn")]
         [Range(0, 100, ErrorMessage = "Phần trăm áp dụng phải là kiểu thập phân")]
         public decimal ApplyPercent { get; set; }
 
@@ -63,7 +63,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
         public DateOnly EndDate { get; set; }
 
-        [Required(ErrorMessage ="Số lượng vé cho giai đoạn này là bắt buộc")]
+        [Required(ErrorMessage = "Số lượng vé cho giai đoạn này là bắt buộc")]
         public int Totalslot { get; set; }
     }
 
@@ -79,7 +79,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [MaxLength(500)]
         [Required(ErrorMessage = "Mô tả vé là bắt buộc")]
         public string TicketDescription { get; set; }
-        [Required(ErrorMessage ="Đây có phải là vé cho vai trò tác giả?")]
+        [Required(ErrorMessage = "Đây có phải là vé cho vai trò tác giả?")]
 
         public Boolean isAuthor { get; set; }
         [Required(ErrorMessage = "Tổng số lượng là bắt buộc")]
@@ -131,7 +131,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [MaxLength(250)]
         public string? Description { get; set; }
         public string? ImageUrl { get; set; }
-        public IFormFile Image {  get; set; }
+        public IFormFile Image { get; set; }
     }
 
     public class AddConferenceSessionsRequest
@@ -233,7 +233,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [MaxLength(500)]
         public string? TicketDescription { get; set; }
 
-        public int? TotalSlot {get; set; }
+        public int? TotalSlot { get; set; }
     }
 
     public class UpdateConferenceSessionRequest
@@ -247,8 +247,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public TimeOnly? StartTime { get; set; }
 
         public TimeOnly? EndTime { get; set; }
-        public DateOnly? Date {  get; set; }
-        
+        public DateOnly? Date { get; set; }
+
 
         public string? RoomId { get; set; }
     }
@@ -299,13 +299,13 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Response DTOs
     public class TechnicalConferenceBasicStepResponse
     {
-       public string? conferenceId { get; set; }
+        public string? conferenceId { get; set; }
         public string? ConferenceName { get; set; }
 
-       
+
         public string? Description { get; set; }
 
-       
+
         public DateOnly? StartDate { get; set; }
 
         public DateOnly? EndDate { get; set; }
@@ -321,7 +321,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? ConferenceCategoryId { get; set; }
 
         public string? CityId { get; set; }
-        public DateOnly? createdAt {  get; set; }
+        public DateOnly? createdAt { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
         public string? createdby { get; set; }
@@ -364,7 +364,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        public string ImageUrl {  get; set; } 
+        public string ImageUrl { get; set; }
     }
 
     // Add missing ConferenceMediaResponse
@@ -379,7 +379,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
         public string SponsorId { get; set; }
         public string Name { get; set; }
-        public string ImageUrl {get; set; }
+        public string ImageUrl { get; set; }
     }
 
     // Additional Response DTOs for the remaining operations
@@ -422,7 +422,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public List<SpeakerResponse>? Speakers { get; set; }
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
-    
+
     // Step 7: Refund Policies
     public class CreateRefundPolicyRequest
     {
@@ -461,7 +461,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? RefundDeadline { get; set; }
         public int? RefundOrder { get; set; }
     }
-    
+
     // Research Conference DTOs
     // Step 1: Research Conference Basic Information (without target audience)
     public class CreateResearchConferenceBasicRequest
@@ -578,7 +578,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         // Note: No speakers for research conference
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
-    
+
     // Research Conference Step 2: Research Conference Detail
     public class CreateResearchConferenceDetailRequest
     {

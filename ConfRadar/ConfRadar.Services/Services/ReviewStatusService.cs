@@ -1,10 +1,5 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -19,7 +14,7 @@ namespace ConfRadar.Services.Services
     public class ReviewStatusService : IReviewStatusService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public ReviewStatusService(IUnitOfWork unitOfWork)  => _unitOfWork = unitOfWork;
+        public ReviewStatusService(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
 
         public async Task<List<ReviewStatus>> GetAllReviewStatuses()
         {

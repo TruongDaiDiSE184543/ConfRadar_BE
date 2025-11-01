@@ -9,7 +9,9 @@
         public string ConferenceId { get; set; }
         public string PaymentLockKey { get; set; }
         public List<string> ConferenceSessionIds { get; set; }
-       
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+
     }
     //public class TransactionResearchConferenceAbstractDataHolder
     //{
