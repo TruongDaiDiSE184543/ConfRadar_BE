@@ -2,6 +2,8 @@ using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Room;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.DTOs.General;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
 {
@@ -20,6 +22,7 @@ namespace ConfRadar.Services.Services
         Task<List<RoomOccupationSlotResponse>> GetSessionsInRoomOnDateAsync(string roomId, DateOnly date);
         Task<List<TimeSpanResponse>> GetUnoccupiedTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
+        Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
 
     }
 
@@ -377,6 +380,97 @@ namespace ConfRadar.Services.Services
                 .ToList();
  
             return occupiedTimeSpans;
+        }
+
+        public async Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null)
+        {
+            // Validate pagination parameters
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            // Build the query with filtering options
+            var query = _unitOfWork.RoomRepository.GetAllRoomsWithoutTracking();
+
+            // Apply destination filter if provided
+            if (!string.IsNullOrEmpty(destinationId))
+            {
+                query = query.Where(r => r.DestinationId == destinationId);
+            }
+
+            // Apply search keyword filter if provided (search in Number and DisplayName)
+            if (!string.IsNullOrEmpty(searchKeyword))
+            {
+                query = query.Where(r => r.Number.ToLower().Contains(searchKeyword.ToLower()) || 
+                                        r.DisplayName.ToLower().Contains(searchKeyword.ToLower()));
+            }
+
+            // Get total count for pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination
+            var rooms = await query
+                .OrderBy(r => r.Number) // Sort by room number for consistent pagination
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Create responses with room information
+            var roomResponses = rooms.Select(room => new DTOs.Room.RoomWithSessionsResponse
+            {
+                RoomId = room.RoomId,
+                Number = room.Number,
+                DisplayName = room.DisplayName,
+                DestinationId = room.DestinationId,
+                Sessions = new List<DTOs.Room.RoomOccupationSlotResponse>() // Initialize empty list, will populate later
+            }).ToList();
+
+            // If a specific date is provided, get sessions for that date
+            if (date.HasValue)
+            {
+                // Get all session IDs for the rooms on the specified date to efficiently fetch sessions
+                var roomIds = rooms.Select(r => r.RoomId).ToList();
+                var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdsAndDateAsync(roomIds, date.Value);
+
+                // Get all associated conferences at once to reduce database calls
+                var conferenceIds = sessions.Select(cs => cs.ConferenceId).Where(id => !string.IsNullOrEmpty(id)).ToList();
+                var conferences = new Dictionary<string, Conference>();
+                if (conferenceIds.Any())
+                {
+                    conferences = await _unitOfWork.ConferenceRepository.GetConferencesByIdsAsync(conferenceIds);
+                }
+
+                // Group sessions by room ID for efficient assignment
+                var sessionsByRoomId = sessions.GroupBy(s => s.RoomId).ToDictionary(g => g.Key, g => g.ToList());
+
+                // Populate each room's sessions
+                foreach (var roomResponse in roomResponses)
+                {
+                    if (sessionsByRoomId.ContainsKey(roomResponse.RoomId))
+                    {
+                        var roomSessions = sessionsByRoomId[roomResponse.RoomId];
+                        roomResponse.Sessions = roomSessions.Select(session => new DTOs.Room.RoomOccupationSlotResponse
+                        {
+                            SessionId = session.ConferenceSessionId,
+                            SessionTitle = session.Title,
+                            StartTime = session.StartTime.GetValueOrDefault(),
+                            EndTime = session.EndTime.GetValueOrDefault(),
+                            ConferenceId = session.ConferenceId!,
+                            ConferenceName = conferences.ContainsKey(session.ConferenceId!) 
+                                ? conferences[session.ConferenceId!].ConferenceName 
+                                : "Unknown Conference"
+                        }).ToList();
+
+                    }
+                }
+            }
+
+            return new DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>
+            {
+                Items = roomResponses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
 }

@@ -192,5 +192,26 @@ namespace ConfRadar.Api.Controllers
                 return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
             }
         }
+
+        // NEW ENDPOINT: Get rooms with their sessions (paginated with filtering)
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [HttpGet("rooms-with-sessions")]
+        public async Task<IActionResult> GetRoomsWithSessions(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? destinationId = null,
+            [FromQuery] string? searchKeyword = null,
+            [FromQuery] DateOnly? date = null)
+        {
+            try
+            {
+                var roomsWithSessions = await _serviceManager.RoomService.GetRoomsWithSessionsAsync(page, pageSize, destinationId, searchKeyword, date);
+                return Ok(ApiResponse<Services.DTOs.General.PagedResult<Services.DTOs.Room.RoomWithSessionsResponse>>.SuccessResponse(roomsWithSessions, "Rooms with sessions retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
+            }
+        }
     }
 }

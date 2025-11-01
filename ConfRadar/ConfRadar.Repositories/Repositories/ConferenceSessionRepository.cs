@@ -14,12 +14,14 @@ namespace ConfRadar.Repositories.Repositories
         Task<ConferenceSession?> GetConferenceSessionByIdAsync(string sessionId);
         Task<List<ConferenceSession>> GetAllConferenceSessionsAsync();
         Task<List<ConferenceSession>> GetSessionsByConferenceIdAsync(string conferenceId);
+        Task<List<ConferenceSession>> GetSessionsByConferenceIdWithRoomAsync(string conferenceId);
         Task<ConferenceSession?> GetSessionWithDetailsAsync(string sessionId);
         Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateOnly startDate, DateOnly endDate);
         Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateAsync(string roomId, DateOnly date);
         Task<List<ConferenceSession>> GetSessionsByRoomIdOverlappingTimeAsync(string roomId, DateOnly date, DateTime startTime, DateTime endTime);
         Task<List<ConferenceSession>> GetSessionsByRoomIdAtTimeAsync(string roomId, DateOnly date, DateTime checkTime);
         Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdsAndDateAsync(List<string> roomIds, DateOnly date);
     }
 
     public class ConferenceSessionRepository : GenericRepository<ConferenceSession>, IConferenceSessionRepository
@@ -56,6 +58,14 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ConferenceSession>> GetSessionsByConferenceIdAsync(string conferenceId)
         {
             return await _context.ConferenceSessions
+                .Where(cs => cs.ConferenceId == conferenceId)
+                .ToListAsync();
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsByConferenceIdWithRoomAsync(string conferenceId)
+        {
+            return await _context.ConferenceSessions
+                .Include(cs => cs.Room)
                 .Where(cs => cs.ConferenceId == conferenceId)
                 .ToListAsync();
         }
@@ -151,6 +161,16 @@ namespace ConfRadar.Repositories.Repositories
             // where the stored local start time falls within the local day.
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
+                             cs.SessionDate.HasValue &&
+                             cs.SessionDate == date)
+                .ToListAsync();
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdsAndDateAsync(List<string> roomIds, DateOnly date)
+        {
+            // Get sessions for multiple rooms on a specific date
+            return await _context.ConferenceSessions
+                .Where(cs => roomIds.Contains(cs.RoomId) &&
                              cs.SessionDate.HasValue &&
                              cs.SessionDate == date)
                 .ToListAsync();
