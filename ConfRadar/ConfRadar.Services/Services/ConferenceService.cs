@@ -96,7 +96,7 @@ namespace ConfRadar.Services.Services
         //}
 
         #region Helper methods to validateDate
-        private 
+       
 
         #endregion
 

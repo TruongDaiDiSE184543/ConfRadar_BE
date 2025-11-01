@@ -124,15 +124,13 @@ namespace ConfRadar.Services.Services
 
         private async Task ValidateSessionTimeAvailability(DateTime startTime, DateTime endTime, string roomId, string? sessionIdToExclude = null)
         {
-            var startTimeUtc = DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
-            var endTimeUtc = DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
-
-            if ((endTimeUtc - startTimeUtc).TotalMinutes < 30)
+            if ((endTime - startTime).TotalMinutes < 30)
             {
                 throw new BadRequestException("Session duration must be at least 30 minutes.");
             }
 
-            var sessionDate = DateOnly.FromDateTime(startTimeUtc);
+            // The date is simply the date part of the local start time. No time zone math.
+            var sessionDate = DateOnly.FromDateTime(startTime);
             var existingSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(roomId, sessionDate);
 
             foreach (var existingSession in existingSessions)
@@ -140,12 +138,14 @@ namespace ConfRadar.Services.Services
                 if (existingSession.ConferenceSessionId == sessionIdToExclude) continue;
                 if (!existingSession.StartTime.HasValue || !existingSession.EndTime.HasValue) continue;
 
-                var existingStartUtc = DateTime.SpecifyKind(existingSession.StartTime.Value, DateTimeKind.Unspecified);
-                var existingEndUtc = DateTime.SpecifyKind(existingSession.EndTime.Value, DateTimeKind.Unspecified);
+                // The values from the DB are already the correct local Vietnam time.
+                var existingStart = existingSession.StartTime.Value;
+                var existingEnd = existingSession.EndTime.Value;
 
-                if (startTimeUtc < existingEndUtc && endTimeUtc > existingStartUtc)
+                // Direct, simple comparison of local times.
+                if (startTime < existingEnd && endTime > existingStart)
                 {
-                    throw new BadRequestException($"Session conflicts with an existing session in room {roomId} from {existingStartUtc:HH:mm} to {existingEndUtc:HH:mm}.");
+                    throw new BadRequestException($"Session conflicts with an existing session in room {roomId} from {existingStart:HH:mm} to {existingEnd:HH:mm}.");
                 }
             }
         }
@@ -413,15 +413,11 @@ namespace ConfRadar.Services.Services
                         if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null) 
                             throw new NotFoundException($"Room with ID {session.RoomId} not found");
 
-                        // Validate session time availability
-                        var startDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
-                        var endDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
-                        
-                        startDateTime = startDateTime.AddHours(session.StartTime.Value.Hour).AddMinutes(session.StartTime.Value.Minute);
-                        endDateTime = endDateTime.AddHours(session.EndTime.Value.Hour).AddMinutes(session.EndTime.Value.Minute);
+                        var sessionStartDateTime = session.Date.Value.ToDateTime(session.StartTime.Value);
+                        var sessionEndDateTime = session.Date.Value.ToDateTime(session.EndTime.Value);
 
-                        await ValidateSessionTimeAvailability(startDateTime, endDateTime, session.RoomId);
-                        
+                        // Step 2: Validate using these direct, local time values.
+                        await ValidateSessionTimeAvailability(sessionStartDateTime, sessionEndDateTime, session.RoomId);
 
                         var conferenceSession = session.ToModel(conferenceId);
                         await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
@@ -431,15 +427,16 @@ namespace ConfRadar.Services.Services
                         {
                             foreach (var speakerRequest in session.Speaker)
                             {
-                                var speaker = speakerRequest.ToModel(conferenceSession.ConferenceSessionId);
+                                String speakerURL = "";
                                 
                                 if (speakerRequest.Image != null)
                                 {
                                     using var stream = speakerRequest.Image.OpenReadStream();
                                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(speakerRequest.Image.FileName);
-                                    speaker.Image = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, speakerRequest.Image.ContentType);
-                                    speaker.Image = _objectStorageSettings.EndPoint + speaker.Image;
+                                    speakerURL = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, speakerRequest.Image.ContentType);
+                                    speakerURL = _objectStorageSettings.EndPoint + speakerURL;
                                 }
+                                var speaker = speakerRequest.ToModel(conferenceSession.ConferenceSessionId, speakerURL);
 
                                 await _unitOfWork.SpeakerRepository.CreateSpeakerAsync(speaker);
                             }
@@ -450,16 +447,17 @@ namespace ConfRadar.Services.Services
                         {
                             foreach (var mediaRequest in session.SessionMedias)
                             {
-                                var sessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId);
+                                String mediaURl = "";
+                                
                                 
                                 if (mediaRequest.MediaFile != null)
                                 {
                                     using var stream = mediaRequest.MediaFile.OpenReadStream();
                                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(mediaRequest.MediaFile.FileName);
-                                    sessionMedia.MediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
-                                    sessionMedia.MediaUrl = _objectStorageSettings.EndPoint + sessionMedia.MediaUrl;
+                                    mediaURl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
+                                    mediaURl = _objectStorageSettings.EndPoint + mediaURl;
                                 }
-
+                                var sessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId, mediaURl);
                                 await _unitOfWork.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(sessionMedia);
                             }
                         }
@@ -467,6 +465,8 @@ namespace ConfRadar.Services.Services
                         // Get updated session with all details
                         var createdSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(conferenceSession.ConferenceSessionId);
                         responses.Add(createdSession.ToResponseWithMedia());
+                        //int result = await _unitOfWork.SaveChangesAsync();
+                        //if (result <= 0) throw new Exception("Không tạo được");
                     }
                 }
 
@@ -1147,17 +1147,17 @@ namespace ConfRadar.Services.Services
                         {
                             foreach (var mediaRequest in session.SessionMedias)
                             {
-                                var sessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId);
-                                
+                                string sessionMedia = "";
                                 if (mediaRequest.MediaFile != null)
                                 {
                                     using var stream = mediaRequest.MediaFile.OpenReadStream();
                                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(mediaRequest.MediaFile.FileName);
-                                    sessionMedia.MediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
-                                    sessionMedia.MediaUrl = _objectStorageSettings.EndPoint + sessionMedia.MediaUrl;
+                                    sessionMedia = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
+                                    sessionMedia = _objectStorageSettings.EndPoint + sessionMedia;
                                 }
+                                var conferenceSessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId, sessionMedia);
 
-                                await _unitOfWork.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(sessionMedia);
+                                await _unitOfWork.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(conferenceSessionMedia);
                             }
                         }
 

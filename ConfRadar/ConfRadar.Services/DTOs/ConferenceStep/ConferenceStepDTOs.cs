@@ -113,8 +113,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         public string? RoomId { get; set; }
         [Required(ErrorMessage = "Cần có ít nhất một diễn giả")]
-        public List<CreateSpeakerRequest> Speaker { get; set; }
-        public List<CreateConferenceSessionMediaRequest> SessionMedias { get; set; }
+        public List<CreateSpeakerRequest>? Speaker { get; set; }
+        public List<CreateConferenceSessionMediaRequest>? SessionMedias { get; set; }
     }
 
     public class CreateConferenceSessionMediaRequest
@@ -131,7 +131,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         [MaxLength(250)]
         public string? Description { get; set; }
-        public string? ImageUrl { get; set; }
+        //public string? ImageUrl { get; set; }
         public IFormFile Image {  get; set; }
     }
 
