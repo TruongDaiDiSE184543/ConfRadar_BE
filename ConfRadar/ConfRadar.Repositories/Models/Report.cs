@@ -19,5 +19,7 @@ public partial class Report
 
     public string? UserId { get; set; }
 
+    public virtual ReportFeedback? ReportFeedback { get; set; }
+
     public virtual User? User { get; set; }
 }

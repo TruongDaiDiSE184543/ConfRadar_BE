@@ -6,6 +6,15 @@ using System.Linq;
 
 namespace ConfRadar.Repositories.Repositories
 {
+    public interface IFullPaperRepository
+    {
+        Task<int> CreateFullPaperAsync(FullPaper fullPaper);
+        Task<int> UpdateFullPaperAsync(FullPaper fullPaper);
+        Task<bool> DeleteFullPaperAsync(FullPaper fullPaper);
+        Task<FullPaper?> GetFullPaperByIdAsync(string fullPaperId);
+        Task<List<FullPaper>> GetAllFullPapersAsync();
+        Task<List<FullPaper>> GetFullPaperByStatusName(string status);
+    }
     public class FullPaperRepository : GenericRepository<FullPaper>, IFullPaperRepository
     {
         public FullPaperRepository(ConfRadarDbContext context) : base(context) { }

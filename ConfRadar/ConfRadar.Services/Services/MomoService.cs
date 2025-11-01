@@ -389,7 +389,7 @@ namespace ConfRadar.Services.Services
             var paperObj = new Paper()
             {
                 PaperId = Guid.NewGuid().ToString(),
-                PresenterId = transacDataHolder.UserId,
+                //PresenterId = transacDataHolder.UserId,
                 ConferenceId = transacDataHolder.ConferenceId,
                 CreatedAt = ExtensionHelper.GetVietnamTime(),
                 PaperPhaseId = currentPaperPhase.PaperPhaseId,

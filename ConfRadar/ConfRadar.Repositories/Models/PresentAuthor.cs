@@ -5,11 +5,13 @@ namespace ConfRadar.Repositories.Models;
 
 public partial class PresentAuthor
 {
-    public string? ConferenceSessionId { get; set; }
+    public string ConferenceSessionId { get; set; } = null!;
 
-    public string? UserId { get; set; }
+    public string PaperId { get; set; } = null!;
 
-    public virtual ConferenceSession? ConferenceSession { get; set; }
+    public DateTime? AssignedAt { get; set; }
 
-    public virtual User? User { get; set; }
+    public virtual ConferenceSession ConferenceSession { get; set; } = null!;
+
+    public virtual Paper Paper { get; set; } = null!;
 }

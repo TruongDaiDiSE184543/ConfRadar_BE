@@ -25,6 +25,8 @@ public partial class Transaction
 
     public virtual PaymentMethod? PaymentMethod { get; set; }
 
+    public virtual ICollection<RefundRequest> RefundRequests { get; set; } = new List<RefundRequest>();
+
     public virtual Ticket? Ticket { get; set; }
 
     public virtual User? User { get; set; }

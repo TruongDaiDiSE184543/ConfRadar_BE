@@ -49,7 +49,7 @@ namespace ConfRadar.Repositories.Repositories
             var result = await (
          from a in _context.Abstracts
          join p in _context.Papers on a.AbstractId equals p.AbstractId
-         join u in _context.Users on p.PresenterId equals u.UserId
+         //join u in _context.Users on p.PresenterId equals u.UserId
          join c in _context.Conferences on p.ConferenceId equals c.ConferenceId
          join gs in _context.GlobalStatuses on a.GlobalStatusId equals gs.GlobalStatusId
          where a.GlobalStatusId == pendingGlobalStatusId && p.AbstractId !=null
@@ -58,9 +58,9 @@ namespace ConfRadar.Repositories.Repositories
              AbstractId = a.AbstractId,
              AbstractUrl = a.AbstractUrl,
              PaperId = p.PaperId,
-             PresenterId = p.PresenterId,
-             PresenterName = u.FullName,
-             AvatarUrl = u.AvatarUrl,
+             //PresenterId = p.PresenterId,
+             //PresenterName = u.FullName,
+             //AvatarUrl = u.AvatarUrl,
              ConferenceId = p.ConferenceId, 
              ConferenceName = c.ConferenceName,
              GlobalStatusId = a.GlobalStatusId,

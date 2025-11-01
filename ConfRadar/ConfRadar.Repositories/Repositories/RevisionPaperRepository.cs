@@ -1,11 +1,22 @@
 using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Repositories.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
 {
-    public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisionPaperRepository
+    public interface IRevisionPaperRepository
+    {
+        Task<int> CreateRevisionPaperAsync(RevisionPaper revisionPaper);
+        Task<int> UpdateRevisionPaperAsync(RevisionPaper revisionPaper);
+        Task<bool> DeleteRevisionPaperAsync(RevisionPaper revisionPaper);
+        Task<RevisionPaper?> GetRevisionPaperByIdAsync(string revisionPaperId);
+        Task<List<RevisionPaper>> GetAllRevisionPapersAsync();
+        Task<RevisionPaper> GetDetailRevisionPaper(string revisionPaperId);
+    }
+}
+public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisionPaperRepository
     {
         public RevisionPaperRepository(ConfRadarDbContext context) : base(context) { }
 
@@ -46,4 +57,3 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync();
         }
     }
-}
