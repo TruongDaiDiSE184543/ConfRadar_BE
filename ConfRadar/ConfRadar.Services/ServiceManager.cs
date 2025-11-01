@@ -25,6 +25,7 @@ namespace ConfRadar.Services
         public ICameraReadyService CameraReadyService { get; }
         public ICityService CityService { get; }
         public IConferenceStatusService ConferenceStatusService { get; }
+        public IConferenceTimelineService ConferenceTimelineService { get; }
         //public ICityService CityService { get; }
 
     }
@@ -53,6 +54,7 @@ namespace ConfRadar.Services
         private readonly ICameraReadyService _cameraReadyService;
         private readonly ICityService _cityService;
         private readonly IConferenceStatusService _conferenceStatusService;
+        private readonly IConferenceTimelineService _conferenceTimelineService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -74,7 +76,8 @@ namespace ConfRadar.Services
             ICameraReadyService cameraReadyService,
             IRankingCategoryService rankingCategoryService,
             ICityService cityService,
-            IConferenceStatusService conferenceStatusService)
+            IConferenceStatusService conferenceStatusService,
+            IConferenceTimelineService conferenceTimelineService)
         {
             _authService = authService;
             _momoService = momoService;
@@ -96,6 +99,7 @@ namespace ConfRadar.Services
             _cameraReadyService = cameraReadyService;
             _cityService = cityService;
             _conferenceStatusService = conferenceStatusService;
+            _conferenceTimelineService = conferenceTimelineService;
         }
 
         public IAuthService AuthService => _authService;
@@ -123,6 +127,8 @@ namespace ConfRadar.Services
         public ICityService CityService => _cityService;
 
         public IConferenceStatusService ConferenceStatusService => _conferenceStatusService;
+
+        public IConferenceTimelineService ConferenceTimelineService => _conferenceTimelineService;
 
     }
 

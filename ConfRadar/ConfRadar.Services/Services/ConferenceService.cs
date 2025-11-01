@@ -6,6 +6,7 @@ using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.DTOs.Configuration;
 using ConfRadar.Services.DTOs.General;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Mappers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -55,24 +56,28 @@ namespace ConfRadar.Services.Services
     public class ConferenceService : IConferenceService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IConferenceStatusService _conferenceStatusService;
+        private readonly IConferenceTimelineService _conferenceTimelineService;
         private readonly IObjectStorageFileService _objectStorageFileService;
         private readonly ITokenService _tokenService;
         private readonly ISystemConfigurationService _systemConfigurationService;
 
         private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
 
-        public ConferenceService(IUnitOfWork unitOfWork, IObjectStorageFileService objectStorageFileService, ITokenService tokenService, ISystemConfigurationService systemConfigurationService, IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings)
+        public ConferenceService(IUnitOfWork unitOfWork, IConferenceStatusService conferenceStatusService, IConferenceTimelineService conferenceTimelineService, IObjectStorageFileService objectStorageFileService, ITokenService tokenService, ISystemConfigurationService systemConfigurationService, IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings)
         {
             _unitOfWork = unitOfWork;
+            _conferenceStatusService = conferenceStatusService;
+            _conferenceTimelineService = conferenceTimelineService;
             _objectStorageFileService = objectStorageFileService;
             _tokenService = tokenService;
             _systemConfigurationService = systemConfigurationService;
             _objectStorageSettings = objectStorageSettings.Value;
         }
 
-     
 
-       
+
+
 
         ///// <summary>
         ///// Adds the base MinIO URL to a file URL if it's not already a full URL
@@ -90,7 +95,11 @@ namespace ConfRadar.Services.Services
         //    return _objectStorageSettings.EndPoint?.TrimEnd('/') + "/" + url.TrimStart('/');
         //}
 
-     
+        #region Helper methods to validateDate
+        private 
+
+        #endregion
+
 
         public async Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize)
         {
@@ -135,9 +144,12 @@ namespace ConfRadar.Services.Services
 
         public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
         {
+            //only retrieve conference with status ready
+            var readyStatus =await  _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
             IQueryable<Conference> query = _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhases);
+                    .ThenInclude(cp => cp.PricePhases)
+                    .Where(c => c.ConferenceStatusId == readyStatus.ConferenceStatusId);
 
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
@@ -589,26 +601,57 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null)
             {
-                return false;
+                throw new BadRequestException("Không tìm thấy conf id này");
+            }
+
+            // Get current status name from the conference status ID
+            var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
+            if (currentStatus == null)
+            {
+                throw new BadRequestException("Không tìm thấy trạng thái hiện tại của hội nghị");
             }
 
             // Get the new status by name
-            var allStatuses = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
-            var newStatus = allStatuses.FirstOrDefault(s => s.ConferenceStatusName == newStatusName);
-                
+            var newStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(newStatusName);
             if (newStatus == null)
             {
                 return false;
             }
+            await _unitOfWork.BeginTransactionAsync();
+            try{
+                // Validate the status transition
+                bool isValidTransition = await _conferenceStatusService.IsStatusTransitionValidAsync(currentStatus.ConferenceStatusName, newStatus.ConferenceStatusName);
+                if (!isValidTransition)
+                {
+                    throw new BadRequestException($"Chuyển trạng thái từ '{currentStatus.ConferenceStatusName}' sang '{newStatusName}' không hợp lệ");
+                }
 
-            // Update the conference status
-            conference.ConferenceStatusId = newStatus.ConferenceStatusId;
-            
-            // Here we could use the reason parameter in the future to store in a history/timeline table
-            // For now, we're just keeping the field for future use as requested
+                // Update the conference status
+                conference.ConferenceStatusId = newStatus.ConferenceStatusId;
 
-            await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
-            return true;
+                // Create a timeline record for the status change
+                var timelineRecord = new CreateConferenceTimelineRequest
+                {
+                    ConferenceId = conferenceId,
+                    ChangeDate = ExtensionHelper.GetVietnamDate(),
+                    PreviousStatusId = currentStatus.ConferenceStatusId,
+                    AfterwardStatusId = newStatus.ConferenceStatusId,
+                    Reason = reason
+                };
+
+                await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
+                
+                // Insert the timeline record after the status change is saved
+                await _conferenceTimelineService.CreateConferenceTimelineAsync(timelineRecord.ToModel());
+                
+                await _unitOfWork.CommitAsync();
+                return true;
+            }catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                return false;
+            }
+           
         }
 
         public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId)

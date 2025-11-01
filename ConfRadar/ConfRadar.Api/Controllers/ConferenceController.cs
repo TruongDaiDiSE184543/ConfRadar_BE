@@ -59,6 +59,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully"));
         }
 
+
         // NEW ENDPOINT 3: Get conferences by status ID with filtering
         [HttpGet("by-status/{conferenceStatusId}")]
         public async Task<IActionResult> GetConferencesByStatus(
@@ -155,5 +156,7 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, step);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Research conference step completion status retrieved successfully"));
         }
+
+        
     }
 }

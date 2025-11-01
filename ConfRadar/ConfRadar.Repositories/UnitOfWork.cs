@@ -17,7 +17,7 @@ namespace ConfRadar.Repositories
         IPaperPhaseRepository PaperPhaseRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
         //ITransactionStatusRepository TransactionStatusRepository { get; }
-
+        IConferenceTimelineRepository ConferenceTimelineRepository { get; } 
 
 
         //ITransactionTypeRepository TransactionTypeRepository { get; }
@@ -84,6 +84,7 @@ namespace ConfRadar.Repositories
         private IPaperPhaseRepository _PaperPhaseRepository;
         private IPaymentMethodRepository _PaymentMethodRepository;
         private IConferenceSessionMediumRepository _ConferenceSessionMediumRepository;
+        private IConferenceTimelineRepository _ConferenceTimelineRepository;
         //private ITransactionStatusRepository _TransactionStatusRepository;
 
         private IPricePhaseRepository _PricePhaseRepository;
@@ -139,7 +140,7 @@ namespace ConfRadar.Repositories
         public IConferenceSessionMediumRepository ConferenceSessionMediumRepository => _ConferenceSessionMediumRepository ??= new ConferenceSessionMediumRepository(_context);
         public IUserRefreshTokenRepository UserRefreshTokenRepository => _UserRefreshTokenRepository ??= new UserRefreshTokenRepository(_context);
 
-
+        public IConferenceTimelineRepository ConferenceTimelineRepository => _ConferenceTimelineRepository ??= new ConferenceTimelineRepository(_context);
         public IUserRoleRepository UserRoleRepository => _UserRoleRepository ??= new UserRoleRepository(_context);
 
         public IGlobalStatusRepository GlobalStatusRepository => _GlobalStatusRepository ??= new GlobalStatusRepository(_context);

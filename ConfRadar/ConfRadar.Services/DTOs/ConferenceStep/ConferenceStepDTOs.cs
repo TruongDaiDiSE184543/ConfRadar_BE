@@ -43,7 +43,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly TicketSaleStart { get; set; }
         [Required(ErrorMessage = "Ngày kết thúc bán vé là bắt buộc")]
         public DateOnly TicketSaleEnd { get; set; }
-        public string? createdby {  get; set; }
+        //public string? createdby {  get; set; }
         [Required(ErrorMessage = "Đối tượng mục tiêu là bắt buộc")]
         public string? targetAudienceTechnicalConference { get; set; }
     }
@@ -84,12 +84,13 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public Boolean isAuthor { get; set; }
         [Required(ErrorMessage = "Tổng số lượng là bắt buộc")]
         public int TotalSlot { get; set; }
+        public List<CreatePricePhaseRequest> Phases { get; set; }
     }
 
     public class AddConferencePricesRequest
     {
-        public CreateConferencePriceRequest TypeOfTicket { get; set; }
-        public List<CreatePricePhaseRequest> Phases { get; set; }
+        public List<CreateConferencePriceRequest> TypeOfTicket { get; set; }
+        
     }
 
     // Step 3: Conference Sessions
@@ -400,6 +401,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public int? AvailableSlot { get; set; }
     }
 
+    public class ConferencePriceListWithPhasesResponse
+    {
+       public List<ConferencePriceWithPhasesResponse>? conferencePriceWithPhasesResponses { get; set; }
+    }
+
     public class ConferencePriceWithPhasesResponse
     {
         public string ConferencePriceId { get; set; }
@@ -408,6 +414,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? TicketDescription { get; set; }
         public List<PricePhaseResponse>? PricePhases { get; set; }
     }
+    
 
     public class ConferenceSessionWithMediaResponse
     {
