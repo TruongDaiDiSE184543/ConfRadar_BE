@@ -8,7 +8,7 @@ namespace ConfRadar.Services.Services
 {
     public interface ITicketService
     {
-        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10);
+        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10,  DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
         Task<List<PaidTicketResponse>> GetTicketListByConferenceId(string conferenceId);
     }
     public class TicketService : ITicketService
@@ -39,11 +39,11 @@ namespace ConfRadar.Services.Services
             }).ToList();
         }
 
-        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId,string? keyword,int? pageNumber=1,int? pageSize=10)
+        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId,string? keyword,int? pageNumber=1,int? pageSize=10,  DateTime? sessionStartTime = null,  DateTime? sessionEndTime = null)
         {
             int page = pageNumber ?? 1;
             int size = pageSize ?? 10;
-            return await _unitOfWork.TicketRepository.GetTicketsByUserId(userId,keyword, page, size);
+            return await _unitOfWork.TicketRepository.GetTicketsByUserId(userId,keyword, page, size,sessionStartTime,sessionEndTime);
         }
 
     }

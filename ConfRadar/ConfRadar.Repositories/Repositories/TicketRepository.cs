@@ -9,7 +9,7 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface ITicketRepository
     {
-        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10);
+        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10,DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
         Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId);
         Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId);
         Task<int> CreateTicketAsync(Ticket ticket);
@@ -22,7 +22,7 @@ namespace ConfRadar.Repositories.Repositories
         {
         }
 
-        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10)
+        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
         {
             var query = _context.Tickets.AsNoTracking().Where(t => t.UserId == userId);
             if (!string.IsNullOrEmpty(keyword))
@@ -41,13 +41,22 @@ namespace ConfRadar.Repositories.Repositories
                         // Search theo City
                         uci.ConferenceSession.Room.Destination.City.CityName.ToLower().Contains(keyword)
                     )||t.Transactions.Any(tr =>
+                        tr.TransactionId.ToLower().Contains(keyword) ||
                         tr.TransactionCode.ToLower().Contains(keyword) ||
                         tr.PaymentMethod.MethodName.ToLower().Contains(keyword)
                     )
                 );
             }
 
-
+            if (sessionStartTime.HasValue || sessionEndTime.HasValue)
+            {
+                query = query.Where(t =>
+                    t.UserCheckIns.Any(uci =>
+                        (!sessionStartTime.HasValue || uci.ConferenceSession.SessionDate >= DateOnly.FromDateTime(sessionStartTime.Value)) &&
+                        (!sessionEndTime.HasValue || uci.ConferenceSession.SessionDate <= DateOnly.FromDateTime(sessionEndTime.Value))
+                    )
+                );
+            }
 
             var totalCount = await query.CountAsync();
 
