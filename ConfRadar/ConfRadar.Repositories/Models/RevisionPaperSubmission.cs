@@ -9,6 +9,10 @@ public partial class RevisionPaperSubmission
 
     public string? RevisionPaperUrl { get; set; }
 
+    public string? Title { get; set; }
+
+    public string? Description { get; set; }
+
     public string? RevisionPaperId { get; set; }
 
     public string? RevisionDeadlineRoundId { get; set; }

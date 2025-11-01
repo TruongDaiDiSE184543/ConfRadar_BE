@@ -10,6 +10,18 @@ using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
+    public interface IPaperAuthorRepository
+    {
+        Task<int> CreatePaperAuthorAsync(PaperAuthor paperAuthor);
+        Task<int> UpdatePaperAuthorAsync(PaperAuthor paperAuthor);
+        Task<bool> DeletePaperAuthorAsync(PaperAuthor paperAuthor);
+        Task<PaperAuthor?> GetPaperAuthorByIdAsync(string? userId, string? paperId);
+        Task<List<PaperAuthor>> GetAllPaperAuthorsAsync();
+        Task<List<PaperAuthor>> GetPaperAuthorsByPaperIdAsync(string paperId);
+        Task<List<PaperAuthor>> GetPaperAuthorsByUserIdAsync(string userId);
+        Task<int> CreateMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthor);
+        Task<List<Paper>> GetPapersByUserIdAsync(string userId);
+    }
     public class PaperAuthorRepository : GenericRepository<PaperAuthor>, IPaperAuthorRepository
     {
         public PaperAuthorRepository(ConfRadarDbContext context) : base(context) { }

@@ -14,4 +14,6 @@ public partial class ReportFeedback
     public string? AdminId { get; set; }
 
     public virtual User? Admin { get; set; }
+
+    public virtual Report Report { get; set; } = null!;
 }

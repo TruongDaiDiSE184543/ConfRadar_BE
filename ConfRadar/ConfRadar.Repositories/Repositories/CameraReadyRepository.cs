@@ -5,6 +5,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
 {
+    public interface ICameraReadyRepository
+    {
+        Task<int> CreateCameraReadyAsync(CameraReady cameraReady);
+        Task<int> UpdateCameraReadyAsync(CameraReady cameraReady);
+        Task<bool> DeleteCameraReadyAsync(CameraReady cameraReady);
+        Task<CameraReady?> GetCameraReadyByIdAsync(string cameraReadyId);
+        Task<List<CameraReady>> GetAllCameraReadysAsync();
+        Task<List<CameraReady>> GetCameraBystatusName(string status);
+    }
     public class CameraReadyRepository : GenericRepository<CameraReady>, ICameraReadyRepository
     {
         public CameraReadyRepository(ConfRadarDbContext context) : base(context) { }

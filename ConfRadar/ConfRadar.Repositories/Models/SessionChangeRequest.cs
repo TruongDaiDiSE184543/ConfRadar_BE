@@ -26,4 +26,6 @@ public partial class SessionChangeRequest
     public virtual GlobalStatus? GlobalStatus { get; set; }
 
     public virtual ConferenceSession? NewConferenceSession { get; set; }
+
+    public virtual Ticket? Ticket { get; set; }
 }

@@ -41,11 +41,15 @@ public partial class User
 
     public DateTime? CreatedAt { get; set; }
 
+    public virtual ICollection<AcademicProfile> AcademicProfiles { get; set; } = new List<AcademicProfile>();
+
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual ICollection<ConferenceFeedback> ConferenceFeedbacks { get; set; } = new List<ConferenceFeedback>();
 
     public virtual ICollection<Conference> Conferences { get; set; } = new List<Conference>();
+
+    public virtual ICollection<FavouriteConference> FavouriteConferences { get; set; } = new List<FavouriteConference>();
 
     public virtual ICollection<FullPaperReview> FullPaperReviews { get; set; } = new List<FullPaperReview>();
 
@@ -53,9 +57,9 @@ public partial class User
 
     public virtual ICollection<PaperAuthor> PaperAuthors { get; set; } = new List<PaperAuthor>();
 
-    public virtual ICollection<PaperWaitList> PaperWaitLists { get; set; } = new List<PaperWaitList>();
+    public virtual ICollection<PaperReviewer> PaperReviewers { get; set; } = new List<PaperReviewer>();
 
-    public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
+    public virtual ICollection<PaperWaitList> PaperWaitLists { get; set; } = new List<PaperWaitList>();
 
     public virtual ICollection<PresenterChangeRequest> PresenterChangeRequestNewPresenters { get; set; } = new List<PresenterChangeRequest>();
 

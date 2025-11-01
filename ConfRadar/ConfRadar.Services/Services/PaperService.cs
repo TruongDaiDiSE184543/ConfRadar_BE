@@ -101,10 +101,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Paper hiện tại không đang trong quá trình gửi abstract");
             }
-            if (paper.PresenterId != userId)
-            {
-                throw new NotFoundException($"Bạn không có quyền sỡ hữu bài báo này");
-            }
+            //if (paper.PresenterId != userId)
+            //{
+            //    throw new NotFoundException($"Bạn không có quyền sỡ hữu bài báo này");
+            //}
 
             var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
             foreach (var coauthorId in request.CoAuthorId)
@@ -308,10 +308,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Full paper file đã có trong hệ thống");
             }
-            if (paper.PresenterId != userId)
-            {
-                throw new BadRequestException($"Bạn không phải chủ sỡ hữu bài báo này");
-            }
+            //if (paper.PresenterId != userId)
+            //{
+            //    throw new BadRequestException($"Bạn không phải chủ sỡ hữu bài báo này");
+            //}
 
             string fullPaperFileUrl = string.Empty;
             if (request.FullPaperFile != null)
@@ -467,10 +467,10 @@ namespace ConfRadar.Services.Services
             }
            
             
-            if (paper.PresenterId != userId)
-            {
-                throw new ConfRadarAuthenticationException("Bạn không có quyền nộp revision cho bài báo này");
-            }
+            //if (paper.PresenterId != userId)
+            //{
+            //    throw new ConfRadarAuthenticationException("Bạn không có quyền nộp revision cho bài báo này");
+            //}
        
             var dateNow = ExtensionHelper.GetVietnamDate();
             string revisionDeadlineId = string.Empty; 
@@ -626,10 +626,10 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
 
             }
-            if (paper.PresenterId != userId)
-            {
-                throw new BadRequestException($"Bạn không thể gửi phản hồi vì bạn không phải là chủ bài báo này");
-            }
+            //if (paper.PresenterId != userId)
+            //{
+            //    throw new BadRequestException($"Bạn không thể gửi phản hồi vì bạn không phải là chủ bài báo này");
+            //}
             var feedBackList = new List<RevisionSubmissionFeedback>();
             foreach (var response in request.Responses)
             {
@@ -845,10 +845,10 @@ namespace ConfRadar.Services.Services
             }
 
             // Validate that the user is the presenter of the paper
-            if (paper.PresenterId != userId)
-            {
-                throw new BadRequestException("You are not authorized to create camera ready for this paper.");
-            }
+            //if (paper.PresenterId != userId)
+            //{
+            //    throw new BadRequestException("You are not authorized to create camera ready for this paper.");
+            //}
 
             // Validation: Paper must have either:
             // 1. RevisionPaper with GlobalStatus = "Accepted", OR

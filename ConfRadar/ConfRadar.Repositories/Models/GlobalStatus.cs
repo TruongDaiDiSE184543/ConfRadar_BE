@@ -17,7 +17,7 @@ public partial class GlobalStatus
 
     public virtual ICollection<PresenterChangeRequest> PresenterChangeRequests { get; set; } = new List<PresenterChangeRequest>();
 
-    public virtual ICollection<Refundrequest> Refundrequests { get; set; } = new List<Refundrequest>();
+    public virtual ICollection<RefundRequest> RefundRequests { get; set; } = new List<RefundRequest>();
 
     public virtual ICollection<RevisionPaperReview> RevisionPaperReviews { get; set; } = new List<RevisionPaperReview>();
 

@@ -55,6 +55,8 @@ public partial class Conference
 
     public virtual User? CreatedByNavigation { get; set; }
 
+    public virtual ICollection<FavouriteConference> FavouriteConferences { get; set; } = new List<FavouriteConference>();
+
     public virtual ICollection<MaterialDownload> MaterialDownloads { get; set; } = new List<MaterialDownload>();
 
     public virtual ICollection<PaperWaitList> PaperWaitLists { get; set; } = new List<PaperWaitList>();

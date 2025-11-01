@@ -11,7 +11,13 @@ public partial class RevisionPaper
 
     public string? GlobalStatusId { get; set; }
 
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? ReviewAt { get; set; }
+
     public virtual GlobalStatus? GlobalStatus { get; set; }
+
+    public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
 
     public virtual ICollection<RevisionPaperReview> RevisionPaperReviews { get; set; } = new List<RevisionPaperReview>();
 

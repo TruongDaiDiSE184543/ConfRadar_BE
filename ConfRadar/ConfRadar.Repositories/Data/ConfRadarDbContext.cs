@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using ConfRadar.Repositories.Models;
+﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -91,7 +91,7 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<RefundPolicy> RefundPolicies { get; set; }
 
-    public virtual DbSet<Refundrequest> Refundrequests { get; set; }
+    public virtual DbSet<RefundRequest> RefundRequests { get; set; }
 
     public virtual DbSet<Report> Reports { get; set; }
 
@@ -143,16 +143,16 @@ public partial class ConfRadarDbContext : DbContext
 
     public static string GetConnectionString(string connectionStringName)
     {
-    var config = new ConfigurationBuilder()
-        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-        .AddJsonFile("appsettings.json")
-        .Build();
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
 
-    string connectionString = config.GetConnectionString(connectionStringName);
-    return connectionString;
+        string connectionString = config.GetConnectionString(connectionStringName);
+        return connectionString;
     }
-protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -163,7 +163,9 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.ToTable("Abstract");
 
             entity.Property(e => e.AbstractId).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
+            entity.Property(e => e.ReviewAt).HasColumnType("timestamp without time zone");
 
             entity.HasOne(d => d.GlobalStatus).WithMany(p => p.Abstracts)
                 .HasForeignKey(d => d.GlobalStatusId)
@@ -178,6 +180,10 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 
             entity.Property(e => e.AcademicProfileId).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);
+
+            entity.HasOne(d => d.User).WithMany(p => p.AcademicProfiles)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_AcademicProfile_UserId");
         });
 
         modelBuilder.Entity<AuditLog>(entity =>
@@ -203,7 +209,9 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 
             entity.Property(e => e.CameraReadyId).HasMaxLength(50);
             entity.Property(e => e.CameraReadyUrl).HasColumnName("CameraReadyURL");
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
+            entity.Property(e => e.ReviewAt).HasColumnType("timestamp without time zone");
 
             entity.HasOne(d => d.GlobalStatus).WithMany(p => p.CameraReadies)
                 .HasForeignKey(d => d.GlobalStatusId)
@@ -400,20 +408,22 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 
         modelBuilder.Entity<FavouriteConference>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("FavouriteConference");
+            entity.HasKey(e => new { e.UserId, e.ConferenceId }).HasName("FavouriteConference_pkey");
 
+            entity.ToTable("FavouriteConference");
+
+            entity.Property(e => e.UserId).HasMaxLength(50);
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.UserId).HasMaxLength(50);
 
-            entity.HasOne(d => d.Conference).WithMany()
+            entity.HasOne(d => d.Conference).WithMany(p => p.FavouriteConferences)
                 .HasForeignKey(d => d.ConferenceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_FavouriteConference_ConferenceId");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.FavouriteConferences)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_FavouriteConference_UserId");
         });
 
@@ -424,7 +434,9 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.ToTable("FullPaper");
 
             entity.Property(e => e.FullPaperId).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.FullPaperUrl).HasColumnName("FullPaperURL");
+            entity.Property(e => e.ReviewAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.ReviewStatusId).HasMaxLength(50);
 
             entity.HasOne(d => d.ReviewStatus).WithMany(p => p.FullPapers)
@@ -524,8 +536,11 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.FullPaperId).HasMaxLength(50);
             entity.Property(e => e.PaperPhaseId).HasMaxLength(50);
-            entity.Property(e => e.PresenterId).HasMaxLength(50);
             entity.Property(e => e.RevisionPaperId).HasMaxLength(50);
+
+            entity.HasOne(d => d.Abstract).WithMany(p => p.Papers)
+                .HasForeignKey(d => d.AbstractId)
+                .HasConstraintName("FK_Paper_AbstractId");
 
             entity.HasOne(d => d.CameraReady).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.CameraReadyId)
@@ -535,13 +550,17 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
                 .HasForeignKey(d => d.ConferenceId)
                 .HasConstraintName("FK_Paper_ConferenceId");
 
+            entity.HasOne(d => d.FullPaper).WithMany(p => p.Papers)
+                .HasForeignKey(d => d.FullPaperId)
+                .HasConstraintName("FK_Paper_FullPaperId");
+
             entity.HasOne(d => d.PaperPhase).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.PaperPhaseId)
                 .HasConstraintName("FK_Paper_PaperPhaseId");
 
-            entity.HasOne(d => d.Presenter).WithMany(p => p.Papers)
-                .HasForeignKey(d => d.PresenterId)
-                .HasConstraintName("FK_Paper_Presenter");
+            entity.HasOne(d => d.RevisionPaper).WithMany(p => p.Papers)
+                .HasForeignKey(d => d.RevisionPaperId)
+                .HasConstraintName("FK_Paper_RevisionPaperId");
         });
 
         modelBuilder.Entity<PaperAuthor>(entity =>
@@ -574,18 +593,19 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 
         modelBuilder.Entity<PaperReviewer>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.PaperId });
-            //entity.HasNoKey();
+            entity.HasKey(e => new { e.PaperId, e.UserId }).HasName("PaperReviewers_pkey");
 
             entity.Property(e => e.PaperId).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);
 
-            entity.HasOne(d => d.Paper).WithMany()
+            entity.HasOne(d => d.Paper).WithMany(p => p.PaperReviewers)
                 .HasForeignKey(d => d.PaperId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PaperReviewers_PaperId");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.PaperReviewers)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PaperReviewers_UserId");
         });
 
@@ -642,18 +662,21 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 
         modelBuilder.Entity<PresentAuthor>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => new { e.ConferenceSessionId, e.PaperId }).HasName("PresentAuthors_pkey");
 
             entity.Property(e => e.ConferenceSessionId).HasMaxLength(50);
-            entity.Property(e => e.UserId).HasMaxLength(50);
+            entity.Property(e => e.PaperId).HasMaxLength(50);
+            entity.Property(e => e.AssignedAt).HasColumnType("timestamp without time zone");
 
-            entity.HasOne(d => d.ConferenceSession).WithMany()
+            entity.HasOne(d => d.ConferenceSession).WithMany(p => p.PresentAuthors)
                 .HasForeignKey(d => d.ConferenceSessionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PresentAuthors_ConferenceSessionId");
 
-            entity.HasOne(d => d.User).WithMany()
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK_PresentAuthors_UserId");
+            entity.HasOne(d => d.Paper).WithMany(p => p.PresentAuthors)
+                .HasForeignKey(d => d.PaperId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PresentAuthors_PaperId");
         });
 
         modelBuilder.Entity<PresenterChangeRequest>(entity =>
@@ -749,11 +772,11 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
                 .HasConstraintName("FK_RefundPolicy_ConferenceId");
         });
 
-        modelBuilder.Entity<Refundrequest>(entity =>
+        modelBuilder.Entity<RefundRequest>(entity =>
         {
-            entity.HasKey(e => e.RefundRequestId).HasName("Refundrequest_pkey");
+            entity.HasKey(e => e.RefundRequestId).HasName("RefundRequest_pkey");
 
-            entity.ToTable("Refundrequest");
+            entity.ToTable("RefundRequest");
 
             entity.Property(e => e.RefundRequestId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
@@ -761,9 +784,17 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.Property(e => e.TicketId).HasMaxLength(50);
             entity.Property(e => e.TransactionId).HasMaxLength(50);
 
-            entity.HasOne(d => d.GlobalStatus).WithMany(p => p.Refundrequests)
+            entity.HasOne(d => d.GlobalStatus).WithMany(p => p.RefundRequests)
                 .HasForeignKey(d => d.GlobalStatusId)
-                .HasConstraintName("FK_Refundrequest_GlobalStatusId");
+                .HasConstraintName("FK_RefundRequest_GlobalStatusId");
+
+            entity.HasOne(d => d.Ticket).WithMany(p => p.RefundRequests)
+                .HasForeignKey(d => d.TicketId)
+                .HasConstraintName("FK_RefundRequest_TicketId");
+
+            entity.HasOne(d => d.Transaction).WithMany(p => p.RefundRequests)
+                .HasForeignKey(d => d.TransactionId)
+                .HasConstraintName("FK_RefundRequest_TransactionId");
         });
 
         modelBuilder.Entity<Report>(entity =>
@@ -795,6 +826,11 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.HasOne(d => d.Admin).WithMany(p => p.ReportFeedbacks)
                 .HasForeignKey(d => d.AdminId)
                 .HasConstraintName("FK_ReportFeedback_User_UserId");
+
+            entity.HasOne(d => d.Report).WithOne(p => p.ReportFeedback)
+                .HasForeignKey<ReportFeedback>(d => d.ReportId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ReportFeedback_ReportId");
         });
 
         modelBuilder.Entity<ResearchConferenceDetail>(entity =>
@@ -871,7 +907,9 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.ToTable("RevisionPaper");
 
             entity.Property(e => e.RevisionPaperId).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
+            entity.Property(e => e.ReviewAt).HasColumnType("timestamp without time zone");
 
             entity.HasOne(d => d.GlobalStatus).WithMany(p => p.RevisionPapers)
                 .HasForeignKey(d => d.GlobalStatusId)
@@ -1009,6 +1047,10 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.HasOne(d => d.NewConferenceSession).WithMany(p => p.SessionChangeRequests)
                 .HasForeignKey(d => d.NewConferenceSessionId)
                 .HasConstraintName("FK_SessionChangeRequest_NewConferenceSessionId");
+
+            entity.HasOne(d => d.Ticket).WithMany(p => p.SessionChangeRequests)
+                .HasForeignKey(d => d.TicketId)
+                .HasConstraintName("FK_SessionChangeRequest_TicketId");
         });
 
         modelBuilder.Entity<Speaker>(entity =>
@@ -1188,12 +1230,12 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("UserRole_RoleId_fkey");
+                .HasConstraintName("FK_UserRole_RoleId");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("UserRole_UserId_fkey");
+                .HasConstraintName("FK_UserRole_UserId");
         });
 
         modelBuilder.Entity<WaitListStatus>(entity =>

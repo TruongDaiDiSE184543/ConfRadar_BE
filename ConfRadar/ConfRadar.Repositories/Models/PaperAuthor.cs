@@ -11,6 +11,8 @@ public partial class PaperAuthor
 
     public bool? IsPresenter { get; set; }
 
+    public bool? IsRootAuthor { get; set; }
+
     public virtual Paper Paper { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
