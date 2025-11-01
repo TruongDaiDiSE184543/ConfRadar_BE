@@ -162,15 +162,51 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        // NEW ENDPOINT: Get unoccupied time spans in a room for a specific date
+        // NEW ENDPOINT: Get free available time spans in a room for a specific date
         [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
-        [HttpGet("{roomId}/unoccupied-times")]
+        [HttpGet("{roomId}/available-times")]
         public async Task<IActionResult> GetUnoccupiedTimeSpansInRoomOnDate(string roomId, [FromQuery] DateOnly date)
         {
             try
             {
                 var unoccupiedTimeSpans = await _serviceManager.RoomService.GetUnoccupiedTimeSpansInRoomOnDateAsync(roomId, date);
                 return Ok(ApiResponse<List<TimeSpanResponse>>.SuccessResponse(unoccupiedTimeSpans, "Unoccupied time spans retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
+            }
+        }
+
+        //NEW ENDPOINT: Get busy time in a room for a specific date
+        [HttpGet("{roomId}/busy-time")]
+        public async Task<IActionResult> GetBusyTimeSpansInRoomOnDate(string roomId, [FromQuery] DateOnly date)
+        {
+            try
+            {
+                var unoccupiedTimeSpans = await _serviceManager.RoomService.GetBusyTimeSpansInRoomOnDateAsync(roomId, date);
+                return Ok(ApiResponse<List<TimeSpanResponse>>.SuccessResponse(unoccupiedTimeSpans, "Unoccupied time spans retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
+            }
+        }
+
+        // NEW ENDPOINT: Get rooms with their sessions (paginated with filtering)
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [HttpGet("rooms-with-sessions")]
+        public async Task<IActionResult> GetRoomsWithSessions(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? destinationId = null,
+            [FromQuery] string? searchKeyword = null,
+            [FromQuery] DateOnly? date = null)
+        {
+            try
+            {
+                var roomsWithSessions = await _serviceManager.RoomService.GetRoomsWithSessionsAsync(page, pageSize, destinationId, searchKeyword, date);
+                return Ok(ApiResponse<Services.DTOs.General.PagedResult<Services.DTOs.Room.RoomWithSessionsResponse>>.SuccessResponse(roomsWithSessions, "Rooms with sessions retrieved successfully"));
             }
             catch (Exception ex)
             {

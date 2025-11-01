@@ -42,6 +42,15 @@ namespace ConfRadar.Services.DTOs.Room
         public string ConferenceName { get; set; }
     }
 
+    public class RoomWithSessionsResponse
+    {
+        public string RoomId { get; set; }
+        public string? Number { get; set; }
+        public string? DisplayName { get; set; }
+        public string? DestinationId { get; set; }
+        public List<RoomOccupationSlotResponse> Sessions { get; set; } = new List<RoomOccupationSlotResponse>();
+    }
+
     public class TimeSpanResponse
     {
         public TimeOnly StartTime { get; set; }

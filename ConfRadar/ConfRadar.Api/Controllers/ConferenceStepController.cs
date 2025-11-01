@@ -59,7 +59,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> AddConferencePrices(string conferenceId, [FromBody] AddConferencePricesRequest request)
         {
             var prices = await _serviceManager.ConferenceStepService.AddConferencePricesAsync(conferenceId, request);
-            return Ok(ApiResponse<List<ConferencePriceWithPhasesResponse>>.SuccessResponse(prices, "Giá vé được thêm thành công"));
+            return Ok(ApiResponse<ConferencePriceListWithPhasesResponse>.SuccessResponse(prices, "Giá vé được thêm thành công"));
         }
 
         [HttpGet("{conferenceId}/prices")]
@@ -92,10 +92,10 @@ namespace ConfRadar.Api.Controllers
         #endregion
 
         #region Step 3: Conference Sessions
-        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        //[Authorize(Roles = "Conference Organizer, Collaborator")]
 
         [HttpPost("{conferenceId}/sessions")]
-        public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromForm] AddConferenceSessionsRequest request)
+        public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromBody] AddConferenceSessionsRequest request)
         {
             var sessions = await _serviceManager.ConferenceStepService.AddConferenceSessionsAsync(conferenceId, request);
             return Ok(ApiResponse<List<ConferenceSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị được thêm thành công"));
@@ -292,6 +292,7 @@ namespace ConfRadar.Api.Controllers
             return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy chính sách hoàn trả"));
         }
         #endregion
+
 
         #region Research Conference Step 2: Research Conference Detail
 
@@ -536,5 +537,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         #endregion
+
+      
     }
 }

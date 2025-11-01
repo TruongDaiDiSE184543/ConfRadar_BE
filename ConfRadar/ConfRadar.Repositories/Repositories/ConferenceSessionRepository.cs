@@ -14,12 +14,14 @@ namespace ConfRadar.Repositories.Repositories
         Task<ConferenceSession?> GetConferenceSessionByIdAsync(string sessionId);
         Task<List<ConferenceSession>> GetAllConferenceSessionsAsync();
         Task<List<ConferenceSession>> GetSessionsByConferenceIdAsync(string conferenceId);
+        Task<List<ConferenceSession>> GetSessionsByConferenceIdWithRoomAsync(string conferenceId);
         Task<ConferenceSession?> GetSessionWithDetailsAsync(string sessionId);
-        Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateTime startDate, DateTime endDate);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateOnly startDate, DateOnly endDate);
         Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateAsync(string roomId, DateOnly date);
         Task<List<ConferenceSession>> GetSessionsByRoomIdOverlappingTimeAsync(string roomId, DateOnly date, DateTime startTime, DateTime endTime);
         Task<List<ConferenceSession>> GetSessionsByRoomIdAtTimeAsync(string roomId, DateOnly date, DateTime checkTime);
         Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date);
+        Task<List<ConferenceSession>> GetSessionsByRoomIdsAndDateAsync(List<string> roomIds, DateOnly date);
     }
 
     public class ConferenceSessionRepository : GenericRepository<ConferenceSession>, IConferenceSessionRepository
@@ -60,6 +62,14 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<ConferenceSession>> GetSessionsByConferenceIdWithRoomAsync(string conferenceId)
+        {
+            return await _context.ConferenceSessions
+                .Include(cs => cs.Room)
+                .Where(cs => cs.ConferenceId == conferenceId)
+                .ToListAsync();
+        }
+
         public async Task<ConferenceSession?> GetSessionWithDetailsAsync(string sessionId)
         {
             return await _context.ConferenceSessions
@@ -70,23 +80,13 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync(cs => cs.ConferenceSessionId == sessionId);
         }
 
-        public async Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateTime startDate, DateTime endDate)
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateOnly startDate, DateOnly endDate)
         {
-            // For timestamp without time zone in PostgreSQL, we need to use DateTimeKind.Unspecified 
-            // to avoid the conversion error. This treats the time as if it has no timezone information, 
-            // which matches the database type.
-            DateTime queryStartValue, queryEndValue;
-
-            // Convert DateTime parameters to Unspecified kind to match the database timestamp without time zone
-            queryStartValue = startDate.Kind == DateTimeKind.Unspecified ?
-                startDate : DateTime.SpecifyKind(startDate, DateTimeKind.Unspecified);
-            queryEndValue = endDate.Kind == DateTimeKind.Unspecified ?
-                endDate : DateTime.SpecifyKind(endDate, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
-                            cs.StartTime >= queryStartValue &&
-                            cs.EndTime <= queryEndValue)
+                             cs.SessionDate >= startDate &&     
+                             cs.SessionDate <= endDate)   
                 .ToListAsync();
         }
 
@@ -101,8 +101,7 @@ namespace ConfRadar.Repositories.Repositories
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
-                            cs.StartTime >= startDateTime &&
-                            cs.StartTime <= endDateTime) // Check if the StartTime is on the specified date
+                            cs.SessionDate == date) // Check if the StartTime is on the specified date
                 .ToListAsync();
         }
 
@@ -110,21 +109,16 @@ namespace ConfRadar.Repositories.Repositories
         {
             // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
             // Convert the date part - start and end of the specified date
-            var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Unspecified);
-            var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Unspecified);
 
             // Convert the time parameters to DateTimeKind.Unspecified to match database format
             DateTime queryStartTime, queryEndTime;
-
-            queryStartTime = startTime.Kind == DateTimeKind.Unspecified ?
-                startTime : DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
-            queryEndTime = endTime.Kind == DateTimeKind.Unspecified ?
-                endTime : DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
+            
+            queryStartTime = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
+            queryEndTime =  DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
-                            cs.StartTime >= dateStart &&
-                            cs.StartTime <= dateEnd &&
+                            cs.SessionDate == date &&
                             cs.StartTime < queryEndTime && // New session starts before existing ends
                             cs.EndTime > queryStartTime)   // New session ends after existing starts
                 .ToListAsync();
@@ -133,18 +127,13 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ConferenceSession>> GetSessionsByRoomIdAtTimeAsync(string roomId, DateOnly date, DateTime checkTime)
         {
             // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
-            // Convert the date part - start and end of the specified date
-            var dateStart = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Unspecified);
-            var dateEnd = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Unspecified);
 
             // Convert the checkTime parameter to DateTimeKind.Unspecified to match database format
-            var queryCheckTime = checkTime.Kind == DateTimeKind.Unspecified ?
-                checkTime : DateTime.SpecifyKind(checkTime, DateTimeKind.Unspecified);
+            var queryCheckTime = DateTime.SpecifyKind(checkTime, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
-                            cs.StartTime >= dateStart &&
-                            cs.StartTime <= dateEnd &&
+                            cs.SessionDate == date &&
                             cs.StartTime <= queryCheckTime && // Session started before or at the check time
                             cs.EndTime > queryCheckTime)       // Session hasn't ended yet
                 .ToListAsync();
@@ -161,19 +150,29 @@ namespace ConfRadar.Repositories.Repositories
         //                    cs.Date < dateEnd)//.AddDays(1)) // From start of day to start of next day
         //        .ToListAsync();
         //}
+
         public async Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date)
         {
-            // Define the 24-hour window for the given date with DateTimeKind.Unspecified
-            // to match the database timestamp without time zone format
-            var startDateTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Unspecified);
-            var endDateTime = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Unspecified);
+            // Define the 24-hour window for the given local date. No tricky conversions.
+            //var startOfDay = date.ToDateTime(TimeOnly.MinValue); // e.g., June 5, 00:00:00
+            //var endOfDay = date.ToDateTime(TimeOnly.MaxValue);   // e.g., June 5, 23:59:59.99...
 
+            // The query is now simple and easy to read. It finds all sessions
+            // where the stored local start time falls within the local day.
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
-                             cs.StartTime.HasValue &&
-                             cs.EndTime.HasValue &&
-                             cs.StartTime >= startDateTime &&
-                             cs.StartTime <= endDateTime)
+                             cs.SessionDate.HasValue &&
+                             cs.SessionDate == date)
+                .ToListAsync();
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsByRoomIdsAndDateAsync(List<string> roomIds, DateOnly date)
+        {
+            // Get sessions for multiple rooms on a specific date
+            return await _context.ConferenceSessions
+                .Where(cs => roomIds.Contains(cs.RoomId) &&
+                             cs.SessionDate.HasValue &&
+                             cs.SessionDate == date)
                 .ToListAsync();
         }
 
