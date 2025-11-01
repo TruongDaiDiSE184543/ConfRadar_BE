@@ -101,7 +101,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         // Room occupation checking endpoints
-        //[Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
         [HttpGet("{roomId}/session-between-2-dateonlys")]
         public async Task<IActionResult> GetRoomOccupation(string roomId, [FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
         {
@@ -116,7 +116,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        //[Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
         [HttpGet("{roomId}/occupation/check-if-room-is-available-in-a-date-between-2-timeonly")]
         public async Task<IActionResult> CheckRoomAvailability(string roomId, [FromQuery] DateOnly date, [FromQuery] TimeOnly startTime, [FromQuery] TimeOnly endTime)
         {
@@ -131,7 +131,7 @@ namespace ConfRadar.Api.Controllers
             }
         }
 
-        //[Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
         [HttpGet("{roomId}/occupation/is-occupied-in-a-given-time")]
         public async Task<IActionResult> IsRoomOccupiedAtTime(string roomId, [FromQuery] DateOnly date, [FromQuery] TimeOnly time)
         {
@@ -147,7 +147,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         // NEW ENDPOINT: Get all sessions in a room for a specific date
-        //[Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
         [HttpGet("{roomId}/sessions-on-date")]
         public async Task<IActionResult> GetSessionsInRoomOnDate(string roomId, [FromQuery] DateOnly date)
         {
@@ -163,7 +163,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         // NEW ENDPOINT: Get free available time spans in a room for a specific date
-        //[Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
         [HttpGet("{roomId}/available-times")]
         public async Task<IActionResult> GetUnoccupiedTimeSpansInRoomOnDate(string roomId, [FromQuery] DateOnly date)
         {

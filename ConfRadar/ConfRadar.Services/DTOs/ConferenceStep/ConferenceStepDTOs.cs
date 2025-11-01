@@ -113,7 +113,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         public string? RoomId { get; set; }
         [Required(ErrorMessage = "Cần có ít nhất một diễn giả")]
-        public List<CreateSpeakerRequest>? Speaker { get; set; }
+        public List<CreateSpeakerRequest> Speaker { get; set; }
         public List<CreateConferenceSessionMediaRequest>? SessionMedias { get; set; }
     }
 
