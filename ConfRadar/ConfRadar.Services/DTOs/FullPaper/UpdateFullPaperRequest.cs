@@ -6,9 +6,9 @@ namespace ConfRadar.Services.DTOs.FullPaper
 {
     public class CreateFullPaperRequest
     {
-        [Required(ErrorMessage ="Full paper file là bắt buộc")]
+        [Required(ErrorMessage = "Full paper file là bắt buộc")]
         public IFormFile FullPaperFile { get; set; }
-        [Required(ErrorMessage ="Paper id là bắt buộc")]
+        [Required(ErrorMessage = "Paper id là bắt buộc")]
         public string PaperId { get; set; }
     }
     public class UpdateFullPaperStatusRequest

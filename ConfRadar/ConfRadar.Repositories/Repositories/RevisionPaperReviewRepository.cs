@@ -2,15 +2,10 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
-   
+
     public interface IRevisionPaperReviewRepository
     {
         Task<int> CreateMultipleRevisionPaperReviewsAsync(List<RevisionPaperReview> revisionPaperReviews);
@@ -45,7 +40,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<RevisionPaperReview>> GetRevisionPaperReviewByRevisionPaperIdAsync(string revisionPaperId)
         {
             return await _context.RevisionPaperReviews
-                .Include(rpr =>rpr.Reviewer)
+                .Include(rpr => rpr.Reviewer)
                 .Include(rpr => rpr.GlobalStatus)
                 .Where(rpr => rpr.RevisionPaperId == revisionPaperId).ToListAsync();
         }

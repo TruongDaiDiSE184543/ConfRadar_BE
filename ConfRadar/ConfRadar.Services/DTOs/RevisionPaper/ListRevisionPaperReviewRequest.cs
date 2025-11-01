@@ -1,10 +1,4 @@
-﻿using ConfRadar.Services.Common;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.RevisionPaper
 {
@@ -14,7 +8,7 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
         public string RevisionPaperId { get; set; }
         [Required(ErrorMessage = "PaperId là bắt buộc")]
         public string PaperId { get; set; }
-        
+
     }
     public class RevisionPaperReviewResponse
     {

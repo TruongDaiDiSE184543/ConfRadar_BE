@@ -11,7 +11,7 @@ namespace ConfRadar.Services.DTOs.Paper
         [Required(ErrorMessage = "GlobalStatus is required")]
         [EnumDataType(typeof(GlobalStatusEnum), ErrorMessage = "Global status is required")]
         public GlobalStatusEnum GlobalStatus { get; set; }
-        [Required(ErrorMessage ="Cần có paperid của paper mà thuộc cameraready thuộc về")]
+        [Required(ErrorMessage = "Cần có paperid của paper mà thuộc cameraready thuộc về")]
         public string Paperid { get; set; }
     }
 }

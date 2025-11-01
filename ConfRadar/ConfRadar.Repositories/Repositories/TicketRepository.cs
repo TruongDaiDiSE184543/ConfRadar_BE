@@ -1,13 +1,15 @@
 ﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Shared.DTO.General;
+using ConfRadar.Shared.DTO.Ticket;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
 {
     public interface ITicketRepository
     {
-        Task<List<Ticket>> GetTicketsByUserId(string userId);
+        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10,DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
         Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId);
         Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId);
         Task<int> CreateTicketAsync(Ticket ticket);
@@ -20,9 +22,107 @@ namespace ConfRadar.Repositories.Repositories
         {
         }
 
-        public async Task<List<Ticket>> GetTicketsByUserId(string userId)
+        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
         {
-            return await _context.Tickets.Where(x => x.UserId == userId).ToListAsync();
+            var query = _context.Tickets.AsNoTracking().Where(t => t.UserId == userId);
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                keyword = keyword.ToLower();
+
+                query = query.Where(t =>
+                    t.UserCheckIns.Any(uci =>
+                        uci.ConferenceSession.Title.ToLower().Contains(keyword) ||
+                        uci.ConferenceSession.Conference.ConferenceName.ToLower().Contains(keyword) ||
+                        uci.ConferenceSession.Room.Number.ToLower().Contains(keyword) ||
+                        uci.ConferenceSession.Room.DisplayName.ToLower().Contains(keyword) ||
+                        uci.ConferenceSession.Room.Destination.Name.ToLower().Contains(keyword) ||
+                        uci.ConferenceSession.Room.Destination.District.ToLower().Contains(keyword) ||
+                        uci.ConferenceSession.Room.Destination.Street.ToLower().Contains(keyword) ||
+                        // Search theo City
+                        uci.ConferenceSession.Room.Destination.City.CityName.ToLower().Contains(keyword)
+                    )||t.Transactions.Any(tr =>
+                        tr.TransactionId.ToLower().Contains(keyword) ||
+                        tr.TransactionCode.ToLower().Contains(keyword) ||
+                        tr.PaymentMethod.MethodName.ToLower().Contains(keyword)
+                    )
+                );
+            }
+
+            if (sessionStartTime.HasValue || sessionEndTime.HasValue)
+            {
+                query = query.Where(t =>
+                    t.UserCheckIns.Any(uci =>
+                        (!sessionStartTime.HasValue || uci.ConferenceSession.SessionDate >= DateOnly.FromDateTime(sessionStartTime.Value)) &&
+                        (!sessionEndTime.HasValue || uci.ConferenceSession.SessionDate <= DateOnly.FromDateTime(sessionEndTime.Value))
+                    )
+                );
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var listTicketDetail = await query
+            .OrderByDescending(t => t.RegisteredDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+        .Select(t => new CustomerPaidTicketResponse
+        {
+            TicketId = t.TicketId,
+            RegisteredDate = t.RegisteredDate,
+            IsRefunded = t.IsRefunded,
+            ActualPrice = t.ActualPrice,
+
+            Transactions = t.Transactions.Select(transac => new CustomerTransactionDetailRespone
+            {
+                TransactionId = transac.TransactionId,
+                Currency = transac.Currency,
+                Amount = transac.Amount,
+                CreatedAt = transac.CreatedAt,
+                TransactionCode = transac.TransactionCode,
+                IsRefunded = transac.IsRefunded,
+                PaymentMethodId = transac.PaymentMethodId,
+                PaymentMethodName = transac.PaymentMethod.MethodName,
+
+            }).ToList(),
+
+            UserCheckIns = t.UserCheckIns.Select(uci => new CustomerCheckInDetailResponse
+            {
+                UserCheckinId = uci.UserCheckinId,
+                IsPresenter = uci.IsPresenter,
+                CheckinStatusId = uci.CheckinStatusId,
+                CheckinStatusName = uci.CheckinStatus.CheckinStatusName,
+                CheckInTime = uci.CheckInTime,
+                ConferenceSessionId = uci.ConferenceSessionId,
+                TicketId = uci.TicketId,
+                ConferenceSessionDetail = new CustomerSessionDetailResponse
+                {
+                    ConferenceSessionId = uci.ConferenceSessionId,
+                    Title = uci.ConferenceSession.Title,
+                    Description = uci.ConferenceSession.Description,
+                    StartTime = uci.ConferenceSession.StartTime,
+                    EndTime = uci.ConferenceSession.EndTime,
+                    SessionDate = uci.ConferenceSession.SessionDate,
+                    ConferenceId = uci.ConferenceSession.ConferenceId,
+                    ConferenceName = uci.ConferenceSession.Conference.ConferenceName,
+                    RoomId = uci.ConferenceSession.RoomId,
+                    RoomNumber = uci.ConferenceSession.Room.Number,
+                    RoomDisplayName = uci.ConferenceSession.Room.DisplayName,
+                    DestinationId = uci.ConferenceSession.Room.DestinationId,
+                    DestinationName = uci.ConferenceSession.Room.Destination.Name,
+                    CityId = uci.ConferenceSession.Room.Destination.CityId,
+                    CityName = uci.ConferenceSession.Room.Destination.City.CityName,
+                    District = uci.ConferenceSession.Room.Destination.District,
+                    Street = uci.ConferenceSession.Room.Destination.Street,
+                }
+            }).ToList()
+        }).ToListAsync();
+
+            return new PagedResultResponseDto<CustomerPaidTicketResponse>()
+            {
+                Items = listTicketDetail,
+                Page = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+            };
         }
         public async Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId)
         {

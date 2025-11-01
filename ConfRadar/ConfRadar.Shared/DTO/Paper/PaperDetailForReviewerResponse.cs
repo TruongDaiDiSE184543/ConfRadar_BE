@@ -1,25 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.Shared.DTO.Paper
+﻿namespace ConfRadar.Shared.DTO.Paper
 {
     public class PaperDetailForReviewerResponse
     {
         public bool IsHeadReviewer { get; set; }
         public FullPaperDetailForReviewerResponse FullPaper { get; set; } = new();
         public RevisonPaperForReviewerResponse RevisionPaper { get; set; } = new();
+        public CameraReadyPaperForReviewerResponse CameraReady { get; set; } = new();
+        public PaperPhaseForReviewerResponse CurrentPhase { get; set; } = new();
 
+    }
+    public class PaperPhaseForReviewerResponse
+    {
+        public string? PaperPhaseId { get; set; }
+        public string? PhaseName { get; set; }
     }
     public class FullPaperDetailForReviewerResponse
     {
         public string? FullPaperId { get; set; } = null!;
         public string? ReviewStatusId { get; set; }
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
         public string? ReviewStatusName { get; set; }
         public string? FullPaperUrl { get; set; }
+        public List<FullPaperReviewForReviewerResponse> FullPaperReviews { get; set; } = new();
         public bool? IsAllSubmittedFullPaperReview { get; set; }
+        public DateOnly? FullPaperStartDate { get; set; }
+
+        public DateOnly? FullPaperEndDate { get; set; }
+    }
+    public class FullPaperReviewForReviewerResponse
+    {
+        public string FullPaperReviewId { get; set; } = null!;
+        public string? ReviewStatusId { get; set; }
+        public string? ReviewStatusName { get; set; }
+        public string? Note { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string? FeedbackToAuthor { get; set; }
+        public string? FeedbackMaterialUrl { get; set; }
+        public string? FullPaperId { get; set; }
+        public string? ReviewerId { get; set; }
+        public string? ReviewerName { get; set; }
+        public string? ReviewerAvatarUrl { get; set; }
+
     }
     public class RevisonPaperForReviewerResponse
     {
@@ -30,6 +53,10 @@ namespace ConfRadar.Shared.DTO.Paper
         public string? GlobalStatusName { get; set; }
         public bool? IsAllSubmittedRevisionPaperReview { get; set; }
         public bool? IsAnsweredAllDiscussion { get; set; }
+        public DateOnly? ReviewStartDate { get; set; }
+
+        public DateOnly? ReviewEndDate { get; set; }
+        public List<RevisionPaperReviewForReviewerResponse> RevisionPaperReviews { get; set; } = new(); // cho head reviewer
         public List<RevisionPaperSubmissionForReviewerResponse> RevisionPaperSubmissions { get; set; } = new();
     }
     public class RevisionPaperSubmissionForReviewerResponse
@@ -39,14 +66,14 @@ namespace ConfRadar.Shared.DTO.Paper
         public string? RevisionPaperUrl { get; set; }
 
         public string? RevisionPaperId { get; set; }
+        public string? Title { get; set; }
 
+        public string? Description { get; set; }
         public string? RevisionDeadlineRoundId { get; set; }
-        public DateOnly? EndDate { get; set; }
+        public DateOnly? RevisionDeadlineEndDate { get; set; }
+        public int? RevisionDeadlineRoundNumber { get; set; }
+        public List<RevisionPaperSubmissionFeedBackForReviewerResponse> RevisionSubmissionFeedbacks { get; set; } = new(); // cho head reviewer
 
-        public int? RoundNumber { get; set; }
-
-        public List<RevisionPaperSubmissionFeedBackForReviewerResponse> RevisionSubmissionFeedbacks { get; set; } = new();
-        public List<RevisionPaperReviewForReviewerResponse> RevisionPaperReviews { get; set; } = new();
     }
     public class RevisionPaperSubmissionFeedBackForReviewerResponse
     {
@@ -79,6 +106,31 @@ namespace ConfRadar.Shared.DTO.Paper
         public string? ReviewerName { get; set; }
         public string? ReviewerAvatarUrl { get; set; }
         public string? RevisionPaperId { get; set; }
+
+    }
+    public class CameraReadyPaperForReviewerResponse
+    {
+        public string PaperId { get; set; }
+
+        public string? CameraReadyId { get; set; } = null!;
+
+        public string? GlobalStatusId { get; set; }
+        public string? GlobalStatusName { get; set; }
+        public string? CameraReadyUrl { get; set; }
+
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
+
+        public DateTime? CreatedAt { get; set; }
+
+        public DateTime? ReviewAt { get; set; }
+
+        public DateOnly? CameraReadyStartDate { get; set; }
+
+        public DateOnly? CameraReadyEndDate { get; set; }
+
+
 
     }
 }

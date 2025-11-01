@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.Shared.DTO.Abstract
+﻿namespace ConfRadar.Shared.DTO.Abstract
 {
     public class PendingAbstractResponse
     {

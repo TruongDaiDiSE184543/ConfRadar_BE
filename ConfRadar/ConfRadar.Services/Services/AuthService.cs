@@ -465,7 +465,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User with this full name already exists");
             }
-            
+
 
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
@@ -474,7 +474,7 @@ namespace ConfRadar.Services.Services
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
             var userCreated = new User()
             {
-                UserId= Guid.NewGuid().ToString(),
+                UserId = Guid.NewGuid().ToString(),
                 Email = request.Email,
                 FullName = request.FullName,
                 PasswordHash = hashedPassword,
@@ -500,7 +500,7 @@ namespace ConfRadar.Services.Services
                 };
                 userCreated.UserRoles.Add(userRoleObj);
             }
-            await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName,request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
+            await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
 

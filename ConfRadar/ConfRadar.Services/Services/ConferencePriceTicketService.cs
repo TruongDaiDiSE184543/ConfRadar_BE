@@ -241,7 +241,7 @@ namespace ConfRadar.Services.Services
             // Find ticket purchased by the user for the specific conference
             // Join: User -> Ticket -> ConferencePrice -> Conference
             var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
-            
+
             if (ticket == null)
             {
                 return null; // No ticket found for this user and conference

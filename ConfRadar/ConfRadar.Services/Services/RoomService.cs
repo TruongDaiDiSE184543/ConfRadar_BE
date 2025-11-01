@@ -185,7 +185,7 @@ namespace ConfRadar.Services.Services
             // Convert DateOnly + TimeOnly to DateTime
             var startDateTime = date.ToDateTime(startTime);
             var endDateTime = date.ToDateTime(endTime);
-            
+
             // Validate time range
             if (endTime <= startTime)
             {
@@ -302,7 +302,7 @@ namespace ConfRadar.Services.Services
             var dayEnd = date.ToDateTime(new TimeOnly(23, 59, 59));
 
             var unoccupiedSpans = new List<TimeSpanResponse>();
-            
+
             // If no sessions exist for the day, the entire day is unoccupied
             if (!occupiedTimeSpans.Any())
             {

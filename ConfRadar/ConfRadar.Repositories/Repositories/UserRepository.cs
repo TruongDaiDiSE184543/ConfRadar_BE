@@ -42,7 +42,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
         {
             var listCustomer = await (from u in _context.Users
-                                      where !_context.PaperReviewers.Any(pr => pr.UserId == u.UserId) && u.IsActive ==true && u.IsEmailConfirmed == true
+                                      where !_context.PaperReviewers.Any(pr => pr.UserId == u.UserId) && u.IsActive == true && u.IsEmailConfirmed == true
                                       select new AvailableCustomerResponse()
                                       {
                                           UserId = u.UserId,
