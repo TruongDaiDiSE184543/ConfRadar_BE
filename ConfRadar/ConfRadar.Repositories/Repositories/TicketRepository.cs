@@ -9,7 +9,7 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface ITicketRepository
     {
-        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10,DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
+        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
         Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId);
         Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId);
         Task<int> CreateTicketAsync(Ticket ticket);
@@ -31,32 +31,45 @@ namespace ConfRadar.Repositories.Repositories
 
                 query = query.Where(t =>
                     t.UserCheckIns.Any(uci =>
-                        uci.ConferenceSession.Title.ToLower().Contains(keyword) ||
-                        uci.ConferenceSession.Conference.ConferenceName.ToLower().Contains(keyword) ||
-                        uci.ConferenceSession.Room.Number.ToLower().Contains(keyword) ||
-                        uci.ConferenceSession.Room.DisplayName.ToLower().Contains(keyword) ||
-                        uci.ConferenceSession.Room.Destination.Name.ToLower().Contains(keyword) ||
-                        uci.ConferenceSession.Room.Destination.District.ToLower().Contains(keyword) ||
-                        uci.ConferenceSession.Room.Destination.Street.ToLower().Contains(keyword) ||
-                        // Search theo City
-                        uci.ConferenceSession.Room.Destination.City.CityName.ToLower().Contains(keyword)
-                    )||t.Transactions.Any(tr =>
-                        tr.TransactionId.ToLower().Contains(keyword) ||
-                        tr.TransactionCode.ToLower().Contains(keyword) ||
-                        tr.PaymentMethod.MethodName.ToLower().Contains(keyword)
+                        (uci.ConferenceSession != null && (
+                            (uci.ConferenceSession.Title != null && uci.ConferenceSession.Title.ToLower().Contains(keyword)) ||
+                            (uci.ConferenceSession.Conference != null && uci.ConferenceSession.Conference.ConferenceName != null &&
+                                uci.ConferenceSession.Conference.ConferenceName.ToLower().Contains(keyword)) ||
+                            (uci.ConferenceSession.Room != null && (
+                                (uci.ConferenceSession.Room.Number != null && uci.ConferenceSession.Room.Number.ToLower().Contains(keyword)) ||
+                                (uci.ConferenceSession.Room.DisplayName != null && uci.ConferenceSession.Room.DisplayName.ToLower().Contains(keyword)) ||
+                                (uci.ConferenceSession.Room.Destination != null && (
+                                    (uci.ConferenceSession.Room.Destination.Name != null && uci.ConferenceSession.Room.Destination.Name.ToLower().Contains(keyword)) ||
+                                    (uci.ConferenceSession.Room.Destination.District != null && uci.ConferenceSession.Room.Destination.District.ToLower().Contains(keyword)) ||
+                                    (uci.ConferenceSession.Room.Destination.Street != null && uci.ConferenceSession.Room.Destination.Street.ToLower().Contains(keyword)) ||
+                                    (uci.ConferenceSession.Room.Destination.City != null && uci.ConferenceSession.Room.Destination.City.CityName != null && uci.ConferenceSession.Room.Destination.City.CityName.ToLower().Contains(keyword))
+                                ))
+                            ))
+                        ))
+                    )
+                    || t.Transactions.Any(tr =>
+                        (tr.TransactionId != null && tr.TransactionId.ToLower().Contains(keyword)) ||
+                        (tr.TransactionCode != null && tr.TransactionCode.ToLower().Contains(keyword)) ||
+                        (tr.PaymentMethod != null && tr.PaymentMethod.MethodName != null &&
+                            tr.PaymentMethod.MethodName.ToLower().Contains(keyword))
                     )
                 );
             }
 
-            if (sessionStartTime.HasValue || sessionEndTime.HasValue)
+
+            if (sessionStartTime.HasValue)
             {
                 query = query.Where(t =>
-                    t.UserCheckIns.Any(uci =>
-                        (!sessionStartTime.HasValue || uci.ConferenceSession.SessionDate >= DateOnly.FromDateTime(sessionStartTime.Value)) &&
-                        (!sessionEndTime.HasValue || uci.ConferenceSession.SessionDate <= DateOnly.FromDateTime(sessionEndTime.Value))
-                    )
+                    t.UserCheckIns.Any(uci => uci.ConferenceSession!.StartTime >= sessionStartTime.Value)
                 );
             }
+            if (sessionEndTime.HasValue)
+            {
+                query = query.Where(t =>
+                    t.UserCheckIns.Any(uci => uci.ConferenceSession!.EndTime <= sessionEndTime.Value)
+                );
+            }
+
 
             var totalCount = await query.CountAsync();
 
@@ -80,7 +93,7 @@ namespace ConfRadar.Repositories.Repositories
                 TransactionCode = transac.TransactionCode,
                 IsRefunded = transac.IsRefunded,
                 PaymentMethodId = transac.PaymentMethodId,
-                PaymentMethodName = transac.PaymentMethod.MethodName,
+                PaymentMethodName = transac.PaymentMethod != null ? transac.PaymentMethod.MethodName : null,
 
             }).ToList(),
 
@@ -89,11 +102,11 @@ namespace ConfRadar.Repositories.Repositories
                 UserCheckinId = uci.UserCheckinId,
                 IsPresenter = uci.IsPresenter,
                 CheckinStatusId = uci.CheckinStatusId,
-                CheckinStatusName = uci.CheckinStatus.CheckinStatusName,
+                CheckinStatusName = uci.CheckinStatus != null ? uci.CheckinStatus.CheckinStatusName : null,
                 CheckInTime = uci.CheckInTime,
                 ConferenceSessionId = uci.ConferenceSessionId,
                 TicketId = uci.TicketId,
-                ConferenceSessionDetail = new CustomerSessionDetailResponse
+                ConferenceSessionDetail = uci.ConferenceSession != null ? new CustomerSessionDetailResponse
                 {
                     ConferenceSessionId = uci.ConferenceSessionId,
                     Title = uci.ConferenceSession.Title,
@@ -102,17 +115,17 @@ namespace ConfRadar.Repositories.Repositories
                     EndTime = uci.ConferenceSession.EndTime,
                     SessionDate = uci.ConferenceSession.SessionDate,
                     ConferenceId = uci.ConferenceSession.ConferenceId,
-                    ConferenceName = uci.ConferenceSession.Conference.ConferenceName,
-                    RoomId = uci.ConferenceSession.RoomId,
-                    RoomNumber = uci.ConferenceSession.Room.Number,
-                    RoomDisplayName = uci.ConferenceSession.Room.DisplayName,
-                    DestinationId = uci.ConferenceSession.Room.DestinationId,
-                    DestinationName = uci.ConferenceSession.Room.Destination.Name,
-                    CityId = uci.ConferenceSession.Room.Destination.CityId,
-                    CityName = uci.ConferenceSession.Room.Destination.City.CityName,
-                    District = uci.ConferenceSession.Room.Destination.District,
-                    Street = uci.ConferenceSession.Room.Destination.Street,
-                }
+                    ConferenceName = uci.ConferenceSession != null && uci.ConferenceSession.Conference != null ? uci.ConferenceSession.Conference.ConferenceName : null,
+                    RoomId = uci.ConferenceSession != null ? uci.ConferenceSession.RoomId : null,
+                    RoomNumber = uci.ConferenceSession != null && uci.ConferenceSession.Room != null ? uci.ConferenceSession.Room.Number : null,
+                    RoomDisplayName = uci.ConferenceSession != null && uci.ConferenceSession.Room != null ? uci.ConferenceSession.Room.DisplayName : null,
+                    DestinationId = uci.ConferenceSession != null && uci.ConferenceSession.Room != null ? uci.ConferenceSession.Room.DestinationId : null,
+                    DestinationName = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.Name : null,
+                    CityId = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.CityId : null,
+                    CityName = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null && uci.ConferenceSession.Room.Destination.City != null ? uci.ConferenceSession.Room.Destination.City.CityName : null,
+                    District = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.District : null,
+                    Street = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.Street : null,
+                } : new CustomerSessionDetailResponse()
             }).ToList()
         }).ToListAsync();
 
