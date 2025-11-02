@@ -4,6 +4,7 @@ using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
