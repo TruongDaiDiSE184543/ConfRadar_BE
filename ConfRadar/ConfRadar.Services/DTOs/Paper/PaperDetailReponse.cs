@@ -1,7 +1,4 @@
 ﻿// Using statements should be minimal, only what is needed for property types.
-using System;
-using System.Collections.Generic;
-
 namespace ConfRadar.Services.DTOs.Paper
 {
     /// <summary>
@@ -36,7 +33,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string AbstractId { get; set; }
         public string FileUrl { get; set; } // Assuming a 'Content' property exists on the entity
         public string Status { get; set; } // The name of the GlobalStatus, e.g., "Pending", "Approved"
-        public DateOnly? RegistrationStart {  get; set; }
+        public DateOnly? RegistrationStart { get; set; }
         public DateOnly? RegistrationEnd { get; set; }
     }
 
@@ -72,7 +69,7 @@ namespace ConfRadar.Services.DTOs.Paper
     public class RevisionPaperDtoDetail
     {
         public string RevisionPaperId { get; set; }
-        public int? RevisionRound {  get; set; }
+        public int? RevisionRound { get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
         public DateOnly? ReviewStartDate { get; set; }
         public DateOnly? ReviewEndDate { get; set; }
@@ -111,7 +108,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string FeedbackId { get; set; }
         public string FeedBack { get; set; }
         public string Response { get; set; } // The name of the user who gave the feedback
-        public int Order {  get; set; }
+        public int Order { get; set; }
         public DateTime CreatedAt { get; set; }
     }
     public class RevisionDeadlineDetail
@@ -176,7 +173,7 @@ namespace ConfRadar.Services.DTOs.Paper
     public class RevisionPaperDto
     {
         public string RevisionPaperId { get; set; }
-        public int? RevisionRound {  get; set; }
+        public int? RevisionRound { get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
         public List<RevisionSubmissionDto> Submissions { get; set; } = new List<RevisionSubmissionDto>();
         public List<RevisionReviewDto> Reviews { get; set; } = new List<RevisionReviewDto>();
@@ -213,7 +210,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string FeedbackId { get; set; }
         public string FeedBack { get; set; }
         public string Response { get; set; } // The name of the user who gave the feedback
-        public int Order {  get; set; }
+        public int Order { get; set; }
         public DateTime CreatedAt { get; set; }
     }
     public class RevisionDeadline
@@ -283,6 +280,6 @@ namespace ConfRadar.Services.DTOs.Paper
 
 
 
-   
+
 
 

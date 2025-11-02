@@ -1,11 +1,5 @@
 ﻿using ConfRadar.Services.Common;
-using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.DTOs.RevisionPaper
 {
@@ -19,6 +13,6 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
         [Required(ErrorMessage = "GlobalStatusEnum là bắt buộc")]
         [EnumDataType(typeof(GlobalStatusEnum), ErrorMessage = "Global status là bắt buộc")]
         public GlobalStatusEnum GlobalStatus { get; set; }
-       
+
     }
 }

@@ -1,4 +1,3 @@
-using ConfRadar.Repositories;
 using ConfRadar.Services.DTOs.Paper;
 
 namespace ConfRadar.Services.Services

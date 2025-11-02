@@ -1,8 +1,5 @@
 using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using ConfRadar.Services.Exceptions;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {

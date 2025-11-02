@@ -93,7 +93,7 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
 
-       
+
         public async Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId)
         {
             return await _context.Papers
@@ -106,8 +106,8 @@ namespace ConfRadar.Repositories.Repositories
             var unassignAbstract = await (from p in _context.Papers
                                           join a in _context.Abstracts.Include(a => a.GlobalStatus) on p.AbstractId equals a.AbstractId
                                           where !(from pr in _context.PaperReviewers
-                                                 select pr.PaperId).Contains(p.PaperId)
-                                          select new {p,a}
+                                                  select pr.PaperId).Contains(p.PaperId)
+                                          select new { p, a }
                                           ).ToListAsync();
             var result = unassignAbstract.Select(x => new UnAssignAbstractResponse()
             {
@@ -122,203 +122,192 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
         {
-            var result = await (
-       from p in _context.Papers.Include(p=>p.Conference)
-                                    .ThenInclude(c=>c.ResearchConferencePhases)
-                                        .ThenInclude(rcp=>rcp.RevisionRoundDeadlines)
 
-       join a in _context.Abstracts on p.AbstractId equals a.AbstractId
+            var paper = await _context.Papers
+                             //paper phase
+                             .Include(p => p.PaperPhase)
+                            //full paper
+                            .Include(p => p.FullPaper)
+                                .ThenInclude(fp => fp.ReviewStatus)
+                            //revise
+                            .Include(p => p.RevisionPaper)
+                            .ThenInclude(rp => rp.GlobalStatus)
+                            //camera ready
+                            .Include(p => p.CameraReady)
+                                .ThenInclude(cr => cr.GlobalStatus)
 
-       join f in _context.FullPapers.Include(f => f.ReviewStatus) on p.FullPaperId equals f.FullPaperId into fps
-       from f in fps.DefaultIfEmpty()
 
-       join r in _context.RevisionPapers.Include(rp => rp.GlobalStatus) on p.RevisionPaperId equals r.RevisionPaperId into rps
-       from r in rps.DefaultIfEmpty()
+                            .Include(p => p.Conference)
+                                .ThenInclude(c => c.ResearchConferencePhases)
+                                .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
 
-       join c in _context.Conferences on p.ConferenceId equals c.ConferenceId
-
-       join pr in _context.PaperReviewers on p.PaperId equals pr.PaperId
-       where p.PaperId == paperId && pr.UserId == userId
-       select new { p, a, f, r, c, pr }
-   ).FirstOrDefaultAsync();
-
-            if (result == null)
+                            .Include(p => p.PaperReviewers)
+                            .FirstOrDefaultAsync(p => p.PaperId == paperId);
+            if (paper == null)
+            {
                 return null;
-
-            var paperDetailResponse = new PaperDetailForReviewerResponse
-            {
-                IsHeadReviewer = result.pr.IsHeadReviewer ?? false,
-                FullPaper = new FullPaperDetailForReviewerResponse(),
-                RevisionPaper = new RevisonPaperForReviewerResponse()
-            };
-            //đếm trong bản paper reviewer
-            var paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
-            // Check Full Paper
-            if (result.f != null)
-            {
-                paperDetailResponse.FullPaper = new FullPaperDetailForReviewerResponse()
-                {
-                    FullPaperId = result.f.FullPaperId,
-                    FullPaperUrl = result.f.FullPaperUrl,
-                    ReviewStatusId = result.f.ReviewStatusId,
-                    ReviewStatusName = result.f.ReviewStatus?.Name
-                };
-                if (paperDetailResponse.IsHeadReviewer)
-                {
-                    var fullPaperReviewerList = await _context.FullPaperReviews.Where(fp => fp.FullPaperId == result.f.FullPaperId).GroupBy(fp => fp.ReviewerId).Select(g => g.First()).ToListAsync();
-                    //paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
-
-                    if (fullPaperReviewerList.Count == paperReviewerList.Count)
-                    {
-                        paperDetailResponse.FullPaper.IsAllSubmittedFullPaperReview = true;
-                    }
-                    else
-                    {
-                        paperDetailResponse.FullPaper.IsAllSubmittedFullPaperReview = false;
-                    }
-                }
-                else
-                {
-                    paperDetailResponse.FullPaper.IsAllSubmittedFullPaperReview = null;
-                }
-
             }
+            var currentResearchConferencePhase = paper.Conference?.ResearchConferencePhases?.FirstOrDefault(rcp => rcp.IsActive == true);
 
-            // Check Revision Paper
-            if (result.r != null)
+            var paperDetailResponse = new PaperDetailForReviewerResponse();
+            if (paper.PaperPhase != null)
             {
-               
-
-                var revisionSubmissionsQuery = _context.RevisionPaperSubmissions
-                    .Where(rs => rs.RevisionPaperId == result.r.RevisionPaperId)
-                    .Include(rs=>rs.RevisionDeadlineRound)
-                    .OrderBy(rs => rs.RevisionDeadlineRound.RoundNumber) 
-                    .ThenBy(rs => rs.RevisionDeadlineRound.EndDate)
-                    .Select(rs => new RevisionPaperSubmissionForReviewerResponse
-                    {
-                        RevisionPaperSubmissionId = rs.RevisionPaperSubmissionId,
-                        RevisionPaperId = rs.RevisionPaperId,
-                        RevisionDeadlineRoundId = rs.RevisionDeadlineRoundId,
-                        EndDate = rs.RevisionDeadlineRound.EndDate,
-                        RoundNumber = rs.RevisionDeadlineRound.RoundNumber,
-                        RevisionPaperUrl = rs.RevisionPaperUrl,
-                        RevisionSubmissionFeedbacks = new List<RevisionPaperSubmissionFeedBackForReviewerResponse>()
-                    });
-
-                var revisionSubmissions = await revisionSubmissionsQuery.ToListAsync();
-
-                //nếu là head reviewer include submission
-                if (paperDetailResponse.IsHeadReviewer)
+                paperDetailResponse.CurrentPhase = new PaperPhaseForReviewerResponse
                 {
-                    foreach (var rs in revisionSubmissions)
-                    {
-                        rs.RevisionSubmissionFeedbacks = await _context.RevisionSubmissionFeedbacks
-                            .Include(fb=>fb.User)
-                            .Where(fb => fb.RevisionPaperSubmissionId == rs.RevisionPaperSubmissionId)
-                            .OrderBy(fb => fb.SortOrder)
-                            .Select(fb => new RevisionPaperSubmissionFeedBackForReviewerResponse
-                            {
-                                RevisionSubmissionFeedbackId = fb.RevisionSubmissionFeedbackId,
-                                UserId = fb.UserId,
-                                FullName = fb.User != null ? fb.User.FullName : null,
-                                AvatarUrl = fb.User!=null ? fb.User.AvatarUrl : null,
-                                Feedback = fb.Feedback,
-                                Response = fb.Response,
-                                SortOrder = fb.SortOrder,
-                                CreatedAt = fb.CreatedAt
-                            })
-                            .ToListAsync();
+                    PaperPhaseId = paper.PaperPhase?.PaperPhaseId,
+                    PhaseName = paper.PaperPhase?.PhaseName,
+                };
+            }
+            var headReviewer = paper.PaperReviewers.FirstOrDefault(x => x.UserId == userId && x.IsHeadReviewer == true);
+            bool isHeadReviewer = headReviewer != null;
+            paperDetailResponse.IsHeadReviewer = isHeadReviewer;
 
-                        //load của reviewr con
-                        rs.RevisionPaperReviews = await _context.RevisionPaperReviews
-                                                                                    .Include(rpr => rpr.Reviewer)
-                                                                                    .Include(rpr=>rpr.GlobalStatus)
-                                                                                     .Where(rpr => rpr.RevisionPaperId == rs.RevisionPaperId)
-                                                                                        .OrderBy(rpr => rpr.CreatedAt)
-                        .Select(rpr => new RevisionPaperReviewForReviewerResponse
-                        {
+            int totalReviewerCount = paper.PaperReviewers.Count;
+            if (paper.FullPaper != null)
+            {
+                paperDetailResponse.FullPaper = new FullPaperDetailForReviewerResponse
+                {
+                    FullPaperId = paper.FullPaperId,
+                    FullPaperUrl = paper.FullPaper.FullPaperUrl,
+                    ReviewStatusId = paper.FullPaper.ReviewStatusId,
+                    ReviewStatusName = paper.FullPaper.ReviewStatus?.Name,
+                    Description = paper.FullPaper?.Description,
+                    Title = paper.FullPaper?.Title,
+                    FullPaperStartDate = currentResearchConferencePhase?.FullPaperStartDate,
+                    FullPaperEndDate = currentResearchConferencePhase?.FullPaperEndDate,
+                };
+
+                if (isHeadReviewer)
+                {
+                    var fullPaperReviews = await _context.FullPaperReviews
+                        .Where(fpr => fpr.FullPaperId == paper.FullPaperId)
+                        .Include(fpr => fpr.Reviewer)
+                        .Include(fpr => fpr.ReviewStatus)
+                        .ToListAsync();
+
+                    paperDetailResponse.FullPaper.FullPaperReviews = fullPaperReviews.Select(fpr => new FullPaperReviewForReviewerResponse
+                    {
+                        FullPaperReviewId = fpr.FullPaperReviewId,
+                        ReviewStatusId = fpr.ReviewStatusId,
+                        ReviewStatusName = fpr.ReviewStatus?.Name,
+                        Note = fpr.Note,
+                        CreatedAt = fpr.CreatedAt,
+                        FeedbackToAuthor = fpr.FeedbackToAuthor,
+                        FeedbackMaterialUrl = fpr.FeedbackMaterialUrl,
+                        FullPaperId = fpr.FullPaperId,
+                        ReviewerId = fpr.Reviewer?.UserId,
+                        ReviewerName = fpr.Reviewer?.FullName,
+                        ReviewerAvatarUrl = fpr.Reviewer?.AvatarUrl,
+
+                    }).ToList();
+                    var fullPaperReviewCount = fullPaperReviews.Select(f => f.ReviewerId).Distinct().Count();
+                    paperDetailResponse.FullPaper.IsAllSubmittedFullPaperReview = fullPaperReviewCount == totalReviewerCount;
+                }
+            }
+            if (paper.RevisionPaper != null)
+            {
+                paperDetailResponse.RevisionPaper = new RevisonPaperForReviewerResponse
+                {
+                    RevisionPaperId = paper.RevisionPaper.RevisionPaperId,
+                    RevisionRound = paper.RevisionPaper.RevisionRound,
+                    GlobalStatusId = paper.RevisionPaper.GlobalStatusId,
+                    GlobalStatusName = paper.RevisionPaper.GlobalStatus?.Name,
+                    ReviewStartDate = currentResearchConferencePhase?.ReviewStartDate,
+                    ReviewEndDate = currentResearchConferencePhase?.ReviewEndDate,
+
+                };
+                var revisionPaperSubmission = await _context.RevisionPaperSubmissions
+                                                                                    .Include(rps => rps.RevisionDeadlineRound)
+                                                                                   .Include(rps => rps.RevisionSubmissionFeedbacks)
+                                                                                   .ThenInclude(fb => fb.User)
+                                                                                   .Where(rps => rps.RevisionPaperId == paper.RevisionPaperId).ToListAsync();
+                paperDetailResponse.RevisionPaper.RevisionPaperSubmissions = revisionPaperSubmission.Select(rps => new RevisionPaperSubmissionForReviewerResponse()
+                {
+                    RevisionPaperSubmissionId = rps.RevisionPaperSubmissionId,
+                    RevisionPaperUrl = rps.RevisionPaperUrl,
+                    RevisionPaperId = rps.RevisionPaperId,
+                    Title = rps.Title,
+                    Description = rps.Description,
+                    RevisionDeadlineRoundId = rps.RevisionDeadlineRoundId,
+                    RevisionDeadlineEndDate = rps.RevisionDeadlineRound?.EndDate,
+                    RevisionDeadlineRoundNumber = rps.RevisionDeadlineRound?.RoundNumber,
+                    RevisionSubmissionFeedbacks = isHeadReviewer ? rps.RevisionSubmissionFeedbacks.Select(rsf => new RevisionPaperSubmissionFeedBackForReviewerResponse()
+                    {
+                        RevisionSubmissionFeedbackId = rsf.RevisionSubmissionFeedbackId,
+                        UserId = rsf.UserId,
+                        FullName = rsf.User?.FullName,
+                        AvatarUrl = rsf.User?.AvatarUrl,
+                        Feedback = rsf.Feedback,
+                        Response = rsf.Response,
+                        SortOrder = rsf.SortOrder,
+                        CreatedAt = rsf.CreatedAt,
+
+                    }).ToList() : new List<RevisionPaperSubmissionFeedBackForReviewerResponse>()
+                }).ToList();
+                if (isHeadReviewer)
+                {
+                    var revisionPaperReviews = await _context.RevisionPaperReviews
+                        .Include(rpr => rpr.GlobalStatus)
+                        .Include(rpr => rpr.Reviewer)
+                        .Where(rpr => rpr.RevisionPaperId == paper.RevisionPaperId)
+                        .ToListAsync();
+
+                    paperDetailResponse.RevisionPaper.RevisionPaperReviews = revisionPaperReviews.Select(rpr => new RevisionPaperReviewForReviewerResponse()
+                    {
                         RevisionPaperReviewId = rpr.RevisionPaperReviewId,
                         GlobalStatusId = rpr.GlobalStatusId,
-                        GlobalStatusName = rpr.GlobalStatus != null ? rpr.GlobalStatus.Name : null,
+                        GlobalStatusName = rpr.GlobalStatus?.Name,
                         Note = rpr.Note,
                         CreatedAt = rpr.CreatedAt,
                         FeedbackToAuthor = rpr.FeedbackToAuthor,
                         FeedbackMaterialUrl = rpr.FeedbackMaterialUrl,
                         ReviewerId = rpr.ReviewerId,
-                        ReviewerName = rpr.Reviewer != null ? rpr.Reviewer.FullName : null,
-                        ReviewerAvatarUrl = rpr.Reviewer != null ? rpr.Reviewer.AvatarUrl : null,
-                        RevisionPaperId = rpr.RevisionPaperId
-                        })
-                        .ToListAsync();
+                        ReviewerName = rpr.Reviewer?.FullName,
+                        ReviewerAvatarUrl = rpr.Reviewer?.AvatarUrl,
+                        RevisionPaperId = rpr.RevisionPaperId,
+                    }).ToList();
 
 
+                    var revisionPaperReviewCount = revisionPaperReviews.Select(f => f.ReviewerId).Distinct().Count();
+                    paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview = revisionPaperReviewCount == totalReviewerCount;
 
+                    var revisionPaperSubmissionIds = revisionPaperSubmission.Select(rps => rps.RevisionPaperSubmissionId);
+                    var revisionPaperFeedbacks = await _context.RevisionSubmissionFeedbacks.Where(rsf => revisionPaperSubmissionIds.Contains(rsf.RevisionPaperSubmissionId)).ToListAsync();
+                    if (revisionPaperFeedbacks.Count > 0)
+                    {
+                        if (revisionPaperFeedbacks.Any(rps => rps.Feedback == null || rps.Response == null))
+                        {
+                            paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = false;
+                        }
+                        else
+                        {
+                            paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = true;
+                        }
 
                     }
-                    paperDetailResponse.RevisionPaper = new RevisonPaperForReviewerResponse
-                    {
-                        RevisionPaperId = result.r.RevisionPaperId,
-                        GlobalStatusId = result.r.GlobalStatusId,
-                        GlobalStatusName = result.r.GlobalStatus?.Name,
-                        RevisionRound = result.r.RevisionRound ?? 0,
-                        RevisionPaperSubmissions = revisionSubmissions
-                    };
-
-                    var allResearchConferencePhases = result.p.Conference?.ResearchConferencePhases;
-                    if (allResearchConferencePhases == null || !allResearchConferencePhases.Any())
-                    {
-                        paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = null;
-                    }
-                    var allPhaseIds = allResearchConferencePhases.Select(p=>p.ResearchConferencePhaseId).ToList();
-                    //load dead line tương ứng với phase
-                    var allDeadlines = await _context.RevisionRoundDeadlines
-                    .Where(r => allPhaseIds.Contains(r.ResearchConferencePhaseId))
-                    .ToListAsync();
-
-                    var allDeadLineIds = allDeadlines.Select(d=>d.RevisionRoundDeadlineId).ToList();
-
-                    var allSubmissions = await _context.RevisionPaperSubmissions
-                    .Where(rps => allDeadLineIds.Contains(rps.RevisionDeadlineRoundId) &&   rps.RevisionPaperId == result.r.RevisionPaperId)
-                    .ToListAsync();
-
-                    var allSubmissionIds = allSubmissions.Select(s => s.RevisionPaperSubmissionId).ToList();
-
-                    var allFeedbacks = await _context.RevisionSubmissionFeedbacks
-                    .Where(fb => allSubmissionIds.Contains(fb.RevisionPaperSubmissionId))
-                    .ToListAsync();
-                    bool hasIncompleteDiscussion = allFeedbacks.Any(fb => fb.Feedback == null || fb.Response == null);
-                    paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = !hasIncompleteDiscussion;
 
                 }
-                else
-                {
-                    paperDetailResponse.RevisionPaper.IsAnsweredAllDiscussion = null;
-                }
 
-                
-                if (paperDetailResponse.IsHeadReviewer)
-                {
-                    var fullRevisionPaperReviewList = await _context.RevisionPaperReviews.Where(rpr => rpr.RevisionPaperId == result.r.RevisionPaperId).GroupBy(rpr=>rpr.ReviewerId).Select(g=>g.First()).ToListAsync();
-                    //var paperReviewerList = await _context.PaperReviewers.Where(pr => pr.PaperId == result.p.PaperId).ToListAsync();
-
-                    if (fullRevisionPaperReviewList.Count == paperReviewerList.Count)
-                    {
-                        paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview= true;
-                    }
-                    else
-                    {
-                        paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview = false;
-                    }
-                }
-                else
-                {
-                    paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview = null;
-                }
 
             }
-
+            if (paper.CameraReady != null)
+            {
+                paperDetailResponse.CameraReady = new CameraReadyPaperForReviewerResponse()
+                {
+                    PaperId = paper.PaperId,
+                    CameraReadyId = paper.CameraReadyId,
+                    GlobalStatusId = paper.CameraReady?.GlobalStatusId,
+                    GlobalStatusName = paper.CameraReady?.GlobalStatus?.Name,
+                    CameraReadyUrl = paper.CameraReady?.CameraReadyUrl,
+                    Title = paper.CameraReady?.Title,
+                    Description = paper.CameraReady?.Description,
+                    CreatedAt = paper.CameraReady?.CreatedAt,
+                    ReviewAt = paper.CameraReady?.ReviewAt,
+                    CameraReadyStartDate = currentResearchConferencePhase?.CameraReadyStartDate,
+                    CameraReadyEndDate = currentResearchConferencePhase?.CameraReadyEndDate
+                };
+            }
             return paperDetailResponse;
-
         }
     }
 }

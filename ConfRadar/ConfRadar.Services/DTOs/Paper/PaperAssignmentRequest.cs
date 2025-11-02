@@ -6,7 +6,7 @@ namespace ConfRadar.Services.DTOs.Paper
     {
         [Required(ErrorMessage = "User ID is required")]
         public string UserId { get; set; }
-        
+
         [Required(ErrorMessage = "Paper ID is required")]
         public string PaperId { get; set; }
     }
@@ -15,10 +15,10 @@ namespace ConfRadar.Services.DTOs.Paper
     {
         [Required(ErrorMessage = "User ID is required")]
         public string UserId { get; set; }
-        
+
         [Required(ErrorMessage = "Paper ID is required")]
         public string PaperId { get; set; }
-        
+
         public bool IsHeadReviewer { get; set; }
     }
 }

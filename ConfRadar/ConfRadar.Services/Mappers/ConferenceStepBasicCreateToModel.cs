@@ -1,11 +1,5 @@
 ﻿using ConfRadar.Repositories.Models;
-using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Mappers
 {

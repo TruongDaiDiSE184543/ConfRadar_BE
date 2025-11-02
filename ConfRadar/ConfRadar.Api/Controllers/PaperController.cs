@@ -6,14 +6,11 @@ using ConfRadar.Services.DTOs.FullPaper;
 using ConfRadar.Services.DTOs.FullPaperReview;
 using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.DTOs.RevisionPaper;
-using ConfRadar.Services.Mappers;
 using ConfRadar.Shared.DTO.Abstract;
 using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.User;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -48,10 +45,10 @@ namespace ConfRadar.Api.Controllers
 
         [Authorize]
         [HttpPost("submit-abstract")]
-        public async Task<IActionResult> SubmitAbstract([FromForm]CreateAbstractRequest request)
+        public async Task<IActionResult> SubmitAbstract([FromForm] CreateAbstractRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.SubmitAbstract(request,userId);
+            var result = await _serviceManager.PaperService.SubmitAbstract(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã nộp abstract thành công"));
         }
         [Authorize(Roles = "Conference Organizer")]
@@ -123,8 +120,8 @@ namespace ConfRadar.Api.Controllers
         }
 
 
-        
-        
+
+
 
 
         [Authorize]
@@ -171,7 +168,7 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize]
         [HttpGet("list-revision-paper-review")]
-        public async Task<IActionResult> ListRevisionPaperReview([FromQuery]ListRevisionPaperReviewRequest request)
+        public async Task<IActionResult> ListRevisionPaperReview([FromQuery] ListRevisionPaperReviewRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.ListRevisionPaperReview(request, userId);
@@ -196,8 +193,8 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<int>.SuccessResponse(result, "Camera ready updated successfully"));
         }
 
-        
-        
+
+
 
         //[HttpPut("decide-fullpaper-review-status")]
         //[Authorize(Roles = "Conference Organizer")]
@@ -209,7 +206,7 @@ namespace ConfRadar.Api.Controllers
         //}
 
         [HttpPut("decide-camera-ready-status")]
-        
+
         public async Task<IActionResult> DecideCameraReadyStatus([FromBody] UpdateCameraReadyStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -238,10 +235,10 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.GetAssignedPapersByReviewerId(userId);
-            return Ok(ApiResponse<List<Paper>>.SuccessResponse(result,"Lấy thành công những paper được assigned theo reviewerId"));
+            return Ok(ApiResponse<List<Paper>>.SuccessResponse(result, "Lấy thành công những paper được assigned theo reviewerId"));
         }
 
-       
+
 
         [HttpGet("get-all-submitted-papers-for-customer")]
         public async Task<IActionResult> getSubmittedPapers()
@@ -267,7 +264,7 @@ namespace ConfRadar.Api.Controllers
         }
 
 
-        
+
 
         [HttpGet("list-all-papers")]
         public async Task<IActionResult> GetListAllPaper()
@@ -287,12 +284,12 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetPaperDetailForReviewer(string paperId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.GetPaperDetailForReviewer(paperId,userId);
+            var result = await _serviceManager.PaperService.GetPaperDetailForReviewer(paperId, userId);
             return Ok(ApiResponse<PaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper"));
         }
 
 
-       
+
 
     }
 }

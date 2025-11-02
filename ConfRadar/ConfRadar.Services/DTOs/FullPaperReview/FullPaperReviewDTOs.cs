@@ -1,6 +1,6 @@
+using ConfRadar.Services.Common;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
-using ConfRadar.Services.Common;
 
 namespace ConfRadar.Services.DTOs.FullPaperReview
 {

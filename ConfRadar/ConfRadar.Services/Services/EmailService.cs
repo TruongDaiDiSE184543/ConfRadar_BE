@@ -69,7 +69,7 @@ namespace ConfRadar.Services.Services
             await SendEmailAsync(toEmail, subject, body);
         }
 
-        public async Task SendCreateCollaboratorAccountEmail(string toEmail, string userName,string password, string link, string subject, string templateFileName)
+        public async Task SendCreateCollaboratorAccountEmail(string toEmail, string userName, string password, string link, string subject, string templateFileName)
         {
             var replacements = new Dictionary<string, string>
     {

@@ -94,7 +94,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             // Get sessions on the specified date
             // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
-            
+
             // Create start and end times for the date with Unspecified kind
             var startDateTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Unspecified);
             var endDateTime = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, DateTimeKind.Unspecified);

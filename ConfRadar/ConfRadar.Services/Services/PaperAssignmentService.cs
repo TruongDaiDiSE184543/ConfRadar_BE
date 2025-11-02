@@ -2,7 +2,6 @@ using ConfRadar.Repositories;
 using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
-using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
 {
@@ -40,7 +39,7 @@ namespace ConfRadar.Services.Services
 
             var userRoles = await _unitOfWork.UserRoleRepository
                 .GetMutipleUserRolesByUserId(request.UserId);
-            
+
             var hasCustomerRole = userRoles.Any(ur => ur.RoleId == customerRole.RoleId);
             if (!hasCustomerRole)
             {
@@ -50,7 +49,7 @@ namespace ConfRadar.Services.Services
             // Check if the user is already assigned to this paper
             var existingPaperAuthor = await _unitOfWork.PaperAuthorRepository
                 .GetPaperAuthorByIdAsync(request.UserId, request.PaperId);
-            
+
             if (existingPaperAuthor != null)
             {
                 throw new BadRequestException($"User with ID {request.UserId} is already assigned as an author to paper with ID {request.PaperId}.");

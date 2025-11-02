@@ -1,10 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
-using ConfRadar.Services.DTOs.Abstract;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
