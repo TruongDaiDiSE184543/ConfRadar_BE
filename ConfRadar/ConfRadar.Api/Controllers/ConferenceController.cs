@@ -1,9 +1,10 @@
-using ConfRadar.Api.Responses;
+﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -57,6 +58,7 @@ namespace ConfRadar.Api.Controllers
             var conferenceDetail = await _serviceManager.ConferenceService.GetTechnicalConferenceDetailAsync(conferenceId);
             return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully"));
         }
+
 
         // NEW ENDPOINT 3: Get conferences by status ID with filtering
         [HttpGet("by-status/{conferenceStatusId}")]
@@ -139,7 +141,7 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 9: Check if technical conference has completed a specific step
         [HttpGet("check-technical-step-completion")]
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> CheckTechnicalConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
         {
             var result = await _serviceManager.ConferenceService.CheckTechnicalConferenceStepCompletionAsync(conferenceId, step);
@@ -153,6 +155,55 @@ namespace ConfRadar.Api.Controllers
         {
             var result = await _serviceManager.ConferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, step);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Research conference step completion status retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 11: Get list of research conferences with pagination and filtering (for organizers and collaborators)
+        [HttpGet("research-conferences-for-Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> GetResearchConferencesList(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? conferenceStatusId = null,
+            [FromQuery] string? searchKeyword = null,
+            [FromQuery] string? cityId = null,
+            [FromQuery] DateOnly? startDate = null,
+            [FromQuery] DateOnly? endDate = null)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isOrganizer = User.IsInRole("Conference Organizer");
+
+            var conferences = await _serviceManager.ConferenceService.GetResearchConferencesListAsync(
+                page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer);
+            return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.ResearchConferenceDetailResponse>>.SuccessResponse(conferences, "Research conferences retrieved successfully"));
+        }
+
+        // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering (for organizers and collaborators)
+        [HttpGet("technical-conferences-for-collaborator-and-Organizer")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> GetTechnicalConferencesList(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? conferenceStatusId = null,
+            [FromQuery] string? searchKeyword = null,
+            [FromQuery] string? cityId = null,
+            [FromQuery] DateOnly? startDate = null,
+            [FromQuery] DateOnly? endDate = null)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isOrganizer = User.IsInRole("Conference Organizer");
+
+            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListAsync(
+                page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer);
+            return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
+        }
+
+        [HttpPost("Update-own-conference-Status")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus,string? reason = null)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.UpdateConferenceStatusAsync(confid, newStatus, reason);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
         }
     }
 }

@@ -43,6 +43,7 @@ namespace ConfRadar.Services
             services.AddScoped<ICityService, CityService>();
             services.AddScoped<IConferenceStatusService, ConferenceStatusService>();
             services.AddScoped<IReviewStatusService, ReviewStatusService>();
+            services.AddScoped<IConferenceTimelineService, ConferenceTimelineService>();
             services.AddScoped<IFavouriteConferenceService, FavouriteConferenceService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IServiceManager, ServiceManager>();

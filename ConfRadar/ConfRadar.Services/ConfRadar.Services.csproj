@@ -42,4 +42,8 @@
     <ProjectReference Include="..\ConfRadar.Shared\ConfRadar.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\ConferenceTimeline\" />
+  </ItemGroup>
+
 </Project>

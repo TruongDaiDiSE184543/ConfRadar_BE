@@ -2,6 +2,8 @@ using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Room;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.DTOs.General;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
 {
@@ -19,6 +21,9 @@ namespace ConfRadar.Services.Services
         Task<bool> IsRoomOccupiedAtTime(string roomId, DateOnly date, TimeOnly time);
         Task<List<RoomOccupationSlotResponse>> GetSessionsInRoomOnDateAsync(string roomId, DateOnly date);
         Task<List<TimeSpanResponse>> GetUnoccupiedTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
+        Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
+        Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
+
     }
 
     public class RoomService : IRoomService
@@ -134,18 +139,13 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("End date cannot be before start date");
             }
 
-            // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
-            // Convert DateOnly to DateTime with Unspecified kind for database comparison
-            var startDateTime = DateTime.SpecifyKind(startDate.ToDateTime(new TimeOnly(0, 0, 0)), DateTimeKind.Unspecified);
-            var endDateTime = DateTime.SpecifyKind(endDate.ToDateTime(new TimeOnly(23, 59, 59)), DateTimeKind.Unspecified);
-
-            // Query conference sessions that occur in this room within the date range
-            var conferenceSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAndDateRangeAsync(roomId, startDateTime, endDateTime);
+          
+            var conferenceSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAndDateRangeAsync(roomId, startDate, endDate);
 
             // Get all associated conferences at once to reduce database calls
             var conferenceIds = conferenceSessions.Select(cs => cs.ConferenceId).Where(id => !string.IsNullOrEmpty(id)).ToList();
             var conferences = new Dictionary<string, Conference>();
-            if (conferenceIds.Any())
+            if (conferenceIds.Any())    
             {
                 conferences = await _unitOfWork.ConferenceRepository.GetConferencesByIdsAsync(conferenceIds);
             }
@@ -155,15 +155,14 @@ namespace ConfRadar.Services.Services
             {
                 SessionId = session.ConferenceSessionId,
                 SessionTitle = session.Title,
-                StartTime = session.StartTime.HasValue ?
-                    DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Local) : DateTime.MinValue,
-                EndTime = session.EndTime.HasValue ?
-                    DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Local) : DateTime.MinValue,
-                ConferenceId = session.ConferenceId!,
+                StartTime = session.StartTime.GetValueOrDefault(),
+                EndTime = session.EndTime.GetValueOrDefault(),
+                ConferenceId = session.ConferenceId, // Added this line back
                 ConferenceName = conferences.ContainsKey(session.ConferenceId!)
-                    ? conferences[session.ConferenceId!].ConferenceName
-                    : "Unknown Conference"
+            ? conferences[session.ConferenceId!].ConferenceName
+            : "Unknown Conference"
             }).ToList();
+
 
             return occupationSlots;
         }
@@ -193,14 +192,11 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("End time must be after start time");
             }
 
-            // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
-            var queryStartDateTime = DateTime.SpecifyKind(startDateTime, DateTimeKind.Unspecified);
-            var queryEndDateTime = DateTime.SpecifyKind(endDateTime, DateTimeKind.Unspecified);
-
+          
             // Check for overlapping sessions in the same room on the same date
             // PostgreSQL optimization: This query efficiently checks for time overlaps
             // Overlap condition: (new_start < existing_end) AND (new_end > existing_start)
-            var overlappingSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOverlappingTimeAsync(roomId, date, queryStartDateTime, queryEndDateTime);
+            var overlappingSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOverlappingTimeAsync(roomId, date, startDateTime, endDateTime);
             var overlappingSession = overlappingSessions.Any();
 
             // If there's an overlapping session, the room is NOT available
@@ -224,12 +220,10 @@ namespace ConfRadar.Services.Services
             // Convert DateOnly + TimeOnly to DateTime
             var checkDateTime = date.ToDateTime(time);
 
-            // For PostgreSQL timestamp without time zone, use DateTimeKind.Unspecified
-            var queryCheckDateTime = DateTime.SpecifyKind(checkDateTime, DateTimeKind.Unspecified);
 
             // Check if there's a session running in this room at the specified time
             // PostgreSQL optimization: Efficient time range check
-            var sessionsAtTime = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAtTimeAsync(roomId, date, queryCheckDateTime);
+            var sessionsAtTime = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAtTimeAsync(roomId, date, checkDateTime);
             var isOccupied = sessionsAtTime.Any();
 
             return isOccupied;
@@ -247,6 +241,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Room with ID {roomId} not found");
             }
 
+
             // Get all sessions in the room for the specific date
             var conferenceSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(roomId, date);
 
@@ -263,10 +258,8 @@ namespace ConfRadar.Services.Services
             {
                 SessionId = session.ConferenceSessionId,
                 SessionTitle = session.Title,
-                StartTime = session.StartTime.HasValue ?
-                    DateTime.SpecifyKind(session.StartTime.Value, DateTimeKind.Local) : DateTime.MinValue,
-                EndTime = session.EndTime.HasValue ?
-                    DateTime.SpecifyKind(session.EndTime.Value, DateTimeKind.Local) : DateTime.MinValue,
+                StartTime = session.StartTime.Value,
+                EndTime = session.EndTime.Value,
                 ConferenceId = session.ConferenceId!,
                 ConferenceName = conferences.ContainsKey(session.ConferenceId!)
                     ? conferences[session.ConferenceId!].ConferenceName
@@ -298,8 +291,8 @@ namespace ConfRadar.Services.Services
                 .Select(s => new
                 {
                     // Since database values come as Unspecified kind, treat as local time
-                    Start = DateTime.SpecifyKind(s.StartTime.Value, DateTimeKind.Local),
-                    End = DateTime.SpecifyKind(s.EndTime.Value, DateTimeKind.Local)
+                    Start = s.StartTime.Value,
+                    End = s.EndTime.Value
                 })
                 .OrderBy(s => s.Start)
                 .ToList();
@@ -360,6 +353,124 @@ namespace ConfRadar.Services.Services
             }
 
             return unoccupiedSpans;
+        }
+
+        public async Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date)
+        {
+            // Validate room exists
+            var room = await _unitOfWork.RoomRepository.GetRoomByIdAsync(roomId);
+            if (room == null)
+            {
+                throw new NotFoundException($"Room with ID {roomId} not found");
+            }
+
+            // Get all sessions in the room for the specific date
+            var occupiedSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(roomId, date);
+
+            // Process the occupied sessions, sorting by start time
+            var occupiedTimeSpans = occupiedSessions
+                .Where(s => s.StartTime.HasValue && s.EndTime.HasValue)
+                .Select(s => new TimeSpanResponse
+                {
+                    // Since database values come as Unspecified kind, treat as local time
+                    StartTime = TimeOnly.FromDateTime(s.StartTime.Value),
+                    EndTime = TimeOnly.FromDateTime(s.EndTime.Value)
+                })
+                .OrderBy(s => s.StartTime)
+                .ToList();
+ 
+            return occupiedTimeSpans;
+        }
+
+        public async Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null)
+        {
+            // Validate pagination parameters
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            // Build the query with filtering options
+            var query = _unitOfWork.RoomRepository.GetAllRoomsWithoutTracking();
+
+            // Apply destination filter if provided
+            if (!string.IsNullOrEmpty(destinationId))
+            {
+                query = query.Where(r => r.DestinationId == destinationId);
+            }
+
+            // Apply search keyword filter if provided (search in Number and DisplayName)
+            if (!string.IsNullOrEmpty(searchKeyword))
+            {
+                query = query.Where(r => r.Number.ToLower().Contains(searchKeyword.ToLower()) || 
+                                        r.DisplayName.ToLower().Contains(searchKeyword.ToLower()));
+            }
+
+            // Get total count for pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination
+            var rooms = await query
+                .OrderBy(r => r.Number) // Sort by room number for consistent pagination
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Create responses with room information
+            var roomResponses = rooms.Select(room => new DTOs.Room.RoomWithSessionsResponse
+            {
+                RoomId = room.RoomId,
+                Number = room.Number,
+                DisplayName = room.DisplayName,
+                DestinationId = room.DestinationId,
+                Sessions = new List<DTOs.Room.RoomOccupationSlotResponse>() // Initialize empty list, will populate later
+            }).ToList();
+
+            // If a specific date is provided, get sessions for that date
+            if (date.HasValue)
+            {
+                // Get all session IDs for the rooms on the specified date to efficiently fetch sessions
+                var roomIds = rooms.Select(r => r.RoomId).ToList();
+                var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdsAndDateAsync(roomIds, date.Value);
+
+                // Get all associated conferences at once to reduce database calls
+                var conferenceIds = sessions.Select(cs => cs.ConferenceId).Where(id => !string.IsNullOrEmpty(id)).ToList();
+                var conferences = new Dictionary<string, Conference>();
+                if (conferenceIds.Any())
+                {
+                    conferences = await _unitOfWork.ConferenceRepository.GetConferencesByIdsAsync(conferenceIds);
+                }
+
+                // Group sessions by room ID for efficient assignment
+                var sessionsByRoomId = sessions.GroupBy(s => s.RoomId).ToDictionary(g => g.Key, g => g.ToList());
+
+                // Populate each room's sessions
+                foreach (var roomResponse in roomResponses)
+                {
+                    if (sessionsByRoomId.ContainsKey(roomResponse.RoomId))
+                    {
+                        var roomSessions = sessionsByRoomId[roomResponse.RoomId];
+                        roomResponse.Sessions = roomSessions.Select(session => new DTOs.Room.RoomOccupationSlotResponse
+                        {
+                            SessionId = session.ConferenceSessionId,
+                            SessionTitle = session.Title,
+                            StartTime = session.StartTime.GetValueOrDefault(),
+                            EndTime = session.EndTime.GetValueOrDefault(),
+                            ConferenceId = session.ConferenceId!,
+                            ConferenceName = conferences.ContainsKey(session.ConferenceId!) 
+                                ? conferences[session.ConferenceId!].ConferenceName 
+                                : "Unknown Conference"
+                        }).ToList();
+
+                    }
+                }
+            }
+
+            return new DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>
+            {
+                Items = roomResponses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
 }

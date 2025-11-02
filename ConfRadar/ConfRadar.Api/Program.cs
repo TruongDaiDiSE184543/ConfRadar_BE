@@ -16,6 +16,27 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var seedDataService = scope.ServiceProvider.GetRequiredService<ISeedDataService>();
+    //await seedDataService.SeedRolesAsync();
+    //await seedDataService.SeedGlobalStatusesAsync();
+    //await seedDataService.SeedConferenceStatusesAsync();
+    //await seedDataService.SeedRankingCategoriesAsync();
+    //await seedDataService.SeedReviewStatusesAsync();
+    //await seedDataService.SeedPaperPhasesAsync();
+    ////await seedDataService.SeedTransactionStatusAsync();
+    //await seedDataService.SeedPaymentMethodsAsync();
+    ////await seedDataService.SeedTransactionTypeAsync();
+    //await seedDataService.SeedConferenceStatusesAsync();
+    //await seedDataService.SeedPaperPhasesAsync();
+    //await seedDataService.SeedCheckInStatusAsync(); 
+    //await seedDataService.SeedRolesAsync();
+    //await seedDataService.SeedGlobalStatusesAsync();
+    ////await seedDataService.SeedTransactionStatusAsync();
+    //await seedDataService.SeedPaymentMethodsAsync();
+    ////await seedDataService.SeedTransactionTypeAsync();
+    //await seedDataService.SeedConferenceStatusesAsync();
+    //await seedDataService.SeedPaperPhasesAsync();
+    //await seedDataService.SeedCheckInStatusAsync();
+    //await seedDataService.SeedReviewStatusesAsync();
     await seedDataService.SeedRolesAsync();
     await seedDataService.SeedGlobalStatusesAsync();
     await seedDataService.SeedConferenceStatusesAsync();

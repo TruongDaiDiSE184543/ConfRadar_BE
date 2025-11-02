@@ -163,14 +163,14 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Speaker Mappers
-        public static Speaker ToModel(this CreateSpeakerRequest request, string conferenceSessionId)
+        public static Speaker ToModel(this CreateSpeakerRequest request, string conferenceSessionId,string imageURL)
         {
             return new Speaker
             {
                 SpeakerId = Guid.NewGuid().ToString(),
                 Name = request.Name,
                 Description = request.Description,
-                Image = request.ImageUrl,
+                Image = imageURL,
                 ConferenceSessionId = conferenceSessionId
             };
         }
@@ -239,13 +239,13 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Conference Session Media Mappers
-        public static ConferenceSessionMedium ToModel(this CreateConferenceSessionMediaRequest request, string conferenceSessionId)
+        public static ConferenceSessionMedium ToModel(this CreateConferenceSessionMediaRequest request, string conferenceSessionId,string mediaURL)
         {
             return new ConferenceSessionMedium
             {
                 ConferenceSessionMediaId = Guid.NewGuid().ToString(),
                 ConferenceSessionId = conferenceSessionId,
-                MediaUrl = request.MediaUrl
+                MediaUrl = mediaURL
             };
         }
 

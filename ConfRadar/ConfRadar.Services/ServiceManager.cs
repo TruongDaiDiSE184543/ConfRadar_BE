@@ -25,6 +25,7 @@ namespace ConfRadar.Services
         public ICameraReadyService CameraReadyService { get; }
         public ICityService CityService { get; }
         public IConferenceStatusService ConferenceStatusService { get; }
+        public IConferenceTimelineService ConferenceTimelineService { get; }
         public IFavouriteConferenceService FavoriteConferenceService { get; }
         //public ICityService CityService { get; }
 
@@ -54,6 +55,7 @@ namespace ConfRadar.Services
         private readonly ICameraReadyService _cameraReadyService;
         private readonly ICityService _cityService;
         private readonly IConferenceStatusService _conferenceStatusService;
+        private readonly IConferenceTimelineService _conferenceTimelineService;
         private readonly IFavouriteConferenceService  _favouriteConferenceService;
 
         public ServiceManager(IAuthService authService,
@@ -77,6 +79,8 @@ namespace ConfRadar.Services
             IRankingCategoryService rankingCategoryService,
             ICityService cityService,
             IConferenceStatusService conferenceStatusService,
+            IConferenceTimelineService conferenceTimelineService,
+            
             IFavouriteConferenceService favouriteConferenceService)
         {
             _authService = authService;
@@ -99,6 +103,7 @@ namespace ConfRadar.Services
             _cameraReadyService = cameraReadyService;
             _cityService = cityService;
             _conferenceStatusService = conferenceStatusService;
+            _conferenceTimelineService = conferenceTimelineService;
             _favouriteConferenceService = favouriteConferenceService;
         }
 
@@ -127,6 +132,8 @@ namespace ConfRadar.Services
         public ICityService CityService => _cityService;
 
         public IConferenceStatusService ConferenceStatusService => _conferenceStatusService;
+
+        public IConferenceTimelineService ConferenceTimelineService => _conferenceTimelineService;
 
         public IFavouriteConferenceService FavoriteConferenceService => _favouriteConferenceService;
     }

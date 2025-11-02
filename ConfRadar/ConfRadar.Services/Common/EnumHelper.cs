@@ -145,6 +145,9 @@ namespace ConfRadar.Services.Common
         [Description("OnHold")]
         OnHold,
 
+        [Description("Ready")]
+        Ready,
+
 
 
 
