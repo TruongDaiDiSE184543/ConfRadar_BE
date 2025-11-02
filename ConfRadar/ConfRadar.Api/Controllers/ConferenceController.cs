@@ -158,8 +158,8 @@ namespace ConfRadar.Api.Controllers
         }
 
         // NEW ENDPOINT 11: Get list of research conferences with pagination and filtering (for organizers and collaborators)
-        [HttpGet("research-conferences")]
-        [Authorize(Roles = "Conference Organizer, ")]
+        [HttpGet("research-conferences-for-Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> GetResearchConferencesList(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -178,8 +178,8 @@ namespace ConfRadar.Api.Controllers
         }
 
         // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering (for organizers and collaborators)
-        [HttpGet("technical-conferences")]
-        [Authorize]
+        [HttpGet("technical-conferences-for-collaborator-and-Organizer")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> GetTechnicalConferencesList(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,

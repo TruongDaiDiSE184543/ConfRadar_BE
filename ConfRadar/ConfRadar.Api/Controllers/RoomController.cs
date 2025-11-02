@@ -180,6 +180,7 @@ namespace ConfRadar.Api.Controllers
 
         //NEW ENDPOINT: Get busy time in a room for a specific date
         [HttpGet("{roomId}/busy-time")]
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
         public async Task<IActionResult> GetBusyTimeSpansInRoomOnDate(string roomId, [FromQuery] DateOnly date)
         {
             try
