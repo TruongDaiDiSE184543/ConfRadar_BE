@@ -1,4 +1,4 @@
-using ConfRadar.Api.Responses;
+﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
@@ -141,7 +141,7 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 9: Check if technical conference has completed a specific step
         [HttpGet("check-technical-step-completion")]
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> CheckTechnicalConferenceStepCompletion([FromQuery] string conferenceId, [FromQuery] string step)
         {
             var result = await _serviceManager.ConferenceService.CheckTechnicalConferenceStepCompletionAsync(conferenceId, step);
@@ -197,6 +197,13 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
         }
 
-        
+        [HttpPost("Update-own-conference-Status")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus,string? reason = null)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.UpdateConferenceStatusAsync(confid, newStatus, reason);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
+        }
     }
 }

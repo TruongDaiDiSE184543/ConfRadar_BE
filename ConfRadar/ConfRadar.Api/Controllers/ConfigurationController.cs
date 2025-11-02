@@ -23,7 +23,7 @@ namespace ConfRadar.Api.Controllers
         {
             try
             {
-                var config = await _serviceManager.SystemConfigurationService.GetSessionConfigurationAsync();
+                var config = await _serviceManager.SystemConfigurationService.GetAllSessionConfigurationAsync();
                 return Ok(ApiResponse<SessionConfigurationResponse>.SuccessResponse(config, "Session configuration retrieved successfully"));
             }
             catch (Exception ex)
