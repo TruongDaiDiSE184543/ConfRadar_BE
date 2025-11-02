@@ -110,8 +110,9 @@ namespace ConfRadar.Services.Services
             var query = _unitOfWork.ConferenceRepository.GetAllConferences();
 
             var totalCount = await query.CountAsync();
-
+            var readystatusId = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             var pagedConferences = await query
+                .Where(c => c.ConferenceStatusId == readystatusId.ConferenceStatusId)
                 .OrderBy(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
