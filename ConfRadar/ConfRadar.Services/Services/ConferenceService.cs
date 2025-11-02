@@ -57,6 +57,7 @@ namespace ConfRadar.Services.Services
         Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
         // ENdPOINT 13: Update conference status log the transition in conference timeline
         Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null);
+        Task<List<ConferenceWithStatusNameResponse>> GetAllConferenceWithStatusByUserId(string userId, string statusId);
     }
 
     public class ConferenceService : IConferenceService
@@ -1521,6 +1522,45 @@ namespace ConfRadar.Services.Services
                 Page = page,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<List<ConferenceWithStatusNameResponse>> GetAllConferenceWithStatusByUserId(string userId, string? statusId)
+        {
+            // Get conferences for the user and by status
+            var conferences = await _unitOfWork.ConferenceRepository.GetConferencesByUserIdAndStatusAsync(userId, statusId);
+            
+            var responses = new List<ConferenceWithStatusNameResponse>();
+            
+            foreach (var conference in conferences)
+            {
+                var conferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
+                
+                var response = new ConferenceWithStatusNameResponse
+                {
+                    ConferenceId = conference.ConferenceId,
+                    ConferenceName = conference.ConferenceName,
+                    Description = conference.Description,
+                    StartDate = conference.StartDate,
+                    EndDate = conference.EndDate,
+                    TotalSlot = conference.TotalSlot,
+                    AvailableSlot = conference.AvailableSlot,
+                    Address = conference.Address,
+                    BannerImageUrl = conference.BannerImageUrl,
+                    CreatedAt = conference.CreatedAt,
+                    TicketSaleStart = conference.TicketSaleStart,
+                    TicketSaleEnd = conference.TicketSaleEnd,
+                    IsInternalHosted = conference.IsInternalHosted,
+                    IsResearchConference = conference.IsResearchConference,
+                    CityId = conference.CityId,
+                    CreatedBy = conference.CreatedBy,
+                    ConferenceCategoryId = conference.ConferenceCategoryId,
+                    ConferenceStatusName = conferenceStatus?.ConferenceStatusName // Use status name instead of ID
+                };
+                
+                responses.Add(response);
+            }
+            
+            return responses;
         }
     }
 }
