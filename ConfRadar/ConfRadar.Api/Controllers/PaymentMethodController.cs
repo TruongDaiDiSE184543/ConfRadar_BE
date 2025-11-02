@@ -1,9 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
-using ConfRadar.Services.DTOs.Transaction;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConfRadar.Api.Controllers

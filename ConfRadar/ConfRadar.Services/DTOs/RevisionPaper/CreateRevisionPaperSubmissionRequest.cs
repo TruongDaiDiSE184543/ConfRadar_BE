@@ -16,6 +16,14 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
         //public string? RevisionDeadlineRoundId { get; set; }
         [Required(ErrorMessage = "Paper Id là bắt buộc")]
         public string PaperId { get; set; }
+        [Required(ErrorMessage = "Tiêu đề cho bài báo revision là bắt buộc")]
+
+        public string Title { get; set; }
+
+        [Required(ErrorMessage = "Mô tả cho bài báo revision là bắt buộc")]
+
+        public string? Description { get; set; }
+
     }
     public class CreateRevisionPaperSubmissionFeedback
     {

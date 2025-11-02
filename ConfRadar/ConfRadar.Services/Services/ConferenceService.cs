@@ -779,7 +779,7 @@ namespace ConfRadar.Services.Services
                     RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                     {
                         RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
-                        EndDate = r.EndDate,
+                        EndDate = r.EndSubmissionDate,
                         RoundNumber = r.RoundNumber,
                         ResearchConferencePhaseId = r.ResearchConferencePhaseId
                     }).ToList()
@@ -1241,7 +1241,7 @@ namespace ConfRadar.Services.Services
                         RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                         {
                             RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
-                            EndDate = r.EndDate,
+                            EndDate = r.EndSubmissionDate,
                             RoundNumber = r.RoundNumber,
                             ResearchConferencePhaseId = r.ResearchConferencePhaseId
                         }).ToList()

@@ -191,6 +191,16 @@ namespace ConfRadar.Services.Common
         [Description("Accepted")]
         Accepted
     }
+    public enum WaitListStatusEnum
+    {
+        [Description("Pending")]
+        Pending,
+
+        [Description("Notified")]
+        Notified,
+
+      
+    }
 
 
 }

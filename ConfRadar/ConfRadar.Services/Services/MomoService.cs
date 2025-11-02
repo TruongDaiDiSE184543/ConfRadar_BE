@@ -108,7 +108,6 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Giá hội nghị với id {request.ConferencePriceId} không tìm thấy");
             }
 
-
             if (conferencePrice.Conference!.IsResearchConference == false)
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference");
@@ -121,15 +120,67 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference tổ chức bởi confradar");
             }
+           
+            if (conferencePrice.IsAuthor == false)
+            {
+                throw new BadRequestException($"Giá vé hiện tại không khả dụng cho việc nộp abstract");
+
+            }
+            var researchConferencePhases = conferencePrice.Conference?.ResearchConferencePhases;
+            if (researchConferencePhases == null || !researchConferencePhases.Any())
+            {
+                throw new BadRequestException($"Không tìm thấy các giai đoạn trong hội nghị nghiên cứu này");
+            }
+           
+            var activeFirstResearchConferencePhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsWaitlist == false && rcp.IsActive == true);
+            var activeSecondWaitListResearchConferencePhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsWaitlist == true && rcp.IsActive == true);
+            var pendingWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Pending.GetDescription());
+            if (pendingWaitListStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái waitlist trong hệ thống");
+            }
+            if (activeFirstResearchConferencePhase == null || activeSecondWaitListResearchConferencePhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn trong hội nghị nghiên cứu");
+            }
+            //check cho 2nd phase
+            if (activeSecondWaitListResearchConferencePhase != null)
+            {
+                var paperWaitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferencePrice.ConferenceId);
+                if (paperWaitListFound != null && conferencePrice.AvailableSlot >0)
+                {
+                    await _unitOfWork.PaperWaitListRepository.DeletePaperWaitListAsync(paperWaitListFound);
+                }
+
+                if (conferencePrice.AvailableSlot <= 0 && paperWaitListFound ==null)
+                {
+                    var paperWaitList = new PaperWaitList()
+                    {
+                        PaperWaitListId = Guid.NewGuid().ToString(),
+                        CreatedAt = ExtensionHelper.GetVietnamTime(),
+                        NotifiedAt = null,
+                        WaitListStatusId = pendingWaitListStatus.WaitListStatusId,
+                        UserId = userId,
+                        ConferenceId = conferencePrice.ConferenceId,
+                    };
+                    await _unitOfWork.PaperWaitListRepository.CreatePaperWaitListAsync(paperWaitList);
+                    throw new BadRequestException("Hiện tại hội nghị nghiên cứu của của chúng tôi đã hết slot nên bạn sẽ được thêm vào danh sách hàng đợi, xin hãy kiểm tra liên tục thông tin sự kiện này để được cập nhật thêm");
+                }
+               
+            }
             if (conferencePrice.AvailableSlot <= 0)
             {
-                throw new BadRequestException($"Hiện tại slot cho research conference đã hết");
+                throw new BadRequestException($"Hiện tại slot cho hội nghị nghiên cứu này đã hết");
             }
+
+
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.MoMo.GetDescription());
             if (paymentMethod == null)
             {
                 throw new NotFoundException($"Phương thức thanh toán không thể tìm thấy trong hệ thống");
             }
+
+
             var paymentLockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, request.ConferencePriceId);
             bool paymentLockFound = await _redisService.KeyExistsAsync(paymentLockKey);
             if (paymentLockFound == true)

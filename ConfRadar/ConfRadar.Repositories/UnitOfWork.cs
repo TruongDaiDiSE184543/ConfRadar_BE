@@ -62,6 +62,9 @@ namespace ConfRadar.Repositories
         IRevisionPaperReviewRepository RevisionPaperReviewRepository { get; }
         IFullPaperReviewRepository FullPaperReviewRepository { get; }
         IReviewerContractRepository ReviewerContractRepository { get; }
+        IWaitListStatusRepository WaitListStatusRepository { get; }
+        IPaperWaitListRepository PaperWaitListRepository { get; }
+        IFavouriteConferenceRepository FavoriteConferenceRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -129,6 +132,9 @@ namespace ConfRadar.Repositories
         private IRevisionPaperReviewRepository _RevisionPaperReviewRepository;
         private IFullPaperReviewRepository _FullPaperReviewRepository;
         private IReviewerContractRepository _ReviewerContractRepository;
+        private IWaitListStatusRepository _WaitListStatusRepository;
+        private IPaperWaitListRepository _PaperWaitListRepository;
+        private IFavouriteConferenceRepository _FavouriteConferenceRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -230,6 +236,12 @@ namespace ConfRadar.Repositories
         public IFullPaperReviewRepository FullPaperReviewRepository => _FullPaperReviewRepository ??= new FullPaperReviewRepository(_context);
 
         public IReviewerContractRepository ReviewerContractRepository => _ReviewerContractRepository ??= new ReviewerContractRepository(_context);
+
+        public IWaitListStatusRepository WaitListStatusRepository => _WaitListStatusRepository ??= new WaitListStatusRepository(_context);
+
+        public IPaperWaitListRepository PaperWaitListRepository => _PaperWaitListRepository ??= new PaperWaitListRepository(_context);
+
+        public IFavouriteConferenceRepository FavoriteConferenceRepository => _FavouriteConferenceRepository ??= new FavouriteConferenceRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

@@ -18,7 +18,7 @@ namespace ConfRadar.Services.Services
         //Task SeedMediaTypesAsync();
         Task SeedCheckInStatusAsync();
         //Task SeedReviewStatusAsync();
-
+        Task SeedWaitListStatusesAsync();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -212,7 +212,22 @@ namespace ConfRadar.Services.Services
                 });
         }
 
+        public async Task SeedWaitListStatusesAsync()
+        {
+            var statusNames = Enum.GetValues<WaitListStatusEnum>()
+                .Select(s => s.GetDescription())
+                .ToList();
 
+            await SeedEntityAsync<WaitListStatus>(
+                statusNames,
+                _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync,
+                _unitOfWork.WaitListStatusRepository.CreateMultipleWaitListStatusesAsync,
+                name => new WaitListStatus
+                {
+                    WaitListStatusId = Guid.NewGuid().ToString(),
+                    Name = name,
+                });
+        }
     }
 
 
