@@ -215,11 +215,18 @@ namespace ConfRadar.Services.Services
 
                 //Total slot for conference must be > 0
                 if (request.TotalSlot < 0) throw new Exception("Total slot must be positive");
+
+                //get current time for conference.createAt
                 var vietNamTimeZoneNow = ExtensionHelper.GetVietnamDate();
+
+                //check if user is in role Organizer => confstatus = preparing
+                //If user is in role Collaborator => confstatus = pendings
                 var userRole = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userid);
                 var OrganizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("Conference Organizer");
                 var roleOfUser = userRole.Select(S => S.RoleId);
                 Conference toBeCreatedConference;
+
+
                 var confStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
                 if (roleOfUser.Contains(OrganizerRole.RoleId)) toBeCreatedConference = ConferenceStepBasicCreateToModel.creatBasicConference(request, confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), vietNamTimeZoneNow, userid);
                 else toBeCreatedConference = ConferenceStepBasicCreateToModel.creatBasicConference(request, confStatus.Where(s => s.ConferenceStatusName == "Pending").FirstOrDefault(), vietNamTimeZoneNow, userid);
