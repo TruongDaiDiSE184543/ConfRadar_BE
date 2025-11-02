@@ -149,6 +149,32 @@ namespace ConfRadar.Services.Services
             }
         }
 
+        private async Task <bool> CheckIfStartDateAndTicketSaleDate(DateOnly startDate, DateOnly endDate, DateOnly ticketSaleStart, DateOnly ticketSaleEnd)
+        {
+            if (startDate < DateOnly.FromDateTime(DateTime.UtcNow) &&
+                endDate < DateOnly.FromDateTime(DateTime.UtcNow) &&
+                ticketSaleStart < DateOnly.FromDateTime(DateTime.UtcNow) &&
+                ticketSaleEnd < DateOnly.FromDateTime(DateTime.UtcNow)
+                ) return false;
+            if (startDate.CompareTo(endDate) > 0) return false;
+            if (ticketSaleStart.CompareTo(ticketSaleEnd) > 0) return false;
+            if (ticketSaleEnd.CompareTo(startDate) > 0 || ticketSaleStart.CompareTo(startDate) > 0) return false;
+            return true;
+        }
+
+        private async Task<bool> checkConferenceResearchPhase(string confId, DateOnly registrationStart, DateOnly registrationEnd,
+            DateOnly FullPaperStart, DateOnly FullPaperEnd,
+            DateOnly ReviewStart, DateOnly ReviewEnd,
+            DateOnly ReviseStart, DateOnly ReviseEnd,
+            DateOnly CameraReadyStart, DateOnly CameraReadyEnd)
+        {
+            //get conference
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
+            DateOnly TicketSaleStart = conference.TicketSaleStart.Value, TicketSaleEnd = conference.TicketSaleEnd.Value; 
+            return true;
+        }
+
+
         #endregion
 
         #region Step 1: Basic Conference
@@ -163,14 +189,13 @@ namespace ConfRadar.Services.Services
                 {
                     throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
                 }
-                var bannerExtension = request.BannerImageFile?.ContentType switch
-                {
-                    "image/jpeg" => "jpeg",
-                    "image/gif" => "gif",
-                    "image/png" => "png",
-                    _ => null
-                };
-                if (bannerExtension == null && request.BannerImageFile != null) throw new Exception("BannerImageFile extension is not supported");
+
+                //Banner image must be image
+                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile)) throw new BadRequestException($"Không hỗ trợ banner ảnh với đuôi {request.BannerImageFile.ContentType}");
+                
+
+                //Must be conference of type technical
+                if (!request.IsResearchConference.HasValue || request.IsResearchConference.Value) throw new BadRequestException("Hội nghị công nghệ yêu cầu IsResearchConference là false");
                 if (request.BannerImageFile != null)
                 {
                     using var stream = request.BannerImageFile.OpenReadStream();
@@ -178,13 +203,17 @@ namespace ConfRadar.Services.Services
                     request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
                     request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
                 }
-                if (request.StartDate < DateOnly.FromDateTime(DateTime.Today) &&
-                    request.EndDate < DateOnly.FromDateTime(DateTime.Today) &&
-                    request.TicketSaleEnd < DateOnly.FromDateTime(DateTime.Today) &&
-                    request.TicketSaleStart < DateOnly.FromDateTime(DateTime.Today)
-                    ) throw new Exception("Date must be after today");
-                if (request.StartDate > request.EndDate || request.TicketSaleStart > request.TicketSaleEnd ||
-                    request.TicketSaleEnd > request.StartDate) throw new Exception("date start must be after dateend the same with ticketsale and ticketsale end must be before date start ");
+
+                // check if any of the date is before today and ticketsale Start/end must before start/end date
+
+                var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate,request.TicketSaleStart,request.TicketSaleEnd);
+                if (!isValidDateValues.Result) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
+
+                // must have target audience for the technical detail
+                if (string.IsNullOrEmpty(request.targetAudienceTechnicalConference)) throw new BadRequestException("Cần phải có khán giả hướng tới cho buổi hội nghị công nghệ");
+
+
+                //Total slot for conference must be > 0
                 if (request.TotalSlot < 0) throw new Exception("Total slot must be positive");
                 var vietNamTimeZoneNow = ExtensionHelper.GetVietnamDate();
                 var userRole = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userid);
@@ -246,6 +275,11 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
 
+            var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate, request.TicketSaleStart.Value, request.TicketSaleEnd.Value);
+            if (!isValidDateValues.Result) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
+
+            if (request.TotalSlot <= 0) throw new BadRequestException("Totalslot phải lớn hơn 0");
+
             conference.ConferenceName = request.ConferenceName ?? conference.ConferenceName;
             conference.Description = request.Description ?? conference.Description;
             conference.StartDate = request.StartDate;  // Fixed nullable DateOnly
@@ -283,6 +317,9 @@ namespace ConfRadar.Services.Services
             {
                 conferencePriceWithPhasesResponses = new List<ConferencePriceWithPhasesResponse>()
             };
+            var existingConferencePrice = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
+            //get existing total slot from conference price to check if this addition will result in exceeding the conferene totol slot 
+            var existingTotalSlot = existingConferencePrice.Sum(x => x.TotalSlot);
             List<PricePhaseResponse> pricePhaseResponses = new ();
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -290,17 +327,21 @@ namespace ConfRadar.Services.Services
                 // Create the conference price
                 var conferencePriceRequest = request.TypeOfTicket;
                 int? totalSlotFromToBeTickets =  request.TypeOfTicket.Sum(ts => ts.TotalSlot);
-                if (totalSlotFromToBeTickets != conference.TotalSlot) throw new BadRequestException("Số lượng totalSlot của từng loại vé tổng phải bằng" +
-                    "total slot của conference");
+                if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot) throw new BadRequestException($"Số lượng totalSlot của từng loại vé tổng phải nhỏ hơn hoặc bằng capicity của conference: {existingTotalSlot}+ {totalSlotFromToBeTickets} > {conference.TotalSlot} ");
                 foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest) 
                 {
+                    //check if totalslot of phases in a ticket type is larger than the totalslot of the ticket itself
                     int? totalSlotFromPhase = toBeConferencePrice.Phases.Sum(phase => phase.Totalslot);
-                    if (toBeConferencePrice.TotalSlot < totalSlotFromPhase) throw new BadRequestException("Tổng totalslot qua từng giai đoạn của vé không thể lớn hơn totalslot của loại vé đó");
+                    if (toBeConferencePrice.TotalSlot != totalSlotFromPhase) throw new BadRequestException("Tổng totalslot qua từng giai đoạn của vé không thể lớn hơn totalslot của loại vé đó");
                     var CreatedConferencePrice = toBeConferencePrice.ToModel(conferenceId);
                     await _unitOfWork.ConferencePriceRepository.CreateConferencePriceAsync(CreatedConferencePrice);
                     foreach (CreatePricePhaseRequest createPricePhaseRequest in toBeConferencePrice.Phases)
                     {
-                        
+                        //check if each phase request is in valid date
+                        //createPricePhaseRequest start must < end, 
+                        if (createPricePhaseRequest.StartDate > createPricePhaseRequest.EndDate) throw new BadRequestException("Start phase phải lớn hơn end phase");
+                        //each phase must be in conference's ticket sale start and end
+                        if(createPricePhaseRequest.StartDate < conference.StartDate || createPricePhaseRequest.EndDate > conference.EndDate) throw new BadRequestException("Start phase phải và endphase phải nằm trong ticket sale start và ticket sale end của conference");
                         var CreatedPricePhase = createPricePhaseRequest.ToModel(CreatedConferencePrice.ConferencePriceId);
                         await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(CreatedPricePhase);
                         pricePhaseResponses.Add(new PricePhaseResponse
@@ -903,17 +944,15 @@ namespace ConfRadar.Services.Services
                     throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
                 }
 
-                var bannerExtension = request.BannerImageFile?.ContentType switch
-                {
-                    "image/jpeg" => "jpeg",
-                    "image/gif" => "gif",
-                    "image/png" => "png",
-                    _ => null
-                };
+                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile)) throw new BadRequestException($"Banner ảnh không hỗ trợ extension{request.BannerImageFile.ContentType}");
                 request.createdby = userid;
 
-                if (bannerExtension == null && request.BannerImageFile != null)
-                    throw new Exception("BannerImageFile extension is not supported");
+                //Must be research conference
+                if (!request.IsResearchConference.HasValue || !request.IsResearchConference.Value) throw new BadRequestException("Phải là hội nghị học thuật và giá trị IsResearchConference phải bằng true");
+
+
+                //Must be internally hosted
+                if (!request.IsInternalHosted.HasValue || !request.IsInternalHosted.Value) throw new BadRequestException("Hội nghị nghiên cứu phải được tổ chức bởi người thuộc ConfRadar");
 
                 if (request.BannerImageFile != null)
                 {
@@ -923,26 +962,17 @@ namespace ConfRadar.Services.Services
                     request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
                 }
 
-                if (request.StartDate < DateOnly.FromDateTime(DateTime.Today) &&
-                    request.EndDate < DateOnly.FromDateTime(DateTime.Today) &&
-                    request.TicketSaleEnd < DateOnly.FromDateTime(DateTime.Today) &&
-                    request.TicketSaleStart < DateOnly.FromDateTime(DateTime.Today)
-                    )
-                    throw new Exception("Date must be after today");
-
-                if (request.StartDate > request.EndDate || request.TicketSaleStart > request.TicketSaleEnd ||
-                    request.TicketSaleEnd > request.StartDate)
-                    throw new Exception("date start must be after dateend the same with ticketsale and ticketsale end must be before date start ");
+                var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
+                if (!isValidDateValues.Result) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
 
                 if (request.TotalSlot < 0)
                     throw new Exception("Total slot must be positive");
 
-                var vietNamTimeZoneNow = DateOnly.FromDateTime(DateTime.Now);
 
 
                 Conference toBeCreatedConference;
                 var confStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
-                toBeCreatedConference = request.ToModel(confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), vietNamTimeZoneNow);
+                toBeCreatedConference = request.ToModel(confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), ExtensionHelper.GetVietnamDate());
 
                 await _unitOfWork.ConferenceRepository.CreateConferenceAsync(toBeCreatedConference);
                 // Note: No TechnicalConferenceDetail for research conference

@@ -14,11 +14,14 @@ namespace ConfRadar.Api.Controllers
         {
             _serviceManager = serviceManager;
         }
+        
         [HttpGet("get-all-conference-statuses")]
         public async Task<IActionResult> ConferenceStatus()
         {
             var result = await _serviceManager.ConferenceStatusService.GetAllConferenceStatusesAsync();
             return Ok(ApiResponse<List<ConferenceStatus>>.SuccessResponse(result, "danh sach conference status"));
         }
+        
+      
     }
 }

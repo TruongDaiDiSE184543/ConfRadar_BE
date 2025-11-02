@@ -55,6 +55,8 @@ namespace ConfRadar.Services.Services
         
         // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering
         Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
+        // ENdPOINT 13: Update conference status log the transition in conference timeline
+        Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null);
     }
 
     public class ConferenceService : IConferenceService
@@ -601,6 +603,19 @@ namespace ConfRadar.Services.Services
             return await UpdateConferenceStatusAsync(conferenceId, "Preparing", request.Reason);
         }
 
+        public async Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new BadRequestException($"Không tìm thấy hội nghị với id {conferenceId}");
+            if (conference.CreatedBy != userId) throw new BadRequestException("Chỉ có người tạo ra conference mới thay đổi được trạng thái");
+
+            //Collaborator's technical confs need to be approved to preparing status first only then they can change the status
+            var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing first để có thể thay đổi trạng thái");
+
+            return UpdateConferenceStatusAsync(conferenceId, newStatus,reason).Result;
+        }
+
         public async Task<bool> UpdateConferenceStatusAsync(string conferenceId, string newStatusName, string? reason = null)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
@@ -620,7 +635,7 @@ namespace ConfRadar.Services.Services
             var newStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(newStatusName);
             if (newStatus == null)
             {
-                return false;
+                throw new BadRequestException($"Không tồn tại trạng thái {newStatus}");
             }
             await _unitOfWork.BeginTransactionAsync();
             try{
