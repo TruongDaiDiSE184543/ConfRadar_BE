@@ -49,10 +49,10 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINT 10: Check if research conference has completed a specific step
         Task<bool> CheckResearchConferenceStepCompletionAsync(string conferenceId, string step);
-        
+
         // NEW ENDPOINT 11: Get list of research conferences with pagination and filtering
         Task<PagedResult<DTOs.Conference.ResearchConferenceDetailResponse>> GetResearchConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
-        
+
         // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering
         Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
         // ENdPOINT 13: Update conference status log the transition in conference timeline
@@ -103,7 +103,7 @@ namespace ConfRadar.Services.Services
         //}
 
         #region Helper methods to validateDate
-       
+
 
         #endregion
 
@@ -153,7 +153,7 @@ namespace ConfRadar.Services.Services
         public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
         {
             //only retrieve conference with status ready
-            var readyStatus =await  _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
+            var readyStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
             IQueryable<Conference> query = _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferencePrices)
                     .ThenInclude(cp => cp.PricePhases)
@@ -614,7 +614,7 @@ namespace ConfRadar.Services.Services
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing first để có thể thay đổi trạng thái");
 
-            return UpdateConferenceStatusAsync(conferenceId, newStatus,reason).Result;
+            return UpdateConferenceStatusAsync(conferenceId, newStatus, reason).Result;
         }
 
         public async Task<bool> UpdateConferenceStatusAsync(string conferenceId, string newStatusName, string? reason = null)
@@ -639,7 +639,8 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Không tồn tại trạng thái {newStatus}");
             }
             await _unitOfWork.BeginTransactionAsync();
-            try{
+            try
+            {
                 // Validate the status transition
                 bool isValidTransition = await _conferenceStatusService.IsStatusTransitionValidAsync(currentStatus.ConferenceStatusName, newStatus.ConferenceStatusName);
                 if (!isValidTransition)
@@ -661,18 +662,19 @@ namespace ConfRadar.Services.Services
                 };
 
                 await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
-                
+
                 // Insert the timeline record after the status change is saved
                 await _conferenceTimelineService.CreateConferenceTimelineAsync(timelineRecord.ToModel());
-                
+
                 await _unitOfWork.CommitAsync();
                 return true;
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
                 return false;
             }
-           
+
         }
 
         public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId)
@@ -1098,10 +1100,10 @@ namespace ConfRadar.Services.Services
                     return false;
             }
         }
-        
+
         public async Task<PagedResult<DTOs.Conference.ResearchConferenceDetailResponse>> GetResearchConferencesListAsync(
-            int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, 
-            string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, 
+            int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
+            string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
             string? userId = null, bool isOrganizer = false)
         {
             IQueryable<Conference> query;
@@ -1128,7 +1130,7 @@ namespace ConfRadar.Services.Services
             // Apply other filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || 
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) ||
                                         c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
@@ -1331,8 +1333,8 @@ namespace ConfRadar.Services.Services
         }
 
         public async Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(
-            int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, 
-            string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, 
+            int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
+            string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
             string? userId = null, bool isOrganizer = false)
         {
             IQueryable<Conference> query;
@@ -1359,7 +1361,7 @@ namespace ConfRadar.Services.Services
             // Apply other filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || 
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) ||
                                         c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
@@ -1392,7 +1394,7 @@ namespace ConfRadar.Services.Services
             {
                 // For each conference, get the detailed technical conference data
                 var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conference.ConferenceId);
-                
+
                 var responsesList = await _unitOfWork.ConferenceRepository.GetAllConferences()
                     .Include(c => c.ConferenceCategory)
                     .Include(c => c.ConferenceMedia)

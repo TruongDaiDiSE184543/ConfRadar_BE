@@ -301,7 +301,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetCustomerWaitList([FromBody] LeaveWaitListRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.LeaveWaitList(userId,request.ConferenceId);
+            var result = await _serviceManager.PaperService.LeaveWaitList(userId, request.ConferenceId);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Đã thoát khỏi waitlist"));
         }
     }

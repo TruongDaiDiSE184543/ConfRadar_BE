@@ -56,7 +56,7 @@ namespace ConfRadar.Services
         private readonly ICityService _cityService;
         private readonly IConferenceStatusService _conferenceStatusService;
         private readonly IConferenceTimelineService _conferenceTimelineService;
-        private readonly IFavouriteConferenceService  _favouriteConferenceService;
+        private readonly IFavouriteConferenceService _favouriteConferenceService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -80,7 +80,7 @@ namespace ConfRadar.Services
             ICityService cityService,
             IConferenceStatusService conferenceStatusService,
             IConferenceTimelineService conferenceTimelineService,
-            
+
             IFavouriteConferenceService favouriteConferenceService)
         {
             _authService = authService;

@@ -149,7 +149,7 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        private async Task <bool> CheckIfStartDateAndTicketSaleDate(DateOnly startDate, DateOnly endDate, DateOnly ticketSaleStart, DateOnly ticketSaleEnd)
+        private async Task<bool> CheckIfStartDateAndTicketSaleDate(DateOnly startDate, DateOnly endDate, DateOnly ticketSaleStart, DateOnly ticketSaleEnd)
         {
             if (startDate < DateOnly.FromDateTime(DateTime.UtcNow) &&
                 endDate < DateOnly.FromDateTime(DateTime.UtcNow) &&
@@ -170,7 +170,7 @@ namespace ConfRadar.Services.Services
         {
             //get conference
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
-            DateOnly TicketSaleStart = conference.TicketSaleStart.Value, TicketSaleEnd = conference.TicketSaleEnd.Value; 
+            DateOnly TicketSaleStart = conference.TicketSaleStart.Value, TicketSaleEnd = conference.TicketSaleEnd.Value;
             return true;
         }
 
@@ -192,7 +192,7 @@ namespace ConfRadar.Services.Services
 
                 //Banner image must be image
                 if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile)) throw new BadRequestException($"Không hỗ trợ banner ảnh với đuôi {request.BannerImageFile.ContentType}");
-                
+
 
                 //Must be conference of type technical
                 if (!request.IsResearchConference.HasValue || request.IsResearchConference.Value) throw new BadRequestException("Hội nghị công nghệ yêu cầu IsResearchConference là false");
@@ -206,7 +206,7 @@ namespace ConfRadar.Services.Services
 
                 // check if any of the date is before today and ticketsale Start/end must before start/end date
 
-                var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate,request.TicketSaleStart,request.TicketSaleEnd);
+                var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
                 if (!isValidDateValues.Result) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
 
                 // must have target audience for the technical detail
@@ -327,15 +327,15 @@ namespace ConfRadar.Services.Services
             var existingConferencePrice = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
             //get existing total slot from conference price to check if this addition will result in exceeding the conferene totol slot 
             var existingTotalSlot = existingConferencePrice.Sum(x => x.TotalSlot);
-            List<PricePhaseResponse> pricePhaseResponses = new ();
+            List<PricePhaseResponse> pricePhaseResponses = new();
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 // Create the conference price
                 var conferencePriceRequest = request.TypeOfTicket;
-                int? totalSlotFromToBeTickets =  request.TypeOfTicket.Sum(ts => ts.TotalSlot);
+                int? totalSlotFromToBeTickets = request.TypeOfTicket.Sum(ts => ts.TotalSlot);
                 if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot) throw new BadRequestException($"Số lượng totalSlot của từng loại vé tổng phải nhỏ hơn hoặc bằng capicity của conference: {existingTotalSlot}+ {totalSlotFromToBeTickets} > {conference.TotalSlot} ");
-                foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest) 
+                foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest)
                 {
                     //check if totalslot of phases in a ticket type is larger than the totalslot of the ticket itself
                     int? totalSlotFromPhase = toBeConferencePrice.Phases.Sum(phase => phase.Totalslot);
@@ -475,7 +475,7 @@ namespace ConfRadar.Services.Services
                             foreach (var speakerRequest in session.Speaker)
                             {
                                 String speakerURL = "";
-                                
+
                                 if (speakerRequest.Image != null)
                                 {
                                     using var stream = speakerRequest.Image.OpenReadStream();
@@ -495,8 +495,8 @@ namespace ConfRadar.Services.Services
                             foreach (var mediaRequest in session.SessionMedias)
                             {
                                 String mediaURl = "";
-                                
-                                
+
+
                                 if (mediaRequest.MediaFile != null)
                                 {
                                     using var stream = mediaRequest.MediaFile.OpenReadStream();

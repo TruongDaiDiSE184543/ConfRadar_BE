@@ -22,7 +22,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<FavouriteConferenceDetailResponse>> GetByUserIdAsync(string userId)
         {
-            var listFavourite = await _context.FavouriteConferences.AsNoTracking().Where(fc => fc.UserId == userId).OrderByDescending(fc=>fc.CreatedAt)
+            var listFavourite = await _context.FavouriteConferences.AsNoTracking().Where(fc => fc.UserId == userId).OrderByDescending(fc => fc.CreatedAt)
                                .Select(fc => new FavouriteConferenceDetailResponse()
                                {
                                    ConferenceId = fc.ConferenceId,

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Shared.DTO.WaitList
 {
@@ -12,7 +7,7 @@ namespace ConfRadar.Shared.DTO.WaitList
     }
     public class LeaveWaitListRequest
     {
-        [Required(ErrorMessage ="Mã hội nghị là bắt buộc")]
+        [Required(ErrorMessage = "Mã hội nghị là bắt buộc")]
         public string ConferenceId { get; set; }
     }
 }
