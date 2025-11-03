@@ -97,18 +97,21 @@ namespace ConfRadar.Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IObjectStorageFileService _objectStorageFileService;
         private readonly ITokenService _tokenService;
+        private readonly IConferenceService _conferenceService;
         private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
 
         public ConferenceStepService(
             IUnitOfWork unitOfWork,
             IObjectStorageFileService objectStorageFileService,
             ITokenService tokenService,
-            IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings)
+            IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings,
+            IConferenceService conferenceService)
         {
             _unitOfWork = unitOfWork;
             _objectStorageFileService = objectStorageFileService;
             _tokenService = tokenService;
             _objectStorageSettings = objectStorageSettings.Value;
+            _conferenceService = conferenceService;
         }
 
         #region Helper Methods
@@ -174,6 +177,32 @@ namespace ConfRadar.Services.Services
             return true;
         }
 
+        //price check for research conf
+        private async Task<ResearchConferencePhase> ValidateAndGetResearchConferencePrerequisitesAsync(string conferenceId, AddConferencePricesRequest request)
+        {
+            var hasResearchDetail = await _conferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, "researchconferencedetail");
+            var hasResearchPhase = await _conferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, "researchphase");
+            if (!hasResearchDetail || !hasResearchPhase)
+            {
+                throw new BadRequestException("Hội nghị nghiên cứu cần hoàn thành bước 'chi tiết' và 'giai đoạn' trước khi thêm giá vé.");
+            }
+
+            if (!request.TypeOfTicket.Any(tot => tot.isAuthor == true))
+            {
+                throw new BadRequestException("Hội nghị nghiên cứu cần có ít nhất một loại vé dành cho tác giả.");
+            }
+
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+            if (researchDetail.AllowListener == true)
+            {
+                if (!request.TypeOfTicket.Any(tot => tot.isAuthor == false))
+                {
+                    throw new BadRequestException("Hội nghị nghiên cứu này cho phép thính giả, do đó cần có ít nhất một loại vé không dành cho tác giả.");
+                }
+            }
+
+            return await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
+        }
 
         #endregion
 
@@ -327,7 +356,15 @@ namespace ConfRadar.Services.Services
             var existingConferencePrice = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
             //get existing total slot from conference price to check if this addition will result in exceeding the conferene totol slot 
             var existingTotalSlot = existingConferencePrice.Sum(x => x.TotalSlot);
-            List<PricePhaseResponse> pricePhaseResponses = new ();
+
+            //get related table for research if the conference is of type reserarch
+            ResearchConferencePhase researchPhase = new();
+
+
+            if (conference.IsResearchConference == true)
+            {
+                researchPhase = await ValidateAndGetResearchConferencePrerequisitesAsync(conferenceId, request);
+            }
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -337,6 +374,8 @@ namespace ConfRadar.Services.Services
                 if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot) throw new BadRequestException($"Số lượng totalSlot của từng loại vé tổng phải nhỏ hơn hoặc bằng capicity của conference: {existingTotalSlot}+ {totalSlotFromToBeTickets} > {conference.TotalSlot} ");
                 foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest) 
                 {
+                    //Phase for each ticket type
+                    List<PricePhaseResponse> pricePhaseResponses = new ();
                     //check if totalslot of phases in a ticket type is larger than the totalslot of the ticket itself
                     int? totalSlotFromPhase = toBeConferencePrice.Phases.Sum(phase => phase.Totalslot);
                     if (toBeConferencePrice.TotalSlot != totalSlotFromPhase) throw new BadRequestException("Tổng totalslot qua từng giai đoạn của vé không thể lớn hơn totalslot của loại vé đó");
@@ -347,8 +386,17 @@ namespace ConfRadar.Services.Services
                         //check if each phase request is in valid date
                         //createPricePhaseRequest start must < end, 
                         if (createPricePhaseRequest.StartDate > createPricePhaseRequest.EndDate) throw new BadRequestException("Start phase phải lớn hơn end phase");
-                        //each phase must be in conference's ticket sale start and end
-                        if(createPricePhaseRequest.StartDate < conference.TicketSaleStart || createPricePhaseRequest.EndDate > conference.TicketSaleEnd) throw new BadRequestException("Start phase phải và endphase phải nằm trong ticket sale start và ticket sale end của conference");
+                        if (toBeConferencePrice.isAuthor == true)
+                        {
+                            //each phase of author ticket types must be in registation start/end interval
+                            if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate ||  createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
+                            {
+                                throw new BadRequestException("Vé bán cho authors phải trong khoảng registration start và end");
+                            }
+                            
+                        }
+                        //each phase of technical and non author must be in conference's ticket sale start and end
+                        else if (createPricePhaseRequest.StartDate < conference.TicketSaleStart || createPricePhaseRequest.EndDate > conference.TicketSaleEnd) throw new BadRequestException("Start phase phải và endphase phải nằm trong ticket sale start và ticket sale end của conference");
                         var CreatedPricePhase = createPricePhaseRequest.ToModel(CreatedConferencePrice.ConferencePriceId);
                         await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(CreatedPricePhase);
                         pricePhaseResponses.Add(new PricePhaseResponse

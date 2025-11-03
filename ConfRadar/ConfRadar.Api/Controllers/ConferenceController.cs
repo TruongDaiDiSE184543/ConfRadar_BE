@@ -62,6 +62,7 @@ namespace ConfRadar.Api.Controllers
 
         // NEW ENDPOINT 3: Get conferences by status ID with filtering
         [HttpGet("by-status/{conferenceStatusId}")]
+        [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> GetConferencesByStatus(
             string conferenceStatusId,
             [FromQuery] int page = 1,
@@ -86,7 +87,7 @@ namespace ConfRadar.Api.Controllers
             [FromQuery] DateOnly? startDate = null,
             [FromQuery] DateOnly? endDate = null)
         {
-            var conferences = await _serviceManager.ConferenceService.GetConferencesStepCompletionStatusAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
+            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesStepCompletionStatusAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
             return Ok(ApiResponse<PagedResult<ConferenceStepCompletionStatusResponse>>.SuccessResponse(conferences, "Conference step completion status retrieved successfully"));
         }
 

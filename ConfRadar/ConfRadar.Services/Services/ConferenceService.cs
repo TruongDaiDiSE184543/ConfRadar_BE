@@ -27,7 +27,7 @@ namespace ConfRadar.Services.Services
         Task<PagedResult<ConferenceResponse>> GetConferencesByStatusAsync(string conferenceStatusId, int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
 
         // Endpoint 4: Get conferences with step completion status
-        Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
+        Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetTechnicalConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
 
         // NEW ENDPOINT 5: Get all pending conferences
         Task<PagedResult<ConferenceResponse>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null);
@@ -425,14 +425,14 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
+        public async Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetTechnicalConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
         {
-            var query = _unitOfWork.ConferenceRepository.GetAllConferences();
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences().Where(c => c.IsResearchConference == false);
 
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
             if (!string.IsNullOrEmpty(cityId))
@@ -1028,6 +1028,12 @@ namespace ConfRadar.Services.Services
                 case "price":
                     var prices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
                     return prices.Any();
+                case "refundpolicy":
+                    var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conferenceId);
+                    return refundPolicies.Any();
+                case "conferencemedia":
+                    var conferencemedias = await _unitOfWork.ConferenceMediaRepository.GetMediaByConferenceIdAsync(conferenceId);
+                    return conferencemedias.Any();
                 default:
                     return false;
             }

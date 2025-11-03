@@ -1,4 +1,5 @@
 using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using Microsoft.AspNetCore.Authorization;
@@ -135,6 +136,14 @@ namespace ConfRadar.Api.Controllers
             }
             return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy phiên hội nghị"));
         }
+
+        //private async Task<bool> CheckIfEachConferenceDateHasSession(Conference conferenece, List<DateOnly> sessionDate)
+        //{
+        //    List<DateOnly> conferenceDate = new();
+        //    for (DateOnly date = conferenece.StartDate.Value; date <= conferenece.EndDate; date = date.AddDays(1)) { 
+
+        //    }
+        //}
 
         #endregion
 
