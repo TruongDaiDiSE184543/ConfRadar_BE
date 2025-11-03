@@ -363,9 +363,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class SpeakerResponse
     {
+        public string SpeakerId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public string ImageUrl { get; set; }
+        public string? ConferenceSessionId { get; set; }
     }
 
     // Add missing ConferenceMediaResponse
@@ -805,4 +807,81 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? ReferenceUrlId { get; set; }
         public string? ReferenceUrl { get; set; }
     }
+
+    // Price Phase DTOs - For CRUD operations on PricePhase
+    public class CreatePricePhaseRequestForConferencePrice
+    {
+        [Required(ErrorMessage = "Tên giai đoạn là bắt buộc")]
+        public string PhaseName { get; set; }
+
+        [Required(ErrorMessage = "Phần trăm áp dụng là bắt buộc, công thức là actualprice = ticketprice * applypercent của giai đoạn")]
+        [Range(0, 1000, ErrorMessage = "Phần trăm áp dụng phải là kiểu thập phân, nằm trong khoảng 0-1000")]
+        public decimal ApplyPercent { get; set; }
+
+        [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
+        public DateOnly StartDate { get; set; }
+        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
+        public DateOnly EndDate { get; set; }
+
+        [Required(ErrorMessage = "Số lượng vé cho giai đoạn này là bắt buộc")]
+        public int TotalSlot { get; set; }
+    }
+
+    public class UpdatePricePhaseRequest
+    {
+        public string? PhaseName { get; set; }
+
+        [Range(0, 1000, ErrorMessage = "Phần trăm áp dụng phải là kiểu thập phân, nằm trong khoảng 0-1000")]
+        public decimal? ApplyPercent { get; set; }
+
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+
+        public int? TotalSlot { get; set; }
+    }
+
+    public class AddPricePhasesRequest
+    {
+        public List<CreatePricePhaseRequestForConferencePrice>? PricePhases { get; set; }
+    }
+
+    public class PricePhaseResponse
+    {
+        public string PricePhaseId { get; set; }
+        public string? PhaseName { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public decimal? ApplyPercent { get; set; }
+        public int? TotalSlot { get; set; }
+        public int? AvailableSlot { get; set; }
+        public string? ConferencePriceId { get; set; }
+    }
+
+    // Speaker DTOs - For CRUD operations on Speaker
+    public class CreateSpeakerRequestForConferenceSession
+    {
+        [Required(ErrorMessage = "Tên diễn giả là bắt buộc")]
+        [MaxLength(255)]
+        public string Name { get; set; }
+
+        [MaxLength(250)]
+        public string? Description { get; set; }
+        public IFormFile Image { get; set; }
+    }
+
+    public class UpdateSpeakerRequestForConferenceSession
+    {
+        [MaxLength(255)]
+        public string? Name { get; set; }
+
+        [MaxLength(250)]
+        public string? Description { get; set; }
+        public IFormFile? Image { get; set; }
+    }
+
+    public class AddSpeakersRequest
+    {
+        public List<CreateSpeakerRequestForConferenceSession>? Speakers { get; set; }
+    }
+
 }

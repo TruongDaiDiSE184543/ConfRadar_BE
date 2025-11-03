@@ -90,6 +90,18 @@ namespace ConfRadar.Services.Services
         Task<List<RankingReferenceUrlResponse>> GetRankingReferenceUrlsByConferenceIdAsync(string conferenceId);
         Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request);
         Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId);
+
+        // PricePhase CRUD operations - Create with conferencePriceId, RUD with its own id
+        Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request);
+        Task<List<PricePhaseResponse>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId);
+        Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request);
+        Task<bool> DeletePricePhaseAsync(string pricePhaseId);
+
+        // Speaker CRUD operations - Create with conferenceSessionId, RUD with its own id
+        Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request);
+        Task<List<SpeakerResponse>> GetSpeakersByConferenceSessionIdAsync(string conferenceSessionId);
+        Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request);
+        Task<bool> DeleteSpeakerAsync(string speakerId);
     }
 
     public class ConferenceStepService : IConferenceStepService
@@ -212,7 +224,7 @@ namespace ConfRadar.Services.Services
                 allConferenceDate.Add(date.Value);
             }
             var missingDates = allConferenceDate.Except(sessionDate);
-            if (missingDates.Any()) return false; throw new BadRequestException($"Tất cả ngày trong hội nghị phải có session: Đây là những ngày còn thiếu{allConferenceDate.Select(d => d.ToString("yyyy-MM-dd"))}");
+            if (missingDates.Any()) throw new BadRequestException($"Tất cả ngày trong hội nghị phải có session: Đây là những ngày còn thiếu{allConferenceDate.Select(d => d.ToString("yyyy-MM-dd"))}");
             return true;
         }
 
@@ -505,7 +517,8 @@ namespace ConfRadar.Services.Services
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
-
+            List<DateOnly> sessionDates = (List<DateOnly>)request.Sessions.Select(s => s.Date);
+            if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
             var responses = new List<ConferenceSessionWithMediaResponse>();
 
             await _unitOfWork.BeginTransactionAsync();
@@ -516,7 +529,7 @@ namespace ConfRadar.Services.Services
                     foreach (var session in request.Sessions)
                     {
                         if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null)
-                            throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
+                            throw new BadRequestException("Session cần có RoomId, StartTime, EndTime, and Date.");
 
                         if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
                             throw new NotFoundException($"Room with ID {session.RoomId} not found");
@@ -1212,6 +1225,8 @@ namespace ConfRadar.Services.Services
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            List<DateOnly> sessionDates = (List<DateOnly>)request.Sessions.Select(s => s.Date);
+            if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
 
             var responses = new List<ResearchSessionWithMediaResponse>();
 
@@ -1229,13 +1244,12 @@ namespace ConfRadar.Services.Services
                             throw new NotFoundException($"Room with ID {session.RoomId} not found");
 
                         // Validate session time availability
-                        var startDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
-                        var endDateTime = new DateTime(session.Date.Value.Year, session.Date.Value.Month, session.Date.Value.Day);
+                        var sessionStartDateTime = session.Date.Value.ToDateTime(session.StartTime.Value);
+                        var sessionEndDateTime = session.Date.Value.ToDateTime(session.EndTime.Value);
 
-                        startDateTime = startDateTime.AddHours(session.StartTime.Value.Hour).AddMinutes(session.StartTime.Value.Minute);
-                        endDateTime = endDateTime.AddHours(session.EndTime.Value.Hour).AddMinutes(session.EndTime.Value.Minute);
+                        // Step 2: Validate using these direct, local time values.
+                        await ValidateSessionTimeAvailability(sessionStartDateTime, sessionEndDateTime, session.RoomId);
 
-                        await ValidateSessionTimeAvailability(startDateTime, endDateTime, session.RoomId);
 
 
                         var conferenceSession = session.ToModel(conferenceId);
@@ -1496,6 +1510,160 @@ namespace ConfRadar.Services.Services
             if (rankingReferenceUrl == null) throw new NotFoundException($"Ranking reference URL with ID {referenceUrlId} not found");
 
             return await _unitOfWork.RankingReferenceUrlRepository.DeleteRankingReferenceUrlAsync(rankingReferenceUrl) > 0;
+        }
+
+        #endregion
+
+        #region PricePhase CRUD Operations
+
+        public async Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request)
+        {
+            var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(conferencePriceId);
+            if (conferencePrice == null) throw new NotFoundException($"Conference price with ID {conferencePriceId} not found");
+
+            var responses = new List<PricePhaseResponse>();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                if (request.PricePhases != null)
+                {
+                    foreach (var pricePhaseRequest in request.PricePhases)
+                    {
+                        // Check if the sum of total slots doesn't exceed the conference price total slot
+                        var existingPhases = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(conferencePriceId);
+                        var existingTotalSlot = existingPhases.Sum(p => p.TotalSlot) ?? 0;
+                        if (existingTotalSlot + pricePhaseRequest.TotalSlot > conferencePrice.TotalSlot)
+                        {
+                            throw new BadRequestException($"Tổng số lượng slot của các giai đoạn vượt quá tổng slot của vé: {conferencePrice.TotalSlot}");
+                        }
+
+                        var pricePhase = pricePhaseRequest.ToModel(conferencePriceId);
+                        await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(pricePhase);
+                        responses.Add(pricePhase.ToResponse());
+                    }
+                }
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+
+            return responses;
+        }
+
+        public async Task<List<PricePhaseResponse>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId)
+        {
+            var pricePhases = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(conferencePriceId);
+            return pricePhases.Select(p => p.ToResponse()).ToList();
+        }
+
+        public async Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request)
+        {
+            var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(pricePhaseId);
+            if (pricePhase == null) throw new NotFoundException($"Price phase with ID {pricePhaseId} not found");
+
+            if (!string.IsNullOrEmpty(request.PhaseName)) pricePhase.PhaseName = request.PhaseName;
+            if (request.ApplyPercent.HasValue) pricePhase.ApplyPercent = request.ApplyPercent;
+            if (request.StartDate.HasValue) pricePhase.StartDate = request.StartDate;
+            if (request.EndDate.HasValue) pricePhase.EndDate = request.EndDate;
+            if (request.TotalSlot.HasValue)
+            {
+                pricePhase.TotalSlot = request.TotalSlot;
+                pricePhase.AvailableSlot = request.TotalSlot; // Update available slot when total is changed
+            }
+
+            await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
+            return pricePhase.ToResponse();
+        }
+
+        public async Task<bool> DeletePricePhaseAsync(string pricePhaseId)
+        {
+            var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(pricePhaseId);
+            if (pricePhase == null) throw new NotFoundException($"Price phase with ID {pricePhaseId} not found");
+
+            return await _unitOfWork.PricePhaseRepository.DeletePricePhaseAsync(pricePhase) > 0;
+        }
+
+        #endregion
+
+        #region Speaker CRUD Operations
+
+        public async Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request)
+        {
+            var conferenceSession = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(conferenceSessionId);
+            if (conferenceSession == null) throw new NotFoundException($"Conference session with ID {conferenceSessionId} not found");
+
+            var responses = new List<SpeakerResponse>();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                if (request.Speakers != null)
+                {
+                    foreach (var speakerRequest in request.Speakers)
+                    {
+                        string? imageUrl = null;
+                        if (speakerRequest.Image != null)
+                        {
+                            using var stream = speakerRequest.Image.OpenReadStream();
+                            var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(speakerRequest.Image.FileName);
+                            imageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, speakerRequest.Image.ContentType);
+                            imageUrl = _objectStorageSettings.EndPoint + imageUrl;
+                        }
+
+                        var speaker = speakerRequest.ToModel(conferenceSessionId, imageUrl);
+                        await _unitOfWork.SpeakerRepository.CreateSpeakerAsync(speaker);
+                        responses.Add(speaker.ToResponse());
+                    }
+                }
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+
+            return responses;
+        }
+
+        public async Task<List<SpeakerResponse>> GetSpeakersByConferenceSessionIdAsync(string conferenceSessionId)
+        {
+            var speakers = await _unitOfWork.SpeakerRepository.GetSpeakersBySessionIdAsync(conferenceSessionId);
+            return speakers.Select(s => s.ToResponse()).ToList();
+        }
+
+        public async Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request)
+        {
+            var speaker = await _unitOfWork.SpeakerRepository.GetSpeakerByIdAsync(speakerId);
+            if (speaker == null) throw new NotFoundException($"Speaker with ID {speakerId} not found");
+
+            if (!string.IsNullOrEmpty(request.Name)) speaker.Name = request.Name;
+            if (!string.IsNullOrEmpty(request.Description)) speaker.Description = request.Description;
+
+            if (request.Image != null)
+            {
+                using var stream = request.Image.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.Image.FileName);
+                speaker.Image = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, request.Image.ContentType);
+                speaker.Image = _objectStorageSettings.EndPoint + speaker.Image;
+            }
+
+            await _unitOfWork.SpeakerRepository.UpdateSpeakerAsync(speaker);
+            return speaker.ToResponse();
+        }
+
+        public async Task<bool> DeleteSpeakerAsync(string speakerId)
+        {
+            var speaker = await _unitOfWork.SpeakerRepository.GetSpeakerByIdAsync(speakerId);
+            if (speaker == null) throw new NotFoundException($"Speaker with ID {speakerId} not found");
+
+            return await _unitOfWork.SpeakerRepository.DeleteSpeakerAsync(speaker) > 0;
         }
 
         #endregion
