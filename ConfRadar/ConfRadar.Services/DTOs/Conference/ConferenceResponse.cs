@@ -1,3 +1,4 @@
+using ConfRadar.Repositories.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.Conference

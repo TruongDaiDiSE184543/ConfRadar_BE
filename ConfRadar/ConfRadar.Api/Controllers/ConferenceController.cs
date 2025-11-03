@@ -204,7 +204,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus, string? reason = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceService.UpdateConferenceStatusAsync(confid, newStatus, reason);
+            var result = await _serviceManager.ConferenceService.ChangeConferenceStatus(userId,confid, newStatus, reason);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
         }
 

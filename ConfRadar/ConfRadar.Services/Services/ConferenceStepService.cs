@@ -204,6 +204,19 @@ namespace ConfRadar.Services.Services
             return await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
         }
 
+        private async Task<bool> checkEachDateHasConferenceSession(Conference conference, List<DateOnly> sessionDate)
+        {
+            List<DateOnly> allConferenceDate = new();
+            for(var date = conference.StartDate; date <= conference.EndDate; date = date.Value.AddDays(1))
+            {
+                allConferenceDate.Add(date.Value);
+            }
+            var missingDates = allConferenceDate.Except(sessionDate);
+            if (missingDates.Any()) return false; throw new BadRequestException($"Tất cả ngày trong hội nghị phải có session: Đây là những ngày còn thiếu{allConferenceDate.Select(d => d.ToString("yyyy-MM-dd"))}");
+            return true;
+        }
+
+
         #endregion
 
         #region Step 1: Basic Conference
@@ -851,6 +864,7 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var sponsor in request.Sponsors)
                     {
+                        if (!_objectStorageFileService.IsValidImageFile(sponsor.ImageFile)) throw new BadRequestException($"Không hỗ trợ{sponsor.ImageFile.ContentType}");
                         string? imageUrl = sponsor.ImageUrl;
                         if (sponsor.ImageFile != null)
                         {
@@ -868,7 +882,7 @@ namespace ConfRadar.Services.Services
                     }
                 }
 
-                await _unitOfWork.CommitAsync();
+                 await _unitOfWork.CommitAsync();
             }
             catch (Exception)
             {
