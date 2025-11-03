@@ -886,6 +886,7 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(ct => ct.PreviousStatus)
                 .Include(c => c.ConferenceTimelines)
                     .ThenInclude(ct => ct.AfterwardStatus)
+                .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
 
             if (conference == null)
@@ -1107,6 +1108,7 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(ct => ct.PreviousStatus)
                 .Include(c => c.ConferenceTimelines)
                     .ThenInclude(ct => ct.AfterwardStatus)
+                .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
 
             if (fullConference == null)
@@ -1137,7 +1139,7 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = fullConference.ConferenceCategoryId,
                 ConferenceStatusId = fullConference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                
+
                 RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                 {
                     RefundPolicyId = rp.RefundPolicyId,
@@ -1212,7 +1214,7 @@ namespace ConfRadar.Services.Services
                         AvailableSlot = pp.AvailableSlot
                     }).ToList()
                 }).ToList(),
-                
+
                 // Include conference timeline data
                 ConferenceTimelines = fullConference.ConferenceTimelines?.Select(ct => new DTOs.Conference.ConferenceTimelineResponse
                 {
@@ -1225,7 +1227,8 @@ namespace ConfRadar.Services.Services
                     PreviousStatusName = ct.PreviousStatus?.ConferenceStatusName,
                     AfterwardStatusName = ct.AfterwardStatus?.ConferenceStatusName,
                     ConferenceName = ct.Conference?.ConferenceName
-                }).ToList()
+                }).ToList(),
+             
             };
         }
 

@@ -313,7 +313,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được tạo thành công"));
         }
 
-        [HttpGet("{conferenceId}/research/detail")]
+        [HttpGet("{conferenceId}/research/detail")] 
 
         public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
         {
