@@ -15,6 +15,7 @@ namespace ConfRadar.Repositories.Repositories
         IQueryable<Conference> GetAllConferences();
         Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId);
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
+        Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string statusId);
 
     }
 
@@ -79,6 +80,23 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
 
             return conferences.ToDictionary(c => c.ConferenceId);
+        }
+
+        public async Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId)
+        {
+            var query = _context.Conferences.AsQueryable();
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(c => c.CreatedBy == userId);
+            }
+
+            if (!string.IsNullOrEmpty(statusId))
+            {
+                query = query.Where(c => c.ConferenceStatusId == statusId);
+            }
+
+            return await query.ToListAsync();
         }
     }
 }

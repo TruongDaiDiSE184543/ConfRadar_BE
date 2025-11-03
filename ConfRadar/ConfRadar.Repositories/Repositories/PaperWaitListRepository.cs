@@ -94,7 +94,10 @@ namespace ConfRadar.Repositories.Repositories
             if (activeConferenceIds.Any())
             {
                 var paperWaitListUser = await _context.PaperWaitLists
+                    
                     .Include(pwl => pwl.User)
+                    .Include(pwl=>pwl.Conference)
+                        .ThenInclude(pwl=> pwl.ConferencePrices)
                     .Where
                     (pwl => pwl.ConferenceId!=null 
                     && activeConferenceIds.Contains(pwl.ConferenceId) 
@@ -102,7 +105,9 @@ namespace ConfRadar.Repositories.Repositories
                     && pwl.NotifiedAt == null 
                     && pwl.UserId!=null 
                     && pwl.User!=null 
-                    && pwl.User.IsActive==true).ToListAsync();
+                    && pwl.User.IsActive==true)
+                    .AsSplitQuery()
+                    .ToListAsync();
                 if (paperWaitListUser.Any())
                 {
                     var listPaperWaitList = new List<PaperWaitList>();
@@ -116,7 +121,18 @@ namespace ConfRadar.Repositories.Repositories
                         notifyUserList.Add(new NotifyUserWaitListDetailResponse()
                         {
                             Email = user.User?.Email,
-                            UserId = user.UserId
+                            UserId = user.UserId,
+                            ConferenceId = user.ConferenceId,
+                            ConferenceName = user.Conference?.ConferenceName,
+                            ConferencePriceDetailList = user.Conference?.ConferencePrices.Select(x => new NotifyConferencePriceDetailResponse()
+                            {
+                                ConferencePriceId = x.ConferencePriceId,
+                                AvailableSlot = x.AvailableSlot,
+                                TotalSlot = x.TotalSlot,
+                                TicketDescription = x.TicketDescription,
+                                TicketName = x.TicketName,
+                                TicketPrice = x.TicketPrice,
+                            }).ToList() ?? new List<NotifyConferencePriceDetailResponse>()
                         });
                     }
                     if (listPaperWaitList.Any())
