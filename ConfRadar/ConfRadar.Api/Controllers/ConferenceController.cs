@@ -198,6 +198,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
         }
 
+        //NEW ENDPOINT 13: update conf status
         [HttpPost("Update-own-conference-Status")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus,string? reason = null)
@@ -206,6 +207,29 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.UpdateConferenceStatusAsync(confid, newStatus, reason);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
         }
+
+        // NEW ENDPOINT 14: Get detailed research conference data for organizer with timeline
+        [HttpGet("detail-research-organizer-for-organizer/{conferenceId}")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> GetDetailResearchForOrganizer(string conferenceId)
+        {
+            var conferenceDetail = await _serviceManager.ConferenceService.GetDetailResearchForOrganizerAsync(conferenceId);
+            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully with timeline"));
+        }
+
+        // NEW ENDPOINT 15: Get detailed technical conference data for organizer and collaborator with timeline
+        [HttpGet("detail-technical-for-organizer-collaborator/{conferenceId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> GetDetailTechnical(string conferenceId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isOrganizer = User.IsInRole("Conference Organizer");
+
+            var conferenceDetail = await _serviceManager.ConferenceService.GetDetailTechnicalAsync(conferenceId, userId, isOrganizer);
+            return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully with timeline"));
+        }
+
+
 
         [HttpGet("get-own-conferences")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
