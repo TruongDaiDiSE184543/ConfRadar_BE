@@ -976,7 +976,7 @@ namespace ConfRadar.Services.Services
                     RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                     {
                         RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
-                        EndDate = r.EndDate,
+                        //EndDate = r.EndDate,
                         RoundNumber = r.RoundNumber,
                         ResearchConferencePhaseId = r.ResearchConferencePhaseId
                     }).ToList()
