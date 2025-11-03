@@ -9,4 +9,6 @@ public partial class ConferenceStatus
     public virtual ICollection<ConferenceTimeline> ConferenceTimelineAfterwardStatuses { get; set; } = new List<ConferenceTimeline>();
 
     public virtual ICollection<ConferenceTimeline> ConferenceTimelinePreviousStatuses { get; set; } = new List<ConferenceTimeline>();
+
+    public virtual ICollection<Conference> Conferences { get; set; } = new List<Conference>();
 }

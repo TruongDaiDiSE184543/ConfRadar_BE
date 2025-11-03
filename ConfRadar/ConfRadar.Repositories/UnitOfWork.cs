@@ -17,7 +17,7 @@ namespace ConfRadar.Repositories
         IPaperPhaseRepository PaperPhaseRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
         //ITransactionStatusRepository TransactionStatusRepository { get; }
-        IConferenceTimelineRepository ConferenceTimelineRepository { get; } 
+        IConferenceTimelineRepository ConferenceTimelineRepository { get; }
 
 
         //ITransactionTypeRepository TransactionTypeRepository { get; }
@@ -62,6 +62,10 @@ namespace ConfRadar.Repositories
         IRevisionPaperReviewRepository RevisionPaperReviewRepository { get; }
         IFullPaperReviewRepository FullPaperReviewRepository { get; }
         IReviewerContractRepository ReviewerContractRepository { get; }
+        IWaitListStatusRepository WaitListStatusRepository { get; }
+        IPaperWaitListRepository PaperWaitListRepository { get; }
+        IFavouriteConferenceRepository FavoriteConferenceRepository { get; }
+        INotificationRepository NotificationRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -129,6 +133,10 @@ namespace ConfRadar.Repositories
         private IRevisionPaperReviewRepository _RevisionPaperReviewRepository;
         private IFullPaperReviewRepository _FullPaperReviewRepository;
         private IReviewerContractRepository _ReviewerContractRepository;
+        private IWaitListStatusRepository _WaitListStatusRepository;
+        private IPaperWaitListRepository _PaperWaitListRepository;
+        private IFavouriteConferenceRepository _FavouriteConferenceRepository;
+        private INotificationRepository _NotificationRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -230,6 +238,14 @@ namespace ConfRadar.Repositories
         public IFullPaperReviewRepository FullPaperReviewRepository => _FullPaperReviewRepository ??= new FullPaperReviewRepository(_context);
 
         public IReviewerContractRepository ReviewerContractRepository => _ReviewerContractRepository ??= new ReviewerContractRepository(_context);
+
+        public IWaitListStatusRepository WaitListStatusRepository => _WaitListStatusRepository ??= new WaitListStatusRepository(_context);
+
+        public IPaperWaitListRepository PaperWaitListRepository => _PaperWaitListRepository ??= new PaperWaitListRepository(_context);
+
+        public IFavouriteConferenceRepository FavoriteConferenceRepository => _FavouriteConferenceRepository ??= new FavouriteConferenceRepository(_context);
+
+        public INotificationRepository NotificationRepository => _NotificationRepository ??= new NotificationRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

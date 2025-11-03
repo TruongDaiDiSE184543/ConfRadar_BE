@@ -9,6 +9,7 @@ using ConfRadar.Services.DTOs.RevisionPaper;
 using ConfRadar.Shared.DTO.Abstract;
 using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.User;
+using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -287,9 +288,21 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.GetPaperDetailForReviewer(paperId, userId);
             return Ok(ApiResponse<PaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper"));
         }
-
-
-
-
+        [Authorize]
+        [HttpGet("list-customer-waitlist")]
+        public async Task<IActionResult> GetCustomerWaitList()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.GetCustomerWaitList(userId);
+            return Ok(ApiResponse<List<CustomerWaitListResponse>>.SuccessResponse(result, "Danh sách các hàng đợi của bạn"));
+        }
+        [Authorize]
+        [HttpDelete("leave-waitlist")]
+        public async Task<IActionResult> GetCustomerWaitList([FromBody] LeaveWaitListRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.LeaveWaitList(userId, request.ConferenceId);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Đã thoát khỏi waitlist"));
+        }
     }
 }

@@ -108,7 +108,6 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Giá hội nghị với id {request.ConferencePriceId} không tìm thấy");
             }
 
-
             if (conferencePrice.Conference!.IsResearchConference == false)
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference");
@@ -121,15 +120,86 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference tổ chức bởi confradar");
             }
-            if (conferencePrice.AvailableSlot <= 0)
+
+            if (conferencePrice.IsAuthor == false)
             {
-                throw new BadRequestException($"Hiện tại slot cho research conference đã hết");
+                throw new BadRequestException($"Giá vé hiện tại không khả dụng cho việc nộp abstract");
+
             }
+            var researchConferencePhases = conferencePrice.Conference?.ResearchConferencePhases;
+            if (researchConferencePhases == null || !researchConferencePhases.Any())
+            {
+                throw new BadRequestException($"Không tìm thấy các giai đoạn trong hội nghị nghiên cứu này");
+            }
+
+            var activeFirstResearchConferencePhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsWaitlist == false && rcp.IsActive == true);
+            var activeWaitlistPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsWaitlist == true && rcp.IsActive == true);
+            var pendingWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Pending.GetDescription());
+            if (activeFirstResearchConferencePhase != null && activeWaitlistPhase != null)
+            {
+                throw new BadRequestException("Hệ thống phát hiện cả hai giai đoạn hội nghị đang được bật đồng thời. Vui lòng liên hệ ban tổ chức để kiểm tra cấu hình.");
+            }
+            if (pendingWaitListStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái waitlist trong hệ thống");
+            }
+            if (activeFirstResearchConferencePhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn trong hội nghị nghiên cứu");
+            }
+
+            var paperWaitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferencePrice.ConferenceId);
+            if (activeFirstResearchConferencePhase != null)
+            {
+
+                if (conferencePrice.AvailableSlot <= 0)
+                {
+                    if (paperWaitListFound == null)
+                    {
+                        var paperWaitList = new PaperWaitList()
+                        {
+                            PaperWaitListId = Guid.NewGuid().ToString(),
+                            CreatedAt = ExtensionHelper.GetVietnamTime(),
+                            NotifiedAt = null,
+                            WaitListStatusId = pendingWaitListStatus.WaitListStatusId,
+                            UserId = userId,
+                            ConferenceId = conferencePrice.ConferenceId,
+                        };
+                        await _unitOfWork.PaperWaitListRepository.CreatePaperWaitListAsync(paperWaitList);
+                        throw new BadRequestException("Hiện tại hội nghị nghiên cứu của của chúng tôi đã hết slot ở giai đoạn đầu nên bạn sẽ được thêm vào danh sách hàng đợi. Bạn sẽ được thông báo khi giai đoạn thứ hai mở lại");
+                    }
+                    else if (paperWaitListFound != null)
+                    {
+                        throw new BadRequestException("Bạn hiện tại đang trong wait list của giai đoạn một, xin hãy bình tĩnh và đừng spam");
+                    }
+
+                }
+
+            }
+            else if (activeWaitlistPhase != null)
+            {
+                if (conferencePrice.AvailableSlot <= 0)
+                {
+                    throw new BadRequestException($"Hiện tại slot cho hội nghị nghiên cứu này đã hết");
+                }
+            }
+            else
+            {
+                throw new BadRequestException("Hội nghị hiện không trong giai đoạn bán vé hoặc danh sách chờ");
+            }
+            if (paperWaitListFound != null&& conferencePrice.AvailableSlot>0)
+            {
+                await _unitOfWork.PaperWaitListRepository.DeletePaperWaitListAsync(paperWaitListFound);
+            }
+
+
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.MoMo.GetDescription());
             if (paymentMethod == null)
             {
                 throw new NotFoundException($"Phương thức thanh toán không thể tìm thấy trong hệ thống");
             }
+
+
             var paymentLockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, request.ConferencePriceId);
             bool paymentLockFound = await _redisService.KeyExistsAsync(paymentLockKey);
             if (paymentLockFound == true)

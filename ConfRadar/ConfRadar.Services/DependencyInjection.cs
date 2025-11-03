@@ -1,10 +1,12 @@
-﻿using ConfRadar.Services.Services;
+﻿using ConfRadar.Services.BackgroundJobs;
+using ConfRadar.Services.Services;
 using FirebaseAdmin;
 using FirebaseAdmin.Auth;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Minio;
+using Quartz;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services
@@ -44,6 +46,8 @@ namespace ConfRadar.Services
             services.AddScoped<IConferenceStatusService, ConferenceStatusService>();
             services.AddScoped<IReviewStatusService, ReviewStatusService>();
             services.AddScoped<IConferenceTimelineService, ConferenceTimelineService>();
+            services.AddScoped<IFavouriteConferenceService, FavouriteConferenceService>();
+            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
@@ -61,6 +65,24 @@ namespace ConfRadar.Services
                 Credential = credential
             });
             services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
+            //add jobs
+            services.AddQuartzHostedService(options =>
+            {
+                options.WaitForJobsToComplete = true;
+            });
+
+            services.AddQuartz(q =>
+            {
+                var jobKey = new JobKey("NotifyWaitListQuartzJob");
+                q.AddJob<NotifyWaitListQuartzJob>(opts => opts.WithIdentity(jobKey));
+
+                q.AddTrigger(opts => opts
+                    .ForJob(jobKey)
+                    .WithIdentity("NotifyWaitListTrigger")
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(5).RepeatForever()));
+            });
+
+            
 
 
 

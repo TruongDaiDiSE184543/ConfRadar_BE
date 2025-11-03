@@ -201,7 +201,7 @@ namespace ConfRadar.Api.Controllers
         //NEW ENDPOINT 13: update conf status
         [HttpPost("Update-own-conference-Status")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus,string? reason = null)
+        public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus, string? reason = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.UpdateConferenceStatusAsync(confid, newStatus, reason);

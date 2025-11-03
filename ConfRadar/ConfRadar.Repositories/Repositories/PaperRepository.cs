@@ -48,12 +48,14 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByIdAsync(string paperId)
         {
             return await _context.Papers
+                .Include(p => p.PaperAuthors)
                 .Include(p => p.PaperPhase)
                 .Include(p => p.Conference)
                     .ThenInclude(c => c.ResearchConferencePhases)
                         .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
                 .Include(p => p.Conference)
                     .ThenInclude(c => c.ResearchConferenceDetail)
+                .AsSplitQuery()
        .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
 
@@ -229,7 +231,8 @@ namespace ConfRadar.Repositories.Repositories
                     Title = rps.Title,
                     Description = rps.Description,
                     RevisionDeadlineRoundId = rps.RevisionDeadlineRoundId,
-                    RevisionDeadlineEndDate = rps.RevisionDeadlineRound?.EndDate,
+                    RevisionDeadlineStartSubmissionDate = rps.RevisionDeadlineRound?.StartSubmissionDate,
+                    RevisionDeadlineEndSubmissionDate = rps.RevisionDeadlineRound?.EndSubmissionDate,
                     RevisionDeadlineRoundNumber = rps.RevisionDeadlineRound?.RoundNumber,
                     RevisionSubmissionFeedbacks = isHeadReviewer ? rps.RevisionSubmissionFeedbacks.Select(rsf => new RevisionPaperSubmissionFeedBackForReviewerResponse()
                     {

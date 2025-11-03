@@ -48,6 +48,8 @@ public partial class Conference
 
     public virtual ICollection<ConferenceSession> ConferenceSessions { get; set; } = new List<ConferenceSession>();
 
+    public virtual ConferenceStatus? ConferenceStatus { get; set; }
+
     public virtual ICollection<ConferenceTimeline> ConferenceTimelines { get; set; } = new List<ConferenceTimeline>();
 
     public virtual User? CreatedByNavigation { get; set; }

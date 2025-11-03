@@ -2,11 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -23,7 +18,7 @@ namespace ConfRadar.Repositories.Repositories
 
     public class ConferenceTimelineRepository : GenericRepository<ConferenceTimeline>, IConferenceTimelineRepository
     {
-        public ConferenceTimelineRepository(ConfRadarDbContext context) : base(context){ }
+        public ConferenceTimelineRepository(ConfRadarDbContext context) : base(context) { }
 
         public async Task<int> CreateConferenceTimelineAsync(ConferenceTimeline conferenceTimeline)
         {
@@ -50,7 +45,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.ConferenceTimelines.Where(ct => ct.ConferenceId == confId &&
             ct.PreviousStatusId == previousId &&
-            ct.AfterwardStatusId == afterwardId 
+            ct.AfterwardStatusId == afterwardId
             ).ToListAsync();
         }
 
@@ -64,6 +59,6 @@ namespace ConfRadar.Repositories.Repositories
             return await base.UpdateAsync(conferenceTimeline);
         }
     }
-    
-    
+
+
 }

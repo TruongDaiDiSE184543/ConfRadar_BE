@@ -19,10 +19,10 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize]
         [HttpGet("get-own-paid-ticket")]
-        public async Task<IActionResult> GetOwnPaidTicketData([FromQuery] string? keyword,[FromQuery] int? pageNumber = 1,[FromQuery] int? pageSize = 10, [FromQuery] DateTime? sessionStartTime=null, [FromQuery] DateTime? sessionEndTime=null)
+        public async Task<IActionResult> GetOwnPaidTicketData([FromQuery] string? keyword, [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10, [FromQuery] DateTime? sessionStartTime = null, [FromQuery] DateTime? sessionEndTime = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.TicketService.GetTicketsByUserId(userId,keyword,pageNumber,pageSize);
+            var result = await _serviceManager.TicketService.GetTicketsByUserId(userId, keyword, pageNumber, pageSize);
             return Ok(ApiResponse<PagedResultResponseDto<CustomerPaidTicketResponse>>.SuccessResponse(result, "Danh sách vé đã chi trả"));
         }
     }

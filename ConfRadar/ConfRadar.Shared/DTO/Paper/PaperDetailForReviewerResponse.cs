@@ -70,7 +70,8 @@
 
         public string? Description { get; set; }
         public string? RevisionDeadlineRoundId { get; set; }
-        public DateOnly? RevisionDeadlineEndDate { get; set; }
+        public DateOnly? RevisionDeadlineStartSubmissionDate { get; set; }
+        public DateOnly? RevisionDeadlineEndSubmissionDate { get; set; }
         public int? RevisionDeadlineRoundNumber { get; set; }
         public List<RevisionPaperSubmissionFeedBackForReviewerResponse> RevisionSubmissionFeedbacks { get; set; } = new(); // cho head reviewer
 
