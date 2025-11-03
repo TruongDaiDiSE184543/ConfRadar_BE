@@ -354,7 +354,7 @@ namespace ConfRadar.Services.Services
                         pricePhaseResponses.Add(new PricePhaseResponse
                         {
                             PhaseName = createPricePhaseRequest.PhaseName,
-                            StartDate = createPricePhaseRequest.StartDate,
+                            StartDate = createPricePhaseRequest.StartDate,  
                             EndDate = createPricePhaseRequest.EndDate,
                             ApplyPercent = createPricePhaseRequest.ApplyPercent,
                             TotalSlot = createPricePhaseRequest.Totalslot,
