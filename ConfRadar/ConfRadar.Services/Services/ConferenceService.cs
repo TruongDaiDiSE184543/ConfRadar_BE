@@ -27,7 +27,7 @@ namespace ConfRadar.Services.Services
         Task<PagedResult<ConferenceResponse>> GetConferencesByStatusAsync(string conferenceStatusId, int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
 
         // Endpoint 4: Get conferences with step completion status
-        Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
+        Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetTechnicalConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
 
         // NEW ENDPOINT 5: Get all pending conferences
         Task<PagedResult<ConferenceResponse>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null);
@@ -55,7 +55,14 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering
         Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
-        // ENdPOINT 13: Update conference status log the transition in conference timeline
+        
+        // NEW ENDPOINT 13: Get detailed research conference data for organizer
+        Task<DTOs.Conference.ResearchConferenceDetailResponse> GetDetailResearchForOrganizerAsync(string conferenceId);
+        
+        // NEW ENDPOINT 14: Get detailed technical conference data for organizer and collaborator
+        Task<DTOs.Conference.TechnicalConferenceDetailResponse> GetDetailTechnicalAsync(string conferenceId, string? userId, bool isOrganizer = false);
+        
+        // ENdPOINT 15: Update conference status log the transition in conference timeline
         Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null);
         Task<List<ConferenceWithStatusNameResponse>> GetAllConferenceWithStatusByUserId(string userId, string statusId);
     }
@@ -425,14 +432,14 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
+        public async Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetTechnicalConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
         {
-            var query = _unitOfWork.ConferenceRepository.GetAllConferences();
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences().Where(c => c.IsResearchConference == false);
 
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.Contains(searchKeyword) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
             }
 
             if (!string.IsNullOrEmpty(cityId))
@@ -860,6 +867,368 @@ namespace ConfRadar.Services.Services
             };
         }
 
+        public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetDetailResearchForOrganizerAsync(string conferenceId)
+        {
+            // Get the main conference with related data and timeline
+            var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.ConferenceCategory)
+                .Include(c => c.ConferenceMedia)
+                .Include(c => c.Policies)
+                .Include(c => c.ConferencePrices)
+                    .ThenInclude(cp => cp.PricePhases)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) // Include room information
+                .Include(c => c.Sponsors)
+                .Include(c => c.RefundPolicies)
+                .Include(c => c.ConferenceTimelines) // Include timeline
+                    .ThenInclude(ct => ct.PreviousStatus)
+                .Include(c => c.ConferenceTimelines)
+                    .ThenInclude(ct => ct.AfterwardStatus)
+                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
+
+            if (conference == null)
+            {
+                throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            }
+
+            // Get research conference detail if it exists (for research conferences)
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+
+            // Get research conference phase
+            var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
+
+            // Get related research data
+            var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
+            var materialDownloads = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conferenceId);
+            var rankingReferenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conferenceId);
+            var researchSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+
+            // Map to response DTO
+            return new DTOs.Conference.ResearchConferenceDetailResponse
+            {
+                ConferenceId = conference.ConferenceId,
+                ConferenceName = conference.ConferenceName,
+                Description = conference.Description,
+                StartDate = conference.StartDate,
+                EndDate = conference.EndDate,
+                TotalSlot = conference.TotalSlot,
+                AvailableSlot = conference.AvailableSlot,
+                Address = conference.Address,
+                BannerImageUrl = conference.BannerImageUrl,
+                CreatedAt = conference.CreatedAt,
+                TicketSaleStart = conference.TicketSaleStart,
+                TicketSaleEnd = conference.TicketSaleEnd,
+                IsInternalHosted = conference.IsInternalHosted,
+                IsResearchConference = conference.IsResearchConference,
+                CityId = conference.CityId,
+                ConferenceCategoryId = conference.ConferenceCategoryId,
+                ConferenceStatusId = conference.ConferenceStatusId,
+
+                // Research Conference Detail specific fields
+                Name = researchDetail?.Name,
+                PaperFormat = researchDetail?.PaperFormat,
+                NumberPaperAccept = researchDetail?.NumberPaperAccept,
+                RevisionAttemptAllowed = researchDetail?.RevisionAttemptAllowed,
+                RankingDescription = researchDetail?.RankingDescription,
+                AllowListener = researchDetail?.AllowListener,
+                RankValue = researchDetail?.RankValue,
+                RankYear = researchDetail?.RankYear,
+                ReviewFee = researchDetail?.ReviewFee,
+                RankingCategoryId = researchDetail?.RankingCategoryId,
+                RankingCategoryName = researchDetail?.RankingCategory?.RankName,
+
+                // Research Conference related data
+                RankingFileUrls = rankingFileUrls?.Select(r => new DTOs.Conference.RankingFileUrlResponse
+                {
+                    RankingFileUrlId = r.RankingFileUrlId,
+                    FileUrl = r.FileUrl
+                }).ToList(),
+                MaterialDownloads = materialDownloads?.Select(m => new DTOs.Conference.MaterialDownloadResponse
+                {
+                    MaterialDownloadId = m.MaterialDownloadId,
+                    FileName = m.FileName,
+                    FileDescription = m.FileDescription,
+                    FileUrl = m.FileName
+                }).ToList(),
+                RankingReferenceUrls = rankingReferenceUrls?.Select(r => new DTOs.Conference.RankingReferenceUrlResponse
+                {
+                    ReferenceUrlId = r.ReferenceUrlId,
+                    ReferenceUrl = r.ReferenceUrl
+                }).ToList(),
+                ResearchPhase = researchPhase != null ? new DTOs.Conference.ResearchConferencePhaseResponse
+                {
+                    ResearchConferencePhaseId = researchPhase.ResearchConferencePhaseId,
+                    ConferenceId = researchPhase.ConferenceId,
+                    RegistrationStartDate = researchPhase.RegistrationStartDate,
+                    RegistrationEndDate = researchPhase.RegistrationEndDate,
+                    FullPaperStartDate = researchPhase.FullPaperStartDate,
+                    FullPaperEndDate = researchPhase.FullPaperEndDate,
+                    ReviewStartDate = researchPhase.ReviewStartDate,
+                    ReviewEndDate = researchPhase.ReviewEndDate,
+                    ReviseStartDate = researchPhase.ReviseStartDate,
+                    ReviseEndDate = researchPhase.ReviseEndDate,
+                    CameraReadyStartDate = researchPhase.CameraReadyStartDate,
+                    CameraReadyEndDate = researchPhase.CameraReadyEndDate,
+                    IsWaitlist = researchPhase.IsWaitlist,
+                    IsActive = researchPhase.IsActive,
+                    RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
+                    {
+                        RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
+                        EndDate = r.EndDate,
+                        RoundNumber = r.RoundNumber,
+                        ResearchConferencePhaseId = r.ResearchConferencePhaseId
+                    }).ToList()
+                } : null,
+                ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
+                {
+                    ConferenceSessionId = rs.ConferenceSessionId,
+                    Title = rs.Title,
+                    Description = rs.Description,
+                    StartTime = rs.StartTime.HasValue ? TimeOnly.FromDateTime(rs.StartTime.Value) : null,
+                    EndTime = rs.EndTime.HasValue ? TimeOnly.FromDateTime(rs.EndTime.Value) : null,
+                    Date = rs.SessionDate,
+                    ConferenceId = rs.ConferenceId,
+                    RoomId = rs.RoomId,
+                    Room = rs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information for research sessions
+                    {
+                        RoomId = rs.Room.RoomId,
+                        Number = rs.Room.Number,
+                        DisplayName = rs.Room.DisplayName,
+                        DestinationId = rs.Room.DestinationId
+                    } : null,
+                    // Note: No speakers for research sessions
+                    SessionMedia = rs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
+                    {
+                        ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
+                        ConferenceSessionMediaUrl = csm.MediaUrl
+                    }).ToList()
+                }).ToList(),
+
+                // Shared tables data (same as technical conference)
+                Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
+                {
+                    PolicyId = p.PolicyId,
+                    PolicyName = p.PolicyName,
+                    Description = p.Description
+                }).ToList(),
+                Sponsors = conference.Sponsors?.Select(s => new DTOs.Conference.SponsorResponse
+                {
+                    SponsorId = s.SponsorId,
+                    Name = s.Name,
+                    ImageUrl = s.ImageUrl
+                }).ToList(),
+                RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                {
+                    RefundPolicyId = rp.RefundPolicyId,
+                    PercentRefund = rp.PercentRefund,
+                    RefundDeadline = rp.RefundDeadline,
+                    RefundOrder = rp.RefundOrder
+                }).ToList(),
+                ConferenceMedia = conference.ConferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
+                {
+                    MediaId = cm.ConferenceMediaId,
+                    MediaUrl = cm.ConferenceMediaUrl
+                }).ToList(),
+                ConferencePrices = conference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
+                {
+                    ConferencePriceId = cp.ConferencePriceId,
+                    TicketPrice = cp.TicketPrice,
+                    TicketName = cp.TicketName,
+                    TicketDescription = cp.TicketDescription,
+                    IsAuthor = cp.IsAuthor,
+                    TotalSlot = cp.TotalSlot,
+                    AvailableSlot = cp.AvailableSlot,
+                    PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
+                    {
+                        PricePhaseId = pp.PricePhaseId,
+                        PhaseName = pp.PhaseName,
+                        StartDate = pp.StartDate,
+                        EndDate = pp.EndDate,
+                        ApplyPercent = pp.ApplyPercent,
+                        TotalSlot = pp.TotalSlot,
+                        AvailableSlot = pp.AvailableSlot
+                    }).ToList()
+                }).ToList(),
+                
+                // Include conference timeline data
+                ConferenceTimelines = conference.ConferenceTimelines?.Select(ct => new DTOs.Conference.ConferenceTimelineResponse
+                {
+                    ConferenceTimelineId = ct.ConferenceTimelineId,
+                    ConferenceId = ct.ConferenceId,
+                    ChangeDate = ct.ChangeDate,
+                    PreviousStatusId = ct.PreviousStatusId,
+                    AfterwardStatusId = ct.AfterwardStatusId,
+                    Reason = ct.Reason,
+                    PreviousStatusName = ct.PreviousStatus?.ConferenceStatusName,
+                    AfterwardStatusName = ct.AfterwardStatus?.ConferenceStatusName,
+                    ConferenceName = ct.Conference?.ConferenceName
+                }).ToList()
+            };
+        }
+
+        public async Task<DTOs.Conference.TechnicalConferenceDetailResponse> GetDetailTechnicalAsync(string conferenceId, string? userId, bool isOrganizer = false)
+        {
+            // Check if the user is authorized to access this conference
+            var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
+            
+            if (conference == null)
+            {
+                throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            }
+
+            // If the user is not an organizer, verify that they created the conference
+            if (!isOrganizer)
+            {
+                if (conference.CreatedBy != userId)
+                {
+                    throw new UnauthorizedAccessException("You are not authorized to view this conference detail.");
+                }
+            }
+
+            // Now get the complete conference data with timeline
+            var fullConference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.ConferenceCategory)
+                .Include(c => c.ConferenceMedia)
+                .Include(c => c.Policies)
+                .Include(c => c.ConferencePrices)
+                    .ThenInclude(cp => cp.PricePhases)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Speakers)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceSessionMedia)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) // Include room information
+                .Include(c => c.Sponsors)
+                .Include(c => c.TechnicalConferenceDetail)
+                .Include(c => c.ConferenceTimelines) // Include timeline
+                    .ThenInclude(ct => ct.PreviousStatus)
+                .Include(c => c.ConferenceTimelines)
+                    .ThenInclude(ct => ct.AfterwardStatus)
+                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
+
+            if (fullConference == null)
+            {
+                throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            }
+
+            // Get technical conference detail if it exists (for technical conferences)
+            var technicalDetail = fullConference.TechnicalConferenceDetail;
+
+            return new DTOs.Conference.TechnicalConferenceDetailResponse
+            {
+                ConferenceId = fullConference.ConferenceId,
+                ConferenceName = fullConference.ConferenceName,
+                Description = fullConference.Description,
+                StartDate = fullConference.StartDate,
+                EndDate = fullConference.EndDate,
+                TotalSlot = fullConference.TotalSlot,
+                AvailableSlot = fullConference.AvailableSlot,
+                Address = fullConference.Address,
+                BannerImageUrl = fullConference.BannerImageUrl,
+                CreatedAt = fullConference.CreatedAt,
+                TicketSaleStart = fullConference.TicketSaleStart,
+                TicketSaleEnd = fullConference.TicketSaleEnd,
+                IsInternalHosted = fullConference.IsInternalHosted,
+                IsResearchConference = fullConference.IsResearchConference,
+                CityId = fullConference.CityId,
+                ConferenceCategoryId = fullConference.ConferenceCategoryId,
+                ConferenceStatusId = fullConference.ConferenceStatusId,
+                TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
+                
+                RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                {
+                    RefundPolicyId = rp.RefundPolicyId,
+                    PercentRefund = rp.PercentRefund,
+                    RefundDeadline = rp.RefundDeadline,
+                    RefundOrder = rp.RefundOrder
+                }).ToList(),
+                Policies = fullConference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
+                {
+                    PolicyId = p.PolicyId,
+                    PolicyName = p.PolicyName,
+                    Description = p.Description
+                }).ToList(),
+                Sponsors = fullConference.Sponsors?.Select(s => new DTOs.Conference.SponsorResponse
+                {
+                    SponsorId = s.SponsorId,
+                    Name = s.Name,
+                    ImageUrl = s.ImageUrl
+                }).ToList(),
+                Sessions = fullConference.ConferenceSessions?.Select(cs => new DTOs.Conference.ConferenceSessionWithSpeakersResponse
+                {
+                    ConferenceSessionId = cs.ConferenceSessionId,
+                    Title = cs.Title,
+                    Description = cs.Description,
+                    StartTime = cs.StartTime,
+                    EndTime = cs.EndTime,
+                    SessionDate = cs.SessionDate,
+                    ConferenceId = cs.ConferenceId,
+                    RoomId = cs.RoomId,
+                    Room = cs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information
+                    {
+                        RoomId = cs.Room.RoomId,
+                        Number = cs.Room.Number,
+                        DisplayName = cs.Room.DisplayName,
+                        DestinationId = cs.Room.DestinationId
+                    } : null,
+                    Speakers = cs.Speakers?.Select(s => new DTOs.Conference.SpeakerResponse
+                    {
+                        SpeakerId = s.SpeakerId,
+                        Name = s.Name,
+                        Description = s.Description,
+                        Image = s.Image
+                    }).ToList(),
+                    SessionMedia = cs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
+                    {
+                        ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
+                        ConferenceSessionMediaUrl = csm.MediaUrl
+                    }).ToList()
+                }).ToList(),
+                ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => new DTOs.Conference.ConferenceMediaResponse
+                {
+                    MediaId = cfm.ConferenceMediaId,
+                    MediaUrl = cfm.ConferenceMediaUrl
+                }).ToList(),
+                ConferencePrices = fullConference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
+                {
+                    ConferencePriceId = cp.ConferencePriceId,
+                    TicketPrice = cp.TicketPrice,
+                    TicketName = cp.TicketName,
+                    TicketDescription = cp.TicketDescription,
+                    IsAuthor = cp.IsAuthor,
+                    TotalSlot = cp.TotalSlot,
+                    AvailableSlot = cp.AvailableSlot,
+                    PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
+                    {
+                        PricePhaseId = pp.PricePhaseId,
+                        PhaseName = pp.PhaseName,
+                        StartDate = pp.StartDate,
+                        EndDate = pp.EndDate,
+                        ApplyPercent = pp.ApplyPercent,
+                        TotalSlot = pp.TotalSlot,
+                        AvailableSlot = pp.AvailableSlot
+                    }).ToList()
+                }).ToList(),
+                
+                // Include conference timeline data
+                ConferenceTimelines = fullConference.ConferenceTimelines?.Select(ct => new DTOs.Conference.ConferenceTimelineResponse
+                {
+                    ConferenceTimelineId = ct.ConferenceTimelineId,
+                    ConferenceId = ct.ConferenceId,
+                    ChangeDate = ct.ChangeDate,
+                    PreviousStatusId = ct.PreviousStatusId,
+                    AfterwardStatusId = ct.AfterwardStatusId,
+                    Reason = ct.Reason,
+                    PreviousStatusName = ct.PreviousStatus?.ConferenceStatusName,
+                    AfterwardStatusName = ct.AfterwardStatus?.ConferenceStatusName,
+                    ConferenceName = ct.Conference?.ConferenceName
+                }).ToList()
+            };
+        }
+
         public async Task<PagedResult<DTOs.Conference.ResearchConferenceStepCompletionStatusResponse>> GetResearchConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
         {
             // Only get research conferences
@@ -1030,6 +1399,12 @@ namespace ConfRadar.Services.Services
                 case "price":
                     var prices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
                     return prices.Any();
+                case "refundpolicy":
+                    var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conferenceId);
+                    return refundPolicies.Any();
+                case "conferencemedia":
+                    var conferencemedias = await _unitOfWork.ConferenceMediaRepository.GetMediaByConferenceIdAsync(conferenceId);
+                    return conferencemedias.Any();
                 default:
                     return false;
             }

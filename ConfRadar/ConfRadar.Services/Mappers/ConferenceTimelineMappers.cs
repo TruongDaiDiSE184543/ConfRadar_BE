@@ -30,9 +30,9 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static ConferenceTimelineResponse ToResponse(this ConferenceTimeline model)
+        public static ConfRadar.Services.DTOs.Conference.ConferenceTimelineResponse ToResponse(this ConferenceTimeline model)
         {
-            return new ConferenceTimelineResponse
+            return new ConfRadar.Services.DTOs.Conference.ConferenceTimelineResponse
             {
                 ConferenceTimelineId = model.ConferenceTimelineId,
                 ConferenceId = model.ConferenceId,
@@ -46,7 +46,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static List<ConferenceTimelineResponse> ToResponseList(this IEnumerable<ConferenceTimeline> models)
+        public static List<ConfRadar.Services.DTOs.Conference.ConferenceTimelineResponse> ToResponseList(this IEnumerable<ConferenceTimeline> models)
         {
             return models.Select(m => m.ToResponse()).ToList();
         }
