@@ -48,7 +48,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByIdAsync(string paperId)
         {
             return await _context.Papers
-                .Include(p=>p.PaperAuthors)
+                .Include(p => p.PaperAuthors)
                 .Include(p => p.PaperPhase)
                 .Include(p => p.Conference)
                     .ThenInclude(c => c.ResearchConferencePhases)

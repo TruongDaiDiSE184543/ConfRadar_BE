@@ -9,7 +9,7 @@ namespace ConfRadar.Services.DTOs.Configuration
 
         [Range(0, 24, ErrorMessage = "Session interval must be between 0 and 24 hours")]
         public double? SessionIntervalHours { get; set; } = 0.5; // Default to 30 minutes
-        public int? IntervalDateFromTicketOpenSaleEndDateToConferenceStart {  get; set; }
+        public int? IntervalDateFromTicketOpenSaleEndDateToConferenceStart { get; set; }
     }
 
     public class SessionConfigurationResponse

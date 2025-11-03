@@ -90,7 +90,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class AddConferencePricesRequest
     {
         public List<CreateConferencePriceRequest> TypeOfTicket { get; set; }
-        
+
     }
 
     // Step 3: Conference Sessions
@@ -132,7 +132,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [MaxLength(250)]
         public string? Description { get; set; }
         //public string? ImageUrl { get; set; }
-        public IFormFile Image {  get; set; }
+        public IFormFile Image { get; set; }
     }
 
     public class AddConferenceSessionsRequest
@@ -403,7 +403,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class ConferencePriceListWithPhasesResponse
     {
-       public List<ConferencePriceWithPhasesResponse>? conferencePriceWithPhasesResponses { get; set; }
+        public List<ConferencePriceWithPhasesResponse>? conferencePriceWithPhasesResponses { get; set; }
     }
 
     public class ConferencePriceWithPhasesResponse
@@ -414,7 +414,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? TicketDescription { get; set; }
         public List<PricePhaseResponse>? PricePhases { get; set; }
     }
-    
+
 
     public class ConferenceSessionWithMediaResponse
     {

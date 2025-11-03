@@ -17,7 +17,7 @@ namespace ConfRadar.Repositories
         IPaperPhaseRepository PaperPhaseRepository { get; }
         IPaymentMethodRepository PaymentMethodRepository { get; }
         //ITransactionStatusRepository TransactionStatusRepository { get; }
-        IConferenceTimelineRepository ConferenceTimelineRepository { get; } 
+        IConferenceTimelineRepository ConferenceTimelineRepository { get; }
 
 
         //ITransactionTypeRepository TransactionTypeRepository { get; }

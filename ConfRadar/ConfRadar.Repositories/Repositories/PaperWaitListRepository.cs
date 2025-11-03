@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Shared.DTO.User;
 using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +17,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperWaitList>> GetAllPaperWaitListsAsync();
         Task<int> CreateMultiplePaperWaitListsAsync(List<PaperWaitList> paperWaitList);
         Task<List<CustomerWaitListResponse>> GetCustomerWaitList(string userId);
-        Task<string> NotifyNextInWaitListInAConferenceAsync(string conferenceId, string pendingWaitListStatusId, string notifiedAtWaitListStatusId, DateTime notifiedAt);
+        Task<List<NotifyUserWaitListDetailResponse>> NotifyWaitListAsync(string readyConfereceStatusId, string pendingWaitListStatusId, string notifiedAtWaitListStatusId, DateTime notifiedAt);
     }
     public class PaperWaitListRepository : GenericRepository<PaperWaitList>, IPaperWaitListRepository
     {
@@ -79,45 +80,60 @@ namespace ConfRadar.Repositories.Repositories
             return result;
         }
 
-        public async Task<string> NotifyNextInWaitListInAConferenceAsync(string conferenceId,string pendingWaitListStatusId,string notifiedAtWaitListStatusId,DateTime notifiedAt)
+        public async Task<List<NotifyUserWaitListDetailResponse>> NotifyWaitListAsync(string readyConfereceStatusId, string pendingWaitListStatusId, string notifiedAtWaitListStatusId, DateTime notifiedAt)
         {
-            var conference = await _context.Conferences.Include(c=>c.ResearchConferencePhases).FirstOrDefaultAsync(c=>c.ConferenceId == conferenceId);
-            if (conference == null || conference.AvailableSlot <= 0)
-            {
-                return string.Empty;
-            }
-            var activeSecondWaitListPhase = conference.ResearchConferencePhases.FirstOrDefault(rcp=>rcp.IsWaitlist==true && rcp.IsActive==true);
-            if (activeSecondWaitListPhase == null)
-            {
-                return string.Empty;
-            }
-            var pendingWaitListStatus = await _context.WaitListStatuses.FirstOrDefaultAsync(wls => wls.WaitListStatusId == pendingWaitListStatusId);
-            var notifiedWaitListStatus = await _context.WaitListStatuses.FirstOrDefaultAsync(wls => wls.WaitListStatusId == notifiedAtWaitListStatusId);
-            if (pendingWaitListStatus == null || notifiedWaitListStatus == null) 
-            {
-                return string.Empty;
-            }
-            var nextInLine = await _context.PaperWaitLists
-                .Include(pwl=>pwl.User)
-                .Where(pwl => pwl.ConferenceId == conferenceId && pwl.WaitListStatusId == pendingWaitListStatus.WaitListStatusId && pwl.NotifiedAt==null)
-                .OrderBy(pwl => pwl.CreatedAt)
-                .FirstOrDefaultAsync();
-            var finalResult = 0;
-            var email = string.Empty;
-            if (nextInLine != null)
-            {
-                nextInLine.NotifiedAt = notifiedAt;
-                nextInLine.WaitListStatusId = notifiedWaitListStatus.WaitListStatusId;
-                //thêm gửi mail và in web/app noti sau
-                finalResult =await _context.SaveChangesAsync();
-                email = nextInLine.User?.Email ?? string.Empty;
-            }
-            if (finalResult > 0)
-            {
-                return email;
-            }
 
-            return email;
+            var notifyUserList = new List<NotifyUserWaitListDetailResponse>();
+            var activeConferenceIds = await _context.Conferences
+                 //.Include(c => c.ResearchConferencePhases)
+                 //.Include(c => c.ConferencePrices)
+                 .Where(c => c.ResearchConferencePhases.Any(rcp => rcp.IsWaitlist == true && rcp.IsActive == true)
+                        && c.ConferencePrices.Any(cp => cp.AvailableSlot > 0 && cp.IsAuthor == true)
+                        && c.ConferenceStatusId == readyConfereceStatusId).Select(c => c.ConferenceId).ToListAsync();
+            var finalResult = 0;
+            if (activeConferenceIds.Any())
+            {
+                var paperWaitListUser = await _context.PaperWaitLists
+                    .Include(pwl => pwl.User)
+                    .Where
+                    (pwl => pwl.ConferenceId!=null 
+                    && activeConferenceIds.Contains(pwl.ConferenceId) 
+                    && pwl.WaitListStatusId == pendingWaitListStatusId 
+                    && pwl.NotifiedAt == null 
+                    && pwl.UserId!=null 
+                    && pwl.User!=null 
+                    && pwl.User.IsActive==true).ToListAsync();
+                if (paperWaitListUser.Any())
+                {
+                    var listPaperWaitList = new List<PaperWaitList>();
+                   
+                    foreach (var user in paperWaitListUser)
+                    {
+                        user.WaitListStatusId = notifiedAtWaitListStatusId;
+                        user.NotifiedAt = notifiedAt;
+
+                        listPaperWaitList.Add(user);
+                        notifyUserList.Add(new NotifyUserWaitListDetailResponse()
+                        {
+                            Email = user.User?.Email,
+                            UserId = user.UserId
+                        });
+                    }
+                    if (listPaperWaitList.Any())
+                    {
+                        _context.PaperWaitLists.UpdateRange(listPaperWaitList);
+                        finalResult = await _context.SaveChangesAsync();
+                    }
+                }
+
+
+            }
+            if (finalResult > 0 && notifyUserList.Count>0)
+            {
+                return notifyUserList;
+            }
+            notifyUserList.Clear();
+            return notifyUserList;
         }
 
         public async Task<PaperWaitList?> GetPaperWaitListByUserIdAndConferenceIdAsync(string userId, string conferenceId)

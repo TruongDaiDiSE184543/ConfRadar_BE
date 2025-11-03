@@ -163,7 +163,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Speaker Mappers
-        public static Speaker ToModel(this CreateSpeakerRequest request, string conferenceSessionId,string imageURL)
+        public static Speaker ToModel(this CreateSpeakerRequest request, string conferenceSessionId, string imageURL)
         {
             return new Speaker
             {
@@ -239,7 +239,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Conference Session Media Mappers
-        public static ConferenceSessionMedium ToModel(this CreateConferenceSessionMediaRequest request, string conferenceSessionId,string mediaURL)
+        public static ConferenceSessionMedium ToModel(this CreateConferenceSessionMediaRequest request, string conferenceSessionId, string mediaURL)
         {
             return new ConferenceSessionMedium
             {
@@ -497,7 +497,7 @@ namespace ConfRadar.Services.Mappers
             return new RevisionRoundDeadline
             {
                 RevisionRoundDeadlineId = Guid.NewGuid().ToString(),
-                EndSubmissionDate= request.EndDate,
+                EndSubmissionDate = request.EndDate,
                 RoundNumber = request.RoundNumber,
                 ResearchConferencePhaseId = researchConferencePhaseId
             };
