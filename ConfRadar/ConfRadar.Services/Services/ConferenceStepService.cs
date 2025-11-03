@@ -348,7 +348,7 @@ namespace ConfRadar.Services.Services
                         //createPricePhaseRequest start must < end, 
                         if (createPricePhaseRequest.StartDate > createPricePhaseRequest.EndDate) throw new BadRequestException("Start phase phải lớn hơn end phase");
                         //each phase must be in conference's ticket sale start and end
-                        if(createPricePhaseRequest.StartDate < conference.StartDate || createPricePhaseRequest.EndDate > conference.EndDate) throw new BadRequestException("Start phase phải và endphase phải nằm trong ticket sale start và ticket sale end của conference");
+                        if(createPricePhaseRequest.StartDate < conference.TicketSaleStart || createPricePhaseRequest.EndDate > conference.TicketSaleEnd) throw new BadRequestException("Start phase phải và endphase phải nằm trong ticket sale start và ticket sale end của conference");
                         var CreatedPricePhase = createPricePhaseRequest.ToModel(CreatedConferencePrice.ConferencePriceId);
                         await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(CreatedPricePhase);
                         pricePhaseResponses.Add(new PricePhaseResponse
