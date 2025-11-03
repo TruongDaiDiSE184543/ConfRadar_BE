@@ -205,5 +205,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.UpdateConferenceStatusAsync(confid, newStatus, reason);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
         }
+
+        [HttpGet("get-own-conferences")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> GetOwnConference(string? statusId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.GetAllConferenceWithStatusByUserId(userId, statusId);
+            return Ok(ApiResponse<List<ConferenceWithStatusNameResponse>>.SuccessResponse(result, "User conferences retrieved successfully"));
+        }
     }
 }

@@ -55,7 +55,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string PhaseName { get; set; }
 
         [Required(ErrorMessage = "Phần trăm áp dụng là bắt buộc, công thức là actualprice = ticketprice * applypercent của giai đoạn")]
-        [Range(0, 100, ErrorMessage = "Phần trăm áp dụng phải là kiểu thập phân")]
+        [Range(0, 1000, ErrorMessage = "Phần trăm áp dụng phải là kiểu thập phân, nằm trong khoảng 0-1000")]
         public decimal ApplyPercent { get; set; }
 
         [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
