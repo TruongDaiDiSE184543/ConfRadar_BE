@@ -65,7 +65,7 @@ namespace ConfRadar.Services.Services
         Task<PaperDetailForReviewerResponse> GetPaperDetailForReviewer(string paperId, string userId);
 
         Task<List<CustomerWaitListResponse>> GetCustomerWaitList(string userId);
-        Task<bool> LeaveWaitList(string userId,string conferenceId);
+        Task<bool> LeaveWaitList(string userId, string conferenceId);
 
 
     }
@@ -103,7 +103,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Paper hiện tại không đang trong quá trình gửi abstract");
             }
-            var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa =>pa.IsRootAuthor ==true && pa.UserId==userId);
+            var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             //if (paper.PresenterId != userId)
             //{
             //    throw new NotFoundException($"Bạn không có quyền sỡ hữu bài báo này");
@@ -140,7 +140,7 @@ namespace ConfRadar.Services.Services
                     }
                 }
             }
-           
+
 
             if (paper.AbstractId != null)
             {
@@ -173,7 +173,7 @@ namespace ConfRadar.Services.Services
 
 
             List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
-            if (request.CoAuthorId !=null && request.CoAuthorId.Count > 0)
+            if (request.CoAuthorId != null && request.CoAuthorId.Count > 0)
             {
                 foreach (var coAuthor in request.CoAuthorId)
                 {
@@ -499,7 +499,7 @@ namespace ConfRadar.Services.Services
             }
 
 
-            var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId==userId);
+            var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             //if (paper.PresenterId != userId)
             //{
             //    throw new NotFoundException($"Bạn không có quyền sỡ hữu bài báo này");
@@ -518,7 +518,7 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var deadline in phase.RevisionRoundDeadlines)
                     {
-                        if (deadline.EndSubmissionDate != null && deadline.StartSubmissionDate !=null&& deadline.StartSubmissionDate<= dateNow && dateNow <= deadline.EndSubmissionDate)
+                        if (deadline.EndSubmissionDate != null && deadline.StartSubmissionDate != null && deadline.StartSubmissionDate <= dateNow && dateNow <= deadline.EndSubmissionDate)
                         {
                             revisionDeadlineId = deadline.RevisionRoundDeadlineId;
 
@@ -600,7 +600,7 @@ namespace ConfRadar.Services.Services
                     RevisionPaperUrl = revisionFileUrl,
                     Title = request.Title,
                     Description = request.Description,
-                    
+
                 };
 
                 var result1 = await _unitOfWork.RevisionPaperRepository.UpdateRevisionPaperAsync(revisionPaper);

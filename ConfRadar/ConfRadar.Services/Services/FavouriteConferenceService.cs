@@ -24,7 +24,7 @@ namespace ConfRadar.Services.Services
         public async Task<AddedFavouriteConfereceResponse> AddFavouriteAsync(string userId, string conferenceId)
         {
             var existingConference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (existingConference == null) 
+            if (existingConference == null)
             {
                 throw new BadRequestException($"Không tìm thấy sự kiện với mã {conferenceId}");
             }

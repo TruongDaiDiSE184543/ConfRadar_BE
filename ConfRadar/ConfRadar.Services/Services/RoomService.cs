@@ -2,7 +2,6 @@ using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Room;
 using ConfRadar.Services.Exceptions;
-using ConfRadar.Services.DTOs.General;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
@@ -139,13 +138,13 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("End date cannot be before start date");
             }
 
-          
+
             var conferenceSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAndDateRangeAsync(roomId, startDate, endDate);
 
             // Get all associated conferences at once to reduce database calls
             var conferenceIds = conferenceSessions.Select(cs => cs.ConferenceId).Where(id => !string.IsNullOrEmpty(id)).ToList();
             var conferences = new Dictionary<string, Conference>();
-            if (conferenceIds.Any())    
+            if (conferenceIds.Any())
             {
                 conferences = await _unitOfWork.ConferenceRepository.GetConferencesByIdsAsync(conferenceIds);
             }
@@ -192,7 +191,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("End time must be after start time");
             }
 
-          
+
             // Check for overlapping sessions in the same room on the same date
             // PostgreSQL optimization: This query efficiently checks for time overlaps
             // Overlap condition: (new_start < existing_end) AND (new_end > existing_start)
@@ -378,7 +377,7 @@ namespace ConfRadar.Services.Services
                 })
                 .OrderBy(s => s.StartTime)
                 .ToList();
- 
+
             return occupiedTimeSpans;
         }
 
@@ -400,7 +399,7 @@ namespace ConfRadar.Services.Services
             // Apply search keyword filter if provided (search in Number and DisplayName)
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(r => r.Number.ToLower().Contains(searchKeyword.ToLower()) || 
+                query = query.Where(r => r.Number.ToLower().Contains(searchKeyword.ToLower()) ||
                                         r.DisplayName.ToLower().Contains(searchKeyword.ToLower()));
             }
 
@@ -455,8 +454,8 @@ namespace ConfRadar.Services.Services
                             StartTime = session.StartTime.GetValueOrDefault(),
                             EndTime = session.EndTime.GetValueOrDefault(),
                             ConferenceId = session.ConferenceId!,
-                            ConferenceName = conferences.ContainsKey(session.ConferenceId!) 
-                                ? conferences[session.ConferenceId!].ConferenceName 
+                            ConferenceName = conferences.ContainsKey(session.ConferenceId!)
+                                ? conferences[session.ConferenceId!].ConferenceName
                                 : "Unknown Conference"
                         }).ToList();
 

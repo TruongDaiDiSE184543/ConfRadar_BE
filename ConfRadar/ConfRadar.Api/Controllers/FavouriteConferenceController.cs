@@ -1,9 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Shared.DTO.FavouriteConference;
-using ConfRadar.Shared.DTO.General;
-using ConfRadar.Shared.DTO.Ticket;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -33,7 +30,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<ActionResult<AddedFavouriteConfereceResponse>> AddFavourite([FromBody] FavouriteConferenceRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.FavoriteConferenceService.AddFavouriteAsync(userId,request.ConferenceId);
+            var result = await _serviceManager.FavoriteConferenceService.AddFavouriteAsync(userId, request.ConferenceId);
             return Ok(ApiResponse<AddedFavouriteConfereceResponse>.SuccessResponse(result, "Đã thêm sự kiện vào danh mục yêu thích"));
 
         }

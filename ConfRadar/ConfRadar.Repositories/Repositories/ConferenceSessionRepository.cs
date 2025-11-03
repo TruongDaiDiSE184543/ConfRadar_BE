@@ -85,8 +85,8 @@ namespace ConfRadar.Repositories.Repositories
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
-                             cs.SessionDate >= startDate &&     
-                             cs.SessionDate <= endDate)   
+                             cs.SessionDate >= startDate &&
+                             cs.SessionDate <= endDate)
                 .ToListAsync();
         }
 
@@ -112,9 +112,9 @@ namespace ConfRadar.Repositories.Repositories
 
             // Convert the time parameters to DateTimeKind.Unspecified to match database format
             DateTime queryStartTime, queryEndTime;
-            
+
             queryStartTime = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
-            queryEndTime =  DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
+            queryEndTime = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
             return await _context.ConferenceSessions
                 .Where(cs => cs.RoomId == roomId &&
