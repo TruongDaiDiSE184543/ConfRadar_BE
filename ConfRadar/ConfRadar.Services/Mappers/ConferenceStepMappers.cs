@@ -72,7 +72,8 @@ namespace ConfRadar.Services.Mappers
                 EndDate = model.EndDate,
                 ApplyPercent = model.ApplyPercent,
                 TotalSlot = model.TotalSlot,
-                AvailableSlot = model.AvailableSlot
+                AvailableSlot = model.AvailableSlot,
+                ConferencePriceId = model.ConferencePriceId
             };
         }
 
@@ -190,9 +191,11 @@ namespace ConfRadar.Services.Mappers
         {
             return new SpeakerResponse
             {
+                SpeakerId = model.SpeakerId,
                 Name = model.Name,
                 Description = model.Description,
-                ImageUrl = model.Image
+                ImageUrl = model.Image,
+                ConferenceSessionId = model.ConferenceSessionId
             };
         }
 
@@ -606,21 +609,6 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static PricePhaseResponse ToResponse(this PricePhase model)
-        {
-            return new PricePhaseResponse
-            {
-                PricePhaseId = model.PricePhaseId,
-                PhaseName = model.PhaseName,
-                StartDate = model.StartDate,
-                EndDate = model.EndDate,
-                ApplyPercent = model.ApplyPercent,
-                TotalSlot = model.TotalSlot,
-                AvailableSlot = model.AvailableSlot,
-                ConferencePriceId = model.ConferencePriceId
-            };
-        }
-
         // Speaker Mappers - Extension methods for Speaker DTOs
         public static Speaker ToModel(this CreateSpeakerRequestForConferenceSession request, string conferenceSessionId, string? imageURL)
         {
@@ -643,16 +631,5 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static SpeakerResponse ToResponse(this Speaker model)
-        {
-            return new SpeakerResponse
-            {
-                SpeakerId = model.SpeakerId,
-                Name = model.Name,
-                Description = model.Description,
-                ImageUrl = model.Image,
-                ConferenceSessionId = model.ConferenceSessionId
-            };
-        }
     }
 }

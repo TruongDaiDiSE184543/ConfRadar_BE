@@ -65,6 +65,8 @@ namespace ConfRadar.Repositories
         IWaitListStatusRepository WaitListStatusRepository { get; }
         IPaperWaitListRepository PaperWaitListRepository { get; }
         IFavouriteConferenceRepository FavoriteConferenceRepository { get; }
+        IReportRepository ReportRepository { get; }
+        IReportFeedbackRepository ReportFeedbackRepository { get; }
         INotificationRepository NotificationRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -137,6 +139,8 @@ namespace ConfRadar.Repositories
         private IPaperWaitListRepository _PaperWaitListRepository;
         private IFavouriteConferenceRepository _FavouriteConferenceRepository;
         private INotificationRepository _NotificationRepository;
+        private IReportRepository _ReportRepository;
+        private IReportFeedbackRepository _ReportFeedbackRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -246,6 +250,9 @@ namespace ConfRadar.Repositories
         public IFavouriteConferenceRepository FavoriteConferenceRepository => _FavouriteConferenceRepository ??= new FavouriteConferenceRepository(_context);
 
         public INotificationRepository NotificationRepository => _NotificationRepository ??= new NotificationRepository(_context);
+
+        public IReportRepository ReportRepository => _ReportRepository ??= new ReportRepository(_context);
+        public IReportFeedbackRepository ReportFeedbackRepository => _ReportFeedbackRepository ??= new ReportFeedbackRepository(_context);
 
         public async Task BeginTransactionAsync()
         {
