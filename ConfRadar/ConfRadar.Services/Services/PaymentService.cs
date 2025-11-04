@@ -72,8 +72,7 @@ namespace ConfRadar.Services.Services
         #region create payment
         public async Task<GeneralPaymentResultResponse> CreatePaymentForTechConference(CreateTechPaymentRequest request, string userId)
         {
-            try
-            {
+            
                 var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
                 if (paymentMethod == null)
                 {
@@ -219,22 +218,13 @@ namespace ConfRadar.Services.Services
                     PaymentMessage = "Thanh toán thành công",
                     CheckOutUrl = checkOutUrl,
                 };
-            }
-            catch (Exception ex)
-            {
-                return new GeneralPaymentResultResponse()
-                {
-                    PaymentMessage = "Thanh toán thất bại",
-                    CheckOutUrl = null
-                };
-            }
+            
 
 
         }
         public async Task<GeneralPaymentResultResponse> CreatePaymentForAbstract(CreatePaperPaymentRequest request, string userId)
         {
-            try
-            {
+           
                 var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
                 if (paymentMethod == null)
                 {
@@ -491,17 +481,7 @@ namespace ConfRadar.Services.Services
                     ConferenceId = conferencePrice.ConferenceId,
                     IsAddedWaitList = false,
                 };
-            }
-            catch (Exception ex)
-            {
-                return new GeneralPaymentResultResponse()
-                {
-                    PaymentMessage = "Thanh toán thất bại",
-                    CheckOutUrl = null,
-                    IsAddedWaitList = null,
-                    ConferenceId = null
-                };
-            }
+            
 
         }
 
