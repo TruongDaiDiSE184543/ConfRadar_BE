@@ -48,6 +48,7 @@ namespace ConfRadar.Services
             services.AddScoped<IConferenceTimelineService, ConferenceTimelineService>();
             services.AddScoped<IFavouriteConferenceService, FavouriteConferenceService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();

@@ -547,6 +547,82 @@ namespace ConfRadar.Api.Controllers
 
         #endregion
 
+        #region PricePhase CRUD Operations
 
+        [HttpPost("prices/{conferencePriceId}/phases")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request)
+        {
+            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request);
+            return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được thêm thành công"));
+        }
+
+        [HttpGet("prices/{conferencePriceId}/phases")]
+        public async Task<IActionResult> GetPricePhasesByConferencePriceId(string conferencePriceId)
+        {
+            var pricePhases = await _serviceManager.ConferenceStepService.GetPricePhasesByConferencePriceIdAsync(conferencePriceId);
+            return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được lấy thành công"));
+        }
+
+        [HttpPut("phases/{pricePhaseId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> UpdatePricePhase(string pricePhaseId, [FromBody] UpdatePricePhaseRequest request)
+        {
+            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request);
+            return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(pricePhase, "Giai đoạn giá vé được cập nhật thành công"));
+        }
+
+        [HttpDelete("phases/{pricePhaseId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> DeletePricePhase(string pricePhaseId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeletePricePhaseAsync(pricePhaseId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Giai đoạn giá vé được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy giai đoạn giá vé"));
+        }
+
+        #endregion
+
+        #region Speaker CRUD Operations
+
+        [HttpPost("sessions/{conferenceSessionId}/speakers")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> AddSpeakers(string conferenceSessionId, [FromForm] AddSpeakersRequest request)
+        {
+            var speakers = await _serviceManager.ConferenceStepService.AddSpeakersAsync(conferenceSessionId, request);
+            return Ok(ApiResponse<List<SpeakerResponse>>.SuccessResponse(speakers, "Diễn giả được thêm thành công"));
+        }
+
+        [HttpGet("sessions/{conferenceSessionId}/speakers")]
+        public async Task<IActionResult> GetSpeakersByConferenceSessionId(string conferenceSessionId)
+        {
+            var speakers = await _serviceManager.ConferenceStepService.GetSpeakersByConferenceSessionIdAsync(conferenceSessionId);
+            return Ok(ApiResponse<List<SpeakerResponse>>.SuccessResponse(speakers, "Diễn giả được lấy thành công"));
+        }
+
+        [HttpPut("speakers/{speakerId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> UpdateSpeakerBySpeakerId(string speakerId, [FromBody] UpdateSpeakerRequestForConferenceSession request)
+        {
+            var speaker = await _serviceManager.ConferenceStepService.UpdateSpeakerBySpeakerIdAsync(speakerId, request);
+            return Ok(ApiResponse<SpeakerResponse>.SuccessResponse(speaker, "Diễn giả được cập nhật thành công"));
+        }
+
+        [HttpDelete("speakers/{speakerId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> DeleteSpeaker(string speakerId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteSpeakerAsync(speakerId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Diễn giả được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy diễn giả"));
+        }
+
+        #endregion
     }
 }

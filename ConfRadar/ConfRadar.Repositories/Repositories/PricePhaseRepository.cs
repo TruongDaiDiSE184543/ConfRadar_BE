@@ -18,6 +18,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PricePhase>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId);
         Task<PricePhase?> GetPricePhaseByConferencePriceIdAsync(string conferencePriceId);
         Task<List<PricePhase>> GetAllPricePhasesAsync();
+        // Additional methods for CRUD operations on PricePhase
+        Task<int> CreatePricePhasesForConferencePriceAsync(string conferencePriceId, List<PricePhase> pricePhases);
     }
     public class PricePhaseRepository : GenericRepository<PricePhase>, IPricePhaseRepository
     {
@@ -68,6 +70,16 @@ namespace ConfRadar.Repositories.Repositories
                             .Include(pp => pp.ConferencePrice)
                                 .ThenInclude(cp => cp.Conference)
                             .FirstOrDefaultAsync(pp => pp.ConferencePriceId == conferencePriceId);
+        }
+
+        public async Task<int> CreatePricePhasesForConferencePriceAsync(string conferencePriceId, List<PricePhase> pricePhases)
+        {
+            foreach (var pricePhase in pricePhases)
+            {
+                pricePhase.ConferencePriceId = conferencePriceId;
+            }
+            await _context.PricePhases.AddRangeAsync(pricePhases);
+            return await _context.SaveChangesAsync();
         }
     }
 }

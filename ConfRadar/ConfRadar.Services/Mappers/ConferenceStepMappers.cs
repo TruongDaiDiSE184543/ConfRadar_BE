@@ -72,7 +72,8 @@ namespace ConfRadar.Services.Mappers
                 EndDate = model.EndDate,
                 ApplyPercent = model.ApplyPercent,
                 TotalSlot = model.TotalSlot,
-                AvailableSlot = model.AvailableSlot
+                AvailableSlot = model.AvailableSlot,
+                ConferencePriceId = model.ConferencePriceId
             };
         }
 
@@ -190,9 +191,11 @@ namespace ConfRadar.Services.Mappers
         {
             return new SpeakerResponse
             {
+                SpeakerId = model.SpeakerId,
                 Name = model.Name,
                 Description = model.Description,
-                ImageUrl = model.Image
+                ImageUrl = model.Image,
+                ConferenceSessionId = model.ConferenceSessionId
             };
         }
 
@@ -576,5 +579,57 @@ namespace ConfRadar.Services.Mappers
                 ReferenceUrl = model.ReferenceUrl
             };
         }
+
+        // Price Phase Mappers - Extension methods for PricePhase DTOs
+        public static PricePhase ToModel(this CreatePricePhaseRequestForConferencePrice request, string conferencePriceId)
+        {
+            return new PricePhase
+            {
+                PricePhaseId = Guid.NewGuid().ToString(),
+                PhaseName = request.PhaseName,
+                ApplyPercent = request.ApplyPercent,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                TotalSlot = request.TotalSlot,
+                AvailableSlot = request.TotalSlot, // Initialize available slot to total slot
+                ConferencePriceId = conferencePriceId
+            };
+        }
+
+        public static PricePhase ToModel(this UpdatePricePhaseRequest request)
+        {
+            return new PricePhase
+            {
+                PhaseName = request.PhaseName,
+                ApplyPercent = request.ApplyPercent,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                TotalSlot = request.TotalSlot,
+                AvailableSlot = request.TotalSlot // Update available slot to match total slot if total is updated
+            };
+        }
+
+        // Speaker Mappers - Extension methods for Speaker DTOs
+        public static Speaker ToModel(this CreateSpeakerRequestForConferenceSession request, string conferenceSessionId, string? imageURL)
+        {
+            return new Speaker
+            {
+                SpeakerId = Guid.NewGuid().ToString(),
+                Name = request.Name,
+                Description = request.Description,
+                Image = imageURL,
+                ConferenceSessionId = conferenceSessionId
+            };
+        }
+
+        public static Speaker ToModel(this UpdateSpeakerRequestForConferenceSession request)
+        {
+            return new Speaker
+            {
+                Name = request.Name,
+                Description = request.Description
+            };
+        }
+
     }
 }
