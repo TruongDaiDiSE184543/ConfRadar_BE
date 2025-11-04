@@ -186,41 +186,34 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Update Requests for individual components
     public class UpdateConferenceBasicRequest
     {
-        [Required(ErrorMessage = "Tên hội nghị là bắt buộc")]
         [MaxLength(255)]
-        public string ConferenceName { get; set; }
+        public string? ConferenceName { get; set; }
 
         [MaxLength(500)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
-        [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
-        public DateOnly StartDate { get; set; }
+        
+        public DateOnly? StartDate { get; set; }
 
-        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
-        public DateOnly EndDate { get; set; }
-        [Required(ErrorMessage = "Tổng số slot là bắt buộc")]
+        public DateOnly? EndDate { get; set; }
         public int? TotalSlot { get; set; }
 
         [MaxLength(255)]
         public string? Address { get; set; }
 
-        public IFormFile BannerImageFile { get; set; }
+        public IFormFile? BannerImageFile { get; set; }
 
-        [Required(ErrorMessage = "Bạn cần xác định hội nghị này do nội bộ tổ chức hay không")]
-        public bool? IsInternalHosted { get; set; }
-        [Required(ErrorMessage = "Đây có phải là hội nghị nghiên cứu không?")]
+        //[Required(ErrorMessage = "Bạn cần xác định hội nghị này do nội bộ tổ chức hay không")]
+        //public bool? IsInternalHosted { get; set; }
+        //[Required(ErrorMessage = "Đây có phải là hội nghị nghiên cứu không?")]
 
-        public bool? IsResearchConference { get; set; }
+        //public bool? IsResearchConference { get; set; }
 
-        [Required(ErrorMessage = "ID danh mục là bắt buộc")]
         [MaxLength(50)]
-        public string ConferenceCategoryId { get; set; }
+        public string? ConferenceCategoryId { get; set; }
 
-        [Required(ErrorMessage = "ID thành phố là bắt buộc")]
-        public string CityId { get; set; }
-        [Required(ErrorMessage = "Ngày bắt đầu bán vé là bắt buộc")]
+        public string? CityId { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
-        [Required(ErrorMessage = "Ngày kết thúc bán vé là bắt buộc")]
         public DateOnly? TicketSaleEnd { get; set; }
     }
 
@@ -672,8 +665,12 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class CreateRevisionRoundDeadlineRequest
     {
-        public DateOnly? EndDate { get; set; }
-        public int? RoundNumber { get; set; }
+        [Required]
+        public DateOnly StartSubmissionDate { get; set; }
+        [Required]
+        public DateOnly EndSubmissionDate { get; set; }
+        [Required]
+        public int RoundNumber { get; set; }
     }
 
     public class UpdateResearchConferencePhaseRequest

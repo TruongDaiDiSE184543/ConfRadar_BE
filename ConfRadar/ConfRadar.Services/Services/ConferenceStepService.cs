@@ -5,6 +5,8 @@ using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
+using Minio.Exceptions;
+using System.Collections.Generic;
 
 namespace ConfRadar.Services.Services
 {
@@ -13,7 +15,7 @@ namespace ConfRadar.Services.Services
         Task<TechnicalConferenceBasicStepResponse> CreateTechnicalConferenceBasicAsync(CreateTechnicalConferenceBasicRequest request, string userid);
         // Step 1: Basic Conference Creation
         Task<TechnicalConferenceBasicStepResponse> GetConferenceBasicAsync(string conferenceId);
-        Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request);
+        Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request, string userId);
 
         // Step 2: Add Conference Prices
         Task<ConferencePriceListWithPhasesResponse> AddConferencePricesAsync(string conferenceId, AddConferencePricesRequest request);
@@ -102,6 +104,12 @@ namespace ConfRadar.Services.Services
         Task<List<SpeakerResponse>> GetSpeakersByConferenceSessionIdAsync(string conferenceSessionId);
         Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request);
         Task<bool> DeleteSpeakerAsync(string speakerId);
+
+        // Revision Round Deadline CRUD operations - Create with researchConferencePhaseId, RUD with its own id
+        Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request);
+        Task<List<RevisionRoundDeadlineResponse>> GetRevisionRoundDeadlinesByResearchPhaseIdAsync(string researchConferencePhaseId);
+        Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request);
+        Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId);
     }
 
     public class ConferenceStepService : IConferenceStepService
@@ -164,19 +172,38 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        private async Task<bool> CheckIfStartDateAndTicketSaleDate(DateOnly startDate, DateOnly endDate, DateOnly ticketSaleStart, DateOnly ticketSaleEnd)
+        private async Task<bool> IsValidConferenceAndTicketSaleDates(DateOnly startDate, DateOnly endDate, DateOnly ticketSaleStart, DateOnly ticketSaleEnd)
         {
-            if (startDate < DateOnly.FromDateTime(DateTime.UtcNow) &&
-                endDate < DateOnly.FromDateTime(DateTime.UtcNow) &&
-                ticketSaleStart < DateOnly.FromDateTime(DateTime.UtcNow) &&
-                ticketSaleEnd < DateOnly.FromDateTime(DateTime.UtcNow)
-                ) return false;
-            if (startDate.CompareTo(endDate) > 0) return false;
-            if (ticketSaleStart.CompareTo(ticketSaleEnd) > 0) return false;
-            if (ticketSaleEnd.CompareTo(startDate) > 0 || ticketSaleStart.CompareTo(startDate) > 0) return false;
+            // Sử dụng ngày hôm nay theo múi giờ của máy chủ.
+            var today = DateOnly.FromDateTime(DateTime.Now);
+
+            // 1. Không có ngày nào được nằm trong quá khứ.
+            if (startDate < today || ticketSaleStart < today)
+            {
+                return false;
+            }
+
+            // 2. Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.
+            if (startDate > endDate)
+            {
+                return false;
+            }
+
+            // 3. Ngày bắt đầu bán vé phải trước hoặc bằng ngày kết thúc bán vé.
+            if (ticketSaleStart > ticketSaleEnd)
+            {
+                return false;
+            }
+
+            // 4. Việc bán vé phải kết thúc trước hoặc trong ngày hội nghị bắt đầu.
+            if (ticketSaleEnd > startDate)
+            {
+                return false;
+            }
+
+            // Tất cả kiểm tra đều hợp lệ
             return true;
         }
-
         private async Task<bool> checkConferenceResearchPhase(string confId, DateOnly registrationStart, DateOnly registrationEnd,
             DateOnly FullPaperStart, DateOnly FullPaperEnd,
             DateOnly ReviewStart, DateOnly ReviewEnd,
@@ -235,6 +262,16 @@ namespace ConfRadar.Services.Services
 
         public async Task<TechnicalConferenceBasicStepResponse> CreateTechnicalConferenceBasicAsync(CreateTechnicalConferenceBasicRequest request, string userid)
         {
+            if (string.IsNullOrWhiteSpace(request.ConferenceName))
+                throw new BadRequestException("Tên hội nghị là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.Address))
+                throw new BadRequestException("Địa chỉ là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.ConferenceCategoryId))
+                throw new BadRequestException("ID danh mục hội nghị là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.CityId))
+                throw new BadRequestException("ID thành phố là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(request.targetAudienceTechnicalConference))
+                throw new BadRequestException("Đối tượng tham dự là bắt buộc đối với hội nghị kỹ thuật.");
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -250,18 +287,37 @@ namespace ConfRadar.Services.Services
 
                 //Must be conference of type technical
                 if (!request.IsResearchConference.HasValue || request.IsResearchConference.Value) throw new BadRequestException("Hội nghị công nghệ yêu cầu IsResearchConference là false");
-                if (request.BannerImageFile != null)
-                {
-                    using var stream = request.BannerImageFile.OpenReadStream();
-                    var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
-                    request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
-                    request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
-                }
+
+                if (request.BannerImageFile == null)
+                    throw new BadRequestException("Ảnh bìa (banner) là bắt buộc để tạo hội nghị.");
+
+                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
+                    throw new BadRequestException($"Loại ảnh bìa không được hỗ trợ: '{request.BannerImageFile.ContentType}'. Vui lòng sử dụng định dạng ảnh hợp lệ.");
+
+                const long maxFileSize = 5 * 1024 * 1024; // 5 MB
+                if (request.BannerImageFile.Length > maxFileSize)
+                    throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
+
+                using var stream = request.BannerImageFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
+                request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
+                request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
+                
+
+
+                //Must have category
+                if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
+                    throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
+
+                //Cần có city id
+                if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
+                    throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
+
 
                 // check if any of the date is before today and ticketsale Start/end must before start/end date
 
-                var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
-                if (!isValidDateValues.Result) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
+                var isValidDateValues = IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
+                if (!isValidDateValues.Result) throw new BadRequestException("Ngày tháng cung cấp không hợp lệ. Vui lòng đảm bảo các ngày không nằm trong quá khứ, ngày bắt đầu/kết thúc theo đúng thứ tự, và ngày kết thúc bán vé phải trước ngày bắt đầu hội nghị.");
 
                 // must have target audience for the technical detail
                 if (string.IsNullOrEmpty(request.targetAudienceTechnicalConference)) throw new BadRequestException("Cần phải có khán giả hướng tới cho buổi hội nghị công nghệ");
@@ -331,25 +387,68 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request)
+        public async Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null) throw new NotFoundException($"Hội nghị với ID {conferenceId} không tìm thấy");
 
-            var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate, request.TicketSaleStart.Value, request.TicketSaleEnd.Value);
-            if (!isValidDateValues.Result) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
+            if (conference.CreatedBy != userId)
+            {
+                throw new ForbiddenException("Bạn không có quyền cập nhật hội nghị này.");
+            }
+
+            var conferenceStatusName = conference.ConferenceStatus?.ConferenceStatusName ?? string.Empty;
+            if (conferenceStatusName != "Preparing" && conferenceStatusName != "Pending")
+            {
+                throw new BadRequestException($"Không thể cập nhật hội nghị vì trạng thái hiện tại là '{conferenceStatusName}'. Chỉ cho phép cập nhật khi ở trạng thái 'Chuẩn bị' (Preparing) hoặc 'Chờ duyệt' (Pending).");
+            }
+
+            var finalStartDate = request.StartDate ?? conference.StartDate;
+            var finalEndDate = request.EndDate ?? conference.EndDate;
+            var finalTicketSaleStart = request.TicketSaleStart ?? conference.TicketSaleStart;
+            var finalTicketSaleEnd = request.TicketSaleEnd ?? conference.TicketSaleEnd;
+            bool isValidDateValues = await IsValidConferenceAndTicketSaleDates(
+            finalStartDate.Value,
+            finalEndDate.Value,
+            finalTicketSaleStart.Value,
+            finalTicketSaleEnd.Value
+        );
+
+            if (!isValidDateValues) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
 
             if (request.TotalSlot <= 0) throw new BadRequestException("Totalslot phải lớn hơn 0");
 
+
+            if (!string.IsNullOrWhiteSpace(request.ConferenceCategoryId) && request.ConferenceCategoryId != conference.ConferenceCategoryId)
+            {
+                if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
+                    throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
+            }
+            if (!string.IsNullOrWhiteSpace(request.CityId) && request.CityId != conference.CityId)
+            {
+                if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
+                    throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
+            }
+
+            if (request.BannerImageFile != null)
+            {
+                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
+                    throw new BadRequestException($"Loại ảnh bìa không được hỗ trợ: '{request.BannerImageFile.ContentType}'. Vui lòng sử dụng định dạng ảnh hợp lệ.");
+
+                const long maxFileSize = 5 * 1024 * 1024; // 5 MB
+                if (request.BannerImageFile.Length > maxFileSize)
+                    throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
+            }
+
             conference.ConferenceName = request.ConferenceName ?? conference.ConferenceName;
             conference.Description = request.Description ?? conference.Description;
-            conference.StartDate = request.StartDate;  // Fixed nullable DateOnly
-            conference.EndDate = request.EndDate;         // Fixed nullable DateOnly
+            conference.StartDate = request.StartDate ?? conference.StartDate;  // Fixed nullable DateOnly
+            conference.EndDate = request.EndDate ?? conference.EndDate;         // Fixed nullable DateOnly
             conference.TotalSlot = request.TotalSlot ?? conference.TotalSlot;
             conference.AvailableSlot = request.TotalSlot ?? conference.AvailableSlot; // Update available slot if total is changed
             conference.Address = request.Address ?? conference.Address;
-            conference.IsInternalHosted = request.IsInternalHosted ?? conference.IsInternalHosted;
-            conference.IsResearchConference = request.IsResearchConference ?? conference.IsResearchConference;
+            //conference.IsInternalHosted = request.IsInternalHosted ?? conference.IsInternalHosted;
+            //conference.IsResearchConference = request.IsResearchConference ?? conference.IsResearchConference;
             conference.ConferenceCategoryId = request.ConferenceCategoryId ?? conference.ConferenceCategoryId;
             conference.CityId = request.CityId ?? conference.CityId;
             conference.TicketSaleStart = request.TicketSaleStart ?? conference.TicketSaleStart;
@@ -1044,7 +1143,7 @@ namespace ConfRadar.Services.Services
                     request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
                 }
 
-                var isValidDateValues = CheckIfStartDateAndTicketSaleDate(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
+                var isValidDateValues = IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
                 if (!isValidDateValues.Result) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
 
                 if (request.TotalSlot < 0)
@@ -1089,8 +1188,8 @@ namespace ConfRadar.Services.Services
             conference.TotalSlot = request.TotalSlot ?? conference.TotalSlot;
             conference.AvailableSlot = request.TotalSlot ?? conference.AvailableSlot; // Update available slot if total is changed
             conference.Address = request.Address ?? conference.Address;
-            conference.IsInternalHosted = request.IsInternalHosted ?? conference.IsInternalHosted;
-            conference.IsResearchConference = request.IsResearchConference ?? conference.IsResearchConference;
+            //conference.IsInternalHosted = request.IsInternalHosted ?? conference.IsInternalHosted;
+            //conference.IsResearchConference = request.IsResearchConference ?? conference.IsResearchConference;
             conference.ConferenceCategoryId = request.ConferenceCategoryId ?? conference.ConferenceCategoryId;
             conference.CityId = request.CityId ?? conference.CityId;
             conference.TicketSaleStart = request.TicketSaleStart ?? conference.TicketSaleStart;
@@ -1664,6 +1763,98 @@ namespace ConfRadar.Services.Services
             if (speaker == null) throw new NotFoundException($"Speaker with ID {speakerId} not found");
 
             return await _unitOfWork.SpeakerRepository.DeleteSpeakerAsync(speaker) > 0;
+        }
+
+        #endregion
+
+        #region Revision Round Deadline CRUD Operations
+
+        public async Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request)
+        {
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(researchConferencePhaseId);
+            if (phase == null) throw new NotFoundException($"Phase Hội nghị nghiên cứu  ID {researchConferencePhaseId} không thấy");
+
+            //list round phải bắt đầu từ 1 và khác nhau
+            List<int> round = request.Select( r => r.RoundNumber ).ToList();
+            bool isValid = round.Count > 0 &&
+                           round.Min() == 1 &&
+                           round.Max() == round.Count &&
+                           round.Distinct().Count() == round.Count;
+            if (!isValid) throw new BadRequestException("Round phải bắt đầu từ 1 và khác nhau");
+            // Validate that all dates in the request are between the revise start and end date of the phase
+            if (phase.ReviseStartDate.HasValue && phase.ReviseEndDate.HasValue)
+            {
+                foreach (var deadline in request)
+                {
+                    if (deadline.StartSubmissionDate != null && deadline.EndSubmissionDate != null)
+                    {
+                        if (deadline.StartSubmissionDate >= phase.ReviseStartDate.Value || deadline.EndSubmissionDate <= phase.ReviseEndDate.Value)
+                        {
+                            throw new BadRequestException($"Ngày hạn nộp bắt đầu {deadline.StartSubmissionDate} và kết thúc {deadline.EndSubmissionDate} phải nằm trong khoảng từ ngày bắt đầu chỉnh sửa ({phase.ReviseStartDate.Value}) đến ngày kết thúc chỉnh sửa ({phase.ReviseEndDate.Value})");
+                        }
+                    }
+                }
+            }
+
+            var responses = new List<RevisionRoundDeadlineResponse>();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                foreach (var deadlineRequest in request)
+                {
+                    var revisionRoundDeadline = deadlineRequest.ToModel(researchConferencePhaseId);
+                    await _unitOfWork.RevisionRoundDeadlineRepository.CreateCsAsync(revisionRoundDeadline);
+                    responses.Add(revisionRoundDeadline.ToRevisionRoundDeadlineResponse());
+                }
+
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+
+            return responses;
+        }
+
+        public async Task<List<RevisionRoundDeadlineResponse>> GetRevisionRoundDeadlinesByResearchPhaseIdAsync(string researchConferencePhaseId)
+        {
+            var deadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(researchConferencePhaseId);
+            return deadlines.Select(d => d.ToRevisionRoundDeadlineResponse()).ToList();
+        }
+
+        public async Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request)
+        {
+            var deadline = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByIdAsync(revisionRoundDeadlineId);
+            if (deadline == null) throw new NotFoundException($"Revision round deadline with ID {revisionRoundDeadlineId} not found");
+
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(deadline.ResearchConferencePhaseId);
+            if (phase == null) throw new NotFoundException($"Research conference phase for revision round deadline {revisionRoundDeadlineId} not found");
+
+            // Validate that the new date is between the revise start and end date of the phase
+            if (phase.ReviseStartDate.HasValue && phase.ReviseEndDate.HasValue && request.EndDate.HasValue)
+            {
+                if (request.EndDate.Value < phase.ReviseStartDate.Value || request.EndDate.Value > phase.ReviseEndDate.Value)
+                {
+                    throw new BadRequestException($"Ngày hết hạn {request.EndDate.Value} phải nằm trong khoảng từ ngày bắt đầu chỉnh sửa ({phase.ReviseStartDate.Value}) đến ngày kết thúc chỉnh sửa ({phase.ReviseEndDate.Value})");
+                }
+            }
+
+            deadline.EndSubmissionDate = request.EndDate ?? deadline.EndSubmissionDate;
+            deadline.RoundNumber = request.RoundNumber ?? deadline.RoundNumber;
+
+            await _unitOfWork.RevisionRoundDeadlineRepository.UpdateCsAsync(deadline);
+            return deadline.ToRevisionRoundDeadlineResponse();
+        }
+
+        public async Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId)
+        {
+            var deadline = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByIdAsync(revisionRoundDeadlineId);
+            if (deadline == null) throw new NotFoundException($"Revision round deadline with ID {revisionRoundDeadlineId} not found");
+
+            return await _unitOfWork.RevisionRoundDeadlineRepository.DeleteCsAsync(deadline) > 0;
         }
 
         #endregion
