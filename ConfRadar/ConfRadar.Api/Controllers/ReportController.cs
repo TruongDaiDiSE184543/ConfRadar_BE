@@ -1,8 +1,9 @@
-using ConfRadar.Api.Responses;
+﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
-using ConfRadar.Services.DTOs.ConferenceStep;
+using ConfRadar.Shared.DTO.Report;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -24,14 +25,11 @@ namespace ConfRadar.Api.Controllers
         [Authorize]
         public async Task<IActionResult> CreateReport([FromBody] CreateReportRequest request)
         {
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(ApiResponse<object>.FailResponse("User not authenticated"));
-            }
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
 
             var report = await _serviceManager.ReportService.CreateReportAsync(userId, request);
-            return Ok(ApiResponse<ReportResponse>.SuccessResponse(report, "Report created successfully"));
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Report được tạo thành công "));
         }
 
         /// <summary>
@@ -52,14 +50,19 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateReportFeedback(string reportId, [FromBody] CreateReportFeedbackRequest request)
         {
-            var adminId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(adminId))
-            {
-                return Unauthorized(ApiResponse<object>.FailResponse("Admin not authenticated"));
-            }
+            var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+          
 
             var feedback = await _serviceManager.ReportService.CreateReportFeedbackAsync(reportId, adminId, request);
             return Ok(ApiResponse<ReportFeedbackResponse>.SuccessResponse(feedback, "Report feedback created successfully"));
+        }
+
+        [HttpGet("{reportId}/get-response")]
+        [Authorize(Roles = "Admin")]
+        public async  Task<IActionResult> GetReportFeedback(string reportId)
+        {
+            var result = await _serviceManager.ReportService.GetReportFeedBackByReportId(reportId);
+            return Ok(ApiResponse<ReportFeedbackResponse>.SuccessResponse(result, "Lấy report feedback thành công"));
         }
     }
 }

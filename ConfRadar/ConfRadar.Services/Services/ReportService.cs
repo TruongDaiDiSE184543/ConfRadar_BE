@@ -1,6 +1,8 @@
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using ConfRadar.Services.DTOs.ConferenceStep;
+using ConfRadar.Services.Common;
+using ConfRadar.Services.Exceptions;
+using ConfRadar.Shared.DTO.Report;
 
 namespace ConfRadar.Services.Services
 {
@@ -9,6 +11,7 @@ namespace ConfRadar.Services.Services
         Task<ReportResponse> CreateReportAsync(string userId, CreateReportRequest request);
         Task<List<UnresolvedReportResponse>> GetUnresolvedReportsAsync();
         Task<ReportFeedbackResponse> CreateReportFeedbackAsync(string reportId, string adminId, CreateReportFeedbackRequest request);
+        Task<ReportFeedbackResponse> GetReportFeedBackByReportId(string reportId);
     }
 
     public class ReportService : IReportService
@@ -22,14 +25,15 @@ namespace ConfRadar.Services.Services
 
         public async Task<ReportResponse> CreateReportAsync(string userId, CreateReportRequest request)
         {
+
             var report = new Report
             {
                 ReportId = Guid.NewGuid().ToString(),
                 ReportSubject = request.ReportSubject,
                 Reason = request.Reason,
                 Description = request.Description,
-                HasResolve = true, // Default to true as per requirement
-                CreatedAt = DateTime.UtcNow,
+                HasResolve = false, 
+                CreatedAt = ExtensionHelper.GetVietnamTime(),
                 UserId = userId
             };
 
@@ -66,27 +70,48 @@ namespace ConfRadar.Services.Services
             var report = await _unitOfWork.ReportRepository.GetReportByIdAsync(reportId);
             if (report == null)
             {
-                throw new Exception($"Report with ID {reportId} not found");
+                throw new Exception($"Không tìm thấy report ID {reportId} ");
             }
 
-            report.HasResolve = true; // Mark the report as resolved
-            await _unitOfWork.ReportRepository.UpdateReportAsync(report);
+            if (report.HasResolve == true) throw new BadRequestException("Report này đã được xử lí rồi");
 
-            // Create the report feedback
-            var reportFeedback = new ReportFeedback
+            _unitOfWork.BeginTransactionAsync();
+            try
             {
-                ReportId = reportId,
-                ReportSubject = request.ReportSubject,
-                Reason = request.Reason,
-                AdminId = adminId
-            };
+                report.HasResolve = true; // Mark the report as resolved
+                await _unitOfWork.ReportRepository.UpdateReportAsync(report);
 
-            await _unitOfWork.ReportFeedbackRepository.CreateReportFeedbackAsync(reportFeedback);
+                // Create the report feedback
+                var reportFeedback = new ReportFeedback
+                {
+                    ReportId = reportId,
+                    ReportSubject = request.ReportSubject,
+                    Reason = request.Reason,
+                    AdminId = adminId
+                };
 
-            var createdFeedback = await _unitOfWork.ReportFeedbackRepository.GetReportFeedbackByIdAsync(reportId);
-            return MapToReportFeedbackResponse(createdFeedback);
+                await _unitOfWork.ReportFeedbackRepository.CreateReportFeedbackAsync(reportFeedback);
+
+                var createdFeedback = await _unitOfWork.ReportFeedbackRepository.GetReportFeedbackByIdAsync(reportId);
+                await _unitOfWork.CommitAsync();
+                return MapToReportFeedbackResponse(createdFeedback);
+            }catch (Exception e)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw e;
+            }
+            
         }
 
+
+        public async Task<ReportFeedbackResponse> GetReportFeedBackByReportId(string reportId)
+        {
+            var report = await _unitOfWork.ReportRepository.GetReportByIdAsync(reportId);
+            if (report == null) throw new Exception($"Không tìm thấy report {reportId}");
+            var reportFeedBack = await _unitOfWork.ReportFeedbackRepository.GetReportFeedbackByIdAsync(reportId);
+            if (reportFeedBack == null || report.HasResolve == false) throw new Exception("Report này chưa có feedback");
+            return MapToReportFeedbackResponse(reportFeedBack);
+        }
         private ReportResponse MapToReportResponse(Report report)
         {
             return new ReportResponse
@@ -120,11 +145,10 @@ namespace ConfRadar.Services.Services
                 Admin = feedback.Admin != null ? new UserResponse
                 {
                     UserId = feedback.Admin.UserId,
-                    //UserName = feedback.Admin.FullName,
+                    UserName = feedback.Admin.FullName,
                     Email = feedback.Admin.Email,
                     FullName = feedback.Admin.FullName
-                } : null,
-                Report = feedback.Report != null ? MapToReportResponse(feedback.Report) : null
+                } : null
             };
         }
     }

@@ -13,6 +13,35 @@ namespace ConfRadar.Services.DTOs.Paper
         public FullPaperDtoDetail? FullPaper { get; set; }
         public RevisionPaperDtoDetail? RevisionPaper { get; set; }
         public CameraReadyDtoDetail? CameraReady { get; set; }
+        public ResearchPhaseDtoDetail? ResearchPhase { get; set; }
+        public List<RevisionDeadlineDetail>? revisionDeadline { get; set; }
+    }
+
+    public class ResearchPhaseDtoDetail
+    {
+        public string ResearchConferencePhaseId { get; set; } = null!;
+
+        public string? ConferenceId { get; set; }
+
+        public DateOnly? RegistrationStartDate { get; set; }
+
+        public DateOnly? RegistrationEndDate { get; set; }
+
+        public DateOnly? FullPaperStartDate { get; set; }
+
+        public DateOnly? FullPaperEndDate { get; set; }
+
+        public DateOnly? ReviewStartDate { get; set; }
+
+        public DateOnly? ReviewEndDate { get; set; }
+
+        public DateOnly? ReviseStartDate { get; set; }
+
+        public DateOnly? ReviseEndDate { get; set; }
+
+        public DateOnly? CameraReadyStartDate { get; set; }
+
+        public DateOnly? CameraReadyEndDate { get; set; }
     }
 
 
@@ -74,7 +103,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public DateOnly? ReviewStartDate { get; set; }
         public DateOnly? ReviewEndDate { get; set; }
         public List<RevisionSubmissionDtoDetail> Submissions { get; set; } = new List<RevisionSubmissionDtoDetail>();
-        public List<RevisionDeadlineDetail>? revisionDeadline { get; set; }
+        
         public List<RevisionReviewDtoDetail> Reviews { get; set; } = new List<RevisionReviewDtoDetail>();
     }
 
@@ -113,8 +142,15 @@ namespace ConfRadar.Services.DTOs.Paper
     }
     public class RevisionDeadlineDetail
     {
-        public int? RoundNumher { get; set; } // e.g., "Revision Round 1"
-        public DateOnly? Deadline { get; set; }
+        public string RevisionRoundDeadlineId { get; set; } = null!;
+
+        public DateOnly? StartSubmissionDate { get; set; }
+        public DateOnly? EndSubmissionDate { get; set; }
+
+        public int? RoundNumber { get; set; }
+
+        public string? ResearchConferencePhaseId { get; set; }
+
     }
 
 

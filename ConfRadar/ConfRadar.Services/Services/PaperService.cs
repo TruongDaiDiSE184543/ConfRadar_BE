@@ -1343,31 +1343,11 @@ namespace ConfRadar.Services.Services
             var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(paper.ConferenceId);
             var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(paper.ConferenceId);
 
-            // Step 2: Prepare all other data fetching tasks to run IN PARALLEL.
-            // If an ID is null, we create a completed task that returns null instantly.
-            //var abstractTask = paper.AbstractId != null
-            //    ? _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId) // Note: Ensure this includes GlobalStatus
-            //    : Task.FromResult<ConfRadar.Repositories.Models.Abstract>(null);
-
-            //var fullPaperTask = paper.FullPaperId != null
-            //    ? _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId) // Note: Ensure this includes ReviewStatus
-            //    : Task.FromResult<ConfRadar.Repositories.Models.FullPaper>(null);
-
-            //var revisionPaperTask = paper.RevisionPaperId != null
-            //    ? _unitOfWork.RevisionPaperRepository.GetDetailRevisionPaper(paper.RevisionPaperId)
-            //    : Task.FromResult<ConfRadar.Repositories.Models.RevisionPaper>(null);
-
-            //// Step 3: Execute all tasks concurrently and wait for them all to finish.
-            //await Task.WhenAll(abstractTask, fullPaperTask, revisionPaperTask);
-
-            //// Step 4: Get the results from the now-completed tasks.
-            //var abstractEntity = await abstractTask;
-            //var fullPaperEntity = await fullPaperTask;
-            //var revisionPaperEntity = await revisionPaperTask;
+           
 
             var abstractEntity = paper.AbstractId != null
-      ? await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId)
-      : null;
+            ? await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId)
+            : null;
 
             var fullPaperEntity = paper.FullPaperId != null
                 ? await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId)
@@ -1381,6 +1361,20 @@ namespace ConfRadar.Services.Services
             var response = new PaperDetailResponseDtoDetail
             {
                 PaperId = paper.PaperId,
+                ResearchPhase = researchConferencePhase !=null ? new ResearchPhaseDtoDetail
+                {
+                    ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
+                    RegistrationStartDate = researchConferencePhase.RegistrationStartDate,
+                    RegistrationEndDate = researchConferencePhase.RegistrationEndDate,
+                    FullPaperStartDate = researchConferencePhase.FullPaperStartDate,
+                    FullPaperEndDate = researchConferencePhase.FullPaperEndDate,
+                    ReviewStartDate = researchConferencePhase.ReviewStartDate,
+                    ReviewEndDate = researchConferencePhase.ReviewEndDate,
+                    ReviseStartDate = researchConferencePhase.ReviseStartDate,
+                    ReviseEndDate = researchConferencePhase.ReviseEndDate,
+                    CameraReadyStartDate = researchConferencePhase.CameraReadyStartDate,
+                    ConferenceId = researchConferencePhase.ConferenceId
+                } : null ,
 
                 // Map properties we already have from the initial query
                 CurrentPhase = paper.PaperPhase != null ? new PaperPhaseDtoDetail
@@ -1394,8 +1388,6 @@ namespace ConfRadar.Services.Services
                     CameraReadyId = paper.CameraReady.CameraReadyId,
                     FileUrl = paper.CameraReady.CameraReadyUrl,
                     Status = paper.CameraReady.GlobalStatus?.Name, // Safe navigation
-                    CameraReadyStartDate = researchConferencePhase?.CameraReadyStartDate,
-                    CameraReadyEndDate = researchConferencePhase?.CameraReadyEndDate,
                 } : null,
 
                 // Map the result from the parallel tasks
@@ -1404,8 +1396,6 @@ namespace ConfRadar.Services.Services
                     AbstractId = abstractEntity.AbstractId,
                     FileUrl = abstractEntity.AbstractUrl,
                     Status = abstractEntity.GlobalStatus?.Name,
-                    RegistrationStart = researchConferencePhase?.RegistrationStartDate,
-                    RegistrationEnd = researchConferencePhase?.RegistrationEndDate,
                 } : null,
 
                 FullPaper = fullPaperEntity != null ? new FullPaperDtoDetail
@@ -1413,9 +1403,14 @@ namespace ConfRadar.Services.Services
                     FullPaperId = fullPaperEntity.FullPaperId,
                     FileUrl = fullPaperEntity.FullPaperUrl,
                     ReviewStatus = fullPaperEntity.ReviewStatus?.Name,
-                    FullPaperStartDate = researchConferencePhase?.FullPaperStartDate,
-                    FullPaperEndDate = researchConferencePhase?.FullPaperEndDate,
                 } : null,
+                revisionDeadline = roundDeadline?.Select (r => new RevisionDeadlineDetail
+                {
+                    RevisionRoundDeadlineId = r?.RevisionRoundDeadlineId,
+                    RoundNumber = r?.RoundNumber,
+                    StartSubmissionDate = r.StartSubmissionDate,
+                    EndSubmissionDate = r?.EndSubmissionDate
+                }).ToList(),
 
                 // Use a helper method for complex mapping to keep this clean
                 RevisionPaper = revisionPaperEntity != null
@@ -1437,11 +1432,7 @@ namespace ConfRadar.Services.Services
                 OverallStatus = entity.GlobalStatus?.Name,
                 ReviewStartDate = phase?.ReviewStartDate,
                 ReviewEndDate = phase?.ReviewEndDate,
-                revisionDeadline = deadlines?.Select(d => new RevisionDeadlineDetail
-                {
-                    RoundNumher = d.RoundNumber,
-                    Deadline = d?.EndSubmissionDate,
-                }).ToList(),
+              
 
                 Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
                 {

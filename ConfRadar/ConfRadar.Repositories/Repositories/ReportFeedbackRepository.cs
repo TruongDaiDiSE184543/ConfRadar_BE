@@ -12,7 +12,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdateReportFeedbackAsync(ReportFeedback reportFeedback);
         Task<int> DeleteReportFeedbackAsync(ReportFeedback reportFeedback);
         Task<List<ReportFeedback>> GetAllReportFeedbacksAsync();
-        Task<ReportFeedback?> GetReportFeedbackByReportIdAsync(string reportId);
+        //Task<ReportFeedback?> GetReportFeedbackByReportIdAsync(string reportId);
     }
 
     public class ReportFeedbackRepository : GenericRepository<ReportFeedback>, IReportFeedbackRepository
@@ -53,13 +53,13 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
-        public async Task<ReportFeedback?> GetReportFeedbackByReportIdAsync(string reportId)
-        {
-            return await _context.ReportFeedbacks
-                .Include(rf => rf.Admin)
-                .Include(rf => rf.Report)
-                    .ThenInclude(r => r.User)
-                .FirstOrDefaultAsync(rf => rf.ReportId == reportId);
-        }
+        //public async Task<ReportFeedback?> GetReportFeedbackByReportIdAsync(string reportId)
+        //{
+        //    return await _context.ReportFeedbacks
+        //        .Include(rf => rf.Admin)
+        //        .Include(rf => rf.Report)
+        //            .ThenInclude(r => r.User)
+        //        .FirstOrDefaultAsync(rf => rf.ReportId == reportId);
+        //}
     }
 }
