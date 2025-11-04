@@ -1341,7 +1341,7 @@ namespace ConfRadar.Services.Services
             }
 
             var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(paper.ConferenceId);
-            var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(paper.ConferenceId);
+            var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(researchConferencePhase.ResearchConferencePhaseId);
 
            
 
@@ -1408,8 +1408,9 @@ namespace ConfRadar.Services.Services
                 {
                     RevisionRoundDeadlineId = r?.RevisionRoundDeadlineId,
                     RoundNumber = r?.RoundNumber,
-                    StartSubmissionDate = r.StartSubmissionDate,
-                    EndSubmissionDate = r?.EndSubmissionDate
+                    StartSubmissionDate = r?.StartSubmissionDate,
+                    EndSubmissionDate = r?.EndSubmissionDate,
+                    ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId
                 }).ToList(),
 
                 // Use a helper method for complex mapping to keep this clean
