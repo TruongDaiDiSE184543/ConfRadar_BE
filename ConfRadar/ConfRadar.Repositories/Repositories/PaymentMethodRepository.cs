@@ -8,6 +8,7 @@ namespace ConfRadar.Repositories.Repositories
     public interface IPaymentMethodRepository
     {
         Task<PaymentMethod?> GetPaymentMethodByName(string paymentMethodName);
+        Task<PaymentMethod?> GetPaymentMethodById(string paymentMethodId);
         Task<List<PaymentMethod>> GetListPaymentMethods();
         Task<int> CreateMutiplePaymentMethodsAsync(IEnumerable<PaymentMethod> paymentMethods);
     }
@@ -30,6 +31,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<PaymentMethod>> GetListPaymentMethods()
         {
             return await _context.PaymentMethods.ToListAsync();
+        }
+
+        public async Task<PaymentMethod?> GetPaymentMethodById(string paymentMethodId)
+        {
+            return await _context.PaymentMethods.FirstOrDefaultAsync(pm => pm.PaymentMethodId == paymentMethodId);
         }
     }
 

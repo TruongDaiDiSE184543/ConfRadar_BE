@@ -1,5 +1,4 @@
 using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using Microsoft.AspNetCore.Authorization;
@@ -86,7 +85,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DeleteConferencePrice(string priceId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId,User);
+            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId, userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Giá vé được xóa thành công"));

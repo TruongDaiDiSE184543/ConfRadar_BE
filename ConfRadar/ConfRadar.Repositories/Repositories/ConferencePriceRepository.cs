@@ -8,7 +8,7 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface IConferencePriceRepository
     {
-        Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId);
+        //Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId);
         Task<int> CreateConferencePriceAsync(ConferencePrice price);
         Task<int> CreateMutipleConferencePriceAsync(List<ConferencePrice> price);
         Task<int> UpdateConferencePriceAsync(ConferencePrice price);
@@ -24,12 +24,15 @@ namespace ConfRadar.Repositories.Repositories
     public class ConferencePriceRepository : GenericRepository<ConferencePrice>, IConferencePriceRepository
     {
         public ConferencePriceRepository(ConfRadarDbContext context) : base(context) { }
-        public async Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId)
-        {
-            return await _context.ConferencePrices.Include(x => x.PricePhases)
-                .Include(x => x.Conference).ThenInclude(x => x.ConferenceSessions)
-                .FirstOrDefaultAsync(x => x.ConferencePriceId == conferencePriceId);
-        }
+        //public async Task<ConferencePrice?> GetConferencePriceByConferencePriceId(string conferencePriceId)
+        //{
+        //    return await _context.ConferencePrices
+        //        .Include(x => x.PricePhases)
+        //        .Include(x => x.Conference)
+        //            .ThenInclude(x => x.ConferenceSessions)
+        //        .AsSplitQuery()
+        //        .FirstOrDefaultAsync(x => x.ConferencePriceId == conferencePriceId);
+        //}
 
         public async Task<int> CreateConferencePriceAsync(ConferencePrice price)
         {
@@ -54,7 +57,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(c => c.Conference)
                     .ThenInclude(c => c.ResearchConferencePhases)
                 .Include(c => c.Conference)
-                    .ThenInclude(c=>c.ConferenceSessions)
+                    .ThenInclude(c => c.ConferenceSessions)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.ConferencePriceId == priceId);
         }

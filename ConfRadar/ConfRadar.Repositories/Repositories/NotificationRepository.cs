@@ -2,11 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -20,10 +15,10 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdateNotificationAsync(Notification notification);
         Task<bool> DeleteNotificationAsync(Notification notification);
     }
-    public class NotificationRepository : GenericRepository<Notification> ,INotificationRepository
+    public class NotificationRepository : GenericRepository<Notification>, INotificationRepository
     {
 
-        public NotificationRepository(ConfRadarDbContext context) :base(context)
+        public NotificationRepository(ConfRadarDbContext context) : base(context)
         {
         }
 

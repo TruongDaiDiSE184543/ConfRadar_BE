@@ -55,5 +55,26 @@
             public string Password { get; set; }
             public int Port { get; set; }
         }
+        public class ZaloPaySettings
+        {
+            public int AppId { get; set; }
+            public string ReqTime { get; set; }
+            public string Key1 { get; set; }
+            public string Key2 { get; set; }
+            public string Mac { get; set; }
+            public string CallbackUrl { get; set; }
+
+        }
+        public class PayOsSettings
+        {
+            public string ClientId { get; set; }
+            public string ApiKey { get; set; }
+            public string CheckSumKey { get; set; }
+            public string IpnLink { get; set; }
+            public string ReturnUrl { get; set; }
+            public string CancelUrl { get; set; }
+        }
+
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Shared.DTO.ReviewContract;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
@@ -16,6 +17,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ReviewerContract>> GetReviewerContractsByConferenceIdAsync(string conferenceId);
         Task<ReviewerContract?> GetContractByUserAndConferenceAsync(string userId, string conferenceId);
         Task<List<ReviewerContract>> GetAllReviewerContractsAsync();
+        Task<List<ConferenceBelongToReviewContractResponse>> GetListConferenceBelongToReviewContractByUserId(string userId);
+        Task<List<PaperDetailBelongToConferenceInReviewContractResposne>> GetPapersBelongToAConferenceByConferenceIdAndUserId(string conferenceId, string userId);
     }
     public class ReviewerContractRepository : GenericRepository<ReviewerContract>, IReviewerContractRepository
     {
@@ -71,6 +74,72 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ReviewerContract>> GetAllReviewerContractsAsync()
         {
             return await _context.ReviewerContracts.ToListAsync();
+        }
+
+        public async Task<List<ConferenceBelongToReviewContractResponse>> GetListConferenceBelongToReviewContractByUserId(string userId)
+        {
+            var listConferences = await _context.Conferences
+                .AsNoTracking()
+                .Where(c => c.ReviewerContracts.Any(rc => rc.UserId == userId))
+                .Select(c => new ConferenceBelongToReviewContractResponse()
+                {
+                    ConferenceId = c.ConferenceId,
+                    ConferenceName = c.ConferenceName,
+                    Description = c.Description,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    TotalSlot = c.TotalSlot,
+                    AvailableSlot = c.AvailableSlot,
+                    Address = c.Address,
+                    BannerImageUrl = c.BannerImageUrl,
+                    CreatedAt = c.CreatedAt,
+                    TicketSaleStart = c.TicketSaleStart,
+                    TicketSaleEnd = c.TicketSaleEnd,
+                    IsInternalHosted = c.IsInternalHosted,
+                    IsResearchConference = c.IsResearchConference,
+                    CityId = c.CityId,
+                    CityName = c.City != null ? c.City.CityName : null,
+                    ConferenceCategoryId = c.ConferenceCategoryId,
+                    ConferenceCategoryName = c.ConferenceCategory != null ? c.ConferenceCategory.ConferenceCategoryName : null,
+                    ConferenceStatusId = c.ConferenceStatusId,
+                    ConferenceStatusName = c.ConferenceStatus != null ? c.ConferenceStatus.ConferenceStatusName : null,
+                    ResearchConferenceDetail = c.ResearchConferenceDetail != null ? new ResearchConferenceDetailForReviewContract()
+                    {
+                        ConferenceId = c.ConferenceId,
+                        Name = c.ResearchConferenceDetail.Name,
+                        PaperFormat = c.ResearchConferenceDetail.PaperFormat,
+                        NumberPaperAccept = c.ResearchConferenceDetail.NumberPaperAccept,
+                        RevisionAttemptAllowed = c.ResearchConferenceDetail.RevisionAttemptAllowed,
+                        RankingDescription = c.ResearchConferenceDetail.RankingDescription,
+                        AllowListener = c.ResearchConferenceDetail.AllowListener,
+                        RankValue = c.ResearchConferenceDetail.RankValue,
+                        RankYear = c.ResearchConferenceDetail.RankYear,
+                        ReviewFee = c.ResearchConferenceDetail.ReviewFee,
+                        RankingCategoryId = c.ResearchConferenceDetail.RankingCategoryId,
+                        RankCategoryName = c.ResearchConferenceDetail.RankingCategory != null ? c.ResearchConferenceDetail.RankingCategory.RankName : null,
+                        RankCategoryDescription = c.ResearchConferenceDetail.RankingCategory != null ? c.ResearchConferenceDetail.RankingCategory.RankDescription : null,
+
+                    } : null,
+                }).ToListAsync();
+            return listConferences;
+        }
+
+        public async Task<List<PaperDetailBelongToConferenceInReviewContractResposne>> GetPapersBelongToAConferenceByConferenceIdAndUserId(string conferenceId, string userId)
+        {
+            var listPaper = await _context.Papers
+                .AsNoTracking()
+                .Where(p => p.ConferenceId == conferenceId && p.Conference != null && p.Conference.ReviewerContracts.Any(rc => rc.UserId == userId))
+                .Select(p => new PaperDetailBelongToConferenceInReviewContractResposne()
+                {
+                    PaperId = p.PaperId,
+                    ConferenceId = p.ConferenceId,
+                    PaperPhaseId = p.PaperPhaseId,
+                    PhaseName = p.PaperPhase != null ? p.PaperPhase.PhaseName : null,
+                    CreatedAt = p.CreatedAt,
+                    Title = p.Title,
+                    Description = p.Description,
+                }).ToListAsync();
+            return listPaper;
         }
     }
 }

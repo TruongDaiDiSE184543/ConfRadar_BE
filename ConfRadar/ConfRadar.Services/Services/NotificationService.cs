@@ -1,7 +1,6 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
-using ConfRadar.Shared.DTO.User;
 
 namespace ConfRadar.Services.Services
 {
@@ -22,15 +21,15 @@ namespace ConfRadar.Services.Services
             var readyConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             var pendingWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Pending.GetDescription());
             var notifiedWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Notified.GetDescription());
-            if (readyConferenceStatus == null || pendingWaitListStatus==null || notifiedWaitListStatus==null)
+            if (readyConferenceStatus == null || pendingWaitListStatus == null || notifiedWaitListStatus == null)
             {
                 return;
             }
-            var listNotifiedUser = await _unitOfWork.PaperWaitListRepository.NotifyWaitListAsync(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId,ExtensionHelper.GetVietnamTime());
-            if (listNotifiedUser !=null && listNotifiedUser.Count > 0)
+            var listNotifiedUser = await _unitOfWork.PaperWaitListRepository.NotifyWaitListAsync(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, ExtensionHelper.GetVietnamTime());
+            if (listNotifiedUser != null && listNotifiedUser.Count > 0)
             {
                 var notifionListObj = new List<Notification>();
-                foreach(var notfiedUser in listNotifiedUser)
+                foreach (var notfiedUser in listNotifiedUser)
                 {
                     var userNotification = new ConfRadar.Repositories.Models.Notification()
                     {
@@ -60,7 +59,7 @@ namespace ConfRadar.Services.Services
                 }
 
             }
-        
+
         }
     }
 }
