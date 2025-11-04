@@ -45,7 +45,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceBasic(string conferenceId, [FromForm] UpdateConferenceBasicRequest request)
         {
-            var conference = await _serviceManager.ConferenceStepService.UpdateConferenceBasicAsync(conferenceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var conference = await _serviceManager.ConferenceStepService.UpdateConferenceBasicAsync(conferenceId, request, userId);
             return Ok(ApiResponse<TechnicalConferenceBasicStepResponse>.SuccessResponse(conference, "Thông tin hội nghị được cập nhật thành công"));
         }
 
@@ -58,7 +59,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferencePrices(string conferenceId, [FromBody] AddConferencePricesRequest request)
         {
-            var prices = await _serviceManager.ConferenceStepService.AddConferencePricesAsync(conferenceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var prices = await _serviceManager.ConferenceStepService.AddConferencePricesAsync(conferenceId, request, userId);
             return Ok(ApiResponse<ConferencePriceListWithPhasesResponse>.SuccessResponse(prices, "Giá vé được thêm thành công"));
         }
 
@@ -73,7 +75,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferencePrice(string priceId, [FromBody] UpdateConferencePriceRequest request)
         {
-            var price = await _serviceManager.ConferenceStepService.UpdateConferencePriceAsync(priceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var price = await _serviceManager.ConferenceStepService.UpdateConferencePriceAsync(priceId, request, userId);
             return Ok(ApiResponse<ConferencePriceWithPhasesResponse>.SuccessResponse(price, "Giá vé được cập nhật thành công"));
         }
 
@@ -81,7 +84,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferencePrice(string priceId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId, userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Giá vé được xóa thành công"));
@@ -118,7 +122,7 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPut("sessions/{sessionId}/speaker")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> UpdateSpeaker(string sessionId, [FromBody] UpdateSpeakerRequest request)
+        public async Task<IActionResult> UpdateSpeaker(string sessionId, [FromForm] UpdateSpeakerRequest request)
         {
             var speaker = await _serviceManager.ConferenceStepService.UpdateSpeakerAsync(sessionId, request);
             return Ok(ApiResponse<SpeakerResponse>.SuccessResponse(speaker, "Diễn giả được cập nhật thành công"));
@@ -312,7 +316,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được tạo thành công"));
         }
 
-        [HttpGet("{conferenceId}/research/detail")]
+        [HttpGet("{conferenceId}/research/detail")] 
 
         public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
         {
@@ -546,6 +550,121 @@ namespace ConfRadar.Api.Controllers
 
         #endregion
 
+        #region PricePhase CRUD Operations
 
+        [HttpPost("prices/{conferencePriceId}/phases")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request)
+        {
+            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request);
+            return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được thêm thành công"));
+        }
+
+        [HttpGet("prices/{conferencePriceId}/phases")]
+        public async Task<IActionResult> GetPricePhasesByConferencePriceId(string conferencePriceId)
+        {
+            var pricePhases = await _serviceManager.ConferenceStepService.GetPricePhasesByConferencePriceIdAsync(conferencePriceId);
+            return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được lấy thành công"));
+        }
+
+        [HttpPut("phases/{pricePhaseId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> UpdatePricePhase(string pricePhaseId, [FromBody] UpdatePricePhaseRequest request)
+        {
+            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request);
+            return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(pricePhase, "Giai đoạn giá vé được cập nhật thành công"));
+        }
+
+        [HttpDelete("phases/{pricePhaseId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> DeletePricePhase(string pricePhaseId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeletePricePhaseAsync(pricePhaseId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Giai đoạn giá vé được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy giai đoạn giá vé"));
+        }
+
+        #endregion
+
+        #region Speaker CRUD Operations
+
+        [HttpPost("sessions/{conferenceSessionId}/speakers")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> AddSpeakers(string conferenceSessionId, [FromForm] AddSpeakersRequest request)
+        {
+            var speakers = await _serviceManager.ConferenceStepService.AddSpeakersAsync(conferenceSessionId, request);
+            return Ok(ApiResponse<List<SpeakerResponse>>.SuccessResponse(speakers, "Diễn giả được thêm thành công"));
+        }
+
+        [HttpGet("sessions/{conferenceSessionId}/speakers")]
+        public async Task<IActionResult> GetSpeakersByConferenceSessionId(string conferenceSessionId)
+        {
+            var speakers = await _serviceManager.ConferenceStepService.GetSpeakersByConferenceSessionIdAsync(conferenceSessionId);
+            return Ok(ApiResponse<List<SpeakerResponse>>.SuccessResponse(speakers, "Diễn giả được lấy thành công"));
+        }
+
+        [HttpPut("speakers/{speakerId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> UpdateSpeakerBySpeakerId(string speakerId, [FromForm] UpdateSpeakerRequestForConferenceSession request)
+        {
+            var speaker = await _serviceManager.ConferenceStepService.UpdateSpeakerBySpeakerIdAsync(speakerId, request);
+            return Ok(ApiResponse<SpeakerResponse>.SuccessResponse(speaker, "Diễn giả được cập nhật thành công"));
+        }
+
+        [HttpDelete("speakers/{speakerId}")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> DeleteSpeaker(string speakerId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteSpeakerAsync(speakerId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Diễn giả được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy diễn giả"));
+        }
+
+        #endregion
+
+        #region Revision Round Deadline CRUD Operations
+
+        [HttpPost("research/phases/{researchConferencePhaseId}/revision-round-deadlines")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> AddRevisionRoundDeadlines(string researchConferencePhaseId, [FromBody] List<CreateRevisionRoundDeadlineRequest> request)
+        {
+            var deadlines = await _serviceManager.ConferenceStepService.AddRevisionRoundDeadlinesAsync(researchConferencePhaseId, request);
+            return Ok(ApiResponse<List<RevisionRoundDeadlineResponse>>.SuccessResponse(deadlines, "Giai đoạn chỉnh sửa được thêm thành công"));
+        }
+
+        [HttpGet("research/phases/{researchConferencePhaseId}/revision-round-deadlines")]
+        public async Task<IActionResult> GetRevisionRoundDeadlinesByResearchPhaseId(string researchConferencePhaseId)
+        {
+            var deadlines = await _serviceManager.ConferenceStepService.GetRevisionRoundDeadlinesByResearchPhaseIdAsync(researchConferencePhaseId);
+            return Ok(ApiResponse<List<RevisionRoundDeadlineResponse>>.SuccessResponse(deadlines, "Giai đoạn chỉnh sửa được lấy thành công"));
+        }
+
+        [HttpPut("revision-round-deadlines/{revisionRoundDeadlineId}")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> UpdateRevisionRoundDeadline(string revisionRoundDeadlineId, [FromBody] UpdateRevisionRoundDeadlineRequest request)
+        {
+            var deadline = await _serviceManager.ConferenceStepService.UpdateRevisionRoundDeadlineAsync(revisionRoundDeadlineId, request);
+            return Ok(ApiResponse<RevisionRoundDeadlineResponse>.SuccessResponse(deadline, "Giai đoạn chỉnh sửa được cập nhật thành công"));
+        }
+
+        [HttpDelete("revision-round-deadlines/{revisionRoundDeadlineId}")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> DeleteRevisionRoundDeadline(string revisionRoundDeadlineId)
+        {
+            var result = await _serviceManager.ConferenceStepService.DeleteRevisionRoundDeadlineAsync(revisionRoundDeadlineId);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Giai đoạn chỉnh sửa được xóa thành công"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy giai đoạn chỉnh sửa"));
+        }
+
+        #endregion
     }
 }

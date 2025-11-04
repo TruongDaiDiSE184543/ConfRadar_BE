@@ -51,6 +51,7 @@ namespace ConfRadar.Services
             services.AddScoped<IZaloPayService, ZaloPayService>();
             services.AddScoped<IPayOsService, PayOsService>();
             services.AddScoped<IContractService, ContractService>();
+            services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();

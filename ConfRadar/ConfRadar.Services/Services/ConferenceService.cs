@@ -886,6 +886,7 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(ct => ct.PreviousStatus)
                 .Include(c => c.ConferenceTimelines)
                     .ThenInclude(ct => ct.AfterwardStatus)
+                .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
 
             if (conference == null)
@@ -1107,6 +1108,7 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(ct => ct.PreviousStatus)
                 .Include(c => c.ConferenceTimelines)
                     .ThenInclude(ct => ct.AfterwardStatus)
+                .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
 
             if (fullConference == null)
@@ -1225,7 +1227,8 @@ namespace ConfRadar.Services.Services
                     PreviousStatusName = ct.PreviousStatus?.ConferenceStatusName,
                     AfterwardStatusName = ct.AfterwardStatus?.ConferenceStatusName,
                     ConferenceName = ct.Conference?.ConferenceName
-                }).ToList()
+                }).ToList(),
+             
             };
         }
 

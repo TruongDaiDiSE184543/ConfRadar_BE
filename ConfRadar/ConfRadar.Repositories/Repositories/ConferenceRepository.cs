@@ -98,5 +98,7 @@ namespace ConfRadar.Repositories.Repositories
 
             return await query.ToListAsync();
         }
+
+      
     }
 }

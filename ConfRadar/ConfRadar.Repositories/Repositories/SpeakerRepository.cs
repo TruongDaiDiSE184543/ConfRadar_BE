@@ -14,6 +14,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<Speaker?> GetSpeakerBySessionIdAsync(string sessionId);
         Task<List<Speaker>> GetSpeakersBySessionIdAsync(string sessionId);
         Task<List<Speaker>> GetAllSpeakersAsync();
+        // Additional methods for CRUD operations on Speaker
+        Task<int> CreateSpeakersForConferenceSessionAsync(string conferenceSessionId, List<Speaker> speakers);
     }
 
     public class SpeakerRepository : GenericRepository<Speaker>, ISpeakerRepository
@@ -59,6 +61,16 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Speaker>> GetAllSpeakersAsync()
         {
             return await GetAllAsync();
+        }
+
+        public async Task<int> CreateSpeakersForConferenceSessionAsync(string conferenceSessionId, List<Speaker> speakers)
+        {
+            foreach (var speaker in speakers)
+            {
+                speaker.ConferenceSessionId = conferenceSessionId;
+            }
+            await _context.Speakers.AddRangeAsync(speakers);
+            return await _context.SaveChangesAsync();
         }
     }
 }
