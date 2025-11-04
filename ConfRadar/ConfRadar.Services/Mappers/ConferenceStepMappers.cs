@@ -500,13 +500,34 @@ namespace ConfRadar.Services.Mappers
             return new RevisionRoundDeadline
             {
                 RevisionRoundDeadlineId = Guid.NewGuid().ToString(),
-                EndSubmissionDate = request.EndDate,
+                StartSubmissionDate = request.StartSubmissionDate,
+                EndSubmissionDate = request.EndSubmissionDate,
                 RoundNumber = request.RoundNumber,
                 ResearchConferencePhaseId = researchConferencePhaseId
             };
         }
 
+        public static RevisionRoundDeadline ToModel(this UpdateRevisionRoundDeadlineRequest request)
+        {
+            return new RevisionRoundDeadline
+            {
+                EndSubmissionDate = request.EndDate,
+                RoundNumber = request.RoundNumber
+            };
+        }
+
         public static RevisionRoundDeadlineResponse ToResponse(this RevisionRoundDeadline model)
+        {
+            return new RevisionRoundDeadlineResponse
+            {
+                RevisionRoundDeadlineId = model.RevisionRoundDeadlineId,
+                EndDate = model.EndSubmissionDate,
+                RoundNumber = model.RoundNumber,
+                ResearchConferencePhaseId = model.ResearchConferencePhaseId
+            };
+        }
+
+        public static RevisionRoundDeadlineResponse ToRevisionRoundDeadlineResponse(this RevisionRoundDeadline model)
         {
             return new RevisionRoundDeadlineResponse
             {

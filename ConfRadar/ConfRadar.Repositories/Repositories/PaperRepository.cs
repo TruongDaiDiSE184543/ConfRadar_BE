@@ -22,7 +22,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<UnAssignAbstractResponse>> GetUnAssignAbstract();
 
         Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
-
+        Task<Paper> GetAllIncludeById(string paper);
 
 
     }
@@ -311,6 +311,20 @@ namespace ConfRadar.Repositories.Repositories
                 };
             }
             return paperDetailResponse;
+        }
+
+        public async Task<Paper> GetAllIncludeById(string paper)
+        {
+            return await _context.Papers
+                .Include(p => p.Abstract)
+                .Include(p => p.FullPaperId)
+                .Include(p => p.RevisionPaper)
+                .Include(p => p.CameraReady)
+                .Include(p => p.PaperReviewers)
+                .Include(p => p.PresentAuthors)
+                .Include(p => p.PaperAuthors)
+                .Include(p => p.PaperPhase)
+                .FirstOrDefaultAsync(p => p.PaperId == paper);
         }
     }
 }
