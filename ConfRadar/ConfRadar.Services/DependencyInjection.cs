@@ -48,6 +48,9 @@ namespace ConfRadar.Services
             services.AddScoped<IConferenceTimelineService, ConferenceTimelineService>();
             services.AddScoped<IFavouriteConferenceService, FavouriteConferenceService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IZaloPayService, ZaloPayService>();
+            services.AddScoped<IPayOsService, PayOsService>();
+            services.AddScoped<IContractService, ContractService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
@@ -82,7 +85,7 @@ namespace ConfRadar.Services
                     .WithSimpleSchedule(x => x.WithIntervalInMinutes(5).RepeatForever()));
             });
 
-            
+
 
 
 

@@ -55,13 +55,13 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering
         Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
-        
+
         // NEW ENDPOINT 13: Get detailed research conference data for organizer
         Task<DTOs.Conference.ResearchConferenceDetailResponse> GetDetailResearchForOrganizerAsync(string conferenceId);
-        
+
         // NEW ENDPOINT 14: Get detailed technical conference data for organizer and collaborator
         Task<DTOs.Conference.TechnicalConferenceDetailResponse> GetDetailTechnicalAsync(string conferenceId, string? userId, bool isOrganizer = false);
-        
+
         // ENdPOINT 15: Update conference status log the transition in conference timeline
         Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null);
         Task<List<ConferenceWithStatusNameResponse>> GetAllConferenceWithStatusByUserId(string userId, string statusId);
@@ -976,7 +976,7 @@ namespace ConfRadar.Services.Services
                     RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                     {
                         RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
-                        EndDate = r.EndSubmissionDate,
+                        //EndDate = r.EndDate,
                         RoundNumber = r.RoundNumber,
                         ResearchConferencePhaseId = r.ResearchConferencePhaseId
                     }).ToList()
@@ -1051,7 +1051,7 @@ namespace ConfRadar.Services.Services
                         AvailableSlot = pp.AvailableSlot
                     }).ToList()
                 }).ToList(),
-                
+
                 // Include conference timeline data
                 ConferenceTimelines = conference.ConferenceTimelines?.Select(ct => new DTOs.Conference.ConferenceTimelineResponse
                 {
@@ -1073,7 +1073,7 @@ namespace ConfRadar.Services.Services
             // Check if the user is authorized to access this conference
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
-            
+
             if (conference == null)
             {
                 throw new NotFoundException($"Conference with ID {conferenceId} not found");
@@ -1137,7 +1137,7 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = fullConference.ConferenceCategoryId,
                 ConferenceStatusId = fullConference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                
+
                 RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                 {
                     RefundPolicyId = rp.RefundPolicyId,
@@ -1212,7 +1212,7 @@ namespace ConfRadar.Services.Services
                         AvailableSlot = pp.AvailableSlot
                     }).ToList()
                 }).ToList(),
-                
+
                 // Include conference timeline data
                 ConferenceTimelines = fullConference.ConferenceTimelines?.Select(ct => new DTOs.Conference.ConferenceTimelineResponse
                 {
@@ -1905,13 +1905,13 @@ namespace ConfRadar.Services.Services
         {
             // Get conferences for the user and by status
             var conferences = await _unitOfWork.ConferenceRepository.GetConferencesByUserIdAndStatusAsync(userId, statusId);
-            
+
             var responses = new List<ConferenceWithStatusNameResponse>();
-            
+
             foreach (var conference in conferences)
             {
                 var conferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
-                
+
                 var response = new ConferenceWithStatusNameResponse
                 {
                     ConferenceId = conference.ConferenceId,
@@ -1933,10 +1933,10 @@ namespace ConfRadar.Services.Services
                     ConferenceCategoryId = conference.ConferenceCategoryId,
                     ConferenceStatusName = conferenceStatus?.ConferenceStatusName // Use status name instead of ID
                 };
-                
+
                 responses.Add(response);
             }
-            
+
             return responses;
         }
     }

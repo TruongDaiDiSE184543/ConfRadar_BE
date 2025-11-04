@@ -6,7 +6,8 @@
         public FullPaperDetailForReviewerResponse FullPaper { get; set; } = new();
         public RevisonPaperForReviewerResponse RevisionPaper { get; set; } = new();
         public CameraReadyPaperForReviewerResponse CameraReady { get; set; } = new();
-        public PaperPhaseForReviewerResponse CurrentPhase { get; set; } = new();
+        public PaperPhaseForReviewerResponse CurrentPaperPhase { get; set; } = new();
+        public CurrentResearchConferencePhaseForReviewerResponse CurrentResearchConferencePhase { get; set; } = new();
 
     }
     public class PaperPhaseForReviewerResponse
@@ -14,6 +15,34 @@
         public string? PaperPhaseId { get; set; }
         public string? PhaseName { get; set; }
     }
+    public class CurrentResearchConferencePhaseForReviewerResponse
+    {
+        public string ResearchConferencePhaseId { get; set; } = null!;
+        public string? ConferenceId { get; set; }
+        public DateOnly? RegistrationStartDate { get; set; }
+        public DateOnly? RegistrationEndDate { get; set; }
+        public DateOnly? FullPaperStartDate { get; set; }
+        public DateOnly? FullPaperEndDate { get; set; }
+        public DateOnly? ReviewStartDate { get; set; }
+        public DateOnly? ReviewEndDate { get; set; }
+        public DateOnly? ReviseStartDate { get; set; }
+        public DateOnly? ReviseEndDate { get; set; }
+        public DateOnly? CameraReadyStartDate { get; set; }
+        public DateOnly? CameraReadyEndDate { get; set; }
+        public bool? IsWaitlist { get; set; }
+        public bool? IsActive { get; set; }
+        public List<RevisionRoundDeadLineDetailForReviewerResponse> RevisionRoundsDetail { get; set; }
+    }
+    public class RevisionRoundDeadLineDetailForReviewerResponse
+    {
+        public string RevisionRoundDeadlineId { get; set; } = null!;
+        public DateOnly? StartSubmissionDate { get; set; }
+        public DateOnly? EndSubmissionDate { get; set; }
+        public int? RoundNumber { get; set; }
+        public string? ResearchConferencePhaseId { get; set; }
+
+    }
+
     public class FullPaperDetailForReviewerResponse
     {
         public string? FullPaperId { get; set; } = null!;

@@ -13,9 +13,9 @@ namespace ConfRadar.Services.DTOs.Payment
         [Required(ErrorMessage = "Mô tả cho bài báo là bắt buộc")]
 
         public string? Description { get; set; }
+        [Required(ErrorMessage = "Mã phương thức thanh toán là bắt buộc")]
+        public string PaymentMethodId { get; set; }
 
-        //[Required(ErrorMessage = "Payment method bắt buộc")]
-        //[EnumDataType(typeof(PaymentMethodEnum))]
-        //public PaymentMethodEnum PaymentMethod { get; set; }
+
     }
 }

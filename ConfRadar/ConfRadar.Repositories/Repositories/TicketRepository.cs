@@ -189,7 +189,7 @@ namespace ConfRadar.Repositories.Repositories
             return await CreateAsync(ticket);
         }
 
-        public async Task<Ticket> GetTicketByUserIdAndConferenceId(string userId, string conferenceId)
+        public async Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId)
         {
             return await _context.Tickets
                 .Include(t => t.ConferencePrice)

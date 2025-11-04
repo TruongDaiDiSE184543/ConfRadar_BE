@@ -27,6 +27,8 @@ namespace ConfRadar.Services
         public IConferenceStatusService ConferenceStatusService { get; }
         public IConferenceTimelineService ConferenceTimelineService { get; }
         public IFavouriteConferenceService FavoriteConferenceService { get; }
+        public IContractService ContractService { get; }
+
         //public ICityService CityService { get; }
 
     }
@@ -57,6 +59,7 @@ namespace ConfRadar.Services
         private readonly IConferenceStatusService _conferenceStatusService;
         private readonly IConferenceTimelineService _conferenceTimelineService;
         private readonly IFavouriteConferenceService _favouriteConferenceService;
+        private readonly IContractService _contractService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -81,7 +84,9 @@ namespace ConfRadar.Services
             IConferenceStatusService conferenceStatusService,
             IConferenceTimelineService conferenceTimelineService,
 
-            IFavouriteConferenceService favouriteConferenceService)
+            IFavouriteConferenceService favouriteConferenceService,
+            IContractService contractService
+           )
         {
             _authService = authService;
             _momoService = momoService;
@@ -105,6 +110,8 @@ namespace ConfRadar.Services
             _conferenceStatusService = conferenceStatusService;
             _conferenceTimelineService = conferenceTimelineService;
             _favouriteConferenceService = favouriteConferenceService;
+            _contractService = contractService;
+
         }
 
         public IAuthService AuthService => _authService;
@@ -136,6 +143,10 @@ namespace ConfRadar.Services
         public IConferenceTimelineService ConferenceTimelineService => _conferenceTimelineService;
 
         public IFavouriteConferenceService FavoriteConferenceService => _favouriteConferenceService;
+
+        public IContractService ContractService => _contractService;
+
+
     }
 
 }

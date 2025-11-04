@@ -375,7 +375,7 @@ namespace ConfRadar.Services.Services
                 foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest)
                 {
                     //Phase for each ticket type
-                    List<PricePhaseResponse> pricePhaseResponses = new ();
+                    List<PricePhaseResponse> pricePhaseResponses = new();
                     //check if totalslot of phases in a ticket type is larger than the totalslot of the ticket itself
                     int? totalSlotFromPhase = toBeConferencePrice.Phases.Sum(phase => phase.Totalslot);
                     if (toBeConferencePrice.TotalSlot != totalSlotFromPhase) throw new BadRequestException("Tổng totalslot qua từng giai đoạn của vé không thể lớn hơn totalslot của loại vé đó");
@@ -389,11 +389,11 @@ namespace ConfRadar.Services.Services
                         if (toBeConferencePrice.isAuthor == true)
                         {
                             //each phase of author ticket types must be in registation start/end interval
-                            if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate ||  createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
+                            if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate || createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
                             {
                                 throw new BadRequestException("Vé bán cho authors phải trong khoảng registration start và end");
                             }
-                            
+
                         }
                         //each phase of technical and non author must be in conference's ticket sale start and end
                         else if (createPricePhaseRequest.StartDate < conference.TicketSaleStart || createPricePhaseRequest.EndDate > conference.TicketSaleEnd) throw new BadRequestException("Start phase phải và endphase phải nằm trong ticket sale start và ticket sale end của conference");
@@ -402,7 +402,7 @@ namespace ConfRadar.Services.Services
                         pricePhaseResponses.Add(new PricePhaseResponse
                         {
                             PhaseName = createPricePhaseRequest.PhaseName,
-                            StartDate = createPricePhaseRequest.StartDate,  
+                            StartDate = createPricePhaseRequest.StartDate,
                             EndDate = createPricePhaseRequest.EndDate,
                             ApplyPercent = createPricePhaseRequest.ApplyPercent,
                             TotalSlot = createPricePhaseRequest.Totalslot,

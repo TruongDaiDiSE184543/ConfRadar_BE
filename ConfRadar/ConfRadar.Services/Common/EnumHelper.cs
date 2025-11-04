@@ -68,7 +68,8 @@ namespace ConfRadar.Services.Common
         //abstractfile,
         //fullpaperfile,
         //revisionpaperfile,
-        revisionpaperreviewfile
+        revisionpaperreviewfile,
+        reviewercontractfile
 
     }
 
@@ -126,6 +127,8 @@ namespace ConfRadar.Services.Common
         ZaloPay,
         [Description("MoMo")]
         MoMo,
+        [Description("PayOs")]
+        PayOs,
     }
     public enum ConferenceStatusEnum
     {

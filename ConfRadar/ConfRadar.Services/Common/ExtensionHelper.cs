@@ -15,9 +15,9 @@
             );
             return DateOnly.FromDateTime(vnTime);
         }
-        public static string GetPaymentLockKeyResult(string userId, string conferencePriceId)
+        public static string GetPaymentLockKeyResult(string userId, string conferenceId)
         {
-            return $"{PaymentLockPrefix}:{userId}:{conferencePriceId}";
+            return $"{PaymentLockPrefix}:{userId}:{conferenceId}";
         }
     }
 
