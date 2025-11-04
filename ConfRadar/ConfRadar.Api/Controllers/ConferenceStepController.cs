@@ -60,7 +60,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferencePrices(string conferenceId, [FromBody] AddConferencePricesRequest request)
         {
-            var prices = await _serviceManager.ConferenceStepService.AddConferencePricesAsync(conferenceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var prices = await _serviceManager.ConferenceStepService.AddConferencePricesAsync(conferenceId, request, userId);
             return Ok(ApiResponse<ConferencePriceListWithPhasesResponse>.SuccessResponse(prices, "Giá vé được thêm thành công"));
         }
 
@@ -75,7 +76,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferencePrice(string priceId, [FromBody] UpdateConferencePriceRequest request)
         {
-            var price = await _serviceManager.ConferenceStepService.UpdateConferencePriceAsync(priceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var price = await _serviceManager.ConferenceStepService.UpdateConferencePriceAsync(priceId, request, userId);
             return Ok(ApiResponse<ConferencePriceWithPhasesResponse>.SuccessResponse(price, "Giá vé được cập nhật thành công"));
         }
 
@@ -83,7 +85,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferencePrice(string priceId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId,User);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Giá vé được xóa thành công"));

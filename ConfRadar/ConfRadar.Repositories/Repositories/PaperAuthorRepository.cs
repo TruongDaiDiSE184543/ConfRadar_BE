@@ -67,11 +67,8 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<Paper>> GetPapersByUserIdAsync(string userId)
         {
-            return await _context.Set<PaperAuthor>()
-                .Include(pa => pa.Paper)
-                .Where(pa => pa.UserId == userId)
-                .Select(pa => pa.Paper)
-                .ToListAsync();
+           return await _context.PaperAuthors.Where(pa => pa.IsRootAuthor == true && pa.UserId == userId).Include(pa => pa.Paper)
+                .Select(pa => pa.Paper).ToListAsync();
         }
     }
 }
