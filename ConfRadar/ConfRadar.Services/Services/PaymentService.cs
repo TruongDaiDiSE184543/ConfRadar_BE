@@ -693,7 +693,7 @@ namespace ConfRadar.Services.Services
             var transacKey = await _redisService.KeyExistsAsync(data.Data.OrderCode.ToString());
             if (!transacKey)
             {
-                throw new NotFoundException("Dữ liệu không tìm thấy");
+                throw new BadRequestException("Dữ liệu không tìm thấy");
             }
             var transac = await _redisService.GetStringAsync(data.Data.OrderCode.ToString());
             var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()

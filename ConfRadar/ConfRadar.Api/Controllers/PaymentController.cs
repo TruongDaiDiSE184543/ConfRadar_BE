@@ -150,7 +150,8 @@ namespace ConfRadar.Api.Controllers
         [HttpPost("verify-payos")]
         public async Task<IActionResult> VerifyPayOs([FromBody] PayOS.Models.Webhooks.Webhook data)
         {
-            await _serviceManager.PaymentService.VerifyPayOsDataForConference(data);
+            await Task.CompletedTask;
+            //await _serviceManager.PaymentService.VerifyPayOsDataForConference(data);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
         }
 
