@@ -21,7 +21,7 @@ namespace ConfRadar.Api
             services.AddDbContext<ConfRadarDbContext>(options =>
             options.UseNpgsql(configs.GetConnectionString("ConnectionStrings")));
 
-
+            services.AddRouting(options => options.LowercaseUrls = true);
             services.AddControllers(options =>
             {
                 options.Filters.Add<ValidationFilter>();
