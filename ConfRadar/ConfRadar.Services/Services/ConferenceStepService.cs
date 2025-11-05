@@ -516,10 +516,7 @@ namespace ConfRadar.Services.Services
             };
             var existingConferencePrice = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
             var conferenceStatusName = conference.ConferenceStatus?.ConferenceStatusName ?? string.Empty;
-            if (conferenceStatusName != "Preparing" && conferenceStatusName != "Pending")
-            {
-                throw new BadRequestException($"Không thể thêm giá vé vì trạng thái hội nghị là '{conferenceStatusName}'.");
-            }
+            await EnsureConferenceIsEditable(conference);
 
             if (request.TypeOfTicket == null || !request.TypeOfTicket.Any())
             {
