@@ -86,7 +86,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DeleteConferencePrice(string priceId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId,User);
+            var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Giá vé được xóa thành công"));
@@ -99,12 +99,12 @@ namespace ConfRadar.Api.Controllers
         #region Step 3: Conference Sessions
         //[Authorize(Roles = "Conference Organizer, Collaborator")]
 
-        [HttpPost("{conferenceId}/sessions")]
-        public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromForm] AddConferenceSessionsRequest request)
-        {
-            var sessions = await _serviceManager.ConferenceStepService.AddConferenceSessionsAsync(conferenceId, request);
-            return Ok(ApiResponse<List<ConferenceSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị được thêm thành công"));
-        }
+        //[HttpPost("{conferenceId}/sessions")]
+        //public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromForm] AddConferenceSessionsRequest request)
+        //{
+        //    var sessions = await _serviceManager.ConferenceStepService.AddConferenceSessionsAsync(conferenceId, request);
+        //    return Ok(ApiResponse<List<ConferenceSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị được thêm thành công"));
+        //}
 
         [HttpGet("{conferenceId}/sessions")]
         public async Task<IActionResult> GetConferenceSessions(string conferenceId)
