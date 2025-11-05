@@ -119,7 +119,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceSession(string sessionId, [FromBody] UpdateConferenceSessionRequest request)
         {
-            var session = await _serviceManager.ConferenceStepService.UpdateConferenceSessionAsync(sessionId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var session = await _serviceManager.ConferenceStepService.UpdateConferenceSessionAsync(sessionId, request, userId);
             return Ok(ApiResponse<ConferenceSessionWithMediaResponse>.SuccessResponse(session, "Phiên hội nghị được cập nhật thành công"));
         }
 
@@ -626,7 +627,7 @@ namespace ConfRadar.Api.Controllers
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Diễn giả được xóa thành công"));
             }
-            return BadRequestException(ApiResponse<object>.FailResponse("Không tìm thấy diễn giả"));
+            return Ok(ApiResponse<object>.FailResponse("Không tìm thấy diễn giả"));
         }
 
         #endregion
