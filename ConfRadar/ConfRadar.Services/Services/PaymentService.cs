@@ -78,11 +78,11 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException($"Không tìm thấy phương thức thanh toán nào với mã {request.PaymentMethodId}");
                 }
-                var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
-                if (user == null)
-                {
-                    throw new ConfRadarAuthenticationException("User không tồn tại");
-                }
+                //var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+                //if (user == null)
+                //{
+                //    throw new ConfRadarAuthenticationException("User không tồn tại");
+                //}
                 var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
                 if (conferencePrice == null)
                 {
@@ -149,7 +149,7 @@ namespace ConfRadar.Services.Services
                 var discountPercent = currentPhase.ApplyPercent ?? 0;
 
                 var rawPrice = conferencePrice.TicketPrice;
-                var discountedPrice = rawPrice - (rawPrice * discountPercent / 100);
+                var discountedPrice = (long)(rawPrice * ((decimal)discountPercent / (decimal)100.0));
                 var finalAmount = (long)discountedPrice;
 
 
@@ -160,7 +160,7 @@ namespace ConfRadar.Services.Services
                 var transactionData = new TransactionDataHolder
                 {
                     TicketId = ticketId,
-                    UserId = user.UserId,
+                    UserId = userId,
                     PaymentMethodId = paymentMethod.PaymentMethodId,
                     ConferencePriceId = request.ConferencePriceId,
                     ConferenceSessionIds = sessionIds,
@@ -332,7 +332,13 @@ namespace ConfRadar.Services.Services
                         }
                         else if (paperWaitListFound != null)
                         {
-                            throw new BadRequestException("Bạn hiện tại đang trong wait list của giai đoạn một, xin hãy bình tĩnh và đừng spam");
+                             return new GeneralPaymentResultResponse()
+                            {
+                                PaymentMessage = "Hiện tại bạn đang ở trong hàng chờ để được nộp bài báo chúng tôi sẽ thông báo cho bạn khi có slot trống",
+                                CheckOutUrl = null,
+                                ConferenceId = conferencePrice.ConferenceId,
+                                IsAddedWaitList = true
+                            };
                         }
 
                     }
@@ -416,7 +422,7 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException($"Giá cho vé hiện tại là {finalPrice} không khả dụng cho cổng thanh toán trong hệ thống xin hãy liên hệ ban tổ chức sự kiện");
                 }
                 var ticketId = Guid.NewGuid().ToString();
-                var lockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, request.ConferencePriceId);
+                var lockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, conferencePrice!.ConferenceId);
                 var transactionData = new TransactionDataHolder()
                 {
                     TicketId = ticketId,
@@ -435,7 +441,7 @@ namespace ConfRadar.Services.Services
                 //logic đa cổng
                 var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 double expireMinute = 90;
-                string paymentDescription = "Thanh toán tech";
+                string paymentDescription = "Thanh toán research";
                 string conferenceName = conferencePrice?.Conference?.ConferenceName ?? "";
 
                 var listPaymentLinkItem = new List<PaymentLinkItem>()
