@@ -2,6 +2,7 @@
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
+using ConfRadar.Shared.DTO.Conference;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -204,7 +205,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus, string? reason = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceService.ChangeConferenceStatus(userId,confid, newStatus, reason);
+            var result = await _serviceManager.ConferenceService.ChangeConferenceStatus(userId, confid, newStatus, reason);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
         }
 
@@ -238,6 +239,22 @@ namespace ConfRadar.Api.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.GetAllConferenceWithStatusByUserId(userId, statusId);
             return Ok(ApiResponse<List<ConferenceWithStatusNameResponse>>.SuccessResponse(result, "User conferences retrieved successfully"));
+        }
+        [Authorize]
+        [HttpPost("submit-conference-feedback")]
+        public async Task<IActionResult> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.SubmitConferenceFeedback(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công feedback"));
+        }
+        [Authorize]
+        [HttpGet("own-conferences-for-schedule")]
+        public async Task<IActionResult> GetListConferencesForSchedule()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.GetListConferencesForScheduleByUserId(userId);
+            return Ok(ApiResponse<List<ConferenceDetailForScheduleResponse>>.SuccessResponse(result, "Danh sách hội nghị"));
         }
     }
 }

@@ -88,7 +88,7 @@ namespace ConfRadar.Services
 
             IFavouriteConferenceService favouriteConferenceService,
             IReportService reportService,
-           
+
             IContractService contractService
            )
         {

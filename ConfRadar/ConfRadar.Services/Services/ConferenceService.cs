@@ -5,6 +5,7 @@ using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using ConfRadar.Shared.DTO.Conference;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -65,6 +66,10 @@ namespace ConfRadar.Services.Services
         // ENdPOINT 15: Update conference status log the transition in conference timeline
         Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null);
         Task<List<ConferenceWithStatusNameResponse>> GetAllConferenceWithStatusByUserId(string userId, string statusId);
+
+
+        Task<int> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request, string userId);
+        Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId);
     }
 
     public class ConferenceService : IConferenceService
@@ -1228,7 +1233,7 @@ namespace ConfRadar.Services.Services
                     AfterwardStatusName = ct.AfterwardStatus?.ConferenceStatusName,
                     ConferenceName = ct.Conference?.ConferenceName
                 }).ToList(),
-             
+
             };
         }
 
@@ -1941,6 +1946,49 @@ namespace ConfRadar.Services.Services
             }
 
             return responses;
+        }
+
+        public async Task<int> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request, string userId)
+        {
+            var conferenceSession = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(request.ConferenceSessionId);
+            if (conferenceSession == null)
+            {
+                throw new BadRequestException($"Không tìm thấy phiên với mã {request.ConferenceSessionId}");
+            }
+            var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserIdAndConferenceSessionIdAsync(request.ConferenceSessionId, userId);
+            if (userCheckInFound == null)
+            {
+                throw new BadRequestException($"Bạn chưa mua bất cứ vé nào nên không thể đánh giá");
+            }
+            var pendingCheckInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Pending.GetDescription());
+            if (pendingCheckInStatus == null)
+            {
+                throw new NotFoundException($"Không tìm thấy trạng thái check in trong hệ thống");
+            }
+            if (userCheckInFound.CheckinStatusId == pendingCheckInStatus.CheckinStatusId)
+            {
+                throw new BadRequestException($"Bạn phải check in rồi mới được đánh giá");
+            }
+            var conferenceFeedbackObj = new ConferenceFeedback()
+            {
+                ConferenceFeedbackId = Guid.NewGuid().ToString(),
+                UserId = userId,
+                ConferenceSessionId = request.ConferenceSessionId,
+                Rating = request.Rating,
+                Message = request.Message,
+                CreatedAt = ExtensionHelper.GetVietnamTime(),
+            };
+            return await _unitOfWork.ConferenceFeedbackRepository.CreateFeedbackAsync(conferenceFeedbackObj);
+        }
+
+        public async Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId)
+        {
+            var readyStatusConference = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyStatusConference == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái ready cho hội nghị");
+            }
+            return await _unitOfWork.ConferenceRepository.GetListConferencesForScheduleByUserId(userId, ExtensionHelper.GetVietnamDate(), readyStatusConference.ConferenceStatusId);
         }
     }
 }

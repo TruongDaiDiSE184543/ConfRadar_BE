@@ -7,57 +7,33 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface IUserCheckInRepository
     {
-        Task<int> CreateUserCheckInAsync(UserCheckIn userCheckIn);
-        Task<int> UpdateUserCheckInAsync(UserCheckIn userCheckIn);
-        Task<bool> DeleteUserCheckInAsync(UserCheckIn userCheckIn);
-        Task<UserCheckIn?> GetUserCheckInByIdAsync(string userCheckInId);
-        Task<List<UserCheckIn>> GetAllUserCheckInsAsync();
-        Task<UserCheckIn?> GetUserCheckInByUserAndSessionAsync(string userId, string sessionId);
+        Task<int> CreateUserCheckInAsync(UserCheckIn checkIn);
+        Task<int> UpdateUserCheckInAsync(UserCheckIn checkIn);
+        Task<bool> DeleteUserCheckInAsync(UserCheckIn checkIn);
+        Task<UserCheckIn?> GetUserCheckInByUserIdAndConferenceSessionIdAsync(string sessionId, string userId);
     }
-
     public class UserCheckInRepository : GenericRepository<UserCheckIn>, IUserCheckInRepository
     {
-        private readonly ConfRadarDbContext _context;
+        public UserCheckInRepository(ConfRadarDbContext context) : base(context) { }
 
-        public UserCheckInRepository(ConfRadarDbContext context) : base(context)
+        public async Task<int> CreateUserCheckInAsync(UserCheckIn checkIn)
         {
-            _context = context;
+            return await CreateAsync(checkIn);
         }
 
-        public async Task<int> CreateUserCheckInAsync(UserCheckIn userCheckIn)
+        public async Task<int> UpdateUserCheckInAsync(UserCheckIn checkIn)
         {
-            _context.UserCheckIns.Add(userCheckIn);
-            return await _context.SaveChangesAsync();
+            return await UpdateAsync(checkIn);
         }
 
-        public async Task<int> UpdateUserCheckInAsync(UserCheckIn userCheckIn)
+        public async Task<bool> DeleteUserCheckInAsync(UserCheckIn checkIn)
         {
-            var tracker = _context.Attach(userCheckIn);
-            tracker.State = EntityState.Modified;
-            return await _context.SaveChangesAsync();
+            return await RemoveAsync(checkIn);
         }
 
-        public async Task<bool> DeleteUserCheckInAsync(UserCheckIn userCheckIn)
+        public async Task<UserCheckIn?> GetUserCheckInByUserIdAndConferenceSessionIdAsync(string sessionId, string userId)
         {
-            _context.UserCheckIns.Remove(userCheckIn);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<UserCheckIn?> GetUserCheckInByIdAsync(string userCheckInId)
-        {
-            return await _context.UserCheckIns.FindAsync(userCheckInId);
-        }
-
-        public async Task<List<UserCheckIn>> GetAllUserCheckInsAsync()
-        {
-            return await _context.UserCheckIns.ToListAsync();
-        }
-
-        public async Task<UserCheckIn?> GetUserCheckInByUserAndSessionAsync(string userId, string sessionId)
-        {
-            return await _context.UserCheckIns
-                .FirstOrDefaultAsync(uci => uci.UserId == userId && uci.ConferenceSessionId == sessionId);
+            return await _context.UserCheckIns.FirstOrDefaultAsync(uci => uci.ConferenceSessionId == sessionId && uci.UserId == userId);
         }
     }
 }

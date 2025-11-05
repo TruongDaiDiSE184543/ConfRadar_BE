@@ -98,7 +98,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public int? RevisionRound { get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
         public List<RevisionSubmissionDtoDetail> Submissions { get; set; } = new List<RevisionSubmissionDtoDetail>();
-        
+
         public List<RevisionReviewDtoDetail> Reviews { get; set; } = new List<RevisionReviewDtoDetail>();
     }
 
