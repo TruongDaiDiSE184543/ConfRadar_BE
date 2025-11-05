@@ -110,7 +110,7 @@ namespace ConfRadar.Services.Services
 
         public async Task SeedConferenceStatusesAsync()
         {
-            var statusNames = Enum.GetValues<ConfRadar.Services.Common.ConferenceStatus>().Select(s => s.ToString()).ToList();
+            var statusNames = Enum.GetValues<ConfRadar.Services.Common.ConferenceStatusEnum>().Select(s => s.ToString()).ToList();
             await SeedEntityAsync<ConfRadar.Repositories.Models.ConferenceStatus>(
                 statusNames,
                 _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName,
@@ -124,7 +124,7 @@ namespace ConfRadar.Services.Services
 
         public async Task SeedRankingCategoriesAsync()
         {
-            var categoryNames = Enum.GetValues<ConfRadar.Services.Common.RankingCategories>().Select(s => s.ToString()).ToList();
+            var categoryNames = Enum.GetValues<ConfRadar.Services.Common.RankingCategoriesEnum>().Select(s => s.ToString()).ToList();
             await SeedEntityAsync<ConfRadar.Repositories.Models.RankingCategory>(
                 categoryNames,
                 _unitOfWork.RankingCategoryRepository.GetRankingCategoryByName,

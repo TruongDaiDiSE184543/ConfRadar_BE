@@ -296,13 +296,22 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.GetCustomerWaitList(userId);
             return Ok(ApiResponse<List<CustomerWaitListResponse>>.SuccessResponse(result, "Danh sách các hàng đợi của bạn"));
         }
+
         [Authorize]
         [HttpDelete("leave-waitlist")]
         public async Task<IActionResult> GetCustomerWaitList([FromBody] LeaveWaitListRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.LeaveWaitList(userId, request.ConferenceId);
-            return Ok(ApiResponse<bool>.SuccessResponse(result, "Đã thoát khỏi waitlist"));
+            return Ok(ApiResponse<LeaveWaitListResponse>.SuccessResponse(result, "Đã thoát khỏi hàng đợi"));
+        }
+        [Authorize]
+        [HttpDelete("add-waitlist")]
+        public async Task<IActionResult> AddCustomerToWaitList([FromBody] AddWaitListRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.AddWaitList(userId, request.ConferenceId);
+            return Ok(ApiResponse<AddWaitListResponse>.SuccessResponse(result, "Đã thêm vào  hàng đợi"));
         }
     }
 }

@@ -192,7 +192,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [MaxLength(500)]
         public string? Description { get; set; }
 
-        
+
         public DateOnly? StartDate { get; set; }
 
         public DateOnly? EndDate { get; set; }
@@ -872,5 +872,5 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public List<CreateSpeakerRequestForConferenceSession>? Speakers { get; set; }
     }
 
-  
+
 }

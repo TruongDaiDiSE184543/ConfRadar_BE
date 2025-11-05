@@ -6,7 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using Minio.Exceptions;
-using System.Collections.Generic;
 
 namespace ConfRadar.Services.Services
 {
@@ -246,7 +245,7 @@ namespace ConfRadar.Services.Services
         private async Task<bool> checkEachDateHasConferenceSession(Conference conference, List<DateOnly> sessionDate)
         {
             List<DateOnly> allConferenceDate = new();
-            for(var date = conference.StartDate; date <= conference.EndDate; date = date.Value.AddDays(1))
+            for (var date = conference.StartDate; date <= conference.EndDate; date = date.Value.AddDays(1))
             {
                 allConferenceDate.Add(date.Value);
             }
@@ -311,7 +310,7 @@ namespace ConfRadar.Services.Services
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
                 request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
                 request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
-                
+
 
 
                 //Must have category
@@ -527,7 +526,7 @@ namespace ConfRadar.Services.Services
                 foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest)
                 {
                     //Phase for each ticket type
-                    List<PricePhaseResponse> pricePhaseResponses = new ();
+                    List<PricePhaseResponse> pricePhaseResponses = new();
                     if (toBeConferencePrice.TicketPrice < 0) throw new BadRequestException($"Giá vé cho '{toBeConferencePrice.TicketName}' không được là số âm.");
                     if (toBeConferencePrice.TotalSlot <= 0) throw new BadRequestException($"Số lượng vé cho '{toBeConferencePrice.TicketName}' phải lớn hơn 0.");
                     //check if totalslot of phases in a ticket type is larger than the totalslot of the ticket itself
@@ -552,8 +551,8 @@ namespace ConfRadar.Services.Services
                             if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate || createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
                             {
                                 throw new BadRequestException("Vé bán cho authors phải trong khoảng registration start và end");
-                            }   
-                            
+                            }
+
                         }
                         //each phase of technical and non author must be in conference's ticket sale start and end
                         else if (createPricePhaseRequest.StartDate < conference.TicketSaleStart || createPricePhaseRequest.EndDate > conference.TicketSaleEnd) throw new BadRequestException("Start phase phải và endphase phải nằm trong ticket sale start và ticket sale end của conference");
@@ -627,7 +626,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy hội nghị gốc liên quan đến loại vé này.");
             }
 
-            
+
 
             // 1. Phân quyền
             if (conference.CreatedBy != userId)
@@ -686,7 +685,7 @@ namespace ConfRadar.Services.Services
 
             await _unitOfWork.ConferencePriceRepository.UpdateConferencePriceAsync(price);
 
-         
+
 
             var phases = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(price.ConferencePriceId);
             return price.ToResponseWithPhases(phases);
@@ -1100,7 +1099,7 @@ namespace ConfRadar.Services.Services
                     }
                 }
 
-                 await _unitOfWork.CommitAsync();
+                await _unitOfWork.CommitAsync();
             }
             catch (Exception)
             {
@@ -1881,7 +1880,7 @@ namespace ConfRadar.Services.Services
             if (phase == null) throw new NotFoundException($"Phase Hội nghị nghiên cứu  ID {researchConferencePhaseId} không thấy");
 
             //list round phải bắt đầu từ 1 và khác nhau
-            List<int> round = request.Select( r => r.RoundNumber ).ToList();
+            List<int> round = request.Select(r => r.RoundNumber).ToList();
             bool isValid = round.Count > 0 &&
                            round.Min() == 1 &&
                            round.Max() == round.Count &&

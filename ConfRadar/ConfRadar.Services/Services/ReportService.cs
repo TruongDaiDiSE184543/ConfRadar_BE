@@ -32,7 +32,7 @@ namespace ConfRadar.Services.Services
                 ReportSubject = request.ReportSubject,
                 Reason = request.Reason,
                 Description = request.Description,
-                HasResolve = false, 
+                HasResolve = false,
                 CreatedAt = ExtensionHelper.GetVietnamTime(),
                 UserId = userId
             };
@@ -95,12 +95,13 @@ namespace ConfRadar.Services.Services
                 var createdFeedback = await _unitOfWork.ReportFeedbackRepository.GetReportFeedbackByIdAsync(reportId);
                 await _unitOfWork.CommitAsync();
                 return MapToReportFeedbackResponse(createdFeedback);
-            }catch (Exception e)
+            }
+            catch (Exception e)
             {
                 await _unitOfWork.RollbackAsync();
                 throw e;
             }
-            
+
         }
 
 

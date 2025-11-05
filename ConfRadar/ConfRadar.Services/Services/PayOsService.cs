@@ -41,7 +41,7 @@ namespace ConfRadar.Services.Services
                     Items = payOsItems,
                     ExpiredAt = DateTimeOffset.UtcNow.AddMinutes(expireMinute).ToUnixTimeSeconds(),
                 };
-                
+
                 CreatePaymentLinkResponse paymentResponse = await client.PaymentRequests.CreateAsync(paymentRequest);
                 string checkOutUrl = paymentResponse.CheckoutUrl;
                 return checkOutUrl;
