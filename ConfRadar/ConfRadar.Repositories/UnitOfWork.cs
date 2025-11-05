@@ -68,6 +68,9 @@ namespace ConfRadar.Repositories
         IReportRepository ReportRepository { get; }
         IReportFeedbackRepository ReportFeedbackRepository { get; }
         INotificationRepository NotificationRepository { get; }
+        IPresentAuthorRepository PresentAuthorRepository { get; }
+        IUserCheckInRepository UserCheckInRepository { get; }
+        IPresenterChangeRequestRepository PresenterChangeRequestRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -141,6 +144,9 @@ namespace ConfRadar.Repositories
         private INotificationRepository _NotificationRepository;
         private IReportRepository _ReportRepository;
         private IReportFeedbackRepository _ReportFeedbackRepository;
+        private IPresentAuthorRepository _PresentAuthorRepository;
+        private IUserCheckInRepository _UserCheckInRepository;
+        private IPresenterChangeRequestRepository _PresenterChangeRequestRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -253,6 +259,9 @@ namespace ConfRadar.Repositories
 
         public IReportRepository ReportRepository => _ReportRepository ??= new ReportRepository(_context);
         public IReportFeedbackRepository ReportFeedbackRepository => _ReportFeedbackRepository ??= new ReportFeedbackRepository(_context);
+        public IPresentAuthorRepository PresentAuthorRepository => _PresentAuthorRepository ??= new PresentAuthorRepository(_context);
+        public IUserCheckInRepository UserCheckInRepository => _UserCheckInRepository ??= new UserCheckInRepository(_context);
+        public IPresenterChangeRequestRepository PresenterChangeRequestRepository => _PresenterChangeRequestRepository ??= new PresenterChangeRequestRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

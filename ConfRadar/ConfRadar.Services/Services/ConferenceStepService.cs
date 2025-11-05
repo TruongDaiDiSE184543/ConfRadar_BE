@@ -264,9 +264,7 @@ namespace ConfRadar.Services.Services
 
             if (missingDates.Any())
             {
-                // SỬA LỖI Ở ĐÂY:
-                // 1. Chuyển danh sách các ngày thiếu thành một chuỗi dễ đọc, phân cách bằng dấu phẩy.
-                // 2. Sử dụng `missingDates`, không phải `allConferenceDates`.
+                
                 var missingDatesString = string.Join(", ", missingDates.Select(d => d.ToString("dd/MM/yyyy")));
 
                 // 3. Tạo một thông báo lỗi rõ ràng và thân thiện.
@@ -287,6 +285,12 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
+        }
+
+        private async Task<bool>CheckSessionForFirstAndLastDay(Conference conference, List<DateOnly> sessionDate)
+        {
+            return sessionDate.Contains(conference.StartDate.Value) && sessionDate.Contains(conference.EndDate.Value);
+
         }
 
 
@@ -753,7 +757,7 @@ namespace ConfRadar.Services.Services
             }
 
             await EnsureConferenceIsEditable(conference);
-            List<DateOnly> sessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).ToList();
+            List<DateOnly> sessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).Distinct().ToList();
             if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
             if (request.Sessions == null || !request.Sessions.Any())
             {

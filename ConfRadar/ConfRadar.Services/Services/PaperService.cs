@@ -1361,6 +1361,9 @@ namespace ConfRadar.Services.Services
             var response = new PaperDetailResponseDtoDetail
             {
                 PaperId = paper.PaperId,
+                Title = paper.Title,
+                Description = paper.Description,
+                Created = paper.CreatedAt.Value,
                 ResearchPhase = researchConferencePhase !=null ? new ResearchPhaseDtoDetail
                 {
                     ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
@@ -1373,6 +1376,7 @@ namespace ConfRadar.Services.Services
                     ReviseStartDate = researchConferencePhase.ReviseStartDate,
                     ReviseEndDate = researchConferencePhase.ReviseEndDate,
                     CameraReadyStartDate = researchConferencePhase.CameraReadyStartDate,
+                    CameraReadyEndDate = researchConferencePhase.ReviewEndDate,
                     ConferenceId = researchConferencePhase.ConferenceId
                 } : null ,
 
@@ -1431,10 +1435,6 @@ namespace ConfRadar.Services.Services
                 RevisionPaperId = entity.RevisionPaperId,
                 RevisionRound = entity.RevisionRound,
                 OverallStatus = entity.GlobalStatus?.Name,
-                ReviewStartDate = phase?.ReviewStartDate,
-                ReviewEndDate = phase?.ReviewEndDate,
-              
-
                 Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
                 {
                     ReviewId = review.RevisionPaperReviewId,
