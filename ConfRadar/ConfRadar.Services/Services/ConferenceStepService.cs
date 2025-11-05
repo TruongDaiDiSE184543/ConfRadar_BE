@@ -7,6 +7,7 @@ using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using Minio.Exceptions;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -24,7 +25,7 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteConferencePriceAsync(string priceId, string userId);
 
         // Step 3: Add Conference Sessions
-        Task<List<ConferenceSessionWithMediaResponse>> AddConferenceSessionsAsync(string conferenceId, AddConferenceSessionsRequest request);
+        Task<List<ConferenceSessionWithMediaResponse>> AddConferenceSessionsAsync(string conferenceId, AddConferenceSessionsRequest request, string userId);
         Task<List<ConferenceSessionWithMediaResponse>> GetConferenceSessionsAsync(string conferenceId);
         Task<ConferenceSessionWithMediaResponse> UpdateConferenceSessionAsync(string sessionId, UpdateConferenceSessionRequest request);
         Task<SpeakerResponse> UpdateSpeakerAsync(string sessionId, UpdateSpeakerRequest request);
@@ -255,12 +256,16 @@ namespace ConfRadar.Services.Services
             return true;
         }
 
-        private void EnsureConferenceIsEditable(Conference conference)
+        private async Task EnsureConferenceIsEditable(Conference conference)
         {
-            var conferenceStatusName = conference.ConferenceStatus?.ConferenceStatusName ?? string.Empty;
-            if (conferenceStatusName != "Preparing" && conferenceStatusName != "Pending")
+            var conferenceStatusId = conference.ConferenceStatusId;
+            var allstatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusesAsync();
+            var pending = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
+            var Preparing = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
+            var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
+            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId)
             {
-                throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{conferenceStatusName}' và không thể chỉnh sửa.");
+                throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
         }
 
@@ -399,18 +404,15 @@ namespace ConfRadar.Services.Services
         public async Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Hội nghị với ID {conferenceId} không tìm thấy");
+            if (conference == null) throw new BadRequestException($"Hội nghị với ID {conferenceId} không tìm thấy");
 
             if (conference.CreatedBy != userId)
             {
-                throw new ForbiddenException("Bạn không có quyền cập nhật hội nghị này.");
+                throw new BadRequestException("Bạn không có quyền cập nhật hội nghị này.");
             }
 
-            var conferenceStatusName = conference.ConferenceStatus?.ConferenceStatusName ?? string.Empty;
-            if (conferenceStatusName != "Preparing" && conferenceStatusName != "Pending")
-            {
-                throw new BadRequestException($"Không thể cập nhật hội nghị vì trạng thái hiện tại là '{conferenceStatusName}'. Chỉ cho phép cập nhật khi ở trạng thái 'Chuẩn bị' (Preparing) hoặc 'Chờ duyệt' (Pending).");
-            }
+            var conferenceStatusName = conference.ConferenceStatusId;
+            await EnsureConferenceIsEditable(conference);
 
             var finalStartDate = request.StartDate ?? conference.StartDate;
             var finalEndDate = request.EndDate ?? conference.EndDate;
@@ -485,7 +487,7 @@ namespace ConfRadar.Services.Services
 
             if (conference.CreatedBy != userId)
             {
-                throw new ForbiddenException("Bạn không có quyền thêm giá vé cho hội nghị này.");
+                throw new BadRequestException("Bạn không có quyền thêm giá vé cho hội nghị này.");
             }
 
             ConferencePriceListWithPhasesResponse result = new ConferencePriceListWithPhasesResponse
@@ -541,7 +543,7 @@ namespace ConfRadar.Services.Services
 
                         if (string.IsNullOrWhiteSpace(createPricePhaseRequest.PhaseName))
                             throw new BadRequestException($"Tên giai đoạn trong vé '{createPricePhaseRequest.PhaseName}' không được để trống.");
-                        if (createPricePhaseRequest.ApplyPercent < 0 || createPricePhaseRequest.ApplyPercent > 100)
+                        if (createPricePhaseRequest.ApplyPercent < 0 || createPricePhaseRequest.ApplyPercent > 1000)
                             throw new BadRequestException($"Tỷ lệ áp dụng cho giai đoạn '{createPricePhaseRequest.ApplyPercent}' phải từ 0 đến 1000.");
                         //check if each phase request is in valid date
                         //createPricePhaseRequest start must < end, 
@@ -635,7 +637,7 @@ namespace ConfRadar.Services.Services
                 throw new ForbiddenException("Bạn không có quyền cập nhật loại vé này.");
             }
 
-            EnsureConferenceIsEditable(conference);
+            await EnsureConferenceIsEditable(conference);
 
             if (request.TicketPrice.HasValue && request.TicketPrice.Value < 0)
                 throw new BadRequestException("Giá vé không được là số âm.");
@@ -706,7 +708,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ForbiddenException("Bạn không có quyền xóa loại vé này.");
             }
-            EnsureConferenceIsEditable(conference);
+            await EnsureConferenceIsEditable(conference);
             // Check if there are any tickets already sold for this price
             var ticketCount = await _unitOfWork.TicketRepository.GetTicketCountByConferencePriceIdAsync(priceId);
             if (ticketCount > 0) throw new BadRequestException("Cannot delete price because tickets have already been sold for this price");
@@ -718,12 +720,29 @@ namespace ConfRadar.Services.Services
 
         #region Step 3: Sessions
 
-        public async Task<List<ConferenceSessionWithMediaResponse>> AddConferenceSessionsAsync(string conferenceId, AddConferenceSessionsRequest request)
+        public async Task<List<ConferenceSessionWithMediaResponse>> AddConferenceSessionsAsync(string conferenceId, AddConferenceSessionsRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null)
+            {
+                throw new BadRequestException($"Không tìm thấy hội nghị với ID {conferenceId}");
+            }
+
+
+            // 1. Phân quyền
+            if (conference.CreatedBy != userId)
+            {
+                throw new BadRequestException("Bạn không có quyền thêm phiên (session) cho hội nghị này.");
+            }
+
+            await EnsureConferenceIsEditable(conference);
             List<DateOnly> sessionDates = (List<DateOnly>)request.Sessions.Select(s => s.Date);
             if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
+            if (request.Sessions == null || !request.Sessions.Any())
+            {
+                throw new BadRequestException("Yêu cầu phải chứa ít nhất một phiên (session).");
+            }
+
             var responses = new List<ConferenceSessionWithMediaResponse>();
 
             await _unitOfWork.BeginTransactionAsync();
@@ -733,11 +752,13 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var session in request.Sessions)
                     {
+                        if (string.IsNullOrWhiteSpace(session.Title))
+                            throw new BadRequestException("Tiêu đề của phiên không được để trống.");
                         if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null)
-                            throw new BadRequestException("Session cần có RoomId, StartTime, EndTime, and Date.");
+                            throw new BadRequestException($"Phiên '{session.Title}' cần có đủ RoomId, StartTime, EndTime, và Date.");
 
                         if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
-                            throw new NotFoundException($"Room with ID {session.RoomId} not found");
+                            throw new NotFoundException($"Phòng với ID {session.RoomId} không tồn tại.");
 
                         var sessionStartDateTime = session.Date.Value.ToDateTime(session.StartTime.Value);
                         var sessionEndDateTime = session.Date.Value.ToDateTime(session.EndTime.Value);

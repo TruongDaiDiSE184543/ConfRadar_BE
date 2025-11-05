@@ -1,6 +1,7 @@
 using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.ConferenceStep;
+using ConfRadar.Services.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -85,6 +86,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DeleteConferencePrice(string priceId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             var result = await _serviceManager.ConferenceStepService.DeleteConferencePriceAsync(priceId, userId);
             if (result)
             {
@@ -96,12 +98,13 @@ namespace ConfRadar.Api.Controllers
         #endregion
 
         #region Step 3: Conference Sessions
-        //[Authorize(Roles = "Conference Organizer, Collaborator")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
 
         [HttpPost("{conferenceId}/sessions")]
         public async Task<IActionResult> AddConferenceSessions(string conferenceId, [FromForm] AddConferenceSessionsRequest request)
         {
-            var sessions = await _serviceManager.ConferenceStepService.AddConferenceSessionsAsync(conferenceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var sessions = await _serviceManager.ConferenceStepService.AddConferenceSessionsAsync(conferenceId, request, userId);
             return Ok(ApiResponse<List<ConferenceSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị được thêm thành công"));
         }
 
@@ -623,7 +626,7 @@ namespace ConfRadar.Api.Controllers
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Diễn giả được xóa thành công"));
             }
-            return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy diễn giả"));
+            return BadRequestException(ApiResponse<object>.FailResponse("Không tìm thấy diễn giả"));
         }
 
         #endregion
