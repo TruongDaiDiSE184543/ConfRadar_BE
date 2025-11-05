@@ -3,6 +3,7 @@
 using ConfRadar.Api.Responses;
 using ConfRadar.Services.Exceptions;
 using FirebaseAdmin.Auth;
+using Minio.Exceptions;
 using System.Text.Json;
 
 namespace ConfRadar.Api.Middleware
@@ -30,6 +31,7 @@ namespace ConfRadar.Api.Middleware
                     ConfRadarAuthenticationException => StatusCodes.Status401Unauthorized,
                     FirebaseAuthException => StatusCodes.Status401Unauthorized,
                     BadRequestException => StatusCodes.Status400BadRequest,
+                    ForbiddenException => StatusCodes.Status401Unauthorized,
                     _ => StatusCodes.Status500InternalServerError
                 };
                 await HandleExceptionAsync(context, statusCode, ex.Message);

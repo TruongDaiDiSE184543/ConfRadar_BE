@@ -27,7 +27,7 @@ namespace ConfRadar.Services.Services
         // Step 3: Add Conference Sessions
         Task<List<ConferenceSessionWithMediaResponse>> AddConferenceSessionsAsync(string conferenceId, AddConferenceSessionsRequest request, string userId);
         Task<List<ConferenceSessionWithMediaResponse>> GetConferenceSessionsAsync(string conferenceId);
-        Task<ConferenceSessionWithMediaResponse> UpdateConferenceSessionAsync(string sessionId, UpdateConferenceSessionRequest request);
+        Task<ConferenceSessionWithMediaResponse> UpdateConferenceSessionAsync(string sessionId, UpdateConferenceSessionRequest request, string userId);
         Task<SpeakerResponse> UpdateSpeakerAsync(string sessionId, UpdateSpeakerRequest request);
         Task<bool> DeleteConferenceSessionAsync(string sessionId);
 
@@ -161,7 +161,6 @@ namespace ConfRadar.Services.Services
                 if (existingSession.ConferenceSessionId == sessionIdToExclude) continue;
                 if (!existingSession.StartTime.HasValue || !existingSession.EndTime.HasValue) continue;
 
-                // The values from the DB are already the correct local Vietnam time.
                 var existingStart = existingSession.StartTime.Value;
                 var existingEnd = existingSession.EndTime.Value;
 
@@ -244,15 +243,36 @@ namespace ConfRadar.Services.Services
             return await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
         }
 
-        private async Task<bool> checkEachDateHasConferenceSession(Conference conference, List<DateOnly> sessionDate)
+      
+
+        private async Task<bool> checkEachDateHasConferenceSession(Conference conference, List<DateOnly> sessionDates)
         {
-            List<DateOnly> allConferenceDate = new();
-            for(var date = conference.StartDate; date <= conference.EndDate; date = date.Value.AddDays(1))
+            // Tạo danh sách tất cả các ngày mà hội nghị diễn ra
+            List<DateOnly> allConferenceDates = new();
+            if (conference.StartDate.HasValue && conference.EndDate.HasValue)
             {
-                allConferenceDate.Add(date.Value);
+                for (var date = conference.StartDate.Value; date <= conference.EndDate.Value; date = date.AddDays(1))
+                {
+                    allConferenceDates.Add(date);
+                }
             }
-            var missingDates = allConferenceDate.Except(sessionDate);
-            if (missingDates.Any()) throw new BadRequestException($"Tất cả ngày trong hội nghị phải có session: Đây là những ngày còn thiếu{allConferenceDate.Select(d => d.ToString("yyyy-MM-dd"))}");
+
+
+
+            // Tìm những ngày có trong hội nghị nhưng không có trong danh sách session
+            var missingDates = allConferenceDates.Except(sessionDates);
+
+            if (missingDates.Any())
+            {
+                // SỬA LỖI Ở ĐÂY:
+                // 1. Chuyển danh sách các ngày thiếu thành một chuỗi dễ đọc, phân cách bằng dấu phẩy.
+                // 2. Sử dụng `missingDates`, không phải `allConferenceDates`.
+                var missingDatesString = string.Join(", ", missingDates.Select(d => d.ToString("dd/MM/yyyy")));
+
+                // 3. Tạo một thông báo lỗi rõ ràng và thân thiện.
+                throw new BadRequestException($"Tất cả các ngày trong hội nghị phải có ít nhất một phiên. Các ngày sau đang bị thiếu phiên: {missingDatesString}");
+            }
+
             return true;
         }
 
@@ -736,7 +756,7 @@ namespace ConfRadar.Services.Services
             }
 
             await EnsureConferenceIsEditable(conference);
-            List<DateOnly> sessionDates = (List<DateOnly>)request.Sessions.Select(s => s.Date);
+            List<DateOnly> sessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).ToList();
             if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
             if (request.Sessions == null || !request.Sessions.Any())
             {
@@ -760,11 +780,18 @@ namespace ConfRadar.Services.Services
                         if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
                             throw new NotFoundException($"Phòng với ID {session.RoomId} không tồn tại.");
 
+                        if (session.Date.Value < conference.StartDate || session.Date.Value > conference.EndDate)
+                        {
+                            throw new BadRequestException($"Ngày của phiên '{session.Title}' ({session.Date.Value:dd/MM/yyyy}) nằm ngoài khoảng thời gian diễn ra hội nghị ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
+                        }
+
                         var sessionStartDateTime = session.Date.Value.ToDateTime(session.StartTime.Value);
                         var sessionEndDateTime = session.Date.Value.ToDateTime(session.EndTime.Value);
 
+
                         // Step 2: Validate using these direct, local time values.
                         await ValidateSessionTimeAvailability(sessionStartDateTime, sessionEndDateTime, session.RoomId);
+
 
                         var conferenceSession = session.ToModel(conferenceId);
                         await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
@@ -774,6 +801,11 @@ namespace ConfRadar.Services.Services
                         {
                             foreach (var speakerRequest in session.Speaker)
                             {
+                                if (string.IsNullOrWhiteSpace(speakerRequest.Name))
+                                    throw new BadRequestException($"Tên của diễn giả trong phiên '{session.Title}' không được để trống.");
+                                if (speakerRequest.Image != null && !_objectStorageFileService.IsValidImageFile(speakerRequest.Image))
+                                    throw new BadRequestException($"Định dạng ảnh của diễn giả '{speakerRequest.Name}' không được hỗ trợ.");
+
                                 String speakerURL = "";
 
                                 if (speakerRequest.Image != null)
@@ -844,19 +876,34 @@ namespace ConfRadar.Services.Services
             return responses;
         }
 
-        public async Task<ConferenceSessionWithMediaResponse> UpdateConferenceSessionAsync(string sessionId, UpdateConferenceSessionRequest request)
+        public async Task<ConferenceSessionWithMediaResponse> UpdateConferenceSessionAsync(string sessionId, UpdateConferenceSessionRequest request, string userId)
         {
             var session = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
-            if (session == null) throw new NotFoundException($"Conference session with ID {sessionId} not found");
+            if (session == null)
+            {
+                throw new NotFoundException($"Không tìm thấy phiên với ID {sessionId}");
+            }
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(session.ConferenceId);
+
+            if (conference.CreatedBy != userId)
+            {
+                throw new ForbiddenException("Bạn không có quyền cập nhật phiên này.");
+            }
+
+            await EnsureConferenceIsEditable(conference);
 
             var newStartTime = request.StartTime ?? TimeOnly.FromDateTime(session.StartTime.Value);
             var newEndTime = request.EndTime ?? TimeOnly.FromDateTime(session.EndTime.Value);
             var newDate = request.Date ?? session.SessionDate;
             var newRoomId = request.RoomId ?? session.RoomId;
 
-            if (newStartTime == null || newEndTime == null || newDate == null || newRoomId == null)
-                throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
+            if (newDate < conference.StartDate || newDate > conference.EndDate)
+            {
+                throw new BadRequestException($"Ngày của phiên ({newDate:dd/MM/yyyy}) phải nằm trong khoảng thời gian diễn ra hội nghị ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
+            }
 
+            
             // Validate session time availability
             var startDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
             var endDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
