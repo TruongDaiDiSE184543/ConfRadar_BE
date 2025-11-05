@@ -73,16 +73,16 @@ namespace ConfRadar.Services.Common
 
     }
 
-    public enum ConferenceStatus
-    {
-        Pending,
-        Rejected,
-        Rreparing,
-        Ready,
-        OnHold,
-        Canceled,
-        Completed
-    }
+    //public enum ConferenceStatus
+    //{
+    //    Pending,
+    //    Rejected,
+    //    Rreparing,
+    //    Ready,
+    //    OnHold,
+    //    Canceled,
+    //    Completed
+    //}
 
     public static class EnumExtension
     {
@@ -94,7 +94,7 @@ namespace ConfRadar.Services.Common
         }
     }
 
-    public enum RankingCategories
+    public enum RankingCategoriesEnum
     {
         Core,
         IF,
@@ -102,13 +102,13 @@ namespace ConfRadar.Services.Common
         CiteScore
     }
 
-    public enum ReviewStatus
-    {
-        Accepted,
-        Rejected,
-        Revise,
-        Pending
-    }
+    //public enum ReviewStatus
+    //{
+    //    Accepted,
+    //    Rejected,
+    //    Revise,
+    //    Pending
+    //}
     public enum GlobalStatusEnum
     {
 

@@ -26,7 +26,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreateReport([FromBody] CreateReportRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            
+
 
             var report = await _serviceManager.ReportService.CreateReportAsync(userId, request);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Report được tạo thành công "));
@@ -51,7 +51,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreateReportFeedback(string reportId, [FromBody] CreateReportFeedbackRequest request)
         {
             var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-          
+
 
             var feedback = await _serviceManager.ReportService.CreateReportFeedbackAsync(reportId, adminId, request);
             return Ok(ApiResponse<ReportFeedbackResponse>.SuccessResponse(feedback, "Report feedback created successfully"));
@@ -59,7 +59,7 @@ namespace ConfRadar.Api.Controllers
 
         [HttpGet("{reportId}/get-response")]
         [Authorize(Roles = "Admin")]
-        public async  Task<IActionResult> GetReportFeedback(string reportId)
+        public async Task<IActionResult> GetReportFeedback(string reportId)
         {
             var result = await _serviceManager.ReportService.GetReportFeedBackByReportId(reportId);
             return Ok(ApiResponse<ReportFeedbackResponse>.SuccessResponse(result, "Lấy report feedback thành công"));

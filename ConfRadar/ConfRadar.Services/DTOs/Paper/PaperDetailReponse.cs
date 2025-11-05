@@ -103,7 +103,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public DateOnly? ReviewStartDate { get; set; }
         public DateOnly? ReviewEndDate { get; set; }
         public List<RevisionSubmissionDtoDetail> Submissions { get; set; } = new List<RevisionSubmissionDtoDetail>();
-        
+
         public List<RevisionReviewDtoDetail> Reviews { get; set; } = new List<RevisionReviewDtoDetail>();
     }
 

@@ -1,0 +1,56 @@
+﻿namespace ConfRadar.Shared.DTO.Conference
+{
+    public class ConferenceDetailForScheduleResponse
+    {
+        public string ConferenceId { get; set; } = null!;
+
+        public string? ConferenceName { get; set; }
+
+        public string? Description { get; set; }
+
+        public DateOnly? StartDate { get; set; }
+
+        public DateOnly? EndDate { get; set; }
+
+        public int? TotalSlot { get; set; }
+        public int? AvailableSlot { get; set; }
+        public string? Address { get; set; }
+        public string? BannerImageUrl { get; set; }
+        public DateOnly? CreatedAt { get; set; }
+        public DateOnly? TicketSaleStart { get; set; }
+        public DateOnly? TicketSaleEnd { get; set; }
+        public bool? IsInternalHosted { get; set; }
+        public bool? IsResearchConference { get; set; }
+        public string? CityId { get; set; }
+        public string? CityName { get; set; }
+        public string? ConferenceCategoryId { get; set; }
+        public string? ConferenceCategoryName { get; set; }
+        public string? ConferenceStatusId { get; set; }
+        public string? ConferenceStatusName { get; set; }
+        public List<SessionDetailForScheduleResponse> Sessions { get; set; }
+
+
+
+
+    }
+    public class SessionDetailForScheduleResponse
+    {
+        public string ConferenceSessionId { get; set; } = null!;
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public DateOnly? SessionDate { get; set; }
+        public string? ConferenceId { get; set; }
+        public string? RoomId { get; set; }
+        public string? RoomNumber { get; set; }
+        public string? RoomDisplayName { get; set; }
+        public string? DestinationId { get; set; }
+        public string? DestinationName { get; set; }
+        public string? DestinationDistrict { get; set; }
+        public string? DestinationStreet { get; set; }
+        public string? CityId { get; set; }
+        public string? CityName { get; set; }
+
+    }
+}
