@@ -125,7 +125,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
         {
 
-            var paper = await _context.Papers
+            var paper = await _context.Papers.AsNoTracking()
                              //paper phase
                              .Include(p => p.PaperPhase)
                             //full paper
@@ -144,6 +144,7 @@ namespace ConfRadar.Repositories.Repositories
                                 .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
 
                             .Include(p => p.PaperReviewers)
+                            .AsSplitQuery()
                             .FirstOrDefaultAsync(p => p.PaperId == paperId);
             if (paper == null)
             {
@@ -154,11 +155,47 @@ namespace ConfRadar.Repositories.Repositories
             var paperDetailResponse = new PaperDetailForReviewerResponse();
             if (paper.PaperPhase != null)
             {
-                paperDetailResponse.CurrentPhase = new PaperPhaseForReviewerResponse
+                paperDetailResponse.CurrentPaperPhase = new PaperPhaseForReviewerResponse
                 {
                     PaperPhaseId = paper.PaperPhase?.PaperPhaseId,
                     PhaseName = paper.PaperPhase?.PhaseName,
                 };
+            }
+            if (paper.Conference != null)
+            {
+                if (paper.Conference.ResearchConferencePhases.Any())
+                {
+                    var currentActivePhase = paper.Conference.ResearchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+                    if (currentActivePhase != null)
+                    {
+                        paperDetailResponse.CurrentResearchConferencePhase = new CurrentResearchConferencePhaseForReviewerResponse()
+                        {
+                            ResearchConferencePhaseId = currentActivePhase.ResearchConferencePhaseId,
+                            ConferenceId = currentActivePhase.ConferenceId,
+                            RegistrationStartDate = currentActivePhase.RegistrationStartDate,
+                            RegistrationEndDate = currentActivePhase.RegistrationEndDate,
+                            FullPaperStartDate = currentActivePhase.FullPaperStartDate,
+                            FullPaperEndDate = currentActivePhase.FullPaperEndDate,
+                            ReviewStartDate = currentActivePhase.ReviewStartDate,
+                            ReviewEndDate = currentActivePhase.ReviewEndDate,
+                            ReviseStartDate = currentActivePhase.ReviseStartDate,
+                            ReviseEndDate = currentActivePhase.ReviseEndDate,
+                            CameraReadyStartDate = currentActivePhase.CameraReadyStartDate,
+                            CameraReadyEndDate = currentActivePhase.CameraReadyEndDate,
+                            IsActive = currentActivePhase.IsActive,
+                            IsWaitlist = currentActivePhase.IsWaitlist,
+                            RevisionRoundsDetail = currentActivePhase.RevisionRoundDeadlines.Any() ? currentActivePhase.RevisionRoundDeadlines.Select(rrd => new RevisionRoundDeadLineDetailForReviewerResponse()
+                            {
+                                RevisionRoundDeadlineId = rrd.RevisionRoundDeadlineId,
+                                StartSubmissionDate = rrd.StartSubmissionDate,
+                                EndSubmissionDate = rrd.EndSubmissionDate,
+                                ResearchConferencePhaseId = rrd.ResearchConferencePhaseId,
+                                RoundNumber = rrd.RoundNumber
+                            }).ToList() : new List<RevisionRoundDeadLineDetailForReviewerResponse>()
+                        };
+                    }
+
+                }
             }
             var headReviewer = paper.PaperReviewers.FirstOrDefault(x => x.UserId == userId && x.IsHeadReviewer == true);
             bool isHeadReviewer = headReviewer != null;

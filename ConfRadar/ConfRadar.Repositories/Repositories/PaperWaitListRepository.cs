@@ -94,24 +94,24 @@ namespace ConfRadar.Repositories.Repositories
             if (activeConferenceIds.Any())
             {
                 var paperWaitListUser = await _context.PaperWaitLists
-                    
+
                     .Include(pwl => pwl.User)
-                    .Include(pwl=>pwl.Conference)
-                        .ThenInclude(pwl=> pwl.ConferencePrices)
+                    .Include(pwl => pwl.Conference)
+                        .ThenInclude(pwl => pwl.ConferencePrices)
                     .Where
-                    (pwl => pwl.ConferenceId!=null 
-                    && activeConferenceIds.Contains(pwl.ConferenceId) 
-                    && pwl.WaitListStatusId == pendingWaitListStatusId 
-                    && pwl.NotifiedAt == null 
-                    && pwl.UserId!=null 
-                    && pwl.User!=null 
-                    && pwl.User.IsActive==true)
+                    (pwl => pwl.ConferenceId != null
+                    && activeConferenceIds.Contains(pwl.ConferenceId)
+                    && pwl.WaitListStatusId == pendingWaitListStatusId
+                    && pwl.NotifiedAt == null
+                    && pwl.UserId != null
+                    && pwl.User != null
+                    && pwl.User.IsActive == true)
                     .AsSplitQuery()
                     .ToListAsync();
                 if (paperWaitListUser.Any())
                 {
                     var listPaperWaitList = new List<PaperWaitList>();
-                   
+
                     foreach (var user in paperWaitListUser)
                     {
                         user.WaitListStatusId = notifiedAtWaitListStatusId;
@@ -144,7 +144,7 @@ namespace ConfRadar.Repositories.Repositories
 
 
             }
-            if (finalResult > 0 && notifyUserList.Count>0)
+            if (finalResult > 0 && notifyUserList.Count > 0)
             {
                 return notifyUserList;
             }

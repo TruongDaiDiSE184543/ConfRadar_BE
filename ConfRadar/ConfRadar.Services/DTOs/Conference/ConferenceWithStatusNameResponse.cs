@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ConfRadar.Services.DTOs.Conference
 {
     public class ConferenceWithStatusNameResponse
@@ -23,7 +21,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusName { get; set; } // Changed from ConferenceStatusId to ConferenceStatusName
     }
-    
+
     public class ConferenceWithStatusNameListResponse
     {
         public List<ConferenceWithStatusNameResponse>? Conferences { get; set; }

@@ -48,6 +48,9 @@ namespace ConfRadar.Services
             services.AddScoped<IConferenceTimelineService, ConferenceTimelineService>();
             services.AddScoped<IFavouriteConferenceService, FavouriteConferenceService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IZaloPayService, ZaloPayService>();
+            services.AddScoped<IPayOsService, PayOsService>();
+            services.AddScoped<IContractService, ContractService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
@@ -83,7 +86,7 @@ namespace ConfRadar.Services
                     .WithSimpleSchedule(x => x.WithIntervalInMinutes(5).RepeatForever()));
             });
 
-            
+
 
 
 

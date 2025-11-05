@@ -551,7 +551,7 @@ namespace ConfRadar.Services.Services
                         if (toBeConferencePrice.isAuthor == true)
                         {
                             //each phase of author ticket types must be in registation start/end interval
-                            if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate ||  createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
+                            if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate || createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
                             {
                                 throw new BadRequestException("Vé bán cho authors phải trong khoảng registration start và end");
                             }   
@@ -564,7 +564,7 @@ namespace ConfRadar.Services.Services
                         pricePhaseResponses.Add(new PricePhaseResponse
                         {
                             PhaseName = createPricePhaseRequest.PhaseName,
-                            StartDate = createPricePhaseRequest.StartDate,  
+                            StartDate = createPricePhaseRequest.StartDate,
                             EndDate = createPricePhaseRequest.EndDate,
                             ApplyPercent = createPricePhaseRequest.ApplyPercent,
                             TotalSlot = createPricePhaseRequest.Totalslot,
