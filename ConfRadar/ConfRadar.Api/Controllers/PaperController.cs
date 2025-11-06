@@ -306,7 +306,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<LeaveWaitListResponse>.SuccessResponse(result, "Đã thoát khỏi hàng đợi"));
         }
         [Authorize]
-        [HttpDelete("add-waitlist")]
+        [HttpPost("add-waitlist")]
         public async Task<IActionResult> AddCustomerToWaitList([FromBody] AddWaitListRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
