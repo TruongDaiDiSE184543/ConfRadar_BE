@@ -277,7 +277,8 @@ namespace ConfRadar.Api.Controllers
         [HttpPost("{conferenceId}/refund-policies")]
         public async Task<IActionResult> AddRefundPolicies(string conferenceId, [FromBody] AddRefundPoliciesRequest request)
         {
-            var refundPolicies = await _serviceManager.ConferenceStepService.AddRefundPoliciesAsync(conferenceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var refundPolicies = await _serviceManager.ConferenceStepService.AddRefundPoliciesAsync(conferenceId, request, userId);
             return Ok(ApiResponse<List<RefundPolicyResponse>>.SuccessResponse(refundPolicies, "Chính sách hoàn trả được thêm thành công"));
         }
 
@@ -292,7 +293,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateRefundPolicy(string refundPolicyId, [FromBody] UpdateRefundPolicyRequest request)
         {
-            var refundPolicy = await _serviceManager.ConferenceStepService.UpdateRefundPolicyAsync(refundPolicyId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var refundPolicy = await _serviceManager.ConferenceStepService.UpdateRefundPolicyAsync(refundPolicyId, request, userId);
             return Ok(ApiResponse<RefundPolicyResponse>.SuccessResponse(refundPolicy, "Chính sách hoàn trả được cập nhật thành công"));
         }
 
@@ -300,7 +302,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteRefundPolicy(string refundPolicyId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteRefundPolicyAsync(refundPolicyId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteRefundPolicyAsync(refundPolicyId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Chính sách hoàn trả được xóa thành công"));
@@ -316,7 +319,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateResearchConferenceDetail(string conferenceId, [FromBody] CreateResearchConferenceDetailRequest request)
         {
-            var detail = await _serviceManager.ConferenceStepService.CreateResearchConferenceDetailAsync(conferenceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var detail = await _serviceManager.ConferenceStepService.CreateResearchConferenceDetailAsync(conferenceId, request,userId);
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được tạo thành công"));
         }
 
@@ -332,7 +336,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateResearchConferenceDetail(string conferenceId, [FromBody] UpdateResearchConferenceDetailRequest request)
         {
-            var detail = await _serviceManager.ConferenceStepService.UpdateResearchConferenceDetailAsync(conferenceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var detail = await _serviceManager.ConferenceStepService.UpdateResearchConferenceDetailAsync(conferenceId, request,userId);
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được cập nhật thành công"));
         }
 

@@ -46,7 +46,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<PresentAuthor?> GetPresentAuthorByIdAsync(string conferenceSessionId, string paperId)
         {
-            return await _context.PresentAuthors
+            return await _context.PresentAuthors.Include(pa => pa.ConferenceSession)
                 .FirstOrDefaultAsync(pa => pa.ConferenceSessionId == conferenceSessionId && pa.PaperId == paperId);
         }
 

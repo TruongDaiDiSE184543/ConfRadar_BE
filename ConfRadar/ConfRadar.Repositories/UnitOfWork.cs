@@ -71,6 +71,7 @@ namespace ConfRadar.Repositories
 
         IPresentAuthorRepository PresentAuthorRepository { get; }
         IPresenterChangeRequestRepository PresenterChangeRequestRepository { get; }
+        ISessionChangeRequestRepository SessionChangeRequestRepository { get; }
 
         IUserCheckInRepository UserCheckInRepository { get; }
         IConferenceFeedbackRepository ConferenceFeedbackRepository { get; }
@@ -152,6 +153,7 @@ namespace ConfRadar.Repositories
         private IPresentAuthorRepository _PresentAuthorRepository;
 
         private IPresenterChangeRequestRepository _PresenterChangeRequestRepository;
+        private ISessionChangeRequestRepository _SessionChangeRequestRepository;
 
         private IUserCheckInRepository _UserCheckInRepository;
         private IConferenceFeedbackRepository _ConferenceFeedbackRepository;
@@ -271,8 +273,8 @@ namespace ConfRadar.Repositories
         public IPresentAuthorRepository PresentAuthorRepository => _PresentAuthorRepository ??= new PresentAuthorRepository(_context);
         public IUserCheckInRepository UserCheckInRepository => _UserCheckInRepository ??= new UserCheckInRepository(_context);
         public IPresenterChangeRequestRepository PresenterChangeRequestRepository => _PresenterChangeRequestRepository ??= new PresenterChangeRequestRepository(_context);
+        public ISessionChangeRequestRepository SessionChangeRequestRepository => _SessionChangeRequestRepository ??= new SessionChangeRequestRepository(_context);
 
-        public IUserCheckInRepository UserCheckInRepository => _UserCheckInRepository ??= new UserCheckInRepository(_context);
 
         public IConferenceFeedbackRepository ConferenceFeedbackRepository => _ConferenceFeedbackRepository ??= new ConferenceFeedbackRepository(_context);
 
