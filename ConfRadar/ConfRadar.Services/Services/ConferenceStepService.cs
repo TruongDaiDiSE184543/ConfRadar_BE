@@ -50,10 +50,10 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteSponsorAsync(string sponsorId);
 
         // Step 7: Add Refund Policies
-        Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request);
+        Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request, string userId);
         Task<List<RefundPolicyResponse>> GetRefundPoliciesAsync(string conferenceId);
-        Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request);
-        Task<bool> DeleteRefundPolicyAsync(string refundPolicyId);
+        Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request, string userId);
+        Task<bool> DeleteRefundPolicyAsync(string refundPolicyId, string userId);
 
         // Research Conference Step 1: Basic Research Conference Creation
         Task<ResearchConferenceBasicStepResponse> CreateResearchConferenceBasicAsync(CreateResearchConferenceBasicRequest request, string userid);
@@ -61,9 +61,9 @@ namespace ConfRadar.Services.Services
         Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request);
 
         // Research Conference Step 2: Research Conference Detail
-        Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request);
+        Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request, string userId);
         Task<ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId);
-        Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request);
+        Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request , string userId);
 
         // Research Conference Step 3: Research Conference Phases
         Task<ResearchConferencePhaseResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhaseRequest request);
@@ -120,6 +120,18 @@ namespace ConfRadar.Services.Services
         private readonly ITokenService _tokenService;
         private readonly IConferenceService _conferenceService;
         private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
+
+        private static readonly HashSet<string> AllowedPaperFormats = new HashSet<string>
+    {
+        "ieee",
+        "acm",
+        "apa",
+        "springer",
+        "mla",       // Modern Language Association
+        "chicago",   // Chicago Manual of Style
+        "elsevier",  // Elsevier format
+        "lncs"       // Lecture Notes in Computer Science (một dạng của Springer)
+    };
 
         public ConferenceStepService(
             IUnitOfWork unitOfWork,
@@ -264,9 +276,7 @@ namespace ConfRadar.Services.Services
 
             if (missingDates.Any())
             {
-                // SỬA LỖI Ở ĐÂY:
-                // 1. Chuyển danh sách các ngày thiếu thành một chuỗi dễ đọc, phân cách bằng dấu phẩy.
-                // 2. Sử dụng `missingDates`, không phải `allConferenceDates`.
+                
                 var missingDatesString = string.Join(", ", missingDates.Select(d => d.ToString("dd/MM/yyyy")));
 
                 // 3. Tạo một thông báo lỗi rõ ràng và thân thiện.
@@ -289,6 +299,80 @@ namespace ConfRadar.Services.Services
             }
         }
 
+        private async Task<bool>CheckSessionForFirstAndLastDay(Conference conference, List<DateOnly> sessionDate)
+        {
+            return sessionDate.Contains(conference.StartDate.Value) && sessionDate.Contains(conference.EndDate.Value);
+
+        }
+
+        private  Task ValidatePaperFormat(string paperFormat)
+        {
+            // Phương thức này hiện trả về Task để có thể "await"
+            if (string.IsNullOrWhiteSpace(paperFormat))
+            {
+                return Task.CompletedTask; // Bỏ qua nếu không có giá trị
+            }
+
+            if (!AllowedPaperFormats.Contains(paperFormat.Trim().ToLower()))
+            {
+                var allowedFormatsString = string.Join(", ", AllowedPaperFormats.OrderBy(f => f));
+                throw new BadRequestException($"Định dạng bài báo không hợp lệ. Các định dạng được chấp nhận là: {allowedFormatsString}.");
+            }
+
+            return Task.CompletedTask; // Hoàn thành thành công nếu validation pass
+        }
+
+
+        // DÁN PHƯƠNG THỨC NÀY VÀO TRONG CONFERENCESTEPSERVICE
+
+        private async Task ValidateRankValueAsync(string rankingCategoryId, string rankValue)
+        {
+            // Nếu RankValue không được cung cấp thì không cần kiểm tra
+            if (string.IsNullOrWhiteSpace(rankValue))
+            {
+                return;
+            }
+
+            var rankingCategory = await _unitOfWork.RankingCategoryRepository.GetRankingCategoryByIdAsync(rankingCategoryId);
+            if (rankingCategory == null)
+            {
+                // Lỗi này đã được xử lý ở các phương thức gọi, nhưng để an toàn vẫn kiểm tra
+                throw new NotFoundException($"Loại xếp hạng với ID '{rankingCategoryId}' không tồn tại.");
+            }
+
+            // Sử dụng switch để áp dụng quy tắc validation cho từng loại RankName
+            switch (rankingCategory.RankName)
+            {
+                case "Core":
+                case "CoreRanking": // Gộp chung 2 trường hợp nếu logic giống nhau
+                    var validQValues = new HashSet<string> { "Q1", "Q2", "Q3", "Q4" };
+                    if (!validQValues.Contains(rankValue.ToUpper()))
+                    {
+                        throw new BadRequestException($"Giá trị xếp hạng cho '{rankingCategory.RankName}' phải là Q1, Q2, Q3, hoặc Q4.");
+                    }
+                    break;
+
+                case "IF": // Impact Factor
+                case "CiteScore":
+                    if (!decimal.TryParse(rankValue, out var decimalValue) || decimalValue < 0)
+                    {
+                        throw new BadRequestException($"Giá trị xếp hạng cho '{rankingCategory.RankName}' phải là một số thập phân không âm (ví dụ: 1.25).");
+                    }
+                    break;
+
+                case "H5": // H5-Index
+                    if (!int.TryParse(rankValue, out var intValue) || intValue < 0)
+                    {
+                        throw new BadRequestException($"Giá trị xếp hạng cho '{rankingCategory.RankName}' phải là một số nguyên không âm (ví dụ: 15).");
+                    }
+                    break;
+
+                    // Thêm các trường hợp khác nếu có
+                    // default:
+                    //     // Mặc định không làm gì, cho phép các loại rank khác có giá trị tự do
+                    //     break;
+            }
+        }
 
         #endregion
 
@@ -753,7 +837,7 @@ namespace ConfRadar.Services.Services
             }
 
             await EnsureConferenceIsEditable(conference);
-            List<DateOnly> sessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).ToList();
+            List<DateOnly> sessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).Distinct().ToList();
             if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
             if (request.Sessions == null || !request.Sessions.Any())
             {
@@ -1220,64 +1304,179 @@ namespace ConfRadar.Services.Services
 
         #region Step 7: Refund Policies
 
-        public async Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request)
+        public async Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null)
+            {
+                throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
+            }
+
+
+            // 1. Phân quyền
+            if (conference.CreatedBy != userId)
+            {
+                throw new ForbiddenException("Bạn không có quyền thêm chính sách hoàn tiền cho hội nghị này.");
+            }
+            await EnsureConferenceIsEditable(conference);
+
+
+            // 3. Kiểm tra request có rỗng không
+            if (request.RefundPolicies == null || !request.RefundPolicies.Any())
+            {
+                throw new BadRequestException("Yêu cầu phải chứa ít nhất một chính sách hoàn tiền.");
+            }
+
+            var existingPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conferenceId);
+            var existingDeadlines = new HashSet<DateOnly>(existingPolicies.Where(p => p.RefundDeadline.HasValue).Select(p => p.RefundDeadline.Value));
+
+            // *** Vòng lặp xác thực chi tiết cho từng chính sách trong request ***
+            foreach (var policy in request.RefundPolicies)
+            {
+                if (policy.PercentRefund < 0 || policy.PercentRefund > 100)
+                {
+                    throw new BadRequestException($"Phần trăm hoàn tiền phải nằm trong khoảng từ 0 đến 100.");
+                }
+
+                if (policy.RefundDeadline <= ExtensionHelper.GetVietnamDate())
+                {
+                    throw new BadRequestException("Hạn chót hoàn tiền phải là một ngày trong tương lai.");
+                }
+
+                if (conference.TicketSaleStart.HasValue && policy.RefundDeadline < conference.TicketSaleStart || conference.TicketSaleEnd.HasValue && policy.RefundDeadline > conference.TicketSaleEnd.Value)
+                {
+                    throw new BadRequestException($"Hạn chót hoàn tiền ({policy.RefundDeadline:dd/MM/yyyy}) phải sau ngày bắt đầu mở bán vé ({conference.TicketSaleStart:dd/MM/yyyy}). và trước ngày đóng bán vé {conference.TicketSaleEnd:dd/MM/yyyy}");
+                }
+
+                if (!existingDeadlines.Add(policy.RefundDeadline.Value))
+                    throw new BadRequestException($"Hạn chót hoàn tiền '{policy.RefundDeadline.Value:dd/MM/yyyy}' đã tồn tại. Mỗi chính sách phải có một hạn chót duy nhất.");
+
+            }
+
 
             var responses = new List<RefundPolicyResponse>();
-
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                if (request.RefundPolicies != null)
+                foreach (var newPolicyRequest in request.RefundPolicies)
                 {
-                    foreach (var refundPolicy in request.RefundPolicies)
+                    var refundPolicyModel = new RefundPolicy
                     {
-                        var refundPolicyModel = refundPolicy.ToModel(conferenceId);
-                        await _unitOfWork.ConferenceRefundPolicyRepository.CreateConferenceRefundPolicyAsync(refundPolicyModel);
-                        responses.Add(refundPolicyModel.ToResponse());
-                    }
+                        RefundPolicyId = Guid.NewGuid().ToString(),
+                        ConferenceId = conferenceId,
+                        PercentRefund = newPolicyRequest.PercentRefund.Value,
+                        RefundDeadline = newPolicyRequest.RefundDeadline.Value,
+                        // no refund order 
+                    };
+                    await _unitOfWork.ConferenceRefundPolicyRepository.CreateConferenceRefundPolicyAsync(refundPolicyModel);
                 }
-
                 await _unitOfWork.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                throw;
+                throw ex;
             }
 
             return responses;
         }
-
         public async Task<List<RefundPolicyResponse>> GetRefundPoliciesAsync(string conferenceId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null)
+            {
+                throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
+            }
 
-            var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conferenceId);
-            return refundPolicies.Select(rp => rp.ToResponse()).ToList();
+            var policiesFromDb = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conferenceId);
+
+            // Sắp xếp các chính sách theo hạn chót tăng dần
+            // Sau đó, dùng phương thức Select có index để tạo ra RefundOrder
+            var sortedAndOrderedPolicies = policiesFromDb
+                .OrderBy(p => p.RefundDeadline)
+                .Select((policy, index) => new RefundPolicyResponse
+                {
+                    RefundPolicyId = policy.RefundPolicyId,
+                    PercentRefund = policy.PercentRefund,
+                    RefundDeadline = policy.RefundDeadline,
+                    RefundOrder = index + 1 // Gán thứ tự: index bắt đầu từ 0, nên cần +1
+                })
+                .ToList();
+
+            return sortedAndOrderedPolicies;
         }
 
-        public async Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request)
+        public async Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request, string userId)
         {
             var refundPolicy = await _unitOfWork.ConferenceRefundPolicyRepository.GetConferenceRefundPolicyByIdAsync(refundPolicyId);
-            if (refundPolicy == null) throw new NotFoundException($"Refund policy with ID {refundPolicyId} not found");
+            if (refundPolicy == null) throw new NotFoundException($"Không tìm thấy chính sách hoàn tiền với ID {refundPolicyId}");
 
-            if (request.PercentRefund.HasValue) refundPolicy.PercentRefund = request.PercentRefund;
-            if (request.RefundDeadline.HasValue) refundPolicy.RefundDeadline = request.RefundDeadline;
-            if (request.RefundOrder.HasValue) refundPolicy.RefundOrder = request.RefundOrder;
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(refundPolicy.ConferenceId);
+
+            #region Xác thực
+            if (conference.CreatedBy != userId) throw new ForbiddenException("Bạn không có quyền cập nhật chính sách này.");
+            EnsureConferenceIsEditable(conference);
+
+            if (request.PercentRefund.HasValue && (request.PercentRefund < 0 || request.PercentRefund > 100))
+                throw new BadRequestException("Phần trăm hoàn tiền phải nằm trong khoảng từ 0 đến 100.");
+
+            if (request.RefundDeadline.HasValue)
+            {
+                if (request.RefundDeadline.Value <= ExtensionHelper.GetVietnamDate())
+                    throw new BadRequestException("Hạn chót hoàn tiền phải là một ngày trong tương lai.");
+                if (conference.TicketSaleStart.HasValue && request.RefundDeadline < conference.TicketSaleStart || conference.TicketSaleEnd.HasValue && request.RefundDeadline > conference.TicketSaleEnd.Value)
+                {
+                    throw new BadRequestException($"Hạn chót hoàn tiền ({request.RefundDeadline:dd/MM/yyyy}) phải sau ngày bắt đầu mở bán vé ({conference.TicketSaleStart:dd/MM/yyyy}). và trước ngày đóng bán vé {conference.TicketSaleEnd:dd/MM/yyyy}");
+                }
+
+                var allPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByConferenceIdAsync(conference.ConferenceId);
+                if (allPolicies.Any(p => p.RefundDeadline == request.RefundDeadline.Value && p.RefundPolicyId != refundPolicyId))
+                    throw new BadRequestException($"Hạn chót hoàn tiền '{request.RefundDeadline.Value:dd/MM/yyyy}' đã tồn tại.");
+            }
+            #endregion
+
+            refundPolicy.PercentRefund = request.PercentRefund ?? refundPolicy.PercentRefund;
+            refundPolicy.RefundDeadline = request.RefundDeadline ?? refundPolicy.RefundDeadline;
 
             await _unitOfWork.ConferenceRefundPolicyRepository.UpdateConferenceRefundPolicyAsync(refundPolicy);
-            return refundPolicy.ToResponse();
-        }
 
-        public async Task<bool> DeleteRefundPolicyAsync(string refundPolicyId)
+            // Sau khi cập nhật, phải lấy lại toàn bộ danh sách để trả về đúng thứ tự
+            var updatedPolicies = await GetRefundPoliciesAsync(conference.ConferenceId);
+            return updatedPolicies.First(p => p.RefundPolicyId == refundPolicyId);
+        }
+        // DÁN TOÀN BỘ PHIÊN BẢN NÀY ĐỂ THAY THẾ PHIÊN BẢN CŨ
+
+        public async Task<bool> DeleteRefundPolicyAsync(string refundPolicyId, string userId)
         {
             var refundPolicy = await _unitOfWork.ConferenceRefundPolicyRepository.GetConferenceRefundPolicyByIdAsync(refundPolicyId);
-            if (refundPolicy == null) throw new NotFoundException($"Refund policy with ID {refundPolicyId} not found");
+            if (refundPolicy == null)
+            {
+                // Nếu không tìm thấy, trả về true vì mục tiêu (xóa nó) đã đạt được.
+                // Điều này tránh lỗi không cần thiết nếu người dùng click xóa 2 lần.
+                return true;
+            }
 
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(refundPolicy.ConferenceId);
+            if (conference == null)
+            {
+                // Trường hợp hiếm gặp, nhưng nên xử lý để tránh lỗi không mong muốn
+                throw new NotFoundException("Không tìm thấy hội nghị liên quan đến chính sách này.");
+            }
+
+            #region Xác thực
+
+            // 1. Phân quyền
+            if (conference.CreatedBy != userId)
+            {
+                throw new ForbiddenException("Bạn không có quyền xóa chính sách hoàn tiền này.");
+            }
+
+            // 2. Xác thực trạng thái hội nghị (sử dụng helper đã có)
+            await EnsureConferenceIsEditable(conference);
+
+            #endregion
+
+            // Thực hiện xóa và trả về kết quả
             return await _unitOfWork.ConferenceRefundPolicyRepository.DeleteConferenceRefundPolicyAsync(refundPolicy) > 0;
         }
 
@@ -1381,15 +1580,54 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 2: Research Conference Detail
 
-        public async Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request)
+        public async Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null)
+            {
+                throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
+            }
 
+            // 1. Phân quyền
+            if (conference.CreatedBy != userId)
+            {
+                throw new ForbiddenException("Bạn không có quyền thêm chi tiết cho hội nghị này.");
+            }
+
+            // 4. Đảm bảo chi tiết này chưa được tạo trước đó (mỗi hội nghị chỉ có 1)
+            var existingDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+            if (existingDetail != null)
+            {
+                throw new BadRequestException("Chi tiết nghiên cứu cho hội nghị này đã tồn tại.");
+            }
+
+
+            // 6. Xác thực sự tồn tại của RankingCategoryId (dựa trên hình ảnh bạn cung cấp)
+            await ValidatePaperFormat(request.PaperFormat);
+            await ValidateRankValueAsync(request.RankingCategoryId, request.RankValue);
+
+            // 7. Xác thực năm xếp hạng hợp lệ
+            if (request.RankYear.HasValue)
+            {
+                int currentYear = DateTime.Now.Year;
+                if (request.RankYear.Value < currentYear - 20 || request.RankYear.Value > currentYear + 5)
+                {
+                    throw new BadRequestException($"Năm xếp hạng '{request.RankYear.Value}' không hợp lệ.");
+                }
+            }
+
+            // 2. Xác thực trạng thái hội nghị
+            await EnsureConferenceIsEditable(conference);
+
+            // 3. Đảm bảo đây là một hội nghị nghiên cứu
+            if (conference.IsResearchConference != true)
+            {
+                throw new BadRequestException("Chỉ có thể thêm chi tiết nghiên cứu cho một hội nghị loại 'nghiên cứu'.");
+            }
             var researchDetail = request.ToModel(conferenceId);
 
             await _unitOfWork.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(researchDetail);
-            return researchDetail.ToResponse();
+            return await GetResearchConferenceDetailAsync(conferenceId);
         }
 
         public async Task<ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId)
@@ -1400,10 +1638,36 @@ namespace ConfRadar.Services.Services
             return researchDetail.ToResponse();
         }
 
-        public async Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request)
+        public async Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request, string userId)
         {
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
-            if (researchDetail == null) throw new NotFoundException($"Research conference detail for conference ID {conferenceId} not found");
+            if (researchDetail == null) throw new NotFoundException($"Không tìm thấy chi tiết nghiên cứu cho hội nghị ID {conferenceId}.");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(researchDetail.ConferenceId);
+
+            
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền cập nhật chi tiết cho hội nghị này.");
+
+            var finalRankingCategoryId = request.RankingCategoryId ?? researchDetail.RankingCategoryId;
+            var finalRankValue = request.RankValue ?? researchDetail.RankValue;
+
+            // Nếu RankingCategoryId được thay đổi, xác thực sự tồn tại của ID mới
+            if (request.RankingCategoryId != null && request.RankingCategoryId != researchDetail.RankingCategoryId)
+            {
+                if (await _unitOfWork.RankingCategoryRepository.GetRankingCategoryByIdAsync(request.RankingCategoryId) == null)
+                    throw new NotFoundException($"Loại xếp hạng với ID '{request.RankingCategoryId}' không tồn tại.");
+            }
+
+            // *** GỌI VALIDATION ĐỘNG MỚI ***
+            // Luôn gọi với các giá trị cuối cùng để đảm bảo tính nhất quán
+            if (request.PaperFormat != null)
+            {
+                await ValidatePaperFormat(request.PaperFormat);
+            }
+            await ValidateRankValueAsync(finalRankingCategoryId, finalRankValue);
+            await EnsureConferenceIsEditable(conference);
+
 
             researchDetail.Name = request.Name ?? researchDetail.Name;
             researchDetail.PaperFormat = request.PaperFormat ?? researchDetail.PaperFormat;
@@ -1417,7 +1681,7 @@ namespace ConfRadar.Services.Services
             researchDetail.RankingCategoryId = request.RankingCategoryId ?? researchDetail.RankingCategoryId;
 
             await _unitOfWork.ResearchConferenceDetailRepository.UpdateResearchConferenceDetailAsync(researchDetail);
-            return researchDetail.ToResponse();
+            return await GetResearchConferenceDetailAsync(conferenceId);
         }
 
         #endregion

@@ -68,8 +68,14 @@ namespace ConfRadar.Repositories
         IReportRepository ReportRepository { get; }
         IReportFeedbackRepository ReportFeedbackRepository { get; }
         INotificationRepository NotificationRepository { get; }
+
+        IPresentAuthorRepository PresentAuthorRepository { get; }
+        IPresenterChangeRequestRepository PresenterChangeRequestRepository { get; }
+        ISessionChangeRequestRepository SessionChangeRequestRepository { get; }
+
         IUserCheckInRepository UserCheckInRepository { get; }
         IConferenceFeedbackRepository ConferenceFeedbackRepository { get; }
+
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -143,8 +149,15 @@ namespace ConfRadar.Repositories
         private INotificationRepository _NotificationRepository;
         private IReportRepository _ReportRepository;
         private IReportFeedbackRepository _ReportFeedbackRepository;
+
+        private IPresentAuthorRepository _PresentAuthorRepository;
+
+        private IPresenterChangeRequestRepository _PresenterChangeRequestRepository;
+        private ISessionChangeRequestRepository _SessionChangeRequestRepository;
+
         private IUserCheckInRepository _UserCheckInRepository;
         private IConferenceFeedbackRepository _ConferenceFeedbackRepository;
+
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -257,8 +270,11 @@ namespace ConfRadar.Repositories
 
         public IReportRepository ReportRepository => _ReportRepository ??= new ReportRepository(_context);
         public IReportFeedbackRepository ReportFeedbackRepository => _ReportFeedbackRepository ??= new ReportFeedbackRepository(_context);
-
+        public IPresentAuthorRepository PresentAuthorRepository => _PresentAuthorRepository ??= new PresentAuthorRepository(_context);
         public IUserCheckInRepository UserCheckInRepository => _UserCheckInRepository ??= new UserCheckInRepository(_context);
+        public IPresenterChangeRequestRepository PresenterChangeRequestRepository => _PresenterChangeRequestRepository ??= new PresenterChangeRequestRepository(_context);
+        public ISessionChangeRequestRepository SessionChangeRequestRepository => _SessionChangeRequestRepository ??= new SessionChangeRequestRepository(_context);
+
 
         public IConferenceFeedbackRepository ConferenceFeedbackRepository => _ConferenceFeedbackRepository ??= new ConferenceFeedbackRepository(_context);
 

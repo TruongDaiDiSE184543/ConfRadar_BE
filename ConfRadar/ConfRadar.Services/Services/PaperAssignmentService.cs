@@ -5,6 +5,11 @@ using ConfRadar.Services.Mappers;
 
 namespace ConfRadar.Services.Services
 {
+    public interface IPaperAssignmentService
+    {
+        Task<string> AssignAuthorToPaper(AssignAuthorToPaperRequest request);
+        Task<string> AssignReviewerToPaper(AssignReviewerToPaperRequest request);
+    }
     public class PaperAssignmentService : IPaperAssignmentService
     {
         private readonly IUnitOfWork _unitOfWork;

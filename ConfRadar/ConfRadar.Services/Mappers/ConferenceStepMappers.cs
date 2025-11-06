@@ -291,7 +291,7 @@ namespace ConfRadar.Services.Mappers
                 RefundPolicyId = Guid.NewGuid().ToString(),
                 PercentRefund = request.PercentRefund,
                 RefundDeadline = request.RefundDeadline,
-                RefundOrder = request.RefundOrder,
+                //RefundOrder = request.RefundOrder,
                 ConferenceId = conferenceId
             };
         }

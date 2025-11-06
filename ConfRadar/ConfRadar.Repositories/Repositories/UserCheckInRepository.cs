@@ -1,4 +1,4 @@
-﻿using ConfRadar.Repositories.Base;
+using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
@@ -7,33 +7,63 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface IUserCheckInRepository
     {
-        Task<int> CreateUserCheckInAsync(UserCheckIn checkIn);
-        Task<int> UpdateUserCheckInAsync(UserCheckIn checkIn);
-        Task<bool> DeleteUserCheckInAsync(UserCheckIn checkIn);
-        Task<UserCheckIn?> GetUserCheckInByUserIdAndConferenceSessionIdAsync(string sessionId, string userId);
+        Task<int> CreateUserCheckInAsync(UserCheckIn userCheckIn);
+        Task<int> UpdateUserCheckInAsync(UserCheckIn userCheckIn);
+        Task<bool> DeleteUserCheckInAsync(UserCheckIn userCheckIn);
+        Task<UserCheckIn?> GetUserCheckInByIdAsync(string userCheckInId);
+        Task<List<UserCheckIn>> GetAllUserCheckInsAsync();
+        Task<UserCheckIn?> GetUserCheckInByUserAndSessionAsync(string userId, string sessionId);
+        Task<UserCheckIn> GetPresenterByTicket(string ticketId);
     }
+
     public class UserCheckInRepository : GenericRepository<UserCheckIn>, IUserCheckInRepository
     {
-        public UserCheckInRepository(ConfRadarDbContext context) : base(context) { }
+        private readonly ConfRadarDbContext _context;
 
-        public async Task<int> CreateUserCheckInAsync(UserCheckIn checkIn)
+        public UserCheckInRepository(ConfRadarDbContext context) : base(context)
         {
-            return await CreateAsync(checkIn);
+            _context = context;
         }
 
-        public async Task<int> UpdateUserCheckInAsync(UserCheckIn checkIn)
+        public async Task<int> CreateUserCheckInAsync(UserCheckIn userCheckIn)
         {
-            return await UpdateAsync(checkIn);
+            _context.UserCheckIns.Add(userCheckIn);
+            return await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> DeleteUserCheckInAsync(UserCheckIn checkIn)
+        public async Task<int> UpdateUserCheckInAsync(UserCheckIn userCheckIn)
         {
-            return await RemoveAsync(checkIn);
+            var tracker = _context.Attach(userCheckIn);
+            tracker.State = EntityState.Modified;
+            return await _context.SaveChangesAsync();
         }
 
-        public async Task<UserCheckIn?> GetUserCheckInByUserIdAndConferenceSessionIdAsync(string sessionId, string userId)
+        public async Task<bool> DeleteUserCheckInAsync(UserCheckIn userCheckIn)
         {
-            return await _context.UserCheckIns.FirstOrDefaultAsync(uci => uci.ConferenceSessionId == sessionId && uci.UserId == userId);
+            _context.UserCheckIns.Remove(userCheckIn);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<UserCheckIn?> GetUserCheckInByIdAsync(string userCheckInId)
+        {
+            return await _context.UserCheckIns.FindAsync(userCheckInId);
+        }
+
+        public async Task<List<UserCheckIn>> GetAllUserCheckInsAsync()
+        {
+            return await _context.UserCheckIns.ToListAsync();
+        }
+
+        public async Task<UserCheckIn?> GetUserCheckInByUserAndSessionAsync(string userId, string sessionId)
+        {
+            return await _context.UserCheckIns
+                .FirstOrDefaultAsync(uci => uci.UserId == userId && uci.ConferenceSessionId == sessionId);
+        }
+
+        public async Task<UserCheckIn> GetPresenterByTicket(string ticketId)
+        {
+            return await _context.UserCheckIns.FirstOrDefaultAsync(usc => usc.TicketId == ticketId && usc.IsPresenter == true);
         }
     }
 }

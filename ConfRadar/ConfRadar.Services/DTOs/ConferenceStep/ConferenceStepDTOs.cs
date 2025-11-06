@@ -426,8 +426,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Ngày hết hạn hoàn trả là bắt buộc")]
         public DateOnly? RefundDeadline { get; set; }
 
-        [Required(ErrorMessage = "Thứ tự hoàn trả là bắt buộc")]
-        public int? RefundOrder { get; set; }
     }
 
     public class AddRefundPoliciesRequest
@@ -443,8 +441,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Ngày hết hạn hoàn trả là bắt buộc")]
         public DateOnly? RefundDeadline { get; set; }
 
-        [Required(ErrorMessage = "Thứ tự hoàn trả là bắt buộc")]
-        public int? RefundOrder { get; set; }
+        
     }
 
     public class RefundPolicyResponse
@@ -573,61 +570,81 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     }
 
     // Research Conference Step 2: Research Conference Detail
+
     public class CreateResearchConferenceDetailRequest
     {
-        [MaxLength(255)]
-        public string? Name { get; set; }
+        [Required(ErrorMessage = "Tên (chuyên ngành) của hội nghị là bắt buộc.")]
+        [MaxLength(255, ErrorMessage = "Tên chuyên ngành không được vượt quá 255 ký tự.")]
+        public string Name { get; set; }
 
-        [MaxLength(1000)]
-        public string? PaperFormat { get; set; }
+        [Required(ErrorMessage = "Định dạng bài báo là bắt buộc.")]
+        [MaxLength(255, ErrorMessage = "Định dạng bài báo không được vượt quá 255 ký tự.")]
+        public string PaperFormat { get; set; }
 
-        public int? NumberPaperAccept { get; set; }
+        // `int` không phải nullable, nên [Required] chỉ để làm rõ. Quan trọng là Range.
+        [Required(ErrorMessage = "Số lượng bài báo dự kiến chấp nhận là bắt buộc.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Số lượng bài báo chấp nhận phải là một số dương.")]
+        public int NumberPaperAccept { get; set; }
 
+        // `int?` là nullable, nên [Required] là cần thiết.
+        [Required(ErrorMessage = "Số lần cho phép sửa đổi là bắt buộc.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Số lần cho phép sửa đổi phải là một số dương.")]
         public int? RevisionAttemptAllowed { get; set; }
 
-        [MaxLength(1000)]
+        [MaxLength(1000, ErrorMessage = "Mô tả xếp hạng không được vượt quá 1000 ký tự.")]
         public string? RankingDescription { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng cho biết hội nghị có cho phép người nghe tham dự hay không.")]
         public bool? AllowListener { get; set; }
 
-        [MaxLength(50)]
+        
         public string? RankValue { get; set; }
 
+        // Có thể không bắt buộc, nhưng nếu có thì phải hợp lệ.
+        [Range(2000, 2050, ErrorMessage = "Năm xếp hạng không hợp lệ.")]
         public int? RankYear { get; set; }
 
+        // Có thể không bắt buộc (nếu miễn phí), nhưng nếu có thì không được âm.
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí phản biện không được là số âm.")]
         public decimal? ReviewFee { get; set; }
 
+        [Required(ErrorMessage = "Loại xếp hạng (Ranking Category) là bắt buộc.")]
         [MaxLength(50)]
-        public string? RankingCategoryId { get; set; }
+        public string RankingCategoryId { get; set; }
     }
 
     public class UpdateResearchConferenceDetailRequest
     {
-        [MaxLength(255)]
+        [MaxLength(255, ErrorMessage = "Tên chuyên ngành không được vượt quá 255 ký tự.")]
         public string? Name { get; set; }
 
-        [MaxLength(1000)]
+        [MaxLength(255, ErrorMessage = "Định dạng bài báo không được vượt quá 255 ký tự.")]
         public string? PaperFormat { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Số lượng bài báo chấp nhận phải là một số dương.")]
         public int? NumberPaperAccept { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Số lần cho phép sửa đổi phải là một số dương.")]
         public int? RevisionAttemptAllowed { get; set; }
 
-        [MaxLength(1000)]
+        [MaxLength(1000, ErrorMessage = "Mô tả xếp hạng không được vượt quá 1000 ký tự.")]
         public string? RankingDescription { get; set; }
 
         public bool? AllowListener { get; set; }
 
-        [MaxLength(50)]
+        
         public string? RankValue { get; set; }
 
+        [Range(2000, 2050, ErrorMessage = "Năm xếp hạng không hợp lệ.")]
         public int? RankYear { get; set; }
 
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí phản biện không được là số âm.")]
         public decimal? ReviewFee { get; set; }
 
         [MaxLength(50)]
         public string? RankingCategoryId { get; set; }
     }
+
 
     public class ResearchConferenceDetailResponse
     {

@@ -6,6 +6,7 @@ namespace ConfRadar.Services
     {
         public IAuthService AuthService { get; }
         public IReviewStatusService ReviewStatusService { get; }
+        public IAssigningPresenterSessionService AssigningPresenterSessionService { get; }
         public IRankingCategoryService RankingCategoryService { get; }
         public IMomoService MomoService { get; }
         public ITicketService TicketService { get; }
@@ -61,6 +62,7 @@ namespace ConfRadar.Services
         private readonly IConferenceTimelineService _conferenceTimelineService;
         private readonly IFavouriteConferenceService _favouriteConferenceService;
         private readonly IReportService _reportService;
+        private readonly IAssigningPresenterSessionService _assigningPresenterSessionService;
         private readonly IContractService _contractService;
 
         public ServiceManager(IAuthService authService,
@@ -89,7 +91,8 @@ namespace ConfRadar.Services
             IFavouriteConferenceService favouriteConferenceService,
             IReportService reportService,
 
-            IContractService contractService
+            IContractService contractService,
+            IAssigningPresenterSessionService assigningPresenterSessionService
            )
         {
             _authService = authService;
@@ -117,6 +120,7 @@ namespace ConfRadar.Services
             _contractService = contractService;
 
             _reportService = reportService;
+            _assigningPresenterSessionService = assigningPresenterSessionService;
         }
 
         public IAuthService AuthService => _authService;
@@ -151,6 +155,7 @@ namespace ConfRadar.Services
         public IReportService ReportService => _reportService;
 
         public IContractService ContractService => _contractService;
+        public IAssigningPresenterSessionService AssigningPresenterSessionService => _assigningPresenterSessionService;
 
 
     }
