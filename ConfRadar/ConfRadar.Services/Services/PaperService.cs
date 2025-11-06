@@ -1414,6 +1414,18 @@ namespace ConfRadar.Services.Services
             var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(paper.ConferenceId);
             var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(researchConferencePhase.ResearchConferencePhaseId);
 
+            //get all authors
+            var allAuthor = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paperId);
+            //get rootauthor
+            var paperRootAuthor=  allAuthor.FirstOrDefault(pa => pa.IsRootAuthor ==true);
+            var RootAuthor = await _unitOfWork.UserRepository.GetUserByUserId(paperRootAuthor.UserId);
+            var coAuthorIds = allAuthor.Where(pa => pa.UserId != RootAuthor.UserId).Select(paper => paper.UserId).ToList();
+            List<User> coAuthors = new List<User>();
+            foreach(var authorId in coAuthorIds)
+            {
+                User CoAuthor = await _unitOfWork.UserRepository.GetUserByUserId(authorId);
+                coAuthorIds.Add(authorId);
+            }
 
 
             var abstractEntity = paper.AbstractId != null
@@ -1434,7 +1446,13 @@ namespace ConfRadar.Services.Services
                 PaperId = paper.PaperId,
                 Title = paper.Title,
                 Description = paper.Description,
-                Created = paper.CreatedAt.Value,
+                Created = paper.CreatedAt,
+                RootAuthor =  RootAuthor!= null ? new Author {UserId =RootAuthor.UserId,FullName = RootAuthor.FullName } : null,
+                CoAuthors = coAuthors?.Select(user =>new Author
+                {
+                    UserId = user.UserId,
+                    FullName = user.FullName
+                }).ToList(),
                 ResearchPhase = researchConferencePhase !=null ? new ResearchPhaseDtoDetail
                 {
                     ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
@@ -1463,6 +1481,10 @@ namespace ConfRadar.Services.Services
                     CameraReadyId = paper.CameraReady.CameraReadyId,
                     FileUrl = paper.CameraReady.CameraReadyUrl,
                     Status = paper.CameraReady.GlobalStatus?.Name, // Safe navigation
+                    Title = paper.CameraReady.Title,
+                    Description = paper.CameraReady.Description,
+                    Created = paper.CameraReady.CreatedAt,
+                    Updated = paper.CameraReady.ReviewAt
                 } : null,
 
                 // Map the result from the parallel tasks
@@ -1471,6 +1493,10 @@ namespace ConfRadar.Services.Services
                     AbstractId = abstractEntity.AbstractId,
                     FileUrl = abstractEntity.AbstractUrl,
                     Status = abstractEntity.GlobalStatus?.Name,
+                    Title = abstractEntity.Title,
+                    Description = abstractEntity.Description,
+                    Created = abstractEntity.CreatedAt,
+                    Updated = abstractEntity.ReviewAt
                 } : null,
 
                 FullPaper = fullPaperEntity != null ? new FullPaperDtoDetail
@@ -1478,6 +1504,10 @@ namespace ConfRadar.Services.Services
                     FullPaperId = fullPaperEntity.FullPaperId,
                     FileUrl = fullPaperEntity.FullPaperUrl,
                     ReviewStatus = fullPaperEntity.ReviewStatus?.Name,
+                    Title = fullPaperEntity.Title,
+                    Description = fullPaperEntity.Description,
+                    Created = fullPaperEntity.CreatedAt,
+                    Updated= fullPaperEntity.ReviewAt
                 } : null,
                 revisionDeadline = roundDeadline?.Select(r => new RevisionDeadlineDetail
                 {
@@ -1505,6 +1535,8 @@ namespace ConfRadar.Services.Services
             {
                 RevisionPaperId = entity.RevisionPaperId,
                 RevisionRound = entity.RevisionRound,
+                Created = entity.CreatedAt,
+                Updated = entity.ReviewAt,
                 OverallStatus = entity.GlobalStatus?.Name,
                 Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
                 {
@@ -1519,6 +1551,8 @@ namespace ConfRadar.Services.Services
                 {
                     SubmissionId = sub.RevisionPaperSubmissionId,
                     FileUrl = sub.RevisionPaperUrl,
+                    Title = sub.Title,
+                    Description = sub.Description,
                     Feedbacks = sub.RevisionSubmissionFeedbacks?.Select(fb => new FeedbackDtoDetail
                     {
                         FeedbackId = fb.RevisionSubmissionFeedbackId,
