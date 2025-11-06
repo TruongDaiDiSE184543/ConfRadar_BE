@@ -86,13 +86,14 @@ namespace ConfRadar.Services.Services
             }
             if (conferencePrice.Conference?.AvailableSlot <= 0)
             {
-                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} is sold out!");
+                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} đã bán hết vé!");
             }
-            var paymentLockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, conferencePrice.ConferenceId!);
-            bool paymentLockFound = await _redisService.KeyExistsAsync(paymentLockKey);
-            if (paymentLockFound == true)
+            //check ko cho mua 1 conf
+            var paymentConferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
+            bool paymentConferenceLockFound = await _redisService.KeyExistsAsync(paymentConferenceLockKey);
+            if (paymentConferenceLockFound == true)
             {
-                var paymentLockDataFound = await _redisService.GetStringAsync(paymentLockKey);
+                var paymentLockDataFound = await _redisService.GetStringAsync(paymentConferenceLockKey);
                 var paymentLockDataHolder = JsonSerializer.Deserialize<PaymentLockKeyDTO>(paymentLockDataFound, new JsonSerializerOptions()
                 {
                     PropertyNameCaseInsensitive = true,
@@ -102,17 +103,29 @@ namespace ConfRadar.Services.Services
                 {
                     return new GeneralPaymentResultResponse()
                     {
+                        PaymentCreateSuccess = false,
                         CheckOutUrl = null,
                         PaymentMessage = $"Bạn hiện đang có 1 thanh toán, và chưa được thực hiện với cổng thanh toán {paymentMethodInPaymentLock!.MethodName}. Xin vui lòng thanh toán bằng cổng {paymentMethodInPaymentLock!.MethodName}. Hoặc hủy thanh toán, hoặc đợi hết hạn 90 phút"
                     };
                 }
                 return new GeneralPaymentResultResponse()
                 {
+                    PaymentCreateSuccess = false,
                     CheckOutUrl = paymentLockDataHolder.OldCheckOutUrl,
                     PaymentMessage = $"Chúng tôi phát hiện bạn đang có 1 giao dịch chưa được thực hiện với cổng:{paymentMethodInPaymentLock!.MethodName}. Xin vui lòng thực hiện giao dịch này "
                 };
 
             }
+            
+
+
+
+
+
+
+
+
+
             var ticketFound = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId!);
             if (ticketFound != null)
             {
@@ -136,28 +149,49 @@ namespace ConfRadar.Services.Services
             var currentPhase = validPhases.FirstOrDefault(p => p.AvailableSlot > 0);
             if (currentPhase == null)
             {
-                throw new BadRequestException("Tất cả các phase hợp lệ hiện tại đã hết slot");
+                throw new BadRequestException("Giai đoạn hiện tại hiện tại đã hết slot");
             }
+            //check nhiều người mua trong 1 phase
+            var paymentPhaseLockPattern = ExtensionHelper.GetPaymentPhaseLockKeyPattern(currentPhase.PricePhaseId!);
+            var paymentPhaseLockList = await _redisService.GetKeysByPatternAsync(paymentPhaseLockPattern);
+            int paymentPhaseLockCount = paymentPhaseLockList.Count();
+            if (paymentPhaseLockCount >= currentPhase.AvailableSlot)
+            {
+                return new GeneralPaymentResultResponse()
+                {
+                    PaymentCreateSuccess = false,
+                    CheckOutUrl = null,
+                    PaymentMessage = $"Hiện tại đang có {paymentPhaseLockCount} khách hàng đang thực hiện giao dịch trong giai đoạn hiện tại mua vé từ {currentPhase.StartDate} đến {currentPhase.EndDate} tương ứng với {currentPhase.AvailableSlot} số vé "
+                };
+
+            }
+
             var discountPercent = currentPhase.ApplyPercent ?? 0;
 
             var rawPrice = conferencePrice.TicketPrice;
             var discountedPrice = (long)(rawPrice * ((decimal)discountPercent / (decimal)100.0));
             var finalAmount = (long)discountedPrice;
-
+            if (finalAmount <= 10000)
+            {
+                throw new BadRequestException($"Giá cho vé hiện tại là {finalAmount} không khả dụng cho cổng thanh toán trong hệ thống xin hãy liên hệ ban tổ chức sự kiện");
+            }
 
             var sessionIds = conferencePrice.Conference!.ConferenceSessions.Select(s => s.ConferenceSessionId).ToList();
             var ticketId = Guid.NewGuid().ToString();
 
-            var lockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, conferencePrice.ConferenceId!);
+            var conferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
+            var phaseLockKey = ExtensionHelper.GetPaymentPhaseLockKeyResult(userId, currentPhase.PricePhaseId);
             var transactionData = new TransactionDataHolder
             {
                 TicketId = ticketId,
                 UserId = userId,
                 PaymentMethodId = paymentMethod.PaymentMethodId,
                 ConferencePriceId = request.ConferencePriceId,
+                PricePhaseId = currentPhase.PricePhaseId,
                 ConferenceSessionIds = sessionIds,
                 ConferenceId = conferencePrice.ConferenceId!,
-                PaymentLockKey = lockKey,
+                PaymentConferenceLockKey = conferenceLockKey,
+                PaymentPhaseLockKey = phaseLockKey,
                 Description = null,
                 Title = null,
                 IsResearchConference = false,
@@ -203,11 +237,13 @@ namespace ConfRadar.Services.Services
                 PaymentMethodId = request.PaymentMethodId
             };
             var lockeyDataJson = JsonSerializer.Serialize(lockeyData);
-            await _redisService.SetStringAsync(lockKey, lockeyDataJson, TimeSpan.FromMinutes(expireMinute));
+            await _redisService.SetStringAsync(conferenceLockKey, lockeyDataJson, TimeSpan.FromMinutes(expireMinute));
+            await _redisService.SetStringAsync(phaseLockKey, "", TimeSpan.FromMinutes(expireMinute));
             await _redisService.SetStringAsync(orderCode.ToString(), transacJson, TimeSpan.FromMinutes(expireMinute));
             return new GeneralPaymentResultResponse()
             {
-                PaymentMessage = "Thanh toán thành công",
+                PaymentCreateSuccess = true,
+                PaymentMessage = "Tạo liên kết thanh toán thành công. Vui lòng hoàn tất giao dịch tại cổng thanh toán.",
                 CheckOutUrl = checkOutUrl,
             };
 
@@ -227,7 +263,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Giá hội nghị với id {request.ConferencePriceId} không tìm thấy");
             }
-
+            if (conferencePrice.Conference?.AvailableSlot <= 0)
+            {
+                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} đã bán hết vé!");
+            }
             if (conferencePrice.Conference!.IsResearchConference == false)
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference");
@@ -240,11 +279,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference tổ chức bởi confradar");
             }
-            var paymentLockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, conferencePrice.ConferenceId!);
-            bool paymentLockFound = await _redisService.KeyExistsAsync(paymentLockKey);
-            if (paymentLockFound == true)
+            var paymentConferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
+            bool paymentConferenceLockFound = await _redisService.KeyExistsAsync(paymentConferenceLockKey);
+            if (paymentConferenceLockFound == true)
             {
-                var paymentLockDataFound = await _redisService.GetStringAsync(paymentLockKey);
+                var paymentLockDataFound = await _redisService.GetStringAsync(paymentConferenceLockKey);
                 var paymentLockDataHolder = JsonSerializer.Deserialize<PaymentLockKeyDTO>(paymentLockDataFound, new JsonSerializerOptions()
                 {
                     PropertyNameCaseInsensitive = true,
@@ -254,22 +293,20 @@ namespace ConfRadar.Services.Services
                 {
                     return new GeneralPaymentResultResponse()
                     {
+                        PaymentCreateSuccess = false,
                         CheckOutUrl = null,
                         PaymentMessage = $"Bạn hiện đang có 1 thanh toán, và chưa được thực hiện với cổng thanh toán {paymentMethodInPaymentLock!.MethodName}. Xin vui lòng thanh toán bằng cổng {paymentMethodInPaymentLock!.MethodName}. Hoặc hủy thanh toán, hoặc đợi hết hạn 90 phút"
                     };
                 }
                 return new GeneralPaymentResultResponse()
                 {
+                    PaymentCreateSuccess = false,
                     CheckOutUrl = paymentLockDataHolder.OldCheckOutUrl,
                     PaymentMessage = $"Chúng tôi phát hiện bạn đang có 1 giao dịch chưa được thực hiện với cổng:{paymentMethodInPaymentLock!.MethodName}. Xin vui lòng thực hiện giao dịch này "
                 };
 
             }
-            if (conferencePrice.IsAuthor == false)
-            {
-                throw new BadRequestException($"Giá vé hiện tại không khả dụng cho việc mua bài báo");
-
-            }
+          
             var researchConferencePhases = conferencePrice.Conference?.ResearchConferencePhases;
             if (researchConferencePhases == null || !researchConferencePhases.Any())
             {
@@ -278,12 +315,7 @@ namespace ConfRadar.Services.Services
 
 
 
-            var paperWaitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferencePrice.ConferenceId);
-
-            if (paperWaitListFound != null && conferencePrice.AvailableSlot > 0)
-            {
-                await _unitOfWork.PaperWaitListRepository.DeletePaperWaitListAsync(paperWaitListFound);
-            }
+          
 
 
             var ticketFound = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
@@ -332,8 +364,25 @@ namespace ConfRadar.Services.Services
             var currentPhase = validPhases.FirstOrDefault(p => p.AvailableSlot > 0);
             if (currentPhase == null)
             {
-                throw new BadRequestException("Tất cả các phase hợp lệ hiện tại đã hết slot");
+                throw new BadRequestException("Giai đoạn hiện tại đã hết slot");
             }
+            //check nhiều người mua trong 1 phase
+            var paymentPhaseLockPattern = ExtensionHelper.GetPaymentPhaseLockKeyPattern(currentPhase.PricePhaseId!);
+            var paymentPhaseLockList = await _redisService.GetKeysByPatternAsync(paymentPhaseLockPattern);
+            int paymentPhaseLockCount = paymentPhaseLockList.Count();
+            if (paymentPhaseLockCount >= currentPhase.AvailableSlot)
+            {
+                return new GeneralPaymentResultResponse()
+                {
+                    PaymentCreateSuccess = false,
+                    CheckOutUrl = null,
+                    PaymentMessage = $"Hiện tại đang có {paymentPhaseLockCount} khách hàng đang thực hiện giao dịch trong giai đoạn hiện tại mua vé từ {currentPhase.StartDate} đến {currentPhase.EndDate} tương ứng với {currentPhase.AvailableSlot} số vé "
+                };
+
+            }
+
+
+
             var sessionIdsList = conferencePrice.Conference.ConferenceSessions.Select(cs => cs.ConferenceSessionId).ToList();
             applyPercent = currentPhase.ApplyPercent ?? 0;
             long finalPrice = 0;
@@ -346,8 +395,15 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Giá cho vé hiện tại là {finalPrice} không khả dụng cho cổng thanh toán trong hệ thống xin hãy liên hệ ban tổ chức sự kiện");
             }
+            var paperWaitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferencePrice.ConferenceId);
+
+            if (paperWaitListFound != null && conferencePrice.AvailableSlot > 0)
+            {
+                await _unitOfWork.PaperWaitListRepository.DeletePaperWaitListAsync(paperWaitListFound);
+            }
             var ticketId = Guid.NewGuid().ToString();
-            var lockKey = ExtensionHelper.GetPaymentLockKeyResult(userId, conferencePrice!.ConferenceId);
+            var lockKeyConference = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice!.ConferenceId);
+            var lockKeyPhase = ExtensionHelper.GetPaymentPhaseLockKeyResult(userId, currentPhase.PricePhaseId);
             var transactionData = new TransactionDataHolder()
             {
                 TicketId = ticketId,
@@ -356,7 +412,9 @@ namespace ConfRadar.Services.Services
                 ConferencePriceId = request.ConferencePriceId,
                 ConferenceSessionIds = sessionIdsList,
                 ConferenceId = conferencePrice.ConferenceId,
-                PaymentLockKey = lockKey,
+                PaymentConferenceLockKey = lockKeyConference,
+                PaymentPhaseLockKey = lockKeyPhase,
+                PricePhaseId = currentPhase.PricePhaseId,
                 Title = request.Title,
                 Description = request.Description,
                 IsResearchConference = true
@@ -403,11 +461,13 @@ namespace ConfRadar.Services.Services
                 PaymentMethodId = request.PaymentMethodId
             };
             var lockeyDataJson = JsonSerializer.Serialize(lockeyData);
-            await _redisService.SetStringAsync(lockKey, lockeyDataJson, TimeSpan.FromMinutes(expireMinute));
+            await _redisService.SetStringAsync(lockKeyConference, lockeyDataJson, TimeSpan.FromMinutes(expireMinute));
+            await _redisService.SetStringAsync(lockKeyPhase, "", TimeSpan.FromMinutes(expireMinute));
             await _redisService.SetStringAsync(orderCode.ToString(), transacJson, TimeSpan.FromMinutes(expireMinute));
             return new GeneralPaymentResultResponse()
             {
-                PaymentMessage = "Thanh toán thành công",
+                PaymentCreateSuccess = true,
+                PaymentMessage = "Tạo liên kết thanh toán thành công. Vui lòng hoàn tất giao dịch tại cổng thanh toán.",
                 CheckOutUrl = checkOutUrl,
             };
 
@@ -472,21 +532,27 @@ namespace ConfRadar.Services.Services
                 };
                 ticketObj.UserCheckIns.Add(userCheckInObj);
             }
-            var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByConferencePriceIdAsync(transacDataHolder.ConferencePriceId);
-            if (pricePhase.TotalSlot <= 0)
+            var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
+            if (pricePhase == null)
             {
-                throw new BadRequestException("Hết slot");
+                throw new BadRequestException("Không tìm thấy phase tương ứng.");
             }
-            pricePhase!.TotalSlot -= -1;
-            pricePhase!.ConferencePrice!.AvailableSlot -= -1;
-            pricePhase!.ConferencePrice!.Conference!.AvailableSlot -= -1;
+            if (pricePhase.AvailableSlot <= 0)
+            {
+                throw new BadRequestException("Giai đoạn hiện tại đã hết slot.");
+            }
             await _unitOfWork.BeginTransactionAsync();
             try
             {
+                pricePhase!.AvailableSlot = pricePhase.AvailableSlot - 1;
+                pricePhase!.ConferencePrice!.AvailableSlot = pricePhase!.ConferencePrice!.AvailableSlot - 1;
+                pricePhase!.ConferencePrice!.Conference!.AvailableSlot = pricePhase!.ConferencePrice!.Conference!.AvailableSlot - 1;
                 await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
-                await _redisService.DeleteKeyAsync(transacDataHolder.TicketId);
-                await _redisService.DeleteKeyAsync(transacDataHolder.PaymentLockKey);
+                await _unitOfWork.CommitAsync();
+                await _redisService.DeleteKeyAsync(orderId);
+                await _redisService.DeleteKeyAsync(transacDataHolder.PaymentConferenceLockKey);
+                await _redisService.DeleteKeyAsync(transacDataHolder.PaymentPhaseLockKey);
             }
             catch (Exception ex)
             {
@@ -548,7 +614,7 @@ namespace ConfRadar.Services.Services
                 var userCheckInObj = new UserCheckIn()
                 {
                     UserCheckinId = Guid.NewGuid().ToString(),
-                    IsPresenter = true,
+                    IsPresenter = false,
                     CheckinStatusId = checkInStatus.CheckinStatusId,
                     CheckInTime = null,
                     UserId = transacDataHolder.UserId,
@@ -569,31 +635,36 @@ namespace ConfRadar.Services.Services
             };
             var presenterPaperAuthor = new PaperAuthor()
             {
-                IsPresenter = true,
+                IsPresenter = false,
                 UserId = transacDataHolder.UserId,
                 PaperId = paperObj.PaperId,
                 IsRootAuthor = true,
             };
             paperObj.PaperAuthors.Add(presenterPaperAuthor);
-            var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByConferencePriceIdAsync(transacDataHolder.ConferencePriceId);
-            if (pricePhase.TotalSlot <= 0)
+            var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
+            if (pricePhase==null)
+            {
+                throw new BadRequestException("Giai đoạn vé không tìm thấy");
+            }
+            if (pricePhase.AvailableSlot <= 0)
             {
                 throw new BadRequestException("Hết slot");
             }
-            pricePhase!.TotalSlot -= -1;
-            pricePhase!.ConferencePrice!.AvailableSlot -= -1;
-            pricePhase!.ConferencePrice!.Conference!.AvailableSlot -= -1;
+           
 
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-
+                pricePhase!.AvailableSlot = pricePhase.AvailableSlot - 1;
+                pricePhase!.ConferencePrice!.AvailableSlot = pricePhase!.ConferencePrice!.AvailableSlot - 1;
+                pricePhase!.ConferencePrice!.Conference!.AvailableSlot = pricePhase!.ConferencePrice!.Conference!.AvailableSlot - 1;
                 await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
                 await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
                 await _unitOfWork.CommitAsync();
                 await _redisService.DeleteKeyAsync(orderId);
-                await _redisService.DeleteKeyAsync(transacDataHolder.PaymentLockKey);
+                await _redisService.DeleteKeyAsync(transacDataHolder.PaymentConferenceLockKey);
+                await _redisService.DeleteKeyAsync(transacDataHolder.PaymentPhaseLockKey);
 
             }
             catch (Exception ex)
