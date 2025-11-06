@@ -1421,11 +1421,18 @@ namespace ConfRadar.Services.Services
             var RootAuthor = await _unitOfWork.UserRepository.GetUserByUserId(paperRootAuthor.UserId);
             var coAuthorIds = allAuthor.Where(pa => pa.UserId != RootAuthor.UserId).Select(paper => paper.UserId).ToList();
             List<User> coAuthors = new List<User>();
-            foreach(var authorId in coAuthorIds)
+            if (coAuthorIds.Count() > 0)
             {
-                User CoAuthor = await _unitOfWork.UserRepository.GetUserByUserId(authorId);
-                coAuthorIds.Add(authorId);
+                foreach (var authorId in coAuthorIds)
+                {
+                    User CoAuthor = await _unitOfWork.UserRepository.GetUserByUserId(authorId);
+                    if (CoAuthor != null)
+                    {
+                        coAuthors.Add(CoAuthor);
+                    }
+                }
             }
+            
 
 
             var abstractEntity = paper.AbstractId != null

@@ -87,6 +87,16 @@ namespace ConfRadar.Services
                     .WithSimpleSchedule(x => x.WithIntervalInMinutes(5).RepeatForever()));
             });
 
+            services.AddQuartz(q =>
+            {
+                var jobKey = new JobKey("ResetNotifyWaitListQuartzJob");
+                q.AddJob<ResetNotifyWaitListQuartzJob>(opts => opts.WithIdentity(jobKey));
+
+                q.AddTrigger(opts => opts
+                    .ForJob(jobKey)
+                    .WithIdentity("ResetNotifyWaitListTrigger")
+                    .WithSimpleSchedule(x => x.WithIntervalInHours(3).RepeatForever()));
+            });
 
 
 

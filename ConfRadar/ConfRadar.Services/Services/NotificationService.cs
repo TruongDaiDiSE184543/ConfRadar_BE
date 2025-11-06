@@ -7,6 +7,7 @@ namespace ConfRadar.Services.Services
     public interface INotificationService
     {
         Task NotifyWaitList();
+        Task ResetWaitList();
     }
     public class NotificationService : INotificationService
     {
@@ -60,6 +61,19 @@ namespace ConfRadar.Services.Services
 
             }
 
+        }
+
+        public async Task ResetWaitList()
+        {
+            var readyConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            var pendingWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Pending.GetDescription());
+            var notifiedWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Notified.GetDescription());
+
+            if (readyConferenceStatus == null|| pendingWaitListStatus==null || notifiedWaitListStatus==null)
+            {
+                return;
+            }
+            await _unitOfWork.PaperWaitListRepository.ResetUserWaitList(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, ExtensionHelper.GetVietnamTime());
         }
     }
 }
