@@ -451,7 +451,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Research Conference Phase Mappers
-        public static ResearchConferencePhase ToModel(this CreateResearchConferencePhaseRequest request, string conferenceId)
+        public static ResearchConferencePhase ToModel(this CreateResearchConferencePhaseItemRequest request, string conferenceId)
         {
             return new ResearchConferencePhase
             {
@@ -467,8 +467,7 @@ namespace ConfRadar.Services.Mappers
                 ReviseEndDate = request.ReviseEndDate,
                 CameraReadyStartDate = request.CameraReadyStartDate,
                 CameraReadyEndDate = request.CameraReadyEndDate,
-                IsWaitlist = request.IsWaitlist,
-                IsActive = request.IsActive
+                IsWaitlist = request.IsWaitlist
             };
         }
 
@@ -495,26 +494,26 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Revision Round Deadline Mappers
-        public static RevisionRoundDeadline ToModel(this CreateRevisionRoundDeadlineRequest request, string researchConferencePhaseId)
-        {
-            return new RevisionRoundDeadline
-            {
-                RevisionRoundDeadlineId = Guid.NewGuid().ToString(),
-                StartSubmissionDate = request.StartSubmissionDate,
-                EndSubmissionDate = request.EndSubmissionDate,
-                RoundNumber = request.RoundNumber,
-                ResearchConferencePhaseId = researchConferencePhaseId
-            };
-        }
+        //public static RevisionRoundDeadline ToModel(this CreateRevisionRoundDeadlineRequest request, string researchConferencePhaseId)
+        //{
+        //    return new RevisionRoundDeadline
+        //    {
+        //        RevisionRoundDeadlineId = Guid.NewGuid().ToString(),
+        //        StartSubmissionDate = request.StartSubmissionDate,
+        //        EndSubmissionDate = request.EndSubmissionDate,
+        //        RoundNumber = request.RoundNumber,
+        //        ResearchConferencePhaseId = researchConferencePhaseId
+        //    };
+        //}
 
-        public static RevisionRoundDeadline ToModel(this UpdateRevisionRoundDeadlineRequest request)
-        {
-            return new RevisionRoundDeadline
-            {
-                EndSubmissionDate = request.EndDate,
-                RoundNumber = request.RoundNumber
-            };
-        }
+        //public static RevisionRoundDeadline ToModel(this UpdateRevisionRoundDeadlineRequest request)
+        //{
+        //    return new RevisionRoundDeadline
+        //    {
+        //        EndSubmissionDate = request.EndDate,
+        //        RoundNumber = request.RoundNumber
+        //    };
+        //}
 
         public static RevisionRoundDeadlineResponse ToResponse(this RevisionRoundDeadline model)
         {

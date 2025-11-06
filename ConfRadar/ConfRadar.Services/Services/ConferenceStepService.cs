@@ -66,15 +66,15 @@ namespace ConfRadar.Services.Services
         Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request , string userId);
 
         // Research Conference Step 3: Research Conference Phases
-        Task<ResearchConferencePhaseResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhaseRequest request);
+        Task<CreatePhasesResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhasesRequest request, string userId);
         Task<ResearchConferencePhaseResponse> GetResearchConferencePhaseAsync(string conferenceId);
-        Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request);
+        Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request, string userId);
 
         // Research Conference Step 4: Research Conference Sessions (without speakers)
-        Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request);
+        Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request,string userId);
         Task<List<ResearchSessionWithMediaResponse>> GetResearchSessionsAsync(string conferenceId);
-        Task<ResearchSessionWithMediaResponse> UpdateResearchSessionAsync(string sessionId, UpdateConferenceSessionRequest request);
-        Task<bool> DeleteResearchSessionAsync(string sessionId);
+        Task<ResearchSessionWithMediaResponse> UpdateResearchSessionAsync(string sessionId, UpdateConferenceSessionRequest request, string userId);
+        Task<bool> DeleteResearchSessionAsync(string sessionId, string userId);
 
         // Research Conference Step 5: Material Downloads
         Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request);
@@ -107,10 +107,10 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteSpeakerAsync(string speakerId);
 
         // Revision Round Deadline CRUD operations - Create with researchConferencePhaseId, RUD with its own id
-        Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request);
+        Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request,string userId);
         Task<List<RevisionRoundDeadlineResponse>> GetRevisionRoundDeadlinesByResearchPhaseIdAsync(string researchConferencePhaseId);
-        Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request);
-        Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId);
+        Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request,string userId);
+        Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, string userId);
     }
 
     public class ConferenceStepService : IConferenceStepService
@@ -255,35 +255,53 @@ namespace ConfRadar.Services.Services
             return await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
         }
 
-      
 
-        private async Task<bool> checkEachDateHasConferenceSession(Conference conference, List<DateOnly> sessionDates)
+
+        private async Task checkEachDateHasConferenceSession(Conference conference, List<DateOnly> sessionDates, bool checkOnlyBoundaries = false)
         {
-            // Tạo danh sách tất cả các ngày mà hội nghị diễn ra
-            List<DateOnly> allConferenceDates = new();
-            if (conference.StartDate.HasValue && conference.EndDate.HasValue)
+            if (checkOnlyBoundaries)
             {
-                for (var date = conference.StartDate.Value; date <= conference.EndDate.Value; date = date.AddDays(1))
+                // LOGIC MỚI: Chỉ kiểm tra ngày đầu và cuối
+                if (!conference.StartDate.HasValue || !conference.EndDate.HasValue) return;
+
+                var startDate = conference.StartDate.Value;
+                var endDate = conference.EndDate.Value;
+                var sessionDatesSet = new HashSet<DateOnly>(sessionDates);
+                var missingBoundaryDates = new List<DateOnly>();
+
+                if (!sessionDatesSet.Contains(startDate))
                 {
-                    allConferenceDates.Add(date);
+                    missingBoundaryDates.Add(startDate);
+                }
+                if (startDate != endDate && !sessionDatesSet.Contains(endDate))
+                {
+                    missingBoundaryDates.Add(endDate);
+                }
+
+                if (missingBoundaryDates.Any())
+                {
+                    var missingDatesString = string.Join(" và ", missingBoundaryDates.Select(d => d.ToString("dd/MM/yyyy")));
+                    throw new BadRequestException($"Ngày bắt đầu và ngày kết thúc của hội nghị phải có ít nhất một phiên. Các ngày sau đang bị thiếu phiên: {missingDatesString}");
                 }
             }
-
-
-
-            // Tìm những ngày có trong hội nghị nhưng không có trong danh sách session
-            var missingDates = allConferenceDates.Except(sessionDates);
-
-            if (missingDates.Any())
+            else
             {
-                
-                var missingDatesString = string.Join(", ", missingDates.Select(d => d.ToString("dd/MM/yyyy")));
-
-                // 3. Tạo một thông báo lỗi rõ ràng và thân thiện.
-                throw new BadRequestException($"Tất cả các ngày trong hội nghị phải có ít nhất một phiên. Các ngày sau đang bị thiếu phiên: {missingDatesString}");
+                // LOGIC CŨ: Kiểm tra tất cả các ngày
+                List<DateOnly> allConferenceDates = new();
+                if (conference.StartDate.HasValue && conference.EndDate.HasValue)
+                {
+                    for (var date = conference.StartDate.Value; date <= conference.EndDate.Value; date = date.AddDays(1))
+                    {
+                        allConferenceDates.Add(date);
+                    }
+                }
+                var missingDates = allConferenceDates.Except(sessionDates);
+                if (missingDates.Any())
+                {
+                    var missingDatesString = string.Join(", ", missingDates.Select(d => d.ToString("dd/MM/yyyy")));
+                    throw new BadRequestException($"Tất cả các ngày trong hội nghị phải có ít nhất một phiên. Các ngày sau đang bị thiếu phiên: {missingDatesString}");
+                }
             }
-
-            return true;
         }
 
         private async Task EnsureConferenceIsEditable(Conference conference)
@@ -323,7 +341,6 @@ namespace ConfRadar.Services.Services
         }
 
 
-        // DÁN PHƯƠNG THỨC NÀY VÀO TRONG CONFERENCESTEPSERVICE
 
         private async Task ValidateRankValueAsync(string rankingCategoryId, string rankValue)
         {
@@ -838,7 +855,7 @@ namespace ConfRadar.Services.Services
 
             await EnsureConferenceIsEditable(conference);
             List<DateOnly> sessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).Distinct().ToList();
-            if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
+            await checkEachDateHasConferenceSession(conference, sessionDates,true);
             if (request.Sessions == null || !request.Sessions.Any())
             {
                 throw new BadRequestException("Yêu cầu phải chứa ít nhất một phiên (session).");
@@ -1688,26 +1705,81 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 3: Research Conference Phases
 
-        public async Task<ResearchConferencePhaseResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhaseRequest request)
+        public async Task<CreatePhasesResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhasesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null) throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
 
-            var phase = request.ToModel(conferenceId);
+            
+            // 1. Phân quyền, trạng thái, và loại hội nghị
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
+            await EnsureConferenceIsEditable(conference);
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
 
+            // 2. Kiểm tra xem hội nghị đã có phase nào chưa (chỉ cho phép tạo một lần)
+            var existingPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
+            if (existingPhases.Any())
+                throw new BadRequestException("Hội nghị này đã có các giai đoạn (phase). Vui lòng sử dụng chức năng cập nhật.");
+
+            // 3. Validation logic cho danh sách các phase từ request
+            var newPhases = request.Phases.OrderBy(p => p.RegistrationStartDate).ToList();
+            // 3a. Phải có đúng MỘT phase chính (IsWaitlist = false) 
+            if (newPhases.Count(p =>p.IsWaitlist == false) != 1) throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
+
+            // 3b. Phase đầu tiên phải là phase chính
+            if(newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase đầu tiên (dựa theo ngày bắt đầu) phải là phase chính.");
+
+
+            // 3c. Phải có ít nhất MỘT phase waitlist
+            if(!newPhases.Any(p => p.IsWaitlist == true)) throw new BadRequestException("Yêu cầu phải có ít nhất một phase dự phòng (IsWaitlist = true).");
+
+
+            // 4. Validation logic cho ngày tháng (tuần tự và hợp lệ)
+            DateOnly? lastPhaseEndDate = null;
+            foreach (var phase in newPhases)
+            {
+                // 4a. Các mốc thời gian trong cùng một phase phải tuần tự
+                if (phase.RegistrationStartDate > phase.RegistrationEndDate ||
+                    phase.RegistrationEndDate > phase.FullPaperStartDate ||
+                    phase.FullPaperStartDate > phase.FullPaperEndDate ||
+                    phase.FullPaperEndDate > phase.ReviewStartDate ||
+                    phase.ReviewStartDate > phase.ReviewEndDate ||
+                    phase.ReviewEndDate > phase.ReviseStartDate ||
+                    phase.ReviseStartDate > phase.ReviseEndDate ||
+                    phase.ReviseEndDate > phase.CameraReadyStartDate ||
+                    phase.CameraReadyStartDate > phase.CameraReadyEndDate)
+                {
+                    throw new BadRequestException("Các mốc thời gian trong một phase không theo đúng thứ tự tuần tự.");
+                }
+
+                // 4b. Các phase phải diễn ra nối tiếp nhau, không được gối lên nhau
+                if (lastPhaseEndDate.HasValue && phase.RegistrationStartDate <= lastPhaseEndDate)
+                {
+                    throw new BadRequestException($"Ngày bắt đầu của một phase phải sau ngày kết thúc của phase trước đó. Cụ thể ngày kết thúc phase liền trước{lastPhaseEndDate.Value} > {phase.RegistrationStartDate.Value} ngày bắt đầu phase liền sau là sai");
+                }
+                lastPhaseEndDate = phase.CameraReadyEndDate;
+            }
+
+            var createdPhaseIds = new List<string>();
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                await _unitOfWork.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(phase);
-
-                // Create revision round deadlines if provided
-                if (request.RevisionRoundDeadlines != null)
+                for (int i = 0; i < newPhases.Count; i++)
                 {
-                    foreach (var deadline in request.RevisionRoundDeadlines)
-                    {
-                        var revisionRoundDeadline = deadline.ToModel(phase.ResearchConferencePhaseId);
-                        await _unitOfWork.RevisionRoundDeadlineRepository.CreateCsAsync(revisionRoundDeadline);
-                    }
+                    var phaseRequest = newPhases[i];
+                    var phaseModel = phaseRequest.ToModel(conferenceId);
+
+                    // Gán trạng thái IsActive theo quy tắc
+                    // Phase đầu tiên (chính) luôn active, các phase waitlist không active
+                    phaseModel.IsActive = (i == 0);
+
+                    await _unitOfWork.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(phaseModel);
+
+                    // (Logic tạo RevisionRoundDeadlines giữ nguyên nếu cần)
+
+                    createdPhaseIds.Add(phaseModel.ResearchConferencePhaseId);
                 }
 
                 await _unitOfWork.CommitAsync();
@@ -1718,7 +1790,11 @@ namespace ConfRadar.Services.Services
                 throw;
             }
 
-            return phase.ToResponse();
+            return new CreatePhasesResponse
+            {
+                CreatedPhaseIds = createdPhaseIds,
+                Message = "Tạo các giai đoạn cho hội nghị thành công.",
+            };
         }
 
         public async Task<ResearchConferencePhaseResponse> GetResearchConferencePhaseAsync(string conferenceId)
@@ -1729,7 +1805,7 @@ namespace ConfRadar.Services.Services
             return phase.ToResponse();
         }
 
-        public async Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request)
+        public async Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request, string userId)
         {
             var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(phaseId);
             if (phase == null) throw new NotFoundException($"Research conference phase with ID {phaseId} not found");
@@ -1755,65 +1831,88 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 4: Research Conference Sessions (without speakers)
 
-        public async Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request)
+        public async Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
-            List<DateOnly> sessionDates = (List<DateOnly>)request.Sessions.Select(s => s.Date);
-            if (!checkEachDateHasConferenceSession(conference, sessionDates).Result) throw new Exception();
+            if (conference == null) throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
+
+            #region Xác thực
+            // 1. Phân quyền và trạng thái
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền thêm phiên (session) cho hội nghị này.");
+            await EnsureConferenceIsEditable(conference);
+
+            // 2. Đảm bảo đây là hội nghị nghiên cứu
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
+
+            // 3. Kiểm tra request hợp lệ
+            if (request.Sessions == null || !request.Sessions.Any())
+                throw new BadRequestException("Yêu cầu phải chứa ít nhất một phiên (session).");
+
+            // 4. Kiểm tra xem tất cả các ngày của hội nghị đều có session (Đã sửa lỗi)
+            var sessionDates = request.Sessions
+                                    .Where(s => s.Date.HasValue)
+                                    .Select(s => s.Date.Value)
+                                    .Distinct()
+                                    .ToList();
+            await checkEachDateHasConferenceSession(conference, sessionDates,true); // Gọi await đúng cách
+            #endregion
 
             var responses = new List<ResearchSessionWithMediaResponse>();
-
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                if (request.Sessions != null)
+                foreach (var sessionRequest in request.Sessions)
                 {
-                    foreach (var session in request.Sessions)
+                    #region Xác thực cho từng Session
+                    
+                    if (string.IsNullOrWhiteSpace(sessionRequest.Title))
+                        throw new BadRequestException("Tiêu đề của phiên không được để trống.");
+
+                    if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(sessionRequest.RoomId) == null)
+                        throw new NotFoundException($"Phòng với ID {sessionRequest.RoomId} không tồn tại.");
+
+                    // Ngày của session phải nằm trong khoảng ngày của hội nghị
+                    if (sessionRequest.Date.Value < conference.StartDate || sessionRequest.Date.Value > conference.EndDate)
                     {
-                        if (session.RoomId == null || session.StartTime == null || session.EndTime == null || session.Date == null)
-                            throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
-
-                        if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
-                            throw new NotFoundException($"Room with ID {session.RoomId} not found");
-
-                        // Validate session time availability
-                        var sessionStartDateTime = session.Date.Value.ToDateTime(session.StartTime.Value);
-                        var sessionEndDateTime = session.Date.Value.ToDateTime(session.EndTime.Value);
-
-                        // Step 2: Validate using these direct, local time values.
-                        await ValidateSessionTimeAvailability(sessionStartDateTime, sessionEndDateTime, session.RoomId);
-
-
-
-                        var conferenceSession = session.ToModel(conferenceId);
-                        await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
-
-                        // Add media for the session (no speakers for research sessions)
-                        if (session.SessionMedias != null)
-                        {
-                            foreach (var mediaRequest in session.SessionMedias)
-                            {
-                                string sessionMedia = "";
-                                if (mediaRequest.MediaFile != null)
-                                {
-                                    using var stream = mediaRequest.MediaFile.OpenReadStream();
-                                    var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(mediaRequest.MediaFile.FileName);
-                                    sessionMedia = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
-                                    sessionMedia = _objectStorageSettings.EndPoint + sessionMedia;
-                                }
-                                var conferenceSessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId, sessionMedia);
-
-                                await _unitOfWork.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(conferenceSessionMedia);
-                            }
-                        }
-
-                        // Get updated session with all details
-                        var createdSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(conferenceSession.ConferenceSessionId);
-                        responses.Add(createdSession.ToResearchResponseWithMedia());
+                        throw new BadRequestException($"Ngày của phiên '{sessionRequest.Title}' ({sessionRequest.Date.Value:dd/MM/yyyy}) nằm ngoài khoảng thời gian diễn ra hội nghị ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
                     }
-                }
 
+                    var sessionStartDateTime = sessionRequest.Date.Value.ToDateTime(sessionRequest.StartTime.Value);
+                    var sessionEndDateTime = sessionRequest.Date.Value.ToDateTime(sessionRequest.EndTime.Value);
+
+                    // Kiểm tra thời gian trùng lặp
+                    await ValidateSessionTimeAvailability(sessionStartDateTime, sessionEndDateTime, sessionRequest.RoomId);
+                    #endregion
+
+                    var conferenceSession = sessionRequest.ToModel(conferenceId);
+                    await _unitOfWork.ConferenceSessionRepository.CreateConferenceSessionAsync(conferenceSession);
+
+                    // Xử lý media (không có speaker)
+                    if (sessionRequest.SessionMedias != null)
+                    {
+                        foreach (var mediaRequest in sessionRequest.SessionMedias)
+                        {
+                            if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile)) throw new BadRequestException($"Không hỗ trợ định dạng {mediaRequest.MediaFile.ContentType  }");
+                            if (mediaRequest.MediaFile == null && string.IsNullOrWhiteSpace(mediaRequest.MediaUrl))
+                                continue; 
+
+                            string mediaUrl = mediaRequest.MediaUrl;
+                            if (mediaRequest.MediaFile != null)
+                            {
+                                using var stream = mediaRequest.MediaFile.OpenReadStream();
+                                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(mediaRequest.MediaFile.FileName);
+                                mediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
+                            }
+                            var conferenceSessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId, mediaUrl);
+                            await _unitOfWork.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(conferenceSessionMedia);
+                        }
+                    }
+
+                    var createdSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(conferenceSession.ConferenceSessionId);
+                    responses.Add(createdSession.ToResearchResponseWithMedia());
+                }
                 await _unitOfWork.CommitAsync();
             }
             catch (Exception)
@@ -1841,34 +1940,48 @@ namespace ConfRadar.Services.Services
             return responses;
         }
 
-        public async Task<ResearchSessionWithMediaResponse> UpdateResearchSessionAsync(string sessionId, UpdateConferenceSessionRequest request)
+        public async Task<ResearchSessionWithMediaResponse> UpdateResearchSessionAsync(string sessionId, UpdateConferenceSessionRequest request, string userId)
         {
             var session = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
-            if (session == null) throw new NotFoundException($"Conference session with ID {sessionId} not found");
+            if (session == null) throw new NotFoundException($"Không tìm thấy phiên với ID {sessionId}");
 
-            var newStartTime = request.StartTime ?? TimeOnly.FromDateTime(session.StartTime.Value);
-            var newEndTime = request.EndTime ?? TimeOnly.FromDateTime(session.EndTime.Value);
-            var newDate = request.Date ?? session.SessionDate;
-            var newRoomId = request.RoomId ?? session.RoomId;
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(session.ConferenceId);
 
-            if (newStartTime == null || newEndTime == null || newDate == null || newRoomId == null)
-                throw new BadRequestException("Session must have a RoomId, StartTime, EndTime, and Date.");
+            #region Xác thực
+            // 1. Phân quyền và trạng thái
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền cập nhật phiên này.");
+            EnsureConferenceIsEditable(conference);
 
-            // Validate session time availability
-            var startDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
-            var endDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
+            // 2. Đảm bảo đây là session của hội nghị nghiên cứu
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ dành cho phiên của hội nghị nghiên cứu.");
 
-            startDateTime = startDateTime.AddHours(newStartTime.Hour).AddMinutes(newStartTime.Minute);
-            endDateTime = endDateTime.AddHours(newEndTime.Hour).AddMinutes(newEndTime.Minute);
+            // 3. Xác định các giá trị cuối cùng và xác thực
+            var finalDate = request.Date ?? session.SessionDate.Value;
+            var finalStartTime = request.StartTime ?? TimeOnly.FromDateTime(session.StartTime.Value);
+            var finalEndTime = request.EndTime ?? TimeOnly.FromDateTime(session.EndTime.Value);
+            var finalRoomId = request.RoomId ?? session.RoomId;
 
-            await ValidateSessionTimeAvailability(startDateTime, endDateTime, newRoomId, sessionId);
+            if (finalDate < conference.StartDate || finalDate > conference.EndDate)
+            {
+                throw new BadRequestException($"Ngày của phiên ({finalDate:dd/MM/yyyy}) phải nằm trong khoảng thời gian diễn ra hội nghị ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
+            }
 
+            var finalStartDateTime = finalDate.ToDateTime(finalStartTime);
+            var finalEndDateTime = finalDate.ToDateTime(finalEndTime);
+
+            // 4. Kiểm tra trùng lặp thời gian
+            await ValidateSessionTimeAvailability(finalStartDateTime, finalEndDateTime, finalRoomId, sessionId);
+            #endregion
+
+            // Áp dụng thay đổi
             session.Title = request.Title ?? session.Title;
             session.Description = request.Description ?? session.Description;
-            session.StartTime = startDateTime;
-            session.EndTime = endDateTime;
-            session.SessionDate = newDate;
-            session.RoomId = newRoomId;
+            session.StartTime = finalStartDateTime;
+            session.EndTime = finalEndDateTime;
+            session.SessionDate = finalDate;
+            session.RoomId = finalRoomId;
 
             await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
 
@@ -1876,18 +1989,39 @@ namespace ConfRadar.Services.Services
             return updatedSession.ToResearchResponseWithMedia();
         }
 
-        public async Task<bool> DeleteResearchSessionAsync(string sessionId)
+        public async Task<bool> DeleteResearchSessionAsync(string sessionId, string userId)
         {
             var session = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(sessionId);
-            if (session == null) throw new NotFoundException($"Conference session with ID {sessionId} not found");
+            if (session == null)
+            {
+                return false; // Trả về false thay vì NotFound
+            }
 
-            // Delete all media associated with this session (no speakers for research sessions)
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(session.ConferenceId);
+
+            #region Xác thực
+            // 1. Phân quyền và trạng thái
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền xóa phiên này.");
+            EnsureConferenceIsEditable(conference);
+
+            //// 2. Kiểm tra xem đã có presenter nào được gán vào session này chưa
+            //var presentersInSession = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorsBySessionIdAsync(sessionId);
+            //if (presentersInSession.Any())
+            //{
+            //    throw new BadRequestException("Không thể xóa phiên này vì đã có bài báo được gán để trình bày.");
+            //}
+            #endregion
+
+            // Xóa tất cả media liên quan
             var mediaList = await _unitOfWork.ConferenceSessionMediumRepository.GetMediaBySessionIdAsync(sessionId);
             foreach (var media in mediaList)
             {
+                // (Tùy chọn: Xóa file khỏi Object Storage ở đây nếu cần)
                 await _unitOfWork.ConferenceSessionMediumRepository.DeleteConferenceSessionMediumAsync(media);
             }
 
+            // Xóa session
             return await _unitOfWork.ConferenceSessionRepository.DeleteConferenceSessionAsync(session) > 0;
         }
 
@@ -2204,94 +2338,168 @@ namespace ConfRadar.Services.Services
 
         #region Revision Round Deadline CRUD Operations
 
-        public async Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request)
+        public async Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request, string userId)
         {
             var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(researchConferencePhaseId);
-            if (phase == null) throw new NotFoundException($"Phase Hội nghị nghiên cứu  ID {researchConferencePhaseId} không thấy");
+            if (phase == null) throw new NotFoundException($"Không tìm thấy giai đoạn (phase) với ID {researchConferencePhaseId}.");
 
-            //list round phải bắt đầu từ 1 và khác nhau
-            List<int> round = request.Select(r => r.RoundNumber).ToList();
-            bool isValid = round.Count > 0 &&
-                           round.Min() == 1 &&
-                           round.Max() == round.Count &&
-                           round.Distinct().Count() == round.Count;
-            if (!isValid) throw new BadRequestException("Round phải bắt đầu từ 1 và khác nhau");
-            // Validate that all dates in the request are between the revise start and end date of the phase
-            if (phase.ReviseStartDate.HasValue && phase.ReviseEndDate.HasValue)
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(phase.ConferenceId);
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(phase.ConferenceId);
+
+            #region Xác thực
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
+            EnsureConferenceIsEditable(conference);
+            if (researchDetail == null)
+                throw new BadRequestException("Hội nghị này chưa có chi tiết nghiên cứu (Research Detail).");
+            if (request == null || !request.Any())
+                throw new BadRequestException("Yêu cầu phải chứa ít nhất một deadline.");
+
+            var existingDeadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(researchConferencePhaseId);
+
+            // 1. Số lượng deadline không được vượt quá số lần cho phép
+            int allowedAttempts = researchDetail.RevisionAttemptAllowed ?? 0;
+            if (existingDeadlines.Count + request.Count > allowedAttempts)
             {
-                foreach (var deadline in request)
-                {
-                    if (deadline.StartSubmissionDate != null && deadline.EndSubmissionDate != null)
-                    {
-                        if (deadline.StartSubmissionDate >= phase.ReviseStartDate.Value || deadline.EndSubmissionDate <= phase.ReviseEndDate.Value)
-                        {
-                            throw new BadRequestException($"Ngày hạn nộp bắt đầu {deadline.StartSubmissionDate} và kết thúc {deadline.EndSubmissionDate} phải nằm trong khoảng từ ngày bắt đầu chỉnh sửa ({phase.ReviseStartDate.Value}) đến ngày kết thúc chỉnh sửa ({phase.ReviseEndDate.Value})");
-                        }
-                    }
-                }
+                throw new BadRequestException($"Không thể thêm. Tổng số deadline ({existingDeadlines.Count + request.Count}) sẽ vượt quá số lần cho phép sửa đổi ({allowedAttempts}).");
             }
 
-            var responses = new List<RevisionRoundDeadlineResponse>();
+            // 2. Sắp xếp các deadline mới để kiểm tra tuần tự
+            var sortedNewDeadlines = request.OrderBy(d => d.StartSubmissionDate).ToList();
+            var allDeadlinesSorted = existingDeadlines
+                .Select(d => new { d.StartSubmissionDate, d.EndSubmissionDate })
+                .Union(sortedNewDeadlines.Select(d => new { d.StartSubmissionDate, d.EndSubmissionDate }))
+                .OrderBy(d => d.StartSubmissionDate)
+                .ToList();
 
+            DateOnly? lastEndDate = null;
+            foreach (var deadline in allDeadlinesSorted)
+            {
+                // 2a. Start Date phải trước End Date
+                if (deadline.StartSubmissionDate >= deadline.EndSubmissionDate)
+                    throw new BadRequestException($"Ngày bắt đầu ({deadline.StartSubmissionDate:dd/MM/yyyy}) phải trước ngày kết thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
+
+                // 2b. Khoảng thời gian của deadline phải nằm trong khoảng Revise của Phase cha (SỬA LỖI LOGIC)
+                if (deadline.StartSubmissionDate < phase.ReviseStartDate || deadline.EndSubmissionDate > phase.ReviseEndDate)
+                {
+                    throw new BadRequestException($"Khoảng thời gian deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) phải nằm trong giai đoạn sửa đổi của phase ({phase.ReviseStartDate:dd/MM/yyyy} - {phase.ReviseEndDate:dd/MM/yyyy}).");
+                }
+
+                // 2c. Các deadline không được chồng chéo lên nhau
+                if (lastEndDate.HasValue && deadline.StartSubmissionDate <= lastEndDate)
+                {
+                    throw new BadRequestException($"Deadline bắt đầu vào ngày {deadline.StartSubmissionDate:dd/MM/yyyy} bị chồng chéo với deadline trước đó (kết thúc vào {lastEndDate:dd/MM/yyyy}).");
+                }
+                lastEndDate = deadline.EndSubmissionDate;
+            }
+            #endregion
+
+            var responses = new List<RevisionRoundDeadlineResponse>();
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                foreach (var deadlineRequest in request)
+                // Tìm round number lớn nhất hiện có để bắt đầu từ số tiếp theo
+                int lastRoundNumber = existingDeadlines.Any() ? existingDeadlines.Max(d => d.RoundNumber ?? 0) : 0;
+
+                foreach (var deadlineRequest in sortedNewDeadlines)
                 {
-                    var revisionRoundDeadline = deadlineRequest.ToModel(researchConferencePhaseId);
+                    lastRoundNumber++; // Tăng round number tự động
+                    var revisionRoundDeadline = new RevisionRoundDeadline
+                    {
+                        RevisionRoundDeadlineId = Guid.NewGuid().ToString(),
+                        ResearchConferencePhaseId = researchConferencePhaseId,
+                        StartSubmissionDate = deadlineRequest.StartSubmissionDate,
+                        EndSubmissionDate = deadlineRequest.EndSubmissionDate,
+                        RoundNumber = lastRoundNumber
+                    };
                     await _unitOfWork.RevisionRoundDeadlineRepository.CreateCsAsync(revisionRoundDeadline);
                     responses.Add(revisionRoundDeadline.ToRevisionRoundDeadlineResponse());
                 }
-
                 await _unitOfWork.CommitAsync();
             }
-            catch (Exception)
-            {
+            catch (Exception e) { 
                 await _unitOfWork.RollbackAsync();
-                throw;
+                throw e;
             }
 
             return responses;
         }
-
         public async Task<List<RevisionRoundDeadlineResponse>> GetRevisionRoundDeadlinesByResearchPhaseIdAsync(string researchConferencePhaseId)
         {
             var deadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(researchConferencePhaseId);
             return deadlines.Select(d => d.ToRevisionRoundDeadlineResponse()).ToList();
         }
 
-        public async Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request)
+
+        public async Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request, string userId)
         {
-            var deadline = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByIdAsync(revisionRoundDeadlineId);
-            if (deadline == null) throw new NotFoundException($"Revision round deadline with ID {revisionRoundDeadlineId} not found");
+            var deadlineToUpdate = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByIdAsync(revisionRoundDeadlineId);
+            if (deadlineToUpdate == null) throw new NotFoundException($"Không tìm thấy deadline với ID {revisionRoundDeadlineId}");
 
-            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(deadline.ResearchConferencePhaseId);
-            if (phase == null) throw new NotFoundException($"Research conference phase for revision round deadline {revisionRoundDeadlineId} not found");
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(deadlineToUpdate.ResearchConferencePhaseId);
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(phase.ConferenceId);
 
-            // Validate that the new date is between the revise start and end date of the phase
-            if (phase.ReviseStartDate.HasValue && phase.ReviseEndDate.HasValue && request.EndDate.HasValue)
+            #region Xác thực
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền cập nhật deadline này.");
+            EnsureConferenceIsEditable(conference);
+
+            var finalStartDate = request.StartSubmissionDate ?? deadlineToUpdate.StartSubmissionDate;
+            var finalEndDate = request.EndSubmissionDate ?? deadlineToUpdate.EndSubmissionDate;
+
+            // 1. Start date phải trước end date
+            if (finalStartDate >= finalEndDate)
+                throw new BadRequestException("Ngày bắt đầu phải trước ngày kết thúc.");
+
+            // 2. Khoảng thời gian mới phải nằm trong Phase cha
+            if (finalStartDate < phase.ReviseStartDate || finalEndDate > phase.ReviseEndDate)
+                throw new BadRequestException($"Khoảng thời gian deadline mới phải nằm trong giai đoạn sửa đổi của phase ({phase.ReviseStartDate:dd/MM/yyyy} - {phase.ReviseEndDate:dd/MM/yyyy}).");
+
+            // 3. Khoảng thời gian mới không được chồng chéo với các deadline KHÁC
+            var otherDeadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(phase.ResearchConferencePhaseId);
+            foreach (var other in otherDeadlines.Where(d => d.RevisionRoundDeadlineId != revisionRoundDeadlineId))
             {
-                if (request.EndDate.Value < phase.ReviseStartDate.Value || request.EndDate.Value > phase.ReviseEndDate.Value)
+                if (finalStartDate < other.EndSubmissionDate && finalEndDate > other.StartSubmissionDate)
                 {
-                    throw new BadRequestException($"Ngày hết hạn {request.EndDate.Value} phải nằm trong khoảng từ ngày bắt đầu chỉnh sửa ({phase.ReviseStartDate.Value}) đến ngày kết thúc chỉnh sửa ({phase.ReviseEndDate.Value})");
+                    throw new BadRequestException($"Khoảng thời gian mới bị chồng chéo với Round {other.RoundNumber} ({other.StartSubmissionDate:dd/MM/yyyy} - {other.EndSubmissionDate:dd/MM/yyyy}).");
                 }
             }
+            #endregion
 
-            deadline.EndSubmissionDate = request.EndDate ?? deadline.EndSubmissionDate;
-            deadline.RoundNumber = request.RoundNumber ?? deadline.RoundNumber;
+            deadlineToUpdate.StartSubmissionDate = finalStartDate;
+            deadlineToUpdate.EndSubmissionDate = finalEndDate;
+            // Không cho phép cập nhật RoundNumber
 
-            await _unitOfWork.RevisionRoundDeadlineRepository.UpdateCsAsync(deadline);
-            return deadline.ToRevisionRoundDeadlineResponse();
+            await _unitOfWork.RevisionRoundDeadlineRepository.UpdateCsAsync(deadlineToUpdate);
+            return deadlineToUpdate.ToRevisionRoundDeadlineResponse();
         }
 
-        public async Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId)
+        public async Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, string userId)
         {
             var deadline = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByIdAsync(revisionRoundDeadlineId);
-            if (deadline == null) throw new NotFoundException($"Revision round deadline with ID {revisionRoundDeadlineId} not found");
+            if (deadline == null)
+            {
+                return false; // Không tìm thấy, trả về false thay vì NotFound
+            }
+
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(deadline.ResearchConferencePhaseId);
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(phase.ConferenceId);
+
+            #region Xác thực
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền xóa deadline này.");
+            EnsureConferenceIsEditable(conference);
+
+            // Thêm kiểm tra: Không cho phép xóa nếu đã có bài nộp trong round này
+            var submissionsInRound = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByDeadlineId(revisionRoundDeadlineId);
+            if (submissionsInRound.Any())
+            {
+                throw new BadRequestException($"Không thể xóa Round {deadline.RoundNumber} vì đã có bài báo được nộp trong giai đoạn này.");
+            }
+            #endregion
 
             return await _unitOfWork.RevisionRoundDeadlineRepository.DeleteCsAsync(deadline) > 0;
         }
-
         #endregion
     }
 }
