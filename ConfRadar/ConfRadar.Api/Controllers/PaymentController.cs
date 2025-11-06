@@ -26,7 +26,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaymentService.CreatePaymentForTechConference(request, userId);
-            return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Đã thanh toán thành công vé cho hội nghị công nghệ"));
+            return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Thanh toán đã hoạt động"));
         }
         [Authorize]
         [HttpPost("pay-research-paper")]
@@ -34,7 +34,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaymentService.CreatePaymentForAbstract(request, userId);
-            return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Đã thanh toán thành công vé cho hội thảo"));
+            return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Thanh toán đã hoạt động"));
         }
 
 

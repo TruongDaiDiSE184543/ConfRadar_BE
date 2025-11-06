@@ -12,6 +12,7 @@ namespace ConfRadar.Services.Services
         Task<bool> KeyExistsAsync(string key);
         Task<long> DecrementAsync(string key, long value = 1);
         Task<long> IncrementAsync(string key, long value = 1);
+        Task<IEnumerable<string>> GetKeysByPatternAsync(string pattern);
     }
     public class RedisService : IRedisService
     {
@@ -56,6 +57,24 @@ namespace ConfRadar.Services.Services
         {
             return await _db.StringDecrementAsync(key, value);
         }
+        private IServer GetServer()
+        {
+            var endpoints = _redis.GetEndPoints();
+            return _redis.GetServer(endpoints.First());
+        }
+        public async Task<IEnumerable<string>> GetKeysByPatternAsync(string pattern)
+        {
+            var server = GetServer();
+            var keys = new List<string>();
+
+            await foreach (var key in server.KeysAsync(pattern: pattern))
+            {
+              keys.Add(key.ToString());
+            }
+
+            return keys.Select(k => (string)k);
+        }
+
     }
 
 }
