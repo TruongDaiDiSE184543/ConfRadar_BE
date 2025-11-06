@@ -6,8 +6,10 @@
         public string UserId { get; set; }
         public string PaymentMethodId { get; set; }
         public string ConferencePriceId { get; set; }
+        public string PricePhaseId { get; set; }
         public string ConferenceId { get; set; }
-        public string PaymentLockKey { get; set; }
+        public string PaymentConferenceLockKey { get; set; }
+        public string PaymentPhaseLockKey { get; set; }
         public List<string> ConferenceSessionIds { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
