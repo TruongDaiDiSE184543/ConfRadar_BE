@@ -30,43 +30,26 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize]
         [HttpPost("pay-research-paper")]
-        public async Task<IActionResult> CreatePaymentForResearch([FromBody] CreatePaperPaymentRequest request)
+        public async Task<IActionResult> CreatePaymentForResearchForPaper([FromBody] CreatePaperPaymentRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaymentService.CreatePaymentForAbstract(request, userId);
             return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Thanh toán đã hoạt động"));
+        }
+        [Authorize]
+        [HttpPost("pay-research-as-attendee")]
+        public async Task<IActionResult> CreatePaymentForResearchAsAttendee([FromBody] CreateResearchAttendeePaymentRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaymentService.CreatePaymentForResearchAsAttendee(request, userId);
+            return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Thanh toán đã hoạt động"));
+
         }
 
 
 
 
 
-        //[HttpPost("verify-momo-for-tech")]
-        //public async Task<IActionResult> VerifyPaymentForTech([FromBody] MomoPaymentCallBackResponse response)
-        //{
-        //    //await _serviceManager.MomoService.VerifyMomoPaymentDataForTechConference(response);
-        //    await Task.CompletedTask;
-        //    return Ok(ApiResponse<object>.SuccessResponse(null, "Thanh toán thành công"));
-        //}
-        //[HttpPost("verify-momo-for-research")]
-        //public async Task<IActionResult> VerifyPaymentForResearch([FromBody] MomoPaymentCallBackResponse response)
-        //{
-        //    await _serviceManager.MomoService.VerifyMomoPaymentDataForResearchConferenceAbstractSubmission(response);
-        //    await Task.CompletedTask;
-        //    return Ok(ApiResponse<object>.SuccessResponse(null, "Thanh toán thành công"));
-        //}
-        //[HttpGet("momo-success-for-tech")]
-        //public async Task<IActionResult> MomoSucessForTech([FromQuery] MomoPaymentCallBackResponse response)
-        //{
-        //    await _serviceManager.MomoService.VerifyMomoPaymentDataForTechConference(response);
-        //    return Ok(ApiResponse<object>.SuccessResponse(null, "Thanh toán thành công"));
-        //}
-        //[HttpGet("momo-success-for-research")]
-        //public async Task<IActionResult> MomoSucessForResearch([FromQuery] MomoPaymentCallBackResponse response)
-        //{
-        //    await _serviceManager.MomoService.VerifyMomoPaymentDataForResearchConferenceAbstractSubmission(response);
-        //    return Ok(ApiResponse<object>.SuccessResponse(null, "Thanh toán thành công"));
-        //}
 
         [Authorize]
         [HttpGet("get-own-transaction")]
