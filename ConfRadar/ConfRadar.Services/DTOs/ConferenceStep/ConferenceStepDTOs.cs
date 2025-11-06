@@ -663,31 +663,50 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     }
 
     // Research Conference Step 4: Research Conference Phases and Revision Round Deadlines
-    public class CreateResearchConferencePhaseRequest
+    public class CreateResearchConferencePhasesRequest
     {
+        [Required]
+        [MinLength(2, ErrorMessage = "Phải có ít nhất 2 phase: một phase chính và một phase waitlist.")]
+        public List<CreateResearchConferencePhaseItemRequest> Phases { get; set; }
+    }
+
+    public class CreateResearchConferencePhaseItemRequest
+    {
+        [Required]
         public DateOnly? RegistrationStartDate { get; set; }
+        [Required]
         public DateOnly? RegistrationEndDate { get; set; }
+        [Required]
         public DateOnly? FullPaperStartDate { get; set; }
+        [Required]
         public DateOnly? FullPaperEndDate { get; set; }
+        [Required]
         public DateOnly? ReviewStartDate { get; set; }
+        [Required]
         public DateOnly? ReviewEndDate { get; set; }
+        [Required]
         public DateOnly? ReviseStartDate { get; set; }
+        [Required]
         public DateOnly? ReviseEndDate { get; set; }
+        [Required]
         public DateOnly? CameraReadyStartDate { get; set; }
+        [Required]
         public DateOnly? CameraReadyEndDate { get; set; }
+
+        [Required(ErrorMessage = "Phải xác định đây có phải là phase waitlist hay không.")]
         public bool? IsWaitlist { get; set; }
-        public bool? IsActive { get; set; }
+
         public List<CreateRevisionRoundDeadlineRequest>? RevisionRoundDeadlines { get; set; }
     }
 
     public class CreateRevisionRoundDeadlineRequest
     {
-        [Required]
-        public DateOnly StartSubmissionDate { get; set; }
-        [Required]
-        public DateOnly EndSubmissionDate { get; set; }
-        [Required]
-        public int RoundNumber { get; set; }
+        [Required(ErrorMessage = "Ngày bắt đầu nộp bài là bắt buộc.")]
+        public DateOnly? StartSubmissionDate { get; set; }
+
+        [Required(ErrorMessage = "Ngày kết thúc nộp bài là bắt buộc.")]
+        public DateOnly? EndSubmissionDate { get; set; }
+
     }
 
     public class UpdateResearchConferencePhaseRequest
@@ -708,8 +727,15 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateRevisionRoundDeadlineRequest
     {
-        public DateOnly? EndDate { get; set; }
-        public int? RoundNumber { get; set; }
+        public DateOnly? StartSubmissionDate { get; set; }
+        public DateOnly? EndSubmissionDate { get; set; }
+    }
+
+
+    public class CreatePhasesResponse
+    {
+        public string Message { get; set; }
+        public List<string> CreatedPhaseIds { get; set; }
     }
 
     public class ResearchConferencePhaseResponse
