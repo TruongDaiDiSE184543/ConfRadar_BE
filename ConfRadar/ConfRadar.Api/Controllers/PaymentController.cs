@@ -136,7 +136,12 @@ namespace ConfRadar.Api.Controllers
             await _serviceManager.PaymentService.VerifyPayOsDataForConference(data);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
         }
-
+        [HttpPost("verify-momo")]
+        public async Task<IActionResult> VerifyMomo([FromBody] MomoPaymentCallBackResponse data)
+        {
+            await _serviceManager.PaymentService.VerifyMomoDataForConference(data);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
+        }
         //[HttpPost("cancel-payos")]
         //public async Task<IActionResult> CancelPayOs()
         //{
@@ -146,9 +151,15 @@ namespace ConfRadar.Api.Controllers
 
 
         [HttpGet("success-payos")]
-        public IActionResult Success()
+        public IActionResult SuccessPayOs()
         {
             string message = "Đã thanh toán thành công payos";
+            return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
+        }
+        [HttpGet("success-momo")]
+        public IActionResult SuccessMomo()
+        {
+            string message = "Đã thanh toán thành công momo";
             return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
         }
 
