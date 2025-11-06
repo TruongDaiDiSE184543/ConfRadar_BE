@@ -10,7 +10,10 @@ namespace ConfRadar.Services.DTOs.Paper
         public string PaperId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-        public DateTime Created { get; set; }
+        public DateTime? Created { get; set; }
+        public DateTime? Updated { get; set; }
+        public Author RootAuthor { get; set; }
+        public List<Author> CoAuthors { get; set; }
         public PaperPhaseDtoDetail? CurrentPhase { get; set; }
         public AbstractDtoDetail? Abstract { get; set; }
         public FullPaperDtoDetail? FullPaper { get; set; }
@@ -20,6 +23,12 @@ namespace ConfRadar.Services.DTOs.Paper
         public List<RevisionDeadlineDetail>? revisionDeadline { get; set; }
     }
 
+
+    public class Author
+    {
+        public string UserId {  get; set; }
+        public string FullName { get; set; }
+    }
     public class ResearchPhaseDtoDetail
     {
         public string ResearchConferencePhaseId { get; set; } = null!;
@@ -65,6 +74,10 @@ namespace ConfRadar.Services.DTOs.Paper
         public string AbstractId { get; set; }
         public string FileUrl { get; set; } // Assuming a 'Content' property exists on the entity
         public string Status { get; set; } // The name of the GlobalStatus, e.g., "Pending", "Approved"
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime? Created { get; set; }
+        public DateTime? Updated { get; set; }
     }
 
     /// <summary>
@@ -76,6 +89,10 @@ namespace ConfRadar.Services.DTOs.Paper
         public string FileUrl { get; set; }
         public string ReviewStatus { get; set; } // The name of the ReviewStatus, e.g., "Under Review"
         public string RootPaperId { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime? Created { get; set; }
+        public DateTime? Updated { get; set; }
     }
 
     /// <summary>
@@ -87,6 +104,10 @@ namespace ConfRadar.Services.DTOs.Paper
         public string FileUrl { get; set; }
         public string Status { get; set; } // The name of the GlobalStatus
         public string RootPaperId { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime? Created { get; set; }
+        public DateTime? Updated { get; set; }
     }
 
     /// <summary>
@@ -97,6 +118,8 @@ namespace ConfRadar.Services.DTOs.Paper
         public string RevisionPaperId { get; set; }
         public int? RevisionRound { get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
+        public DateTime? Created { get; set; }
+        public DateTime? Updated { get; set; }
         public List<RevisionSubmissionDtoDetail> Submissions { get; set; } = new List<RevisionSubmissionDtoDetail>();
 
         public List<RevisionReviewDtoDetail> Reviews { get; set; } = new List<RevisionReviewDtoDetail>();
@@ -109,6 +132,8 @@ namespace ConfRadar.Services.DTOs.Paper
     {
         public string SubmissionId { get; set; }
         public string FileUrl { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
         public List<FeedbackDtoDetail> Feedbacks { get; set; } = new List<FeedbackDtoDetail>();
     }
 

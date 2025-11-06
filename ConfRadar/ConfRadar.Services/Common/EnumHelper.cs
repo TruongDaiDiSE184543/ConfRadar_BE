@@ -73,16 +73,16 @@ namespace ConfRadar.Services.Common
 
     }
 
-    //public enum ConferenceStatus
-    //{
-    //    Pending,
-    //    Rejected,
-    //    Rreparing,
-    //    Ready,
-    //    OnHold,
-    //    Canceled,
-    //    Completed
-    //}
+    public enum ConferenceStatus
+    {
+        Pending,
+        Rejected,
+        Rreparing,
+        Ready,
+        OnHold,
+        Cancelled,
+        Completed
+    }
 
     public static class EnumExtension
     {

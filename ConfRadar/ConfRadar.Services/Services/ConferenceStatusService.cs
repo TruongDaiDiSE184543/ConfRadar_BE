@@ -25,9 +25,9 @@ namespace ConfRadar.Services.Services
             var validTransitions = new Dictionary<string, List<string>>
             {
                 { "Pending", new List<string> { "Preparing", "Rejected" } },
-                { "Preparing", new List<string> { "Ready", "Canceled" } },
-                { "Ready", new List<string> { "On Hold", "Completed" } },
-                { "On Hold", new List<string> { "Ready", "Canceled" } },
+                { "Preparing", new List<string> { "Ready", "Cancelled" } },
+                { "Ready", new List<string> { "OnHold", "Completed" } },
+                { "OnHold", new List<string> { "Ready", "Canceled" } },
                 { "Completed", new List<string>() } // No transitions from Completed
             };
 
