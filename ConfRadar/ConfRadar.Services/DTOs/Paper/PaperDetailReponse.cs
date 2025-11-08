@@ -134,6 +134,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string FileUrl { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+        public string RevisionRoundId { get; set; }
         public List<FeedbackDtoDetail> Feedbacks { get; set; } = new List<FeedbackDtoDetail>();
     }
 

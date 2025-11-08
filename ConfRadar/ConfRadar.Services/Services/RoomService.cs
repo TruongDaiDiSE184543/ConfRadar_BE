@@ -1,4 +1,4 @@
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Room;
 using ConfRadar.Services.Exceptions;
@@ -22,6 +22,7 @@ namespace ConfRadar.Services.Services
         Task<List<TimeSpanResponse>> GetUnoccupiedTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
+        Task<List<RoomAvailablity>>  RoomAvailableBetweenDate(string roomId,  DateTime startDate, DateTime endDate);
 
     }
 
@@ -470,6 +471,78 @@ namespace ConfRadar.Services.Services
                 Page = page,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<List<RoomAvailablity>> RoomAvailableBetweenDate(string roomId, DateOnly startDate, DateOnly endDate)
+        {
+            //days interval must be less than 30
+            int daysBetween = startDate.DayNumber - endDate.DayNumber;
+            if (daysBetween > 30) throw new Exception($"{startDate.ToString("dd/MM/yyyy")} cách ${endDate.ToString("dd/MM/yyyy")} hơn 30 ngày");
+            List<RoomAvailablity> response = new(); 
+            for (var date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var occupiedSession = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAndDateAsync(roomId, date);
+                var startDay = new TimeOnly(0,0,0);
+                var endDay = new TimeOnly(23,59,59);
+                var occupiedTimeS = occupiedSession.Where(os => os.SessionDate == date && os.StartTime.HasValue && os.EndTime.HasValue).
+                    Select(os => new
+                    {
+                        startTime = TimeOnly.FromDateTime( os.StartTime.Value),
+                        endTime = TimeOnly.FromDateTime(os.EndTime.Value),
+                    }).OrderBy(os => os.startTime)
+                    .ToList();
+                if (!occupiedSession.Any())
+                {
+                    response.Add(new RoomAvailablity
+                    {
+                        Date = date,
+                        AvailbleTimeSpan = null,
+                        IsAvailableWholeday = true
+                    }
+                    );
+                    continue;
+                }
+                List<TimeSpanResponse> availableInDateInRoom = new();
+                if (startDay < occupiedTimeS.First().startTime)
+                {
+                    availableInDateInRoom.Add(new TimeSpanResponse
+                    {
+                        StartTime = startDay,
+                        EndTime = occupiedTimeS.First().startTime
+                    });
+                }
+
+                for ( int i = 0;i < occupiedTimeS.Count - 1; i++)
+                {
+                    TimeOnly currentEnd = occupiedTimeS[i].endTime;
+                    TimeOnly nextStart = occupiedTimeS[i + 1].startTime;
+                    if (currentEnd < nextStart)
+                    {
+                        availableInDateInRoom.Add(new TimeSpanResponse
+                        {
+                            StartTime = currentEnd,
+                            EndTime = nextStart
+                        });
+                    }
+                }
+
+                if (endDay > occupiedTimeS.Last().endTime)
+                {
+                    availableInDateInRoom.Add(new TimeSpanResponse
+                    {
+                        StartTime = occupiedTimeS.Last().endTime,
+                        EndTime = endDay
+                    });
+                }
+
+                response.Add(new RoomAvailablity
+                {
+                    Date = date,
+                    AvailbleTimeSpan = availableInDateInRoom,
+                    IsAvailableWholeday = false
+                });
+            }
+            return response;
         }
     }
 }
