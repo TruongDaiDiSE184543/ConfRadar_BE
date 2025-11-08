@@ -40,9 +40,13 @@ namespace ConfRadar.Api.Middleware
         private static async Task HandleExceptionAsync(HttpContext context, int statusCode, string message)
         {
             var response = ApiResponse<object>.FailResponse(message);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            await context.Response.WriteAsync(JsonSerializer.Serialize(response,options));
         }
     }
 }

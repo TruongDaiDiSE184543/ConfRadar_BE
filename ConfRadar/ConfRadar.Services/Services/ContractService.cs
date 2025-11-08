@@ -46,17 +46,17 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Reviewer với mã {request.ReviewerId} không tồn tại trong hệ thống");
             }
-            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
-            var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
-            if (adminRole == null || organizerRole == null)
-            {
-                throw new NotFoundException("Không tìm thấy các role tương ứng trong hệ thống");
-            }
-            if (reviewer.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId))
-            {
-                throw new BadRequestException("Người này hiện đang là admin || organizer trong hệ thống");
+            //var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
+            //var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
+            //if (adminRole == null || organizerRole == null)
+            //{
+            //    throw new NotFoundException("Không tìm thấy các role tương ứng trong hệ thống");
+            //}
+            //if (reviewer.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId))
+            //{
+            //    throw new BadRequestException("Người này hiện đang là admin || organizer trong hệ thống");
 
-            }
+            //}
             var reviewContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(request.ReviewerId, request.ConferenceId);
             if (reviewContractFound != null)
             {
