@@ -129,6 +129,8 @@ namespace ConfRadar.Services.Common
         MoMo,
         [Description("PayOs")]
         PayOs,
+        [Description("VnPay")]
+        VnPay,
     }
     public enum ConferenceStatusEnum
     {

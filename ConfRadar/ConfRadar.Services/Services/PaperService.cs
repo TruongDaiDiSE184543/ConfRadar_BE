@@ -250,6 +250,21 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper với id {request.PaperId} trong hệ thống");
             }
+            var researchConferencePhases = basePaper.Conference!.ResearchConferencePhases;
+            if (researchConferencePhases.Count <= 0)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {basePaper.Conference.ConferenceName}");
+            }
+            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeCurrentPhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {basePaper.Conference.ConferenceName}");
+            }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
+            {
+                throw new BadRequestException($"Đã quá hạn quyết định abstract");
+            }
             if (basePaper.PaperPhaseId != abstractPaperPhase.PaperPhaseId)
             {
                 throw new BadRequestException($"Paper hiện tại không đang trong quá trình quyết định abstract");
@@ -438,6 +453,21 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new BadRequestException($"Không tìm thấy paper với id {request.PaperId}.");
+            }
+            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
+            if (researchConferencePhases.Count <= 0)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeCurrentPhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            if (dateNow < activeCurrentPhase.ReviewStartDate || dateNow > activeCurrentPhase.ReviewEndDate)
+            {
+                throw new BadRequestException($"Giai đoạn review cho bài báo này diễn ra từ {activeCurrentPhase.ReviewStartDate} đến {activeCurrentPhase.ReviewEndDate}");
             }
             var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(request.FullPaperId);
             if (fullPaper == null)
@@ -674,7 +704,21 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
 
             }
-
+            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
+            if (researchConferencePhases.Count <= 0)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeCurrentPhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            {
+                throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
+            }
             var revisionPaperSubmission = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(request.RevisionPaperSubmissionId);
             if (revisionPaperSubmission == null)
             {
@@ -716,6 +760,21 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
 
             }
+            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
+            if (researchConferencePhases.Count <= 0)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeCurrentPhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            {
+                throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
+            }
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             //if (paper.PresenterId != userId)
             //{
@@ -750,6 +809,21 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
+            }
+            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
+            if (researchConferencePhases.Count <= 0)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeCurrentPhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            {
+                throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
             }
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
@@ -829,6 +903,21 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new NotFoundException($"Không tìm thấy  paper {request.PaperId} trong hệ thống");
+            }
+            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
+            if (researchConferencePhases.Count <= 0)
+            {
+                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeCurrentPhase == null)
+            {
+                throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+            }
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            {
+                throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
             }
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {

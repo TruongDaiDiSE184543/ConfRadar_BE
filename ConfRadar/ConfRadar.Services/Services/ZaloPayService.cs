@@ -8,7 +8,7 @@ namespace ConfRadar.Services.Services
 {
     public interface IZaloPayService
     {
-        Task<string> CreateMomoPayment();
+        Task<string> CreateZaloPayment();
     }
     public class ZaloPayService : IZaloPayService
     {
@@ -19,11 +19,12 @@ namespace ConfRadar.Services.Services
             _zaloPaySettings = zaloPaySettings;
             _tokenService = tokenService;
         }
-        public async Task<string> CreateMomoPayment()
+        public async Task<string> CreateZaloPayment()
         {
             string createOrderUrl = "https://sb-openapi.zalopay.vn/v2/create";
             var vnTime = ExtensionHelper.GetVietnamTime();
-            string app_trans_id = $"{vnTime:yyMMdd}_{Guid.NewGuid().ToString("N")[..6]}";
+            string orderId = Guid.NewGuid().ToString("N").Substring(0, 6);
+            string app_trans_id = $"{vnTime:yyMMdd}_{orderId}";
             string appUser = "ZaloPayDemo";
             long app_time = new DateTimeOffset(vnTime).ToUnixTimeMilliseconds();
             long amount = 50000;
@@ -59,7 +60,7 @@ namespace ConfRadar.Services.Services
                 description = "Thanh toán đơn hàng confradar",
                 embed_data = embedDataJson,
                 mac = mac,
-                callback_url = "https://483833826218.ngrok-free.app/api/Payment/test-zalo-pay",
+                callback_url = _zaloPaySettings.Value.CallbackUrl,
             };
             using (var httpClient = new HttpClient())
             {

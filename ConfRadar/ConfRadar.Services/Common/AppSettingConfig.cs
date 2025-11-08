@@ -44,10 +44,10 @@
             public bool AutoCapture { get; set; }
             public string ExtraData { get; set; }
             public string Lang { get; set; }
-            public string IpnTech { get; set; }
-            public string IpnResearch { get; set; }
-            public string TechRedirectUrl { get; set; }
-            public string ResearchRedirectUrl { get; set; }
+            //public string IpnTech { get; set; }
+            //public string IpnResearch { get; set; }
+            //public string TechRedirectUrl { get; set; }
+            //public string ResearchRedirectUrl { get; set; }
         }
         public class RedisSettings
         {
@@ -73,6 +73,13 @@
             public string IpnLink { get; set; }
             public string ReturnUrl { get; set; }
             public string CancelUrl { get; set; }
+        }
+        public class VnPaySettings
+        {
+            public string TmnCode { get; set; }
+            public string HashSecret { get; set; }
+            public string ReturnUrl { get; set; }
+          
         }
 
 

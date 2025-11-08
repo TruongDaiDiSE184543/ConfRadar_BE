@@ -9,7 +9,7 @@ namespace ConfRadar.Services.Services
 {
     public interface IMomoService
     {
-        Task<MomoCreatePaymentResponse> CreateMomoPayment(string orderId, long amount, string orderInfo, string ipnUrl, string redirectUrl);
+        Task<MomoCreatePaymentResponse> CreateMomoPayment(string orderId, long amount, string orderInfo);
         bool VerifyMomoPaymentData(MomoPaymentCallBackResponse data);
     }
     public class MomoService : IMomoService
@@ -22,8 +22,10 @@ namespace ConfRadar.Services.Services
             _tokenService = tokenService;
         }
 
-        public async Task<MomoCreatePaymentResponse> CreateMomoPayment(string orderId, long amount, string orderInfo, string ipnUrl, string redirectUrl)
+        public async Task<MomoCreatePaymentResponse> CreateMomoPayment(string orderId, long amount, string orderInfo)
         {
+            string ipnUrl = _momoSettings.Value.IpnUrl;
+            string redirectUrl = _momoSettings.Value.RedirectUrl;
             var rawSignature = "accessKey=" + _momoSettings.Value.AccessKey + "&amount=" + amount +
                 "&extraData=" + _momoSettings.Value.ExtraData + "&ipnUrl=" + ipnUrl + "&orderId=" +
                 orderId + "&orderInfo=" + orderInfo + "&partnerCode=" + _momoSettings.Value.PartnerCode +

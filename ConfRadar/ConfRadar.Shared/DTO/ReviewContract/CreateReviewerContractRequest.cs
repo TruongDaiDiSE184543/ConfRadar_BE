@@ -13,6 +13,9 @@ namespace ConfRadar.Shared.DTO.ReviewContract
         public IFormFile ContractFile { get; set; }
         [Required(ErrorMessage = "Mã hội nghị là bắt buộc")]
         public string ConferenceId { get; set; }
+        [Required(ErrorMessage = "Ngày kí hợp đồng là bắt buộc")]
+
+        public DateOnly? SignDay { get; set; }
 
     }
 }

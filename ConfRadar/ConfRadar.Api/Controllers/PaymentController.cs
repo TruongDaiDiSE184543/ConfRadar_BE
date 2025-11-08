@@ -2,10 +2,14 @@
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.DTOs.Transaction;
+using ConfRadar.Services.Services;
 using ConfRadar.Shared.DTO.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -14,11 +18,11 @@ namespace ConfRadar.Api.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
-
-        public PaymentController(IServiceManager serviceManager)
+        private readonly IZaloPayService _zaloPayService;
+        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService)
         {
             _serviceManager = serviceManager;
-            //_zaloPayService = zaloPayService;
+            _zaloPayService = zaloPayService;
         }
         [Authorize]
         [HttpPost("pay-tech")]
@@ -60,74 +64,8 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<TransactionDetailResponse>>.SuccessResponse(result, "danh sách toàn bộ giao dịch"));
         }
 
-        #region test zalopay
-        //[HttpPost("test-zalo-pay")]
-        //public IActionResult TestZaloPayCallback([FromBody] dynamic callbackData)
-        //{
-        //    var result = new Dictionary<string, object>();
-
-        //    try
-        //    {
-        //        string dataStr = Convert.ToString(callbackData["data"]);
-        //        string reqMac = Convert.ToString(callbackData["mac"]);
-
-        //        string computedMac = ComputeHmacSha256(dataStr, _key2);
 
 
-        //        if (reqMac != computedMac)
-        //        {
-        //            result["return_code"] = -1;
-        //            result["return_message"] = "Invalid MAC";
-        //        }
-        //        else
-        //        {
-
-        //            var dataJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataStr);
-        //            string appTransId = dataJson["app_trans_id"]?.ToString();
-
-
-
-        //            result["return_code"] = 1;
-        //            result["return_message"] = "success";
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result["return_code"] = 0;
-        //        result["return_message"] = ex.Message;
-        //    }
-
-
-        //    return Ok(result);
-        //}
-
-
-        //[HttpGet("create-zalopay")]
-        //public async Task<IActionResult> CreateZaloPayPayment()
-        //{
-        //    try
-        //    {
-        //        var response = await _zaloPayService.CreateMomoPayment();
-
-        //        var json = JsonConvert.DeserializeObject<object>(response);
-        //        Console.WriteLine(json);
-        //        return Ok(json);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new
-        //        {
-        //            message = "Tạo thanh toán ZaloPay thất bại",
-        //            error = ex.Message
-        //        });
-        //    }
-        //}
-        //[HttpGet("payment/success")]
-        //public IActionResult ZaloPaySuccess([FromQuery] string returncode, [FromQuery] string zptransid)
-        //{
-        //    return Ok($"Thanh toán thành công");
-        //}
-        #endregion
 
 
         [HttpPost("verify-payos")]
@@ -136,22 +74,87 @@ namespace ConfRadar.Api.Controllers
             await _serviceManager.PaymentService.VerifyPayOsDataForConference(data);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
         }
+        [HttpPost("verify-momo")]
+        public async Task<IActionResult> VerifyMomo([FromBody] MomoPaymentCallBackResponse data)
+        {
+            //api cb lên production ko call dc (sandbox)
+            await _serviceManager.PaymentService.VerifyMomoDataForConference(data);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
+        }
 
-        //[HttpPost("cancel-payos")]
-        //public async Task<IActionResult> CancelPayOs()
-        //{
-        //    var link = await _serviceManager.PaymentService.CreatePayOsPayment();
-        //    return Ok(link);
-        //}
 
 
         [HttpGet("success-payos")]
-        public IActionResult Success()
+        public IActionResult SuccessPayOs()
         {
             string message = "Đã thanh toán thành công payos";
             return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
         }
+        [HttpGet("success-momo")]
+        public async Task<IActionResult> SuccessMomo([FromQuery] MomoPaymentCallBackResponse data)
+        {
+            //method post trên deploy k call đc
+            await _serviceManager.PaymentService.VerifyMomoDataForConference(data);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
+        }
+        [HttpGet("success-vnpay")]
+        public IActionResult SuccessVnPay()
+        {
+            string message = "Đã thanh toán thành công vnpay";
+            return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
+        }
+        [HttpGet("verify-vnpay")]
+        public async Task<IActionResult> VerifyVnPay([FromQuery] VnPayResponse data)
+        {
+            await _serviceManager.PaymentService.VerifyVnPayDataForConference(data);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
+        }
+        [HttpPost("verify-zalopay")]
+        public IActionResult VerifyZaloPay([FromBody] dynamic cbdata)
+        {
+            var result = new Dictionary<string, object>();
+
+            try
+            {
+                var dataStr = Convert.ToString(cbdata["data"]);
+                var reqMac = Convert.ToString(cbdata["mac"]);
 
 
+                Console.WriteLine("mac = {0}", reqMac);
+                Console.WriteLine("cbdata:" + cbdata);
+
+                // kiểm tra callback hợp lệ (đến từ ZaloPay server)
+                if (1 == 1)
+                {
+                    // callback không hợp lệ
+                    result["returncode"] = -1;
+                    result["returnmessage"] = "mac not equal";
+                }
+                else
+                {
+                    // thanh toán thành công
+                    // merchant cập nhật trạng thái cho đơn hàng
+                    var dataJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataStr);
+                    Console.WriteLine("update order's status = success where apptransid = {0}", dataJson["apptransid"]);
+
+                    result["returncode"] = 1;
+                    result["returnmessage"] = "success";
+                }
+            }
+            catch (Exception ex)
+            {
+                result["returncode"] = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
+                result["returnmessage"] = ex.Message;
+            }
+
+            // thông báo kết quả cho ZaloPay server
+            return Ok(result);
+        }
+        [HttpPost("create-zalopay")]
+        public async Task<IActionResult> CreateZaloPay()
+        {
+            var result = await _zaloPayService.CreateZaloPayment();
+            return Ok(result);
+        }
     }
 }

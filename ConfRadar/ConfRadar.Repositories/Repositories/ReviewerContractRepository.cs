@@ -19,6 +19,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ReviewerContract>> GetAllReviewerContractsAsync();
         Task<List<ConferenceBelongToReviewContractResponse>> GetListConferenceBelongToReviewContractByUserId(string userId);
         Task<List<PaperDetailBelongToConferenceInReviewContractResposne>> GetPapersBelongToAConferenceByConferenceIdAndUserId(string conferenceId, string userId);
+        Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(string conferenceId, List<string> systemRoles);
     }
     public class ReviewerContractRepository : GenericRepository<ReviewerContract>, IReviewerContractRepository
     {
@@ -140,6 +141,25 @@ namespace ConfRadar.Repositories.Repositories
                     Description = p.Description,
                 }).ToListAsync();
             return listPaper;
+        }
+
+        public async Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(string conferenceId,List<string> systemRoles)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .Where(u =>
+            !_context.Papers.Any(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == u.UserId))
+            && !_context.ReviewerContracts.Any(rc => rc.ConferenceId == conferenceId && rc.UserId == u.UserId) 
+            && u.IsActive == true && u.IsEmailConfirmed == true && u.UserRoles.All(ur=> !systemRoles.Contains(ur.RoleId)))
+                .Select(u => new GetUsersForReviewerContractResponse()
+                {
+                    UserId = u.UserId,
+                    Email = u.Email,
+                    FullName = u.FullName,
+                    AvatarUrl = u.AvatarUrl,
+                    BioDescription = u.BioDescription,
+                }).ToListAsync();
+            return user;
         }
     }
 }
