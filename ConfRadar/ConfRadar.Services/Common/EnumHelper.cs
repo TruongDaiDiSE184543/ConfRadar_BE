@@ -73,16 +73,16 @@ namespace ConfRadar.Services.Common
 
     }
 
-    public enum ConferenceStatus
-    {
-        Pending,
-        Rejected,
-        Rreparing,
-        Ready,
-        OnHold,
-        Cancelled,
-        Completed
-    }
+    //public enum ConferenceStatus
+    //{
+    //    Pending,
+    //    Rejected,
+    //    Preparing,
+    //    Ready,
+    //    OnHold,
+    //    Cancelled,
+    //    Completed
+    //}
 
     public static class EnumExtension
     {
@@ -153,9 +153,11 @@ namespace ConfRadar.Services.Common
         [Description("Ready")]
         Ready,
 
+        [Description("Draft")]
+        Draft,
 
-
-
+        [Description("Deleted")]
+        Delete
     }
     public enum PaperPhaseEnum
     {
