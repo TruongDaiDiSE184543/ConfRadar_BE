@@ -4,23 +4,22 @@ namespace ConfRadar.Services.DTOs.User
 {
     public class CreateCollaboratorAccountRequest
     {
-        [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email sai format")]
         [MaxLength(255)]
         public string Email { get; set; }
 
 
-        [Required(ErrorMessage = "Password is required")]
-        [MinLength(6, ErrorMessage = "Password must be at least 6 characters long")]
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        [MinLength(6, ErrorMessage = "Mật khẩu ít nhất 6 kí tự")]
         public string Password { get; set; }
 
 
-        [Required(ErrorMessage = "Please confirm your password")]
-        [Compare("Password", ErrorMessage = "Passwords do not match")]
+        [Required(ErrorMessage = "Mật khẩu xác nhận là bắt buộc")]
+        [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp với mật khẩu")]
         public string ConfirmPassword { get; set; }
 
-        [Required(ErrorMessage = "Please confirm your password")]
-        [Compare("Password", ErrorMessage = "Passwords do not match")]
+        [Required(ErrorMessage = "Tên là bắt buộc")]
         public string FullName { get; set; }
 
 

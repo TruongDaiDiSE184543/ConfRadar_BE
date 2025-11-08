@@ -6,6 +6,7 @@ using ConfRadar.Services.Services;
 using ConfRadar.Shared.DTO.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -17,10 +18,11 @@ namespace ConfRadar.Api.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
-        public PaymentController(IServiceManager serviceManager)
+        private readonly IZaloPayService _zaloPayService;
+        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService)
         {
             _serviceManager = serviceManager;
-            //_zaloPayService = zaloPayService;
+            _zaloPayService = zaloPayService;
         }
         [Authorize]
         [HttpPost("pay-tech")]
@@ -62,8 +64,8 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<TransactionDetailResponse>>.SuccessResponse(result, "danh sách toàn bộ giao dịch"));
         }
 
-       
-       
+
+
 
 
         [HttpPost("verify-payos")]
@@ -79,7 +81,7 @@ namespace ConfRadar.Api.Controllers
             await _serviceManager.PaymentService.VerifyMomoDataForConference(data);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
         }
-      
+
 
 
         [HttpGet("success-payos")]
@@ -102,10 +104,57 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
         }
         [HttpGet("verify-vnpay")]
-        public async Task<IActionResult> VerifyVnPay([FromQuery]VnPayResponse data)
+        public async Task<IActionResult> VerifyVnPay([FromQuery] VnPayResponse data)
         {
-             await _serviceManager.PaymentService.VerifyVnPayDataForConference(data);
+            await _serviceManager.PaymentService.VerifyVnPayDataForConference(data);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
+        }
+        [HttpPost("verify-zalopay")]
+        public IActionResult VerifyZaloPay([FromBody] dynamic cbdata)
+        {
+            var result = new Dictionary<string, object>();
+
+            try
+            {
+                var dataStr = Convert.ToString(cbdata["data"]);
+                var reqMac = Convert.ToString(cbdata["mac"]);
+
+
+                Console.WriteLine("mac = {0}", reqMac);
+                Console.WriteLine("cbdata:" + cbdata);
+
+                // kiểm tra callback hợp lệ (đến từ ZaloPay server)
+                if (1 == 1)
+                {
+                    // callback không hợp lệ
+                    result["returncode"] = -1;
+                    result["returnmessage"] = "mac not equal";
+                }
+                else
+                {
+                    // thanh toán thành công
+                    // merchant cập nhật trạng thái cho đơn hàng
+                    var dataJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataStr);
+                    Console.WriteLine("update order's status = success where apptransid = {0}", dataJson["apptransid"]);
+
+                    result["returncode"] = 1;
+                    result["returnmessage"] = "success";
+                }
+            }
+            catch (Exception ex)
+            {
+                result["returncode"] = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
+                result["returnmessage"] = ex.Message;
+            }
+
+            // thông báo kết quả cho ZaloPay server
+            return Ok(result);
+        }
+        [HttpPost("create-zalopay")]
+        public async Task<IActionResult> CreateZaloPay()
+        {
+            var result = await _zaloPayService.CreateZaloPayment();
+            return Ok(result);
         }
     }
 }
