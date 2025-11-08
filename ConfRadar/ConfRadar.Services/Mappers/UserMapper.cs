@@ -18,7 +18,7 @@ namespace ConfRadar.Services.Mappers
                 PhoneNumber = request.PhoneNumber,
                 Gender = request.Gender?.ToString(),
                 BioDescription = request.BioDescription,
-                IsActive = false,
+                IsActive = true,
                 IsEmailConfirmed = false,
                 CreatedAt = ExtensionHelper.GetVietnamTime(),
             };
