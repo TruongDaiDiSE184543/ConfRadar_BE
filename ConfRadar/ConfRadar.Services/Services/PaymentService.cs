@@ -10,6 +10,7 @@ using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
 using System.Text.Json;
 using static ConfRadar.Services.Common.AppSettingConfig;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ConfRadar.Services.Services
 {
@@ -23,8 +24,12 @@ namespace ConfRadar.Services.Services
         Task<GeneralPaymentResultResponse> CreatePaymentForResearchAsAttendee(CreateResearchAttendeePaymentRequest request, string userId);
         Task ProcessCallBackForTechConference(string orderId, decimal amountFromIpn, string transactionCodeFromIpn);
         Task ProcessCallBackForResearchConferenceAbstractSubmission(string orderId, decimal amountFromIpn, string transactionCodeFromIpn);
+
+
+
         Task VerifyPayOsDataForConference(Webhook data);
         Task VerifyMomoDataForConference(MomoPaymentCallBackResponse data);
+        Task VerifyVnPayDataForConference(VnPayResponse data);
 
     }
     public class PaymentService : IPaymentService
@@ -36,7 +41,8 @@ namespace ConfRadar.Services.Services
         private readonly ITokenService _tokenService;
         private readonly IMomoService _momoService;
         private readonly IPayOsService _payOsService;
-        public PaymentService(IUnitOfWork unitOfWork, IOptions<MomoSettings> momoSettings, IRedisService redisService, ITokenService tokenService, IMomoService momoService, IPayOsService payOsService, IOptions<PayOsSettings> payOsSettings)
+        private readonly IVnPayService _vnPayService;
+        public PaymentService(IUnitOfWork unitOfWork, IOptions<MomoSettings> momoSettings, IRedisService redisService, ITokenService tokenService, IMomoService momoService, IPayOsService payOsService, IOptions<PayOsSettings> payOsSettings, IVnPayService vnPayService)
         {
             _unitOfWork = unitOfWork;
             _momoSettings = momoSettings;
@@ -45,6 +51,7 @@ namespace ConfRadar.Services.Services
             _momoService = momoService;
             _payOsSettings = payOsSettings;
             _payOsService = payOsService;
+            _vnPayService = vnPayService;
         }
 
         public async Task<List<PaymentMethod>> GetListPaymentMethod()
@@ -199,7 +206,7 @@ namespace ConfRadar.Services.Services
             var transacJson = JsonSerializer.Serialize(transactionData);
             var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             double expireMinute = 90;
-            string paymentDescription = "Thanh toán tech";
+            string paymentDescription = "Thanh toan tech";
             string conferenceName = conferencePrice?.Conference?.ConferenceName ?? "";
 
             var listPaymentLinkItem = new List<PaymentLinkItem>()
@@ -222,6 +229,10 @@ namespace ConfRadar.Services.Services
                 case var s when s == PaymentMethodEnum.MoMo.GetDescription():
                     var momoResult = await _momoService.CreateMomoPayment(orderCode.ToString(), finalAmount, paymentDescription);
                     checkOutUrl = momoResult.payUrl;
+                    break;
+                case var s when s == PaymentMethodEnum.VnPay.GetDescription():
+                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalAmount,expireMinute);
+                    checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phương thức thanh toán ZaloPay đang trong trạng thái bảo trì và bị lỏ");
@@ -431,7 +442,7 @@ namespace ConfRadar.Services.Services
             //logic đa cổng
             var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             double expireMinute = 90;
-            string paymentDescription = "Thanh toán research";
+            string paymentDescription = "Thanhtoanresearch";
             string conferenceName = conferencePrice?.Conference?.ConferenceName ?? "";
 
             var listPaymentLinkItem = new List<PaymentLinkItem>()
@@ -454,6 +465,10 @@ namespace ConfRadar.Services.Services
                 case var s when s == PaymentMethodEnum.MoMo.GetDescription():
                     var momoResult = await _momoService.CreateMomoPayment(orderCode.ToString(), finalPrice, paymentDescription);
                     checkOutUrl = momoResult.payUrl;
+                    break;
+                case var s when s == PaymentMethodEnum.VnPay.GetDescription():
+                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
+                    checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phương thức thanh toán ZaloPay đang trong trạng thái bảo trì và bị lỏ");
@@ -656,6 +671,10 @@ namespace ConfRadar.Services.Services
                 case var s when s == PaymentMethodEnum.MoMo.GetDescription():
                     var momoResult = await _momoService.CreateMomoPayment(orderCode.ToString(), finalPrice, paymentDescription);
                     checkOutUrl = momoResult.payUrl;
+                    break;
+                case var s when s == PaymentMethodEnum.VnPay.GetDescription():
+                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice,  expireMinute);
+                    checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phương thức thanh toán ZaloPay đang trong trạng thái bảo trì và bị lỏ");
@@ -994,35 +1013,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Dữ liệu payos không khả dụng");
             }
-            var transacKey = await _redisService.KeyExistsAsync(data.Data.OrderCode.ToString());
-            if (!transacKey)
-            {
-                throw new BadRequestException("Dữ liệu không tìm thấy");
-            }
-            var transac = await _redisService.GetStringAsync(data.Data.OrderCode.ToString());
-            var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
-            {
-                PropertyNameCaseInsensitive = true,
-            });
-            if (transacDataHolder == null)
-            {
-                throw new BadRequestException("Không thể đọc dữ liệu giao dịch");
-            }
-            if (transacDataHolder!.IsResearchConference == true && transacDataHolder.IsResearchConferenceAuthor==true)
-            {
-                await ProcessCallBackForResearchConferenceAbstractSubmission(data.Data.OrderCode.ToString(), (decimal)data.Data.Amount, data.Data.OrderCode.ToString());
-            }
-            else if (transacDataHolder.IsResearchConference == false)
-            {
-                await ProcessCallBackForTechConference(data.Data.OrderCode.ToString(), (decimal)data.Data.Amount, data.Data.OrderCode.ToString());
-            }
-            else if (transacDataHolder!.IsResearchConference == true && transacDataHolder.IsResearchConferenceAuthor==false)
-            {
-                await ProcessCallBackForResearchConferenceAttendee(data.Data.OrderCode.ToString(), (decimal)data.Data.Amount, data.Data.OrderCode.ToString());
-            }else
-            {
-                throw new BadRequestException("Dữ liệu thanh toán không khả dụng");
-            }
+            await ProcessInsertPaymentData(data.Data.OrderCode.ToString(), (decimal)data.Data.Amount, data.Data.OrderCode.ToString());
 
         }
 
@@ -1033,12 +1024,25 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Dữ liệu momo không khả dụng");
             }
-            var transacKey = await _redisService.KeyExistsAsync(data.orderId!.ToString());
+            await ProcessInsertPaymentData(data.orderId!, (decimal)data.amount!.Value, data.transId.ToString()!);
+        }
+        public async Task VerifyVnPayDataForConference(VnPayResponse data)
+        {
+            bool vnPayCheck = _vnPayService.VerifyVnPayPayment(data);
+            if (!vnPayCheck)
+            {
+                throw new BadRequestException("Dữ liệu vnpay không khả dụng");
+            }
+            await ProcessInsertPaymentData(data.Vnp_TxnRef!, (decimal)data.Vnp_Amount!.Value /100, data.Vnp_TransactionNo!.ToString()!);
+        }
+        private async Task ProcessInsertPaymentData(string orderId,decimal amount,string transId)
+        {
+            var transacKey = await _redisService.KeyExistsAsync(orderId);
             if (!transacKey)
             {
                 throw new BadRequestException("Dữ liệu không tìm thấy");
             }
-            var transac = await _redisService.GetStringAsync(data.orderId.ToString());
+            var transac = await _redisService.GetStringAsync(orderId);
             var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,
@@ -1049,15 +1053,15 @@ namespace ConfRadar.Services.Services
             }
             if (transacDataHolder!.IsResearchConference == true && transacDataHolder.IsResearchConferenceAuthor == true)
             {
-                await ProcessCallBackForResearchConferenceAbstractSubmission(data.orderId.ToString(), (decimal)data.amount!, data.transId.ToString());
+                await ProcessCallBackForResearchConferenceAbstractSubmission(orderId, amount, transId);
             }
             else if (transacDataHolder.IsResearchConference == false)
             {
-                await ProcessCallBackForTechConference(data.orderId.ToString(), (decimal)data.amount!, data.transId.ToString());
+                await ProcessCallBackForTechConference(orderId, amount, transId);
             }
             else if (transacDataHolder!.IsResearchConference == true && transacDataHolder.IsResearchConferenceAuthor == false)
             {
-                await ProcessCallBackForResearchConferenceAttendee(data.orderId.ToString(), (decimal)data.amount!, data.transId.ToString());
+                await ProcessCallBackForResearchConferenceAttendee(orderId, amount, transId);
             }
             else
             {

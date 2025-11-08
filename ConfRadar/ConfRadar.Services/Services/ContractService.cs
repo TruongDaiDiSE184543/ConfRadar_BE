@@ -13,6 +13,7 @@ namespace ConfRadar.Services.Services
         Task<List<ConferenceBelongToReviewContractResponse>> GetListConferenceBelongToReviewContractByUserId(string userId);
         Task<List<PaperDetailBelongToConferenceInReviewContractResposne>> GetPapersBelongToAConferenceByConferenceIdAndUserId(string conferenceId, string userId);
         Task<int> CreateReviewerContract(CreateReviewerContractRequest request);
+        Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(GetUsersForReviewerContractRequest request);
     }
     public class ContractService : IContractService
     {
@@ -61,8 +62,16 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Đã tồn tại hợp đồng đổi với reviewer {reviewer.FullName} đối với hội nghị {conference.ConferenceName}");
             }
-
-
+            GetUsersForReviewerContractRequest check = new GetUsersForReviewerContractRequest()
+            {
+                ConferenceId = request.ConferenceId,
+            };
+            var listUserForReviewer = await GetUsersForReviewerContract(check);
+            var validReviewer = listUserForReviewer.FirstOrDefault(r => r.UserId == request.ReviewerId);
+            if (validReviewer == null)
+            {
+                throw new BadRequestException("Người này hiện tại không đáp ứng đủ nhu cầu. Có thể là do là người trong hệ thống, là người review trong hội nghị này hoặc đã sỡ hữu bài báo nào đó trong hội nghị này");
+            }
             string contractFileUrl = null;
             if (request.ContractFile != null)
             {
@@ -86,7 +95,7 @@ namespace ConfRadar.Services.Services
                 ReviewerContractId = Guid.NewGuid().ToString(),
                 UserId = request.ReviewerId,
                 IsActive = true,
-                SignDay = ExtensionHelper.GetVietnamDate(),
+                SignDay = request.SignDay,
                 ExpireDay = conference.EndDate,
                 Wage = request.Wage,
                 ContractUrl = contractFileUrl,
@@ -103,6 +112,20 @@ namespace ConfRadar.Services.Services
         public async Task<List<PaperDetailBelongToConferenceInReviewContractResposne>> GetPapersBelongToAConferenceByConferenceIdAndUserId(string conferenceId, string userId)
         {
             return await _unitOfWork.ReviewerContractRepository.GetPapersBelongToAConferenceByConferenceIdAndUserId(conferenceId, userId);
+        }
+
+        public async Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(GetUsersForReviewerContractRequest request)
+        {
+            var conferenceOrganizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
+            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
+            if (conferenceOrganizerRole == null || adminRole == null)
+            {
+                throw new NotFoundException("Không tìm thấy các role tương ứng trong hệ thống");
+            }
+            List<string> roleIds = new List<string>();
+            roleIds.Add(conferenceOrganizerRole.RoleId);
+            roleIds.Add(adminRole.RoleId);
+            return await _unitOfWork.ReviewerContractRepository.GetUsersForReviewerContract(request.ConferenceId, roleIds);
         }
     }
 }

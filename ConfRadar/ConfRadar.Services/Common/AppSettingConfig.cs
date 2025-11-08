@@ -74,6 +74,13 @@
             public string ReturnUrl { get; set; }
             public string CancelUrl { get; set; }
         }
+        public class VnPaySettings
+        {
+            public string TmnCode { get; set; }
+            public string HashSecret { get; set; }
+            public string ReturnUrl { get; set; }
+          
+        }
 
 
     }
