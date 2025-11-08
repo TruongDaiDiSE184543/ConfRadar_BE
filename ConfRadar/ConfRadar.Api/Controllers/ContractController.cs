@@ -39,5 +39,12 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ContractService.CreateReviewerContract(request);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã tạo hợp đồng thành công"));
         }
+
+        [HttpGet("users-for-reviewer-contract")]
+        public async Task<IActionResult> GetUsersForReviewerContract([FromQuery]GetUsersForReviewerContractRequest request)
+        {
+            var result = await _serviceManager.ContractService.GetUsersForReviewerContract(request);
+            return Ok(ApiResponse<List<GetUsersForReviewerContractResponse>>.SuccessResponse(result, "Danh sách người dùng"));
+        }
     }
 }

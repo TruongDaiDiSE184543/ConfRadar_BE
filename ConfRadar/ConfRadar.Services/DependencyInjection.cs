@@ -53,6 +53,7 @@ namespace ConfRadar.Services
             services.AddScoped<IContractService, ContractService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IAssigningPresenterSessionService, AssigningPresenterSessionService>();
+            services.AddScoped<IVnPayService, VnPayService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();

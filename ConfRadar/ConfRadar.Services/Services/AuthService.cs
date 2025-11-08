@@ -129,6 +129,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Token is expired");
             }
+            user.IsActive = true;
             user.IsEmailConfirmed = true;
             user.VerificationToken = null;
             user.VerificationTokenExpiry = null;
