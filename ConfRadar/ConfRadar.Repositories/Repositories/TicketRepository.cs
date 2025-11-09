@@ -140,15 +140,15 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId)
         {
-            return await _context.Tickets.FirstOrDefaultAsync(x => x.UserId == userId && x.ConferencePriceId == conferencePriceId);
+            return await _context.Tickets.FirstOrDefaultAsync(x => x.UserId == userId  /*x.ConferencePriceId == conferencePriceId */);
         }
         public async Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId)
         {
             var query = from t in _context.Tickets
-                        join cp in _context.ConferencePrices on t.ConferencePriceId equals cp.ConferencePriceId
-                        join c in _context.Conferences on cp.ConferenceId equals c.ConferenceId
+                        //join cp in _context.ConferencePrices on t.ConferencePriceId equals cp.ConferencePriceId
+                        //join c in _context.Conferences on cp.ConferenceId equals c.ConferenceId
                         join u in _context.Users on t.UserId equals u.UserId
-                        where t.IsRefunded == false && c.ConferenceId == conferenceId
+                        //where t.IsRefunded == false && c.ConferenceId == conferenceId
                         select new Ticket()
                         {
                             TicketId = t.TicketId,
@@ -160,16 +160,16 @@ namespace ConfRadar.Repositories.Repositories
                                 Email = u.Email,
                                 AvatarUrl = u.AvatarUrl,
                             },
-                            ConferencePrice = new ConferencePrice
-                            {
-                                ConferencePriceId = cp.ConferencePriceId,
-                                ConferenceId = cp.ConferenceId,
-                                Conference = new Conference
-                                {
-                                    ConferenceId = c.ConferenceId,
-                                    ConferenceName = c.ConferenceName
-                                }
-                            },
+                            //ConferencePrice = new ConferencePrice
+                            //{
+                            //    ConferencePriceId = cp.ConferencePriceId,
+                            //    ConferenceId = cp.ConferenceId,
+                            //    Conference = new Conference
+                            //    {
+                            //        ConferenceId = c.ConferenceId,
+                            //        ConferenceName = c.ConferenceName
+                            //    }
+                            //},
                             RegisteredDate = t.RegisteredDate,
 
                         };
@@ -180,9 +180,10 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId)
         {
-            return await _context.Tickets
-                .Where(t => t.ConferencePriceId == conferencePriceId && !t.IsRefunded.Value)
-                .CountAsync();
+            //return await _context.Tickets
+            //    .Where(t => t.ConferencePriceId == conferencePriceId && !t.IsRefunded.Value)
+            //    .CountAsync();
+            return 0;
         }
 
         public async Task<int> CreateTicketAsync(Ticket ticket)
@@ -192,10 +193,11 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId)
         {
-            return await _context.Tickets
-                .Include(t => t.ConferencePrice)
-                .Where(t => t.UserId == userId && t.ConferencePrice != null && t.ConferencePrice.ConferenceId == conferenceId)
-                .FirstOrDefaultAsync();
+            //return await _context.Tickets
+            //    .Include(t => t.ConferencePrice)
+            //    .Where(t => t.UserId == userId && t.ConferencePrice != null && t.ConferencePrice.ConferenceId == conferenceId)
+            //    .FirstOrDefaultAsync();
+            return new Ticket();
         }
 
         public async Task<Ticket> GetTicketById(string ticketId)

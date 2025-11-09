@@ -248,7 +248,7 @@ namespace ConfRadar.Services.Services
             }
 
             // Return the associated conference price
-            return ticket.ConferencePrice;
+            return ticket.PricePhase.ConferencePrice;
         }
     }
 }

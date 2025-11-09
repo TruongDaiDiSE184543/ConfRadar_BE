@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class ResearchConferencePhase
 {
@@ -31,6 +34,8 @@ public partial class ResearchConferencePhase
     public bool? IsActive { get; set; }
 
     public virtual Conference? Conference { get; set; }
+
+    public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
 
     public virtual ICollection<RevisionRoundDeadline> RevisionRoundDeadlines { get; set; } = new List<RevisionRoundDeadline>();
 }

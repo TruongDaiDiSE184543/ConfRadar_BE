@@ -33,8 +33,8 @@ namespace ConfRadar.Services.Services
                 Email = x.User?.Email ?? "",
                 AvatarUrl = x.User?.AvatarUrl ?? "",
                 //RegisteredDate = x.RegisteredDate ?? DateTime.Now,
-                ConferenceId = x.ConferencePrice?.ConferencePriceId ?? "",
-                ConferenceName = x.ConferencePrice.Conference.ConferenceName,
+                //ConferenceId = x.ConferencePrice?.ConferencePriceId ?? "",
+                //ConferenceName = x.ConferencePrice.Conference.ConferenceName,
             }).ToList();
         }
 

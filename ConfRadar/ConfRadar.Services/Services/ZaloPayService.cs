@@ -65,6 +65,7 @@ namespace ConfRadar.Services.Services
             using (var httpClient = new HttpClient())
             {
                 string json = JsonConvert.SerializeObject(bodyRequest);
+                Console.WriteLine("Request Body JSON: " + json);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync(createOrderUrl, content);
                 string responseBody = await response.Content.ReadAsStringAsync();
