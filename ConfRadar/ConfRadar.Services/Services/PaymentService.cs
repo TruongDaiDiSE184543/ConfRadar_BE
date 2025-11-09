@@ -726,7 +726,7 @@ namespace ConfRadar.Services.Services
                 IsRefunded = false,
                 ActualPrice = amountFromIpn,
                 UserId = transacDataHolder.UserId,
-                //ConferencePriceId = transacDataHolder.ConferencePriceId,
+                PricePhaseId = transacDataHolder.PricePhaseId,
                 Transactions = new List<Transaction>(),
                 UserCheckIns = new List<UserCheckIn>()
             };
@@ -818,7 +818,7 @@ namespace ConfRadar.Services.Services
                 IsRefunded = false,
                 ActualPrice = amountFromIpn,
                 UserId = transacDataHolder.UserId,
-                //ConferencePriceId = transacDataHolder.ConferencePriceId,
+                PricePhaseId = transacDataHolder.PricePhaseId,
                 Transactions = new List<Transaction>(),
                 UserCheckIns = new List<UserCheckIn>()
             };
@@ -933,7 +933,7 @@ namespace ConfRadar.Services.Services
                 IsRefunded = false,
                 ActualPrice = amountFromIpn,
                 UserId = transacDataHolder.UserId,
-                //ConferencePriceId = transacDataHolder.ConferencePriceId,
+                PricePhaseId = transacDataHolder.PricePhaseId,
                 Transactions = new List<Transaction>(),
                 UserCheckIns = new List<UserCheckIn>()
             };

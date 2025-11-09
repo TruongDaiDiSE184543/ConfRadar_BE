@@ -279,7 +279,7 @@ namespace ConfRadar.Services.Services
                 var userTicket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(request.NewUserId, paperConferenceId);
                 bool hasAuthorTicket = false;
 
-                if (userTicket != null && userTicket.PricePhase.ConferencePrice != null && userTicket.PricePhase.ConferencePrice.IsAuthor == true)
+                if (userTicket != null && userTicket.PricePhase!.ConferencePrice != null && userTicket.PricePhase.ConferencePrice.IsAuthor == true)
                 {
                     hasAuthorTicket = true;
                 }

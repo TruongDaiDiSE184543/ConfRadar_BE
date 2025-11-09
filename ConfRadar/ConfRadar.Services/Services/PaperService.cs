@@ -100,15 +100,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper với id {request.PaperId} trong hệ thống");
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference!.ConferenceName}");
             }
             var dateNow = ExtensionHelper.GetVietnamDate();
             if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
@@ -250,12 +245,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper với id {request.PaperId} trong hệ thống");
             }
-            var researchConferencePhases = basePaper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {basePaper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = basePaper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {basePaper.Conference.ConferenceName}");
@@ -352,12 +342,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không thể tìm thấy paper id: {request.PaperId} cho user {userId} hiện tại");
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
@@ -454,12 +439,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy paper với id {request.PaperId}.");
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
@@ -555,12 +535,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Paper id {request.PaperId} không tìm thấy trong hệ thống");
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
@@ -704,12 +679,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
 
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
@@ -760,12 +730,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
 
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
@@ -810,12 +775,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId} trong hệ thống");
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
@@ -904,12 +864,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy  paper {request.PaperId} trong hệ thống");
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
@@ -1023,12 +978,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Paper with ID {request.PaperId} does not exist.");
             }
-            var researchConferencePhases = paper.Conference!.ResearchConferencePhases;
-            if (researchConferencePhases.Count <= 0)
-            {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
-            }
-            var activeCurrentPhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
                 throw new NotFoundException($"Không tìm thấy  giai đoạn nào đang diễn ra cho hội nghị nghiên cứu {paper.Conference.ConferenceName}");
