@@ -544,5 +544,10 @@ namespace ConfRadar.Services.Services
             }
             return response;
         }
+
+        public Task<List<RoomAvailablity>> RoomAvailableBetweenDate(string roomId, DateTime startDate, DateTime endDate)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
