@@ -73,7 +73,7 @@ namespace ConfRadar.Services.Services
         Task<AddWaitListResponse> AddWaitList(string userId, string conferenceId);
 
 
-        
+
 
     }
     public class PaperService : IPaperService
@@ -621,7 +621,7 @@ namespace ConfRadar.Services.Services
                     {
                         throw new BadRequestException($"Revision paper id {paper.RevisionPaperId} không tìm thấy trong hệ thống");
                     }
-                    
+                    revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
                     if (!string.IsNullOrEmpty(revisionDeadlineId))
                     {
                         var revisionPaperSubmissionFound = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByRevisionPaperIdAndDeadlineId(paper.RevisionPaperId, revisionDeadlineId);
@@ -660,7 +660,7 @@ namespace ConfRadar.Services.Services
                     RevisionPaperUrl = revisionFileUrl,
                     Title = request.Title,
                     Description = request.Description,
-                    
+
                 };
 
                 var result1 = await _unitOfWork.RevisionPaperRepository.UpdateRevisionPaperAsync(revisionPaper);
@@ -1461,7 +1461,7 @@ namespace ConfRadar.Services.Services
             //get all authors
             var allAuthor = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paperId);
             //get rootauthor
-            var paperRootAuthor=  allAuthor.FirstOrDefault(pa => pa.IsRootAuthor ==true);
+            var paperRootAuthor = allAuthor.FirstOrDefault(pa => pa.IsRootAuthor == true);
             var RootAuthor = await _unitOfWork.UserRepository.GetUserByUserId(paperRootAuthor.UserId);
             var coAuthorIds = allAuthor.Where(pa => pa.UserId != RootAuthor.UserId).Select(paper => paper.UserId).ToList();
             List<User> coAuthors = new List<User>();
@@ -1476,7 +1476,7 @@ namespace ConfRadar.Services.Services
                     }
                 }
             }
-            
+
 
 
             var abstractEntity = paper.AbstractId != null
@@ -1498,13 +1498,13 @@ namespace ConfRadar.Services.Services
                 Title = paper.Title,
                 Description = paper.Description,
                 Created = paper.CreatedAt,
-                RootAuthor =  RootAuthor!= null ? new Author {UserId =RootAuthor.UserId,FullName = RootAuthor.FullName } : null,
-                CoAuthors = coAuthors?.Select(user =>new Author
+                RootAuthor = RootAuthor != null ? new Author { UserId = RootAuthor.UserId, FullName = RootAuthor.FullName } : null,
+                CoAuthors = coAuthors?.Select(user => new Author
                 {
                     UserId = user.UserId,
                     FullName = user.FullName
                 }).ToList(),
-                ResearchPhase = researchConferencePhase !=null ? new ResearchPhaseDtoDetail
+                ResearchPhase = researchConferencePhase != null ? new ResearchPhaseDtoDetail
                 {
                     ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
                     RegistrationStartDate = researchConferencePhase.RegistrationStartDate,
@@ -1558,7 +1558,7 @@ namespace ConfRadar.Services.Services
                     Title = fullPaperEntity.Title,
                     Description = fullPaperEntity.Description,
                     Created = fullPaperEntity.CreatedAt,
-                    Updated= fullPaperEntity.ReviewAt
+                    Updated = fullPaperEntity.ReviewAt
                 } : null,
                 revisionDeadline = roundDeadline?.Select(r => new RevisionDeadlineDetail
                 {
@@ -1897,7 +1897,7 @@ namespace ConfRadar.Services.Services
             }
             var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
             List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
-            if (request.CoAuthorId != null && request.CoAuthorId.Count > 0 && submitterReviewContracts.Count() >0)
+            if (request.CoAuthorId != null && request.CoAuthorId.Count > 0 && submitterReviewContracts.Count() > 0)
             {
                 foreach (var coauthorId in request.CoAuthorId)
                 {
@@ -1933,7 +1933,7 @@ namespace ConfRadar.Services.Services
 
                 }
             }
-            
+
             string abstractFileUrl = string.Empty;
             if (request.AbstractFile != null)
             {
@@ -1953,8 +1953,8 @@ namespace ConfRadar.Services.Services
             abstractPaper.Description = string.IsNullOrWhiteSpace(request.Description) ? abstractPaper.Description : request.Description;
 
 
-            
-          
+
+
 
             int finalResult;
             await _unitOfWork.BeginTransactionAsync();
@@ -1962,7 +1962,7 @@ namespace ConfRadar.Services.Services
             {
                 var result1 = await _unitOfWork.AbstractRepository.UpdateAbstractAsync(abstractPaper);
                 var result2 = 0;
-                if (oldPaperCoAuthors.Count()>0 && request.CoAuthorId!=null && request.CoAuthorId.Count() > 0)
+                if (oldPaperCoAuthors.Count() > 0 && request.CoAuthorId != null && request.CoAuthorId.Count() > 0)
                 {
                     result2 = await _unitOfWork.PaperAuthorRepository.DeleteMutiplePaperAuthorAsync(oldPaperCoAuthors);
                 }
@@ -2025,8 +2025,8 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Bạn không có quyền sỡ hữu bài báo này");
             }
-           
-         
+
+
             string fullPaperFileUrl = string.Empty;
             if (request.FullPaperFile != null)
             {
@@ -2044,7 +2044,7 @@ namespace ConfRadar.Services.Services
             fullPaper.Title = string.IsNullOrWhiteSpace(request.Title) ? fullPaper.Title : request.Title;
             fullPaper.Description = string.IsNullOrWhiteSpace(request.Description) ? fullPaper.Description : request.Description;
             return await _unitOfWork.FullPaperRepository.UpdateFullPaperAsync(fullPaper);
-           
+
         }
 
         public async Task<int> UpdateRevisionPaperSubmission(UpdateRevisionPaperRevisionSubmissionRequest request, string userId)
@@ -2085,7 +2085,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Bạn không có quyền sỡ hữu bài báo này");
             }
             var revisionPaperFound = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
-            if (revisionPaperFound == null) 
+            if (revisionPaperFound == null)
             {
                 throw new NotFoundException($"Không tìm thấy revision paper với id {paper.RevisionPaperId}");
             }
@@ -2108,7 +2108,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("Không tìm thấy thông tin deadline của revision submission này");
             }
-            if (dateNow < currentRevisionPaperSubmissionDeadline!.StartSubmissionDate || dateNow> currentRevisionPaperSubmissionDeadline!.EndSubmissionDate)
+            if (dateNow < currentRevisionPaperSubmissionDeadline!.StartSubmissionDate || dateNow > currentRevisionPaperSubmissionDeadline!.EndSubmissionDate)
             {
                 throw new BadRequestException($"Bạn không thể chỉnh sửa vì deadline revision submission này từ {currentRevisionPaperSubmissionDeadline.StartSubmissionDate} đến {currentRevisionPaperSubmissionDeadline.EndSubmissionDate}");
             }
@@ -2138,7 +2138,7 @@ namespace ConfRadar.Services.Services
                     revisionFileUrl = baseUri + objectStorageFileUrl;
                     currentRevisionPaperSubmission.RevisionPaperUrl = revisionFileUrl;
                 }
-                result =  await _unitOfWork.RevisionPaperSubmissionRepository.UpdateRevisionPaperSubmissionAsync(currentRevisionPaperSubmission);
+                result = await _unitOfWork.RevisionPaperSubmissionRepository.UpdateRevisionPaperSubmissionAsync(currentRevisionPaperSubmission);
                 await _unitOfWork.CommitAsync();
                 return result;
             }

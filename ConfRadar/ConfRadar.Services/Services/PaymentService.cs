@@ -10,7 +10,6 @@ using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
 using System.Text.Json;
 using static ConfRadar.Services.Common.AppSettingConfig;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ConfRadar.Services.Services
 {
@@ -120,7 +119,7 @@ namespace ConfRadar.Services.Services
                 };
 
             }
-            
+
 
 
 
@@ -231,7 +230,7 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = momoResult.payUrl;
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
-                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalAmount,expireMinute);
+                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalAmount, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
@@ -313,7 +312,7 @@ namespace ConfRadar.Services.Services
                 };
 
             }
-          
+
             var researchConferencePhases = conferencePrice.Conference?.ResearchConferencePhases;
             if (researchConferencePhases == null || !researchConferencePhases.Any())
             {
@@ -324,7 +323,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Giai đoạn hội nghị nghiên cứu hiện tại đã bị đóng. Xin vui lòng liên hệ ban tổ chức sự kiện");
             }
-            if (activeResearchConferencePhase.RegistrationStartDate> dateNow)
+            if (activeResearchConferencePhase.RegistrationStartDate > dateNow)
             {
                 throw new BadRequestException($"Chưa đến thời hạn mua vé. Thời hạn mua vé nằm trong khoảng từ {activeResearchConferencePhase.RegistrationStartDate} đến {activeResearchConferencePhase.RegistrationEndDate}");
             }
@@ -359,7 +358,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Bạn không thể mua vé này vì bạn là reviewer trong hệ thống");
             }
             decimal applyPercent = 0;
-        
+
             //if (conferencePrice.Conference?.TicketSaleStart > dateNow)
             //{
             //    throw new BadRequestException($"Chưa đến thời hạn mua vé. Thời hạn mua vé nằm trong khoảng từ {conferencePrice.Conference.TicketSaleStart} đến {conferencePrice.Conference.TicketSaleEnd}");
@@ -674,7 +673,7 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = momoResult.payUrl;
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
-                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice,  expireMinute);
+                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
@@ -701,7 +700,7 @@ namespace ConfRadar.Services.Services
             };
         }
         #endregion
-        
+
 
         #region process insert data
 
@@ -870,7 +869,7 @@ namespace ConfRadar.Services.Services
             };
             paperObj.PaperAuthors.Add(presenterPaperAuthor);
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
-            if (pricePhase==null)
+            if (pricePhase == null)
             {
                 throw new BadRequestException("Giai đoạn vé không tìm thấy");
             }
@@ -878,7 +877,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Hết slot");
             }
-           
+
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -912,7 +911,7 @@ namespace ConfRadar.Services.Services
         public async Task ProcessCallBackForResearchConferenceAttendee(string orderId, decimal amountFromIpn, string transactionCodeFromIpn)
         {
 
-        
+
             var dateNow = ExtensionHelper.GetVietnamDate();
             var timeNow = ExtensionHelper.GetVietnamTime();
             var transac = await _redisService.GetStringAsync(orderId);
@@ -983,7 +982,7 @@ namespace ConfRadar.Services.Services
                 pricePhase!.AvailableSlot = pricePhase.AvailableSlot - 1;
                 pricePhase!.ConferencePrice!.AvailableSlot = pricePhase!.ConferencePrice!.AvailableSlot - 1;
                 pricePhase!.ConferencePrice!.Conference!.AvailableSlot = pricePhase!.ConferencePrice!.Conference!.AvailableSlot - 1;
-               
+
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
                 await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
                 await _unitOfWork.CommitAsync();
@@ -1021,7 +1020,7 @@ namespace ConfRadar.Services.Services
 
         public async Task VerifyMomoDataForConference(MomoPaymentCallBackResponse data)
         {
-            bool momoCheck =  _momoService.VerifyMomoPaymentData(data);
+            bool momoCheck = _momoService.VerifyMomoPaymentData(data);
             if (!momoCheck)
             {
                 throw new BadRequestException("Dữ liệu momo không khả dụng");
@@ -1035,9 +1034,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Dữ liệu vnpay không khả dụng");
             }
-            await ProcessInsertPaymentData(data.Vnp_TxnRef!, (decimal)data.Vnp_Amount!.Value /100, data.Vnp_TransactionNo!.ToString()!);
+            await ProcessInsertPaymentData(data.Vnp_TxnRef!, (decimal)data.Vnp_Amount!.Value / 100, data.Vnp_TransactionNo!.ToString()!);
         }
-        private async Task ProcessInsertPaymentData(string orderId,decimal amount,string transId)
+        private async Task ProcessInsertPaymentData(string orderId, decimal amount, string transId)
         {
             var transacKey = await _redisService.KeyExistsAsync(orderId);
             if (!transacKey)

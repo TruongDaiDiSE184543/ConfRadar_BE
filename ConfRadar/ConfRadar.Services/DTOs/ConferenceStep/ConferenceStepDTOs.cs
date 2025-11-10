@@ -441,7 +441,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Ngày hết hạn hoàn trả là bắt buộc")]
         public DateOnly? RefundDeadline { get; set; }
 
-        
+
     }
 
     public class RefundPolicyResponse
@@ -597,7 +597,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Vui lòng cho biết hội nghị có cho phép người nghe tham dự hay không.")]
         public bool? AllowListener { get; set; }
 
-        
+
         public string? RankValue { get; set; }
 
         // Có thể không bắt buộc, nhưng nếu có thì phải hợp lệ.
@@ -632,7 +632,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         public bool? AllowListener { get; set; }
 
-        
+
         public string? RankValue { get; set; }
 
         [Range(2000, 2050, ErrorMessage = "Năm xếp hạng không hợp lệ.")]

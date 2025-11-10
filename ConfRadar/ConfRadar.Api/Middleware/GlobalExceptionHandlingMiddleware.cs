@@ -46,7 +46,7 @@ namespace ConfRadar.Api.Middleware
             };
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response,options));
+            await context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
         }
     }
 }

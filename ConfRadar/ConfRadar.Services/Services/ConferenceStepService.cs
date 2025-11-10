@@ -6,8 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using Minio.Exceptions;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -63,7 +61,7 @@ namespace ConfRadar.Services.Services
         // Research Conference Step 2: Research Conference Detail
         Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request, string userId);
         Task<ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId);
-        Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request , string userId);
+        Task<ResearchConferenceDetailResponse> UpdateResearchConferenceDetailAsync(string conferenceId, UpdateResearchConferenceDetailRequest request, string userId);
 
         // Research Conference Step 3: Research Conference Phases
         Task<CreatePhasesResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhasesRequest request, string userId);
@@ -71,7 +69,7 @@ namespace ConfRadar.Services.Services
         Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request, string userId);
 
         // Research Conference Step 4: Research Conference Sessions (without speakers)
-        Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request,string userId);
+        Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request, string userId);
         Task<List<ResearchSessionWithMediaResponse>> GetResearchSessionsAsync(string conferenceId);
         Task<ResearchSessionWithMediaResponse> UpdateResearchSessionAsync(string sessionId, UpdateConferenceSessionRequest request, string userId);
         Task<bool> DeleteResearchSessionAsync(string sessionId, string userId);
@@ -107,9 +105,9 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteSpeakerAsync(string speakerId);
 
         // Revision Round Deadline CRUD operations - Create with researchConferencePhaseId, RUD with its own id
-        Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request,string userId);
+        Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, List<CreateRevisionRoundDeadlineRequest> request, string userId);
         Task<List<RevisionRoundDeadlineResponse>> GetRevisionRoundDeadlinesByResearchPhaseIdAsync(string researchConferencePhaseId);
-        Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request,string userId);
+        Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request, string userId);
         Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, string userId);
     }
 
@@ -317,13 +315,13 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        private async Task<bool>CheckSessionForFirstAndLastDay(Conference conference, List<DateOnly> sessionDate)
+        private async Task<bool> CheckSessionForFirstAndLastDay(Conference conference, List<DateOnly> sessionDate)
         {
             return sessionDate.Contains(conference.StartDate.Value) && sessionDate.Contains(conference.EndDate.Value);
 
         }
 
-        private  Task ValidatePaperFormat(string paperFormat)
+        private Task ValidatePaperFormat(string paperFormat)
         {
             // Phương thức này hiện trả về Task để có thể "await"
             if (string.IsNullOrWhiteSpace(paperFormat))
@@ -855,7 +853,7 @@ namespace ConfRadar.Services.Services
 
             await EnsureConferenceIsEditable(conference);
             List<DateOnly> sessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).Distinct().ToList();
-            await checkEachDateHasConferenceSession(conference, sessionDates,true);
+            await checkEachDateHasConferenceSession(conference, sessionDates, true);
             if (request.Sessions == null || !request.Sessions.Any())
             {
                 throw new BadRequestException("Yêu cầu phải chứa ít nhất một phiên (session).");
@@ -1001,7 +999,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Ngày của phiên ({newDate:dd/MM/yyyy}) phải nằm trong khoảng thời gian diễn ra hội nghị ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
             }
 
-            
+
             // Validate session time availability
             var startDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
             var endDateTime = new DateTime(newDate.Value.Year, newDate.Value.Month, newDate.Value.Day);
@@ -1180,7 +1178,7 @@ namespace ConfRadar.Services.Services
                         //if (await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(media.MediaTypeId) == null) throw new NotFoundException($"Media type with ID {media.MediaTypeId} not found");
                         using var stream = media.MediaFile.OpenReadStream();
                         var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(media.MediaFile.FileName);
-                        mediaUrl =_objectStorageSettings.EndPoint+  await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, media.MediaFile.ContentType);
+                        mediaUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, media.MediaFile.ContentType);
                     }
                     var conferenceMedia = new ConferenceMedium { ConferenceMediaId = Guid.NewGuid().ToString(), ConferenceMediaUrl = mediaUrl, ConferenceId = conferenceId, };
                     await _unitOfWork.ConferenceMediaRepository.CreateConferenceMediaAsync(conferenceMedia);
@@ -1662,7 +1660,7 @@ namespace ConfRadar.Services.Services
 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(researchDetail.ConferenceId);
 
-            
+
             if (conference.CreatedBy != userId)
                 throw new ForbiddenException("Bạn không có quyền cập nhật chi tiết cho hội nghị này.");
 
@@ -1710,7 +1708,7 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
 
-            
+
             // 1. Phân quyền, trạng thái, và loại hội nghị
             if (conference.CreatedBy != userId)
                 throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
@@ -1726,14 +1724,14 @@ namespace ConfRadar.Services.Services
             // 3. Validation logic cho danh sách các phase từ request
             var newPhases = request.Phases.OrderBy(p => p.RegistrationStartDate).ToList();
             // 3a. Phải có đúng MỘT phase chính (IsWaitlist = false) 
-            if (newPhases.Count(p =>p.IsWaitlist == false) != 1) throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
+            if (newPhases.Count(p => p.IsWaitlist == false) != 1) throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
 
             // 3b. Phase đầu tiên phải là phase chính
-            if(newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase đầu tiên (dựa theo ngày bắt đầu) phải là phase chính.");
+            if (newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase đầu tiên (dựa theo ngày bắt đầu) phải là phase chính.");
 
 
             // 3c. Phải có ít nhất MỘT phase waitlist
-            if(!newPhases.Any(p => p.IsWaitlist == true)) throw new BadRequestException("Yêu cầu phải có ít nhất một phase dự phòng (IsWaitlist = true).");
+            if (!newPhases.Any(p => p.IsWaitlist == true)) throw new BadRequestException("Yêu cầu phải có ít nhất một phase dự phòng (IsWaitlist = true).");
 
 
             // 4. Validation logic cho ngày tháng (tuần tự và hợp lệ)
@@ -1856,7 +1854,7 @@ namespace ConfRadar.Services.Services
                                     .Select(s => s.Date.Value)
                                     .Distinct()
                                     .ToList();
-            await checkEachDateHasConferenceSession(conference, sessionDates,true); // Gọi await đúng cách
+            await checkEachDateHasConferenceSession(conference, sessionDates, true); // Gọi await đúng cách
             #endregion
 
             var responses = new List<ResearchSessionWithMediaResponse>();
@@ -1866,7 +1864,7 @@ namespace ConfRadar.Services.Services
                 foreach (var sessionRequest in request.Sessions)
                 {
                     #region Xác thực cho từng Session
-                    
+
                     if (string.IsNullOrWhiteSpace(sessionRequest.Title))
                         throw new BadRequestException("Tiêu đề của phiên không được để trống.");
 
@@ -1894,9 +1892,9 @@ namespace ConfRadar.Services.Services
                     {
                         foreach (var mediaRequest in sessionRequest.SessionMedias)
                         {
-                            if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile)) throw new BadRequestException($"Không hỗ trợ định dạng {mediaRequest.MediaFile.ContentType  }");
+                            if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile)) throw new BadRequestException($"Không hỗ trợ định dạng {mediaRequest.MediaFile.ContentType}");
                             if (mediaRequest.MediaFile == null && string.IsNullOrWhiteSpace(mediaRequest.MediaUrl))
-                                continue; 
+                                continue;
 
                             string mediaUrl = mediaRequest.MediaUrl;
                             if (mediaRequest.MediaFile != null)
@@ -2417,7 +2415,8 @@ namespace ConfRadar.Services.Services
                 }
                 await _unitOfWork.CommitAsync();
             }
-            catch (Exception e) { 
+            catch (Exception e)
+            {
                 await _unitOfWork.RollbackAsync();
                 throw e;
             }

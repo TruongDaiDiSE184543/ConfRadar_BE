@@ -1,9 +1,7 @@
 using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.DTOs.PresenterSession;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -24,7 +22,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetAllAcceptedPaper()
         {
             var result = await _serviceManager.AssigningPresenterSessionService.GetAllAcceptedPaper();
-            return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result,"Lấy thành công"));
+            return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result, "Lấy thành công"));
         }
 
         //[Authorize(Roles = "Conference Organizer,Admin")]

@@ -15,7 +15,7 @@ namespace ConfRadar.Shared.DTO.Paper
 
         [Required(ErrorMessage = "Mã bài báo là bắt buộc")]
         public string PaperId { get; set; }
-        [Required(ErrorMessage ="Revision Paper submission id là bất buộc")]
+        [Required(ErrorMessage = "Revision Paper submission id là bất buộc")]
         public string RevisionPaperSubmissionId { get; set; } = null!;
 
         public string? Title { get; set; }

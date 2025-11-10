@@ -487,20 +487,18 @@ namespace ConfRadar.Services.Services
                 PasswordResetToken = verificationToken,
                 PasswordResetTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1),
             };
-            List<string> listStringRole = new List<string>();
-            listStringRole.Add(SystemRoleEnum.Customer.GetDescription());
-            listStringRole.Add(SystemRoleEnum.Collaborator.GetDescription());
-            var listRole = await _unitOfWork.RoleRepository.GetListRoleByListRoleName(listStringRole);
-            foreach (var role in listRole)
+            var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
+            if (collabRole == null)
             {
-                var userRoleObj = new UserRole()
-                {
-                    AssignedAt = ExtensionHelper.GetVietnamTime(),
-                    RoleId = role.RoleId,
-                    UserId = userCreated.UserId,
-                };
-                userCreated.UserRoles.Add(userRoleObj);
+                throw new NotFoundException("Role collab không tìm thấy trong hệ thống");
             }
+            var userRoleObj = new UserRole()
+            {
+                AssignedAt = ExtensionHelper.GetVietnamTime(),
+                RoleId = collabRole.RoleId,
+                UserId = userCreated.UserId,
+            };
+            userCreated.UserRoles.Add(userRoleObj);
             await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }

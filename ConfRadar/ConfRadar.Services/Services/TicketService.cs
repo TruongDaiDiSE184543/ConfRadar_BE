@@ -25,7 +25,7 @@ namespace ConfRadar.Services.Services
             {
                 TicketId = x.TicketId,
                 UserId = x.UserId,
-                IsRefunded = x.IsRefunded ,
+                IsRefunded = x.IsRefunded,
                 UserName = x.User?.FullName ?? null,
                 Email = x.User?.Email ?? null,
                 AvatarUrl = x.User?.AvatarUrl ?? null,

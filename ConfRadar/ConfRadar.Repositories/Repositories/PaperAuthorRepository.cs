@@ -75,7 +75,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<int> DeleteMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthors)
         {
-             _context.PaperAuthors.RemoveRange(paperAuthors);
+            _context.PaperAuthors.RemoveRange(paperAuthors);
             return await _context.SaveChangesAsync();
         }
     }

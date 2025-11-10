@@ -107,7 +107,7 @@ namespace ConfRadar.Repositories.Repositories
                                  .AsNoTracking()
                                  .Where(t => t.UserId == userId
                                  && t.PricePhase != null
-                                 && t.PricePhase.ConferencePrice !=null
+                                 && t.PricePhase.ConferencePrice != null
                                  && t.PricePhase.ConferencePrice.Conference != null
                                  && t.PricePhase.ConferencePrice.Conference.StartDate > dateNow
                                  && t.PricePhase.ConferencePrice.Conference.ConferenceStatusId == conferenceStatusReadyId

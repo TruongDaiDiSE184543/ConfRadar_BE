@@ -59,8 +59,8 @@ namespace ConfRadar.Services.DTOs.Room
 
     public class RoomAvailablity
     {
-        public DateOnly Date {  get; set; }
+        public DateOnly Date { get; set; }
         public List<TimeSpanResponse>? AvailbleTimeSpan { get; set; }
-        public bool IsAvailableWholeday {  get; set; }
+        public bool IsAvailableWholeday { get; set; }
     }
 }
