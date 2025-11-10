@@ -1,4 +1,4 @@
-using ConfRadar.Api.Responses;
+﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Room;
 using Microsoft.AspNetCore.Authorization;
@@ -213,6 +213,14 @@ namespace ConfRadar.Api.Controllers
             {
                 return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
             }
+        }
+
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [HttpGet("room-availablility-between-dates")]
+        public async Task<IActionResult> Roomavailability(string roomId, [FromQuery] DateOnly dayStart, [FromQuery] DateOnly dayEnd)
+        {
+            var result = await _serviceManager.RoomService.RoomAvailableBetweenDate(roomId, dayStart, dayEnd);
+            return Ok(ApiResponse<List<RoomAvailablity>>.SuccessResponse(result,"lấy danh sách ngày trống thành công"));
         }
     }
 }

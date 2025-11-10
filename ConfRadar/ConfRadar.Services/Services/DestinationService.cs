@@ -1,4 +1,4 @@
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Destination;
 using ConfRadar.Services.DTOs.Room;
@@ -27,11 +27,15 @@ namespace ConfRadar.Services.Services
 
         public async Task<string> CreateDestinationAsync(CreateDestinationRequest request)
         {
+            //Check for existence of city
+            var city = await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId);
+            if (city == null) throw new BadRequestException($"Không tìm thấy city với ID{request.CityId}");
+
             var destination = new Destination
             {
                 DestinationId = Guid.NewGuid().ToString(),
                 Name = request.Name,
-                //City = request.City,
+                CityId = request.CityId,
                 District = request.District,
                 Street = request.Street
             };
@@ -39,7 +43,7 @@ namespace ConfRadar.Services.Services
             var result = await _unitOfWork.DestinationRepository.CreateDestinationAsync(destination);
             if (result <= 0)
             {
-                throw new BadRequestException("Failed to create destination");
+                throw new BadRequestException("Thất bại khi tạo destination");
             }
 
             return destination.DestinationId;
@@ -50,11 +54,14 @@ namespace ConfRadar.Services.Services
             var existingDestination = await _unitOfWork.DestinationRepository.GetDestinationByIdAsync(destinationId);
             if (existingDestination == null)
             {
-                throw new NotFoundException($"Destination with ID {destinationId} not found");
+                throw new NotFoundException($"Destination với ID {destinationId} không tìm thấy");
             }
 
+            var city = await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId);
+            if (city == null) throw new BadRequestException($"Không tìm thấy city với ID{request.CityId}");
+
             existingDestination.Name = request.Name ?? existingDestination.Name;
-            //existingDestination.City = request.City ?? existingDestination.City;
+            existingDestination.CityId = request.CityId ?? existingDestination.CityId;
             existingDestination.District = request.District ?? existingDestination.District;
             existingDestination.Street = request.Street ?? existingDestination.Street;
 

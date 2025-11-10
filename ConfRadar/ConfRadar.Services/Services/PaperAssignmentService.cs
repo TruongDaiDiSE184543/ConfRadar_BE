@@ -94,6 +94,16 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("Local Reviewer or External Reviewer role does not exist in the system.");
             }
 
+            // Check if the user is already assigned to this paper
+            var existingPaperAuthor = await _unitOfWork.PaperAuthorRepository
+                .GetPaperAuthorByIdAsync(request.UserId, request.PaperId);
+
+            if (existingPaperAuthor != null)
+            {
+                throw new BadRequestException($"User with ID {request.UserId} is already assigned as an author to paper with ID, they cannot be a reviewer and author for the same paper {request.PaperId}.");
+            }
+
+
             var userRoles = await _unitOfWork.UserRoleRepository
                 .GetMutipleUserRolesByUserId(request.UserId);
 

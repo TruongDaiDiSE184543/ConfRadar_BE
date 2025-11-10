@@ -5,15 +5,19 @@ namespace ConfRadar.Services.DTOs.Destination
 {
     public class CreateDestinationRequest
     {
+        [Required]
         [MaxLength(50)]
         public string? Name { get; set; }
 
+        [Required]
         [MaxLength(50)]
-        public string? City { get; set; }
+        public string? CityId { get; set; }
 
+        [Required]
         [MaxLength(50)]
         public string? District { get; set; }
 
+        [Required]
         [MaxLength(50)]
         public string? Street { get; set; }
     }
@@ -24,7 +28,7 @@ namespace ConfRadar.Services.DTOs.Destination
         public string? Name { get; set; }
 
         [MaxLength(50)]
-        public string? City { get; set; }
+        public string? CityId { get; set; }
 
         [MaxLength(50)]
         public string? District { get; set; }

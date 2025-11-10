@@ -360,6 +360,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.PresentAuthors)
                 .Include(p => p.PaperAuthors)
                 .Include(p => p.PaperPhase)
+                .Include(p => p.ResearchConferencePhase)
                 .FirstOrDefaultAsync(p => p.PaperId == paper);
         }
 
