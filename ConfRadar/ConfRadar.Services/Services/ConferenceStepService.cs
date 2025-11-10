@@ -48,7 +48,7 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteSponsorAsync(string sponsorId);
 
         // Step 7: Add Refund Policies
-        Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request, string userId);
+        Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId,string pricephaseId, AddRefundPoliciesRequest request, string userId);
         Task<List<RefundPolicyResponse>> GetRefundPoliciesAsync(string conferenceId);
         Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request, string userId);
         Task<bool> DeleteRefundPolicyAsync(string refundPolicyId, string userId);
@@ -309,16 +309,11 @@ namespace ConfRadar.Services.Services
             var pending = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             var Preparing = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
-            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId)
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
+            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId) ;
             {
                 throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
-        }
-
-        private async Task<bool> CheckSessionForFirstAndLastDay(Conference conference, List<DateOnly> sessionDate)
-        {
-            return sessionDate.Contains(conference.StartDate.Value) && sessionDate.Contains(conference.EndDate.Value);
-
         }
 
         private Task ValidatePaperFormat(string paperFormat)
@@ -1374,7 +1369,7 @@ namespace ConfRadar.Services.Services
 
         #region Step 7: Refund Policies
 
-        public async Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, AddRefundPoliciesRequest request, string userId)
+        public async Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId,string pricephaseId, AddRefundPoliciesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null)
@@ -1382,6 +1377,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
             }
 
+            var pricephase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(pricephaseId);
 
             // 1. Phân quyền
             if (conference.CreatedBy != userId)

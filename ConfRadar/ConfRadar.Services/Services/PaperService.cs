@@ -52,7 +52,7 @@ namespace ConfRadar.Services.Services
         Task<int> UpdateCameraReady(UpdateCameraReadyRequest request, string userId);
 
         Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);
-        Task<List<Paper>> GetSubmittedPaper(string userId);
+        Task<List<Paper>> GetSubmittedPaper(string userId, string? confId);
         Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId);
 
 
@@ -1435,10 +1435,11 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<List<Paper>> GetSubmittedPaper(string userId)
+        public async Task<List<Paper>> GetSubmittedPaper(string userId,string? confId)
         {
             // Use the new repository method to get papers by user ID in a single query
             var submittedPapers = await _unitOfWork.PaperAuthorRepository.GetPapersByUserIdAsync(userId);
+            if (confId != null) submittedPapers.Where(p => p.ConferenceId == confId).ToList();
 
             return submittedPapers;
         }
