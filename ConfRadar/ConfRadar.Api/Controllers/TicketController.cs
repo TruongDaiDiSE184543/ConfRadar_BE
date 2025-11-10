@@ -25,5 +25,13 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.TicketService.GetTicketsByUserId(userId, keyword, pageNumber, pageSize);
             return Ok(ApiResponse<PagedResultResponseDto<CustomerPaidTicketResponse>>.SuccessResponse(result, "Danh sách vé đã chi trả"));
         }
+        [Authorize]
+        [HttpPost("refund-ticket")]
+        public async Task<IActionResult> RefundTicket([FromBody] RefundTicketRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.TicketService.CreateRefundTicketRequest(request,userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Hãy check yêu cầu lịch sử refund để biết thêm thông tin chi tiết"));
+        }
     }
 }

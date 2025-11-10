@@ -109,7 +109,16 @@ namespace ConfRadar.Services.Services
                 RoleId = role!.RoleId,
                 AssignedAt = ExtensionHelper.GetVietnamTime(),
             };
+            var userWallet = new Wallet()
+            {
+                WalletId = Guid.NewGuid().ToString(),
+                UserId = userCreated.UserId,
+                Balance = 0,
+                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                UpdatedAt = null
+            };
             userCreated.UserRoles.Add(userRole);
+            userCreated.Wallet = userWallet;
             await _emailService.SendAuthenticationTemplateEmailAsync(request.Email, request.FullName, confirmationLink, "Confirm Email Registration", "EmailRegistrationConfirmation.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
@@ -275,6 +284,14 @@ namespace ConfRadar.Services.Services
                     AvatarUrl = null,
                     CreatedAt = timeNow,
                     UserRoles = userRoleList,
+                    Wallet = new Wallet()
+                    {
+                        WalletId = Guid.NewGuid().ToString(),
+                        UserId = userId,
+                        Balance = 0,
+                        CreatedAt = ExtensionHelper.GetVietnamTime(),
+                        UpdatedAt = null
+                    }
                 };
                 await _unitOfWork.UserRepository.CreateUserAsync(user);
             }
@@ -473,9 +490,10 @@ namespace ConfRadar.Services.Services
 
 
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string userId = Guid.NewGuid().ToString();
             var userCreated = new User()
             {
-                UserId = Guid.NewGuid().ToString(),
+                UserId = userId,
                 Email = request.Email,
                 FullName = request.FullName,
                 PasswordHash = hashedPassword,
@@ -486,6 +504,14 @@ namespace ConfRadar.Services.Services
                 UserRoles = new List<UserRole>(),
                 PasswordResetToken = verificationToken,
                 PasswordResetTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1),
+                Wallet = new Wallet()
+                {
+                    WalletId = Guid.NewGuid().ToString(),
+                    UserId = userId,
+                    Balance = 0,
+                    CreatedAt = ExtensionHelper.GetVietnamTime(),
+                    UpdatedAt = null
+                }
             };
             var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
             if (collabRole == null)

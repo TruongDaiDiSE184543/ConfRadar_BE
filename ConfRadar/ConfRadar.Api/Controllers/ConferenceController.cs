@@ -265,6 +265,7 @@ namespace ConfRadar.Api.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.GetConferenceByAssignedPapers(userId);
+            return Ok(ApiResponse<List<ConferenceResponse>>.SuccessResponse(result, "Lấy thành công danh sách conference có papers được assigned cho local reviewer"));
         }
     }
 }

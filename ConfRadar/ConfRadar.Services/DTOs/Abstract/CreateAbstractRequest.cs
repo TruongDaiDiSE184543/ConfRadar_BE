@@ -20,7 +20,7 @@ namespace ConfRadar.Services.DTOs.Abstract
 
         public List<string>? CoAuthorId { get; set; }
     }
-   
+
 
 
 

@@ -281,7 +281,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<UnAssignAbstractResponse>>.SuccessResponse(result, "Danh sách các paper chưa được phân reviewer"));
         }
 
-        
+
 
         [Authorize]
         [HttpGet("paper-detail-for-reviewer")]

@@ -1997,7 +1997,7 @@ namespace ConfRadar.Services.Services
             List<PaperReviewer> AssignPaper = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
             List<Conference> AssignedConference = AssignPaper.Select(ap => ap.Paper.Conference).ToList();
             List<ConferenceResponse> responses = new();
-            foreach(var conference in AssignedConference)
+            foreach (var conference in AssignedConference)
             {
                 ConferenceResponse conferenceResponse = new ConferenceResponse
                 {

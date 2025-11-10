@@ -75,6 +75,10 @@ namespace ConfRadar.Repositories
 
         IUserCheckInRepository UserCheckInRepository { get; }
         IConferenceFeedbackRepository ConferenceFeedbackRepository { get; }
+        IRefundRequestRepository RefundRequestRepository { get; }
+        IWalletRepository WalletRepository { get; }
+        IWalletTransactionRepository WalletTransactionRepository { get; }
+
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -157,7 +161,9 @@ namespace ConfRadar.Repositories
 
         private IUserCheckInRepository _UserCheckInRepository;
         private IConferenceFeedbackRepository _ConferenceFeedbackRepository;
-
+        private IRefundRequestRepository _RefundRequestRepository;
+        private IWalletRepository _WalletRepository;
+        private IWalletTransactionRepository _WalletTransactionRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -277,6 +283,12 @@ namespace ConfRadar.Repositories
 
 
         public IConferenceFeedbackRepository ConferenceFeedbackRepository => _ConferenceFeedbackRepository ??= new ConferenceFeedbackRepository(_context);
+
+        public IRefundRequestRepository RefundRequestRepository => _RefundRequestRepository ??= new RefundRequestRepository(_context);
+
+        public IWalletRepository WalletRepository => _WalletRepository ??= new WalletRepository(_context);
+
+        public IWalletTransactionRepository WalletTransactionRepository => _WalletTransactionRepository ??= new WalletTransactionRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

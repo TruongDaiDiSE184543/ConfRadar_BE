@@ -54,6 +54,7 @@ namespace ConfRadar.Services
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IAssigningPresenterSessionService, AssigningPresenterSessionService>();
             services.AddScoped<IVnPayService, VnPayService>();
+            services.AddScoped<IWalletService, WalletService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();

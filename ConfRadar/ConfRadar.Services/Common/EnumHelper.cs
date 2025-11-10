@@ -131,6 +131,9 @@ namespace ConfRadar.Services.Common
         PayOs,
         [Description("VnPay")]
         VnPay,
+        [Description("Wallet")]
+        Wallet,
+
     }
     public enum ConferenceStatusEnum
     {
@@ -207,6 +210,30 @@ namespace ConfRadar.Services.Common
         Notified,
 
 
+    }
+
+    public enum WalletTransactionTypeEnum
+    {
+        //[Description("Deposit")]
+        //Deposit,            
+
+        //[Description("Withdraw")]
+        //Withdraw,          
+
+        [Description("Refund")]
+        Refund,            
+
+        [Description("Purchase")]
+        Purchase,       
+
+        //[Description("Adjustment")]
+        //Adjustment,        
+
+        //[Description("Pending")]
+        //Pending,          
+
+        //[Description("Notified")]
+        //Notified,           
     }
 
 
