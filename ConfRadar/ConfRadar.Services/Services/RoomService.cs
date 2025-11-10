@@ -489,18 +489,18 @@ namespace ConfRadar.Services.Services
 
             // Days interval must be less than or equal to 30
             int daysBetween = endDate.DayNumber - startDate.DayNumber;
-            if (daysBetween > 30) 
+            if (daysBetween > 30)
             {
                 throw new BadRequestException($"Khoảng cách start date và end date không thể vượt 30 ngày. {startDate:dd/MM/yyyy} đến {endDate:dd/MM/yyyy} là {daysBetween} ngày");
             }
 
             List<RoomAvailablity> response = new();
-            
+
             for (var date = startDate; date <= endDate; date = date.AddDays(1))
             {
                 // Get all sessions for this room on this specific date
                 var occupiedSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(roomId, date);
-                
+
                 // If no sessions exist for the day, the entire day is available
                 if (!occupiedSessions.Any())
                 {
@@ -550,7 +550,7 @@ namespace ConfRadar.Services.Services
                 {
                     TimeOnly currentEnd = occupiedTimeSlots[i].endTime;
                     TimeOnly nextStart = occupiedTimeSlots[i + 1].startTime;
-                    
+
                     if (currentEnd < nextStart)
                     {
                         availableTimeSpans.Add(new TimeSpanResponse
@@ -578,7 +578,7 @@ namespace ConfRadar.Services.Services
                     IsAvailableWholeday = false
                 });
             }
-            
+
             return response;
         }
 

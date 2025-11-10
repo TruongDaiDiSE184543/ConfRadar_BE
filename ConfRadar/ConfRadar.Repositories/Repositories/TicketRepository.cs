@@ -16,6 +16,9 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId);
         Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<Ticket> GetTicketById(string ticketId);
+        Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId);
+        Task<int> UpdateTicketAsync(Ticket ticket);
+
     }
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
     {
@@ -211,6 +214,20 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Ticket> GetTicketById(string ticketId)
         {
             return await _context.Tickets.FirstOrDefaultAsync(t => t.TicketId == ticketId);
+        }
+
+        public async Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId)
+        {
+            return await _context.Tickets
+                .Include(t => t.PricePhase)
+                    .ThenInclude(pp => pp.RefundPolicies)
+                .Include(t => t.Transactions)
+                .FirstOrDefaultAsync(t => t.TicketId == ticketId && t.UserId == userId);
+        }
+
+        public async Task<int> UpdateTicketAsync(Ticket ticket)
+        {
+           return await UpdateAsync(ticket);
         }
     }
 }

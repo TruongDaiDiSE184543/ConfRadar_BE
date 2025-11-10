@@ -25,6 +25,7 @@ namespace ConfRadar.Services.DTOs.Abstract
 
 
 
+
     public class FullPaperResponse
     {
         public string? ReviewStatus { get; set; }
