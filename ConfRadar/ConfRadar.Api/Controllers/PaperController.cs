@@ -62,7 +62,7 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize(Roles = "Conference Organizer")]
         [HttpGet("list-pending-abstract")]
-        public async Task<IActionResult> ListPendingAbstract(string confId)
+        public async Task<IActionResult> ListPendingAbstract([FromQuery]string? confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.GetListPendingAbstract(confId);
