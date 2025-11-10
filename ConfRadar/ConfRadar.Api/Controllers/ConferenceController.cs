@@ -257,5 +257,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.GetListConferencesForScheduleByUserId(userId);
             return Ok(ApiResponse<List<ConferenceDetailForScheduleResponse>>.SuccessResponse(result, "Danh sách hội nghị"));
         }
+
+
+        [Authorize]
+        [HttpGet("get-conferences-assigned-papers-belong-to")]
+        public async Task<IActionResult> GetAssignConferenceList()
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.GetConferenceByAssignedPapers(userId);
+        }
     }
 }

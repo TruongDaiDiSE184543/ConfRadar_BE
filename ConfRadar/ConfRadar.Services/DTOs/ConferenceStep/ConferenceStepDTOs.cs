@@ -65,6 +65,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         [Required(ErrorMessage = "Số lượng vé cho giai đoạn này là bắt buộc")]
         public int Totalslot { get; set; }
+        public List<CreateRefundPolicyRequest>? refundInPhase {  get; set; }
     }
 
     public class CreateConferencePriceRequest
