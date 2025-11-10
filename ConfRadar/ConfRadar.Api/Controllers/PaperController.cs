@@ -62,10 +62,10 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize(Roles = "Conference Organizer")]
         [HttpGet("list-pending-abstract")]
-        public async Task<IActionResult> ListPendingAbstract()
+        public async Task<IActionResult> ListPendingAbstract(string confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.GetListPendingAbstract();
+            var result = await _serviceManager.PaperService.GetListPendingAbstract(confId);
             return Ok(ApiResponse<List<PendingAbstractResponse>>.SuccessResponse(result, "danh sách pending abstract"));
         }
         [HttpGet("list-available-customers")]
@@ -280,6 +280,9 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.GetUnassignAbstractList();
             return Ok(ApiResponse<List<UnAssignAbstractResponse>>.SuccessResponse(result, "Danh sách các paper chưa được phân reviewer"));
         }
+
+        
+
         [Authorize]
         [HttpGet("paper-detail-for-reviewer")]
         public async Task<IActionResult> GetPaperDetailForReviewer(string paperId)

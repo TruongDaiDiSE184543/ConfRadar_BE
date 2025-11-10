@@ -69,7 +69,7 @@ namespace ConfRadar.Repositories.Repositories
              GlobalStatusId = a.GlobalStatusId,
              GlobalStatusName = gs.Name,
              CreatedAt = p.CreatedAt,
-         }).ToListAsync();
+         }).OrderByDescending(abs => abs.CreatedAt).ToListAsync();
 
             return result;
         }

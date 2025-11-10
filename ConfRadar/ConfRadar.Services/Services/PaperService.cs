@@ -21,7 +21,7 @@ namespace ConfRadar.Services.Services
         Task<int> SubmitAbstract(CreateAbstractRequest request, string userId);
         Task<int> UpdateAbstract(UpdateAbstractRequest request, string userId);
         Task<int> DecideAbstractPaperStatus(UpdateAbstractPaperStatusRequest request, string userId);
-        Task<List<PendingAbstractResponse>> GetListPendingAbstract();
+        Task<List<PendingAbstractResponse>> GetListPendingAbstract(string? confId);
 
         //Task<FullPaperResponse> SubmitFullPaper (CreateFullPaperRequest request, string userId);
         Task<int> SubmitFullPaper(CreateFullPaperRequest request, string userId);
@@ -1633,7 +1633,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        public async Task<List<PendingAbstractResponse>> GetListPendingAbstract()
+        public async Task<List<PendingAbstractResponse>> GetListPendingAbstract(string? confId)
         {
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (pendingGlobalStatus == null)
@@ -1641,6 +1641,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
             var listAbstract = await _unitOfWork.AbstractRepository.GetAllPendingAbstractsAsync(pendingGlobalStatus.GlobalStatusId);
+            if (!string.IsNullOrEmpty(confId)) listAbstract = listAbstract.Where(abs => abs.ConferenceId == confId).ToList();
             return listAbstract;
         }
 
