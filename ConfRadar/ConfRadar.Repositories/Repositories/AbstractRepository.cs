@@ -36,7 +36,9 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<Abstract?> GetAbstractByIdAsync(string abstractId)
         {
-            return await _context.Abstracts.Include(a => a.GlobalStatus).Where(a => a.AbstractId == abstractId).FirstOrDefaultAsync();
+            return await _context.Abstracts
+                .Include(a => a.GlobalStatus)
+                .FirstOrDefaultAsync(a => a.AbstractId == abstractId);
         }
 
         public async Task<List<Abstract>> GetAllAbstractsAsync()

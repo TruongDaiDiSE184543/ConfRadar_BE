@@ -37,10 +37,13 @@ public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisi
 
     public async Task<RevisionPaper?> GetRevisionPaperByIdAsync(string revisionPaperId)
     {
-        return await _context.RevisionPapers.FirstOrDefaultAsync(x => x.RevisionPaperId == revisionPaperId);
-
-
-        //return await GetByIdAsync(revisionPaperId);
+        return await _context.RevisionPapers
+            .AsSplitQuery()
+            .Include(rp =>rp.RevisionPaperSubmissions)
+                .ThenInclude(rps=>rps.RevisionDeadlineRound)
+            .Include(rp => rp.RevisionPaperSubmissions)
+                .ThenInclude(rps => rps.RevisionSubmissionFeedbacks)
+            .FirstOrDefaultAsync(x => x.RevisionPaperId == revisionPaperId);
     }
 
     public async Task<List<RevisionPaper>> GetAllRevisionPapersAsync()
