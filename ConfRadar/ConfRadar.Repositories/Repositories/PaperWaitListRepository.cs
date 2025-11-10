@@ -157,12 +157,12 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.PaperWaitLists.FirstOrDefaultAsync(pwl => pwl.UserId == userId && pwl.ConferenceId == conferenceId);
         }
 
-        public async Task<int> ResetUserWaitList(string readyConferenceStatusId, string pendingWaitListStatusId, string notifiedAtWaitListStatusId,DateTime notifiedAt)
+        public async Task<int> ResetUserWaitList(string readyConferenceStatusId, string pendingWaitListStatusId, string notifiedAtWaitListStatusId, DateTime notifiedAt)
         {
             var notifiedWaitList = await _context.PaperWaitLists
-                                .Where(pwl =>  pwl.WaitListStatusId == notifiedAtWaitListStatusId
+                                .Where(pwl => pwl.WaitListStatusId == notifiedAtWaitListStatusId
                                 && pwl.Conference != null && pwl.Conference.ConferenceStatusId == readyConferenceStatusId
-                                &&pwl.User!=null && pwl.User.IsActive==true).ToListAsync();
+                                && pwl.User != null && pwl.User.IsActive == true).ToListAsync();
             int result = 0;
             if (notifiedWaitList.Count > 0)
             {
@@ -171,8 +171,8 @@ namespace ConfRadar.Repositories.Repositories
                     waitList.WaitListStatusId = pendingWaitListStatusId;
                     waitList.NotifiedAt = notifiedAt;
                 }
-                    _context.PaperWaitLists.UpdateRange(notifiedWaitList);
-                    result = await _context.SaveChangesAsync();
+                _context.PaperWaitLists.UpdateRange(notifiedWaitList);
+                result = await _context.SaveChangesAsync();
             }
             return result;
         }

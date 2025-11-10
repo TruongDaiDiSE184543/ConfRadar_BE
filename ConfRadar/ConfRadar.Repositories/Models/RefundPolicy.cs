@@ -6,6 +6,8 @@ public partial class RefundPolicy
 
     public string? ConferenceId { get; set; }
 
+    public string? PricePhaseId { get; set; }
+
     public int? PercentRefund { get; set; }
 
     public DateOnly? RefundDeadline { get; set; }
@@ -13,4 +15,6 @@ public partial class RefundPolicy
     public int? RefundOrder { get; set; }
 
     public virtual Conference? Conference { get; set; }
+
+    public virtual PricePhase? PricePhase { get; set; }
 }

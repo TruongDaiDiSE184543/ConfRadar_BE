@@ -16,6 +16,8 @@ public partial class Paper
 
     public string? PaperPhaseId { get; set; }
 
+    public string? ResearchConferencePhaseId { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public string? Title { get; set; }
@@ -38,5 +40,11 @@ public partial class Paper
 
     public virtual ICollection<PresentAuthor> PresentAuthors { get; set; } = new List<PresentAuthor>();
 
+    public virtual ICollection<PresenterChangeRequest> PresenterChangeRequests { get; set; } = new List<PresenterChangeRequest>();
+
+    public virtual ResearchConferencePhase? ResearchConferencePhase { get; set; }
+
     public virtual RevisionPaper? RevisionPaper { get; set; }
+
+    public virtual ICollection<SessionChangeRequest> SessionChangeRequests { get; set; } = new List<SessionChangeRequest>();
 }

@@ -12,6 +12,8 @@ public partial class SessionChangeRequest
 
     public string? GlobalStatusId { get; set; }
 
+    public string? PaperId { get; set; }
+
     public string? Reason { get; set; }
 
     public DateTime? RequestAt { get; set; }
@@ -23,6 +25,8 @@ public partial class SessionChangeRequest
     public virtual GlobalStatus? GlobalStatus { get; set; }
 
     public virtual ConferenceSession? NewConferenceSession { get; set; }
+
+    public virtual Paper? Paper { get; set; }
 
     public virtual Ticket? Ticket { get; set; }
 }

@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -19,10 +17,12 @@ namespace ConfRadar.Api.Controllers
     {
         private readonly IServiceManager _serviceManager;
         private readonly IZaloPayService _zaloPayService;
-        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService)
+        private readonly ITokenService _tokenService;
+        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService, ITokenService tokenService)
         {
             _serviceManager = serviceManager;
             _zaloPayService = zaloPayService;
+            _tokenService = tokenService;
         }
         [Authorize]
         [HttpPost("pay-tech")]
@@ -116,16 +116,20 @@ namespace ConfRadar.Api.Controllers
 
             try
             {
+                string key2 = "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz";
                 var dataStr = Convert.ToString(cbdata["data"]);
                 var reqMac = Convert.ToString(cbdata["mac"]);
 
 
                 Console.WriteLine("mac = {0}", reqMac);
                 Console.WriteLine("cbdata:" + cbdata);
+                var mac = _tokenService.CreateSignature(dataStr, key2);
 
+                Console.WriteLine("mac = {0}", mac);
                 // kiểm tra callback hợp lệ (đến từ ZaloPay server)
-                if (1 == 1)
+                if (!reqMac.Equals(mac))
                 {
+
                     // callback không hợp lệ
                     result["returncode"] = -1;
                     result["returnmessage"] = "mac not equal";

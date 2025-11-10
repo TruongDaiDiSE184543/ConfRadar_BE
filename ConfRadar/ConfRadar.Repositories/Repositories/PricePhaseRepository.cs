@@ -27,10 +27,10 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<PricePhase?> GetPricePhaseByPricePhaseId(string pricePhaseId)
         {
-          
+
             return await _context.PricePhases
-                .Include(pp=>pp.ConferencePrice)
-                  .ThenInclude(cp=>cp.Conference)
+                .Include(pp => pp.ConferencePrice)
+                  .ThenInclude(cp => cp.Conference)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.PricePhaseId == pricePhaseId);
         }

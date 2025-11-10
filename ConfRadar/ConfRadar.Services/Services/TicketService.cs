@@ -21,20 +21,17 @@ namespace ConfRadar.Services.Services
         public async Task<List<PaidTicketResponse>> GetTicketListByConferenceId(string conferenceId)
         {
             var tickets = await _unitOfWork.TicketRepository.GetTicketListByConferenceId(conferenceId);
-            if (tickets == null || tickets.Count <= 0)
-            {
-                return new List<PaidTicketResponse>();
-            }
             return tickets.Select(x => new PaidTicketResponse()
             {
                 TicketId = x.TicketId,
-                UserId = x.UserId!,
-                UserName = x.User?.FullName ?? "",
-                Email = x.User?.Email ?? "",
-                AvatarUrl = x.User?.AvatarUrl ?? "",
-                //RegisteredDate = x.RegisteredDate ?? DateTime.Now,
-                ConferenceId = x.ConferencePrice?.ConferencePriceId ?? "",
-                ConferenceName = x.ConferencePrice.Conference.ConferenceName,
+                UserId = x.UserId,
+                IsRefunded = x.IsRefunded,
+                UserName = x.User?.FullName ?? null,
+                Email = x.User?.Email ?? null,
+                AvatarUrl = x.User?.AvatarUrl ?? null,
+                RegisteredDate = x.RegisteredDate ?? null,
+                ConferenceId = x.PricePhase?.ConferencePrice?.ConferenceId ?? null,
+                ConferenceName = x.PricePhase?.ConferencePrice?.Conference?.ConferenceName ?? null,
             }).ToList();
         }
 

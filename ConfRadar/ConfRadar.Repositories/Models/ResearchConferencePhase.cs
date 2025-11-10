@@ -32,5 +32,7 @@ public partial class ResearchConferencePhase
 
     public virtual Conference? Conference { get; set; }
 
+    public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
+
     public virtual ICollection<RevisionRoundDeadline> RevisionRoundDeadlines { get; set; } = new List<RevisionRoundDeadline>();
 }

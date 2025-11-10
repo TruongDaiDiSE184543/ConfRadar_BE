@@ -2,6 +2,7 @@
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
+using ConfRadar.Services.DTOs.Ticket;
 using ConfRadar.Shared.DTO.Conference;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,12 +23,12 @@ namespace ConfRadar.Api.Controllers
 
 
 
-        //[HttpGet("view-registered-users-for-conference")]
-        //public async Task<IActionResult> ViewRegisteredUsersInAConference(string conferenceId)
-        //{
-        //    var userList = await _serviceManager.TicketService.GetTicketListByConferenceId(conferenceId);
-        //    return Ok(ApiResponse<List<PaidTicketResponse>>.SuccessResponse(userList, "data retrieved"));
-        //}
+        [HttpGet("view-registered-users-for-conference")]
+        public async Task<IActionResult> ViewRegisteredUsersInAConference(string conferenceId)
+        {
+            var userList = await _serviceManager.TicketService.GetTicketListByConferenceId(conferenceId);
+            return Ok(ApiResponse<List<PaidTicketResponse>>.SuccessResponse(userList, "data retrieved"));
+        }
 
         [HttpGet("paginated-conferences")]
         public async Task<IActionResult> GetAllConferencesWithPagination([FromQuery] int page = 1, [FromQuery] int pageSize = 10)

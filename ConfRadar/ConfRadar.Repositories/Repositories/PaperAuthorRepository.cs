@@ -10,6 +10,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreatePaperAuthorAsync(PaperAuthor paperAuthor);
         Task<int> UpdatePaperAuthorAsync(PaperAuthor paperAuthor);
         Task<bool> DeletePaperAuthorAsync(PaperAuthor paperAuthor);
+        Task<int> DeleteMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthors);
+
         Task<PaperAuthor?> GetPaperAuthorByIdAsync(string? userId, string? paperId);
         Task<List<PaperAuthor>> GetAllPaperAuthorsAsync();
         Task<List<PaperAuthor>> GetPaperAuthorsByPaperIdAsync(string paperId);
@@ -69,6 +71,12 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.PaperAuthors.Where(pa => pa.IsRootAuthor == true && pa.UserId == userId).Include(pa => pa.Paper)
                  .Select(pa => pa.Paper).ToListAsync();
+        }
+
+        public async Task<int> DeleteMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthors)
+        {
+            _context.PaperAuthors.RemoveRange(paperAuthors);
+            return await _context.SaveChangesAsync();
         }
     }
 }

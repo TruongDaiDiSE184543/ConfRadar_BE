@@ -14,6 +14,7 @@ WORKDIR /src
 COPY ["ConfRadar.Api/ConfRadar.Api.csproj", "ConfRadar.Api/"]
 COPY ["ConfRadar.Services/ConfRadar.Services.csproj", "ConfRadar.Services/"]
 COPY ["ConfRadar.Repositories/ConfRadar.Repositories.csproj", "ConfRadar.Repositories/"]
+COPY ["ConfRadar.Shared/ConfRadar.Shared.csproj", "ConfRadar.Shared/"]
 RUN dotnet restore "./ConfRadar.Api/ConfRadar.Api.csproj"
 COPY . .
 WORKDIR "/src/ConfRadar.Api"

@@ -106,34 +106,35 @@ namespace ConfRadar.Repositories.Repositories
             var conferenceList = await _context.Tickets
                                  .AsNoTracking()
                                  .Where(t => t.UserId == userId
-                                 && t.ConferencePrice != null
-                                 && t.ConferencePrice.Conference != null
-                                 && t.ConferencePrice.Conference.StartDate > dateNow
-                                 && t.ConferencePrice.Conference.ConferenceStatusId == conferenceStatusReadyId
+                                 && t.PricePhase != null
+                                 && t.PricePhase.ConferencePrice != null
+                                 && t.PricePhase.ConferencePrice.Conference != null
+                                 && t.PricePhase.ConferencePrice.Conference.StartDate > dateNow
+                                 && t.PricePhase.ConferencePrice.Conference.ConferenceStatusId == conferenceStatusReadyId
                                  )
                                  .Select(t => new ConferenceDetailForScheduleResponse()
                                  {
-                                     ConferenceId = t.ConferencePrice!.Conference!.ConferenceId,
-                                     ConferenceName = t.ConferencePrice.Conference.ConferenceName,
-                                     Description = t.ConferencePrice.Conference.Description,
-                                     StartDate = t.ConferencePrice.Conference.StartDate,
-                                     EndDate = t.ConferencePrice.Conference.EndDate,
-                                     TotalSlot = t.ConferencePrice.Conference.TotalSlot,
-                                     AvailableSlot = t.ConferencePrice.Conference.AvailableSlot,
-                                     Address = t.ConferencePrice.Conference.Address,
-                                     BannerImageUrl = t.ConferencePrice.Conference.BannerImageUrl,
-                                     CreatedAt = t.ConferencePrice.Conference.CreatedAt,
-                                     TicketSaleStart = t.ConferencePrice.Conference.TicketSaleStart,
-                                     TicketSaleEnd = t.ConferencePrice.Conference.TicketSaleEnd,
-                                     IsInternalHosted = t.ConferencePrice.Conference.IsInternalHosted,
-                                     IsResearchConference = t.ConferencePrice.Conference.IsResearchConference,
-                                     CityId = t.ConferencePrice.Conference.CityId,
-                                     CityName = t.ConferencePrice.Conference.City != null ? t.ConferencePrice.Conference.City.CityName : null,
-                                     ConferenceCategoryId = t.ConferencePrice.Conference.ConferenceCategoryId,
-                                     ConferenceCategoryName = t.ConferencePrice.Conference.ConferenceCategory != null ? t.ConferencePrice.Conference.ConferenceCategory.ConferenceCategoryName : null,
-                                     ConferenceStatusId = t.ConferencePrice.Conference.ConferenceStatusId,
-                                     ConferenceStatusName = t.ConferencePrice.Conference.ConferenceStatus != null ? t.ConferencePrice.Conference.ConferenceStatus.ConferenceStatusName : null,
-                                     Sessions = t.ConferencePrice.Conference.ConferenceSessions.Any() ? t.ConferencePrice.Conference.ConferenceSessions.Select(cs => new SessionDetailForScheduleResponse()
+                                     //ConferenceId = t.PricePhase.ConferencePrice.Conference.ConferenceId,
+                                     //ConferenceName = t.ConferencePrice.Conference.ConferenceName,
+                                     //Description = t.ConferencePrice.Conference.Description,
+                                     //StartDate = t.ConferencePrice.Conference.StartDate,
+                                     //EndDate = t.ConferencePrice.Conference.EndDate,
+                                     //TotalSlot = t.ConferencePrice.Conference.TotalSlot,
+                                     //AvailableSlot = t.ConferencePrice.Conference.AvailableSlot,
+                                     //Address = t.ConferencePrice.Conference.Address,
+                                     //BannerImageUrl = t.ConferencePrice.Conference.BannerImageUrl,
+                                     //CreatedAt = t.ConferencePrice.Conference.CreatedAt,
+                                     //TicketSaleStart = t.ConferencePrice.Conference.TicketSaleStart,
+                                     //TicketSaleEnd = t.ConferencePrice.Conference.TicketSaleEnd,
+                                     //IsInternalHosted = t.ConferencePrice.Conference.IsInternalHosted,
+                                     //IsResearchConference = t.ConferencePrice.Conference.IsResearchConference,
+                                     //CityId = t.ConferencePrice.Conference.CityId,
+                                     //CityName = t.ConferencePrice.Conference.City != null ? t.ConferencePrice.Conference.City.CityName : null,
+                                     //ConferenceCategoryId = t.ConferencePrice.Conference.ConferenceCategoryId,
+                                     //ConferenceCategoryName = t.ConferencePrice.Conference.ConferenceCategory != null ? t.ConferencePrice.Conference.ConferenceCategory.ConferenceCategoryName : null,
+                                     //ConferenceStatusId = t.ConferencePrice.Conference.ConferenceStatusId,
+                                     //ConferenceStatusName = t.ConferencePrice.Conference.ConferenceStatus != null ? t.ConferencePrice.Conference.ConferenceStatus.ConferenceStatusName : null,
+                                     Sessions = t.PricePhase.ConferencePrice.Conference.ConferenceSessions.Any() ? t.PricePhase.ConferencePrice.Conference.ConferenceSessions.Select(cs => new SessionDetailForScheduleResponse()
                                      {
                                          ConferenceSessionId = cs.ConferenceSessionId,
                                          Title = cs.Title,

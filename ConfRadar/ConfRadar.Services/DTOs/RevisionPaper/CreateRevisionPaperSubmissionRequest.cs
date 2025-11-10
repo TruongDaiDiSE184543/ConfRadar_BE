@@ -14,7 +14,7 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
 
         //[Required(ErrorMessage = "RevisionDeadlineRoundId là bắt buộc")]
         //public string? RevisionDeadlineRoundId { get; set; }
-        [Required(ErrorMessage = "Paper Id là bắt buộc")]
+        [Required(ErrorMessage = "Mã bài báo là bắt buộc")]
         public string PaperId { get; set; }
         [Required(ErrorMessage = "Tiêu đề cho bài báo revision là bắt buộc")]
 

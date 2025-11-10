@@ -12,9 +12,9 @@ public partial class Ticket
 
     public string? UserId { get; set; }
 
-    public string? ConferencePriceId { get; set; }
+    public string? PricePhaseId { get; set; }
 
-    public virtual ConferencePrice? ConferencePrice { get; set; }
+    public virtual PricePhase? PricePhase { get; set; }
 
     public virtual ICollection<RefundRequest> RefundRequests { get; set; } = new List<RefundRequest>();
 

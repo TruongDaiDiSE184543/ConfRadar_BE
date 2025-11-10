@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -138,9 +139,18 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<WaitListStatus> WaitListStatuses { get; set; }
 
+    public static string GetConnectionString(string connectionStringName)
+    {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        string connectionString = config.GetConnectionString(connectionStringName);
+        return connectionString;
+    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -528,6 +538,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.FullPaperId).HasMaxLength(50);
             entity.Property(e => e.PaperPhaseId).HasMaxLength(50);
+            entity.Property(e => e.ResearchConferencePhaseId).HasMaxLength(50);
             entity.Property(e => e.RevisionPaperId).HasMaxLength(50);
 
             entity.HasOne(d => d.Abstract).WithMany(p => p.Papers)
@@ -549,6 +560,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.PaperPhase).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.PaperPhaseId)
                 .HasConstraintName("FK_Paper_PaperPhaseId");
+
+            entity.HasOne(d => d.ResearchConferencePhase).WithMany(p => p.Papers)
+                .HasForeignKey(d => d.ResearchConferencePhaseId)
+                .HasConstraintName("FK_Paper_ResearchConferencePhaseId");
 
             entity.HasOne(d => d.RevisionPaper).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.RevisionPaperId)
@@ -680,6 +695,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.PresenterChangeRequestId).HasMaxLength(50);
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
             entity.Property(e => e.NewPresenterId).HasMaxLength(50);
+            entity.Property(e => e.PaperId).HasMaxLength(50);
             entity.Property(e => e.RequestAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.RequestedById).HasMaxLength(50);
             entity.Property(e => e.ReviewedAt).HasColumnType("timestamp without time zone");
@@ -692,6 +708,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.NewPresenter).WithMany(p => p.PresenterChangeRequestNewPresenters)
                 .HasForeignKey(d => d.NewPresenterId)
                 .HasConstraintName("FK_PresenterChangeRequest_NewPresenterId");
+
+            entity.HasOne(d => d.Paper).WithMany(p => p.PresenterChangeRequests)
+                .HasForeignKey(d => d.PaperId)
+                .HasConstraintName("FK_PresenterChangeRequest_PaperId");
 
             entity.HasOne(d => d.RequestedBy).WithMany(p => p.PresenterChangeRequestRequestedBies)
                 .HasForeignKey(d => d.RequestedById)
@@ -758,10 +778,15 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.RefundPolicyId).HasMaxLength(50);
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
+            entity.Property(e => e.PricePhaseId).HasMaxLength(50);
 
             entity.HasOne(d => d.Conference).WithMany(p => p.RefundPolicies)
                 .HasForeignKey(d => d.ConferenceId)
                 .HasConstraintName("FK_RefundPolicy_ConferenceId");
+
+            entity.HasOne(d => d.PricePhase).WithMany(p => p.RefundPolicies)
+                .HasForeignKey(d => d.PricePhaseId)
+                .HasConstraintName("FK_RefundPolicy_PricePhaseId");
         });
 
         modelBuilder.Entity<RefundRequest>(entity =>
@@ -1023,6 +1048,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.CustomerId).HasMaxLength(50);
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
             entity.Property(e => e.NewConferenceSessionId).HasMaxLength(50);
+            entity.Property(e => e.PaperId).HasMaxLength(50);
             entity.Property(e => e.Reason).HasMaxLength(255);
             entity.Property(e => e.RequestAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.ReviewedAt).HasColumnType("timestamp without time zone");
@@ -1039,6 +1065,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.NewConferenceSession).WithMany(p => p.SessionChangeRequests)
                 .HasForeignKey(d => d.NewConferenceSessionId)
                 .HasConstraintName("FK_SessionChangeRequest_NewConferenceSessionId");
+
+            entity.HasOne(d => d.Paper).WithMany(p => p.SessionChangeRequests)
+                .HasForeignKey(d => d.PaperId)
+                .HasConstraintName("FK_SessionChangeRequest_PaperId");
 
             entity.HasOne(d => d.Ticket).WithMany(p => p.SessionChangeRequests)
                 .HasForeignKey(d => d.TicketId)
@@ -1099,12 +1129,12 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.TicketId).HasMaxLength(50);
             entity.Property(e => e.ActualPrice).HasPrecision(10, 2);
-            entity.Property(e => e.ConferencePriceId).HasMaxLength(50);
+            entity.Property(e => e.PricePhaseId).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);
 
-            entity.HasOne(d => d.ConferencePrice).WithMany(p => p.Tickets)
-                .HasForeignKey(d => d.ConferencePriceId)
-                .HasConstraintName("FK_Ticket_ConferencePriceId");
+            entity.HasOne(d => d.PricePhase).WithMany(p => p.Tickets)
+                .HasForeignKey(d => d.PricePhaseId)
+                .HasConstraintName("FK_Ticket_PricePhaseId");
 
             entity.HasOne(d => d.User).WithMany(p => p.Tickets)
                 .HasForeignKey(d => d.UserId)

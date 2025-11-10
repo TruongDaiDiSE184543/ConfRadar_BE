@@ -12,6 +12,8 @@ public partial class PresenterChangeRequest
 
     public string? GlobalStatusId { get; set; }
 
+    public string? PaperId { get; set; }
+
     public string? Reason { get; set; }
 
     public DateTime? RequestAt { get; set; }
@@ -21,6 +23,8 @@ public partial class PresenterChangeRequest
     public virtual GlobalStatus? GlobalStatus { get; set; }
 
     public virtual User? NewPresenter { get; set; }
+
+    public virtual Paper? Paper { get; set; }
 
     public virtual User? RequestedBy { get; set; }
 }

@@ -1,14 +1,7 @@
 ﻿using ConfRadar.Services.Common;
 using ConfRadar.Shared.DTO.Payment;
 using Microsoft.Extensions.Options;
-using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static ConfRadar.Services.Common.AppSettingConfig;
-using static System.Net.WebRequestMethods;
 
 namespace ConfRadar.Services.Services
 {
@@ -17,14 +10,14 @@ namespace ConfRadar.Services.Services
         string CreateVnPayPayment(long orderCode, long amount, double expireMinute);
         bool VerifyVnPayPayment(VnPayResponse data);
     }
-    public class VnPayService:IVnPayService
+    public class VnPayService : IVnPayService
     {
         private readonly IOptions<VnPaySettings> _vnPaySettings;
         private readonly ITokenService _tokenService;
-        public VnPayService(IOptions<VnPaySettings> vnPaySettings,ITokenService tokenService)
+        public VnPayService(IOptions<VnPaySettings> vnPaySettings, ITokenService tokenService)
         {
             _vnPaySettings = vnPaySettings;
-            _tokenService = tokenService; 
+            _tokenService = tokenService;
         }
         public string CreateVnPayPayment(long orderCode, long amount, double expireMinute)
         {
@@ -39,7 +32,7 @@ namespace ConfRadar.Services.Services
             string vnp_IpAddr = "127.0.0.1";
             string vnp_Locale = "vn";
             // order info của vnpay ko có khoảng trắng=> có gây lỗi 
-            string orderInfo = "ThanhToanHang"; 
+            string orderInfo = "ThanhToanHang";
             string vnp_OrderInfo = Uri.EscapeDataString(orderInfo);
             string vnp_OrderType = "other";
             string vnp_ReturnUrl = Uri.EscapeDataString(_vnPaySettings.Value.ReturnUrl);
@@ -60,7 +53,7 @@ namespace ConfRadar.Services.Services
             inputData.Add("vnp_ExpireDate", vnp_ExpireDate);
             inputData.Add("vnp_TxnRef", vnp_TxnRef);
             string rawData = string.Join("&", inputData.Select(x => $"{x.Key}={x.Value}"));
-            string signature =  _tokenService.CreateSignature512(rawData, _vnPaySettings.Value.HashSecret);
+            string signature = _tokenService.CreateSignature512(rawData, _vnPaySettings.Value.HashSecret);
             string vnPayFinalLink = $"{vnPayCreateLink}{rawData}&vnp_SecureHash={signature}";
             return vnPayFinalLink;
         }
