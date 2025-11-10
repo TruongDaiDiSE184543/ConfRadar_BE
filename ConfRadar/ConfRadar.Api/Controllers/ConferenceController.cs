@@ -259,7 +259,7 @@ namespace ConfRadar.Api.Controllers
         }
 
 
-        [Authorize]
+        [Authorize(Roles = "Local Reviewer")]
         [HttpGet("get-conferences-assigned-papers-belong-to")]
         public async Task<IActionResult> GetAssignConferenceList()
         {
@@ -277,5 +277,7 @@ namespace ConfRadar.Api.Controllers
             if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
             return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
         }
+
+        [HttpGet("get-contracted")]
     }
 }

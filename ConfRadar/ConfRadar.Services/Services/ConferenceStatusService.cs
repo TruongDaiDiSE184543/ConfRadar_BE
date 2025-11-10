@@ -26,7 +26,7 @@ namespace ConfRadar.Services.Services
             {
                 { "Draft", new List<string>{ "Pending" , "Deleted"} },
                 { "Pending", new List<string> { "Preparing", "Rejected" , "Deleted" } },
-                { "Preparing", new List<string> { "Ready", "Cancelled", "Deleted" } },
+                { "Preparing", new List<string> { "Ready",  "Deleted" } },
                 { "Ready", new List<string> { "OnHold", "Completed" } },
                 { "OnHold", new List<string> { "Ready", "Cancelled" } },
                 { "Completed", new List<string>() } // No transitions from Completed

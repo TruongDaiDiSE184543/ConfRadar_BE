@@ -222,5 +222,13 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.RoomService.RoomAvailableBetweenDate(roomId, dayStart, dayEnd);
             return Ok(ApiResponse<List<RoomAvailablity>>.SuccessResponse(result,"lấy danh sách ngày trống thành công"));
         }
+
+        [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]
+        [HttpGet("available-rooms-between-dates")]
+        public async Task<IActionResult> RoomsAvailableBetweenDate([FromQuery]DateOnly startdate, [FromQuery] DateOnly endate)
+        {
+            var result = await _serviceManager.RoomService.GetAvailableRoomsBetweenDates(startdate, endate);
+            return Ok(ApiResponse<List<AvailableRoomResponse>>.SuccessResponse(result, "Lấy thành công danh sách phòng trống");
+        }
     }
 }

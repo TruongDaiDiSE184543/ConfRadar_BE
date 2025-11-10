@@ -63,4 +63,14 @@ namespace ConfRadar.Services.DTOs.Room
         public List<TimeSpanResponse>? AvailbleTimeSpan { get; set; }
         public bool IsAvailableWholeday { get; set; }
     }
+
+    public class AvailableRoomResponse
+    {
+        public string RoomId { get; set; }
+        public string? RoomNumber { get; set; }
+        public string? RoomDisplayName { get; set; }
+        public DateOnly Date { get; set; }
+        public List<TimeSpanResponse>? AvailableTimeSpans { get; set; }
+        public bool IsAvailableWholeday { get; set; }
+    }
 }
