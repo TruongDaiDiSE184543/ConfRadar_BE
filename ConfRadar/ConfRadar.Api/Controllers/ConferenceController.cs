@@ -267,5 +267,15 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.GetConferenceByAssignedPapers(userId);
             return Ok(ApiResponse<List<ConferenceResponse>>.SuccessResponse(result, "Lấy thành công danh sách conference có papers được assigned cho local reviewer"));
         }
+
+        [HttpPut("request-a-conference-to-be-approved")]
+        [Authorize(Roles = "Collaborator")]
+        public async Task<IActionResult> RequestPendingConference([FromQuery] string confId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.RequestOrganizerApproval(userId, confId);
+            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
+            return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
+        }
     }
 }

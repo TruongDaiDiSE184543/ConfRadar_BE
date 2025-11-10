@@ -85,6 +85,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public Boolean isAuthor { get; set; }
         [Required(ErrorMessage = "Tổng số lượng là bắt buộc")]
         public int TotalSlot { get; set; }
+        [Required]
+        [MinLength(1, ErrorMessage = "Mỗi loại vé phải có ít nhất một giai đoạn.")]
         public List<CreatePricePhaseRequest> Phases { get; set; }
     }
 
@@ -451,6 +453,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public int? PercentRefund { get; set; }
         public DateOnly? RefundDeadline { get; set; }
         public int? RefundOrder { get; set; }
+        public string?  pricePhaseId {  get; set; }
     }
 
     // Research Conference DTOs
@@ -887,6 +890,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public int? TotalSlot { get; set; }
         public int? AvailableSlot { get; set; }
         public string? ConferencePriceId { get; set; }
+        public List<RefundPolicyResponse> RefundPolicy { get; set; }
     }
 
     // Speaker DTOs - For CRUD operations on Speaker

@@ -258,7 +258,7 @@ namespace ConfRadar.Services.Services
             var dateNow = ExtensionHelper.GetVietnamDate();
             if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
             {
-                throw new BadRequestException($"Đã quá hạn quyết định abstract");
+                throw new BadRequestException($"Phải trong khoảng Registration Date để có thể cập nhật trạng thái abstract này: trong registation start {activeCurrentPhase.RegistrationStartDate.ToString()} và registration end {activeCurrentPhase.RegistrationEndDate.ToString()}");
             }
             if (basePaper.PaperPhaseId != abstractPaperPhase.PaperPhaseId)
             {

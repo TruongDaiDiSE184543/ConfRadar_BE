@@ -303,7 +303,8 @@ namespace ConfRadar.Services.Mappers
                 RefundPolicyId = model.RefundPolicyId,
                 PercentRefund = model.PercentRefund,
                 RefundDeadline = model.RefundDeadline,
-                RefundOrder = model.RefundOrder
+                RefundOrder = model.RefundOrder,
+                pricePhaseId = model.PricePhaseId
             };
         }
 
