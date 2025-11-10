@@ -140,7 +140,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId)
         {
-            return await _context.Tickets.FirstOrDefaultAsync(x => x.UserId == userId && x.PricePhase!=null&& x.PricePhase.ConferencePriceId == conferencePriceId );
+            return await _context.Tickets.FirstOrDefaultAsync(x => x.UserId == userId && x.PricePhase != null && x.PricePhase.ConferencePriceId == conferencePriceId);
         }
         public async Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId)
         {
@@ -165,14 +165,14 @@ namespace ConfRadar.Repositories.Repositories
                             },
                             PricePhase = new PricePhase
                             {
-                               PricePhaseId = pp.PricePhaseId,
-                               ApplyPercent = pp.ApplyPercent,
-                               AvailableSlot = pp.AvailableSlot,
-                               TotalSlot = pp.TotalSlot,
-                               StartDate = pp.StartDate,
-                               EndDate = pp.EndDate,
-                               ConferencePrice = new ConferencePrice
-                               {
+                                PricePhaseId = pp.PricePhaseId,
+                                ApplyPercent = pp.ApplyPercent,
+                                AvailableSlot = pp.AvailableSlot,
+                                TotalSlot = pp.TotalSlot,
+                                StartDate = pp.StartDate,
+                                EndDate = pp.EndDate,
+                                ConferencePrice = new ConferencePrice
+                                {
                                     ConferencePriceId = cp.ConferencePriceId,
                                     ConferenceId = cp.ConferenceId,
                                     Conference = new Conference
@@ -180,7 +180,7 @@ namespace ConfRadar.Repositories.Repositories
                                         ConferenceId = c.ConferenceId,
                                         ConferenceName = c.ConferenceName
                                     }
-                               },
+                                },
                             },
 
                         };
@@ -190,7 +190,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId)
         {
             return await _context.Tickets
-                .Where(t => t.PricePhase.ConferencePriceId== conferencePriceId && !t.IsRefunded.Value)
+                .Where(t => t.PricePhase.ConferencePriceId == conferencePriceId && !t.IsRefunded.Value)
                 .CountAsync();
         }
 
@@ -203,14 +203,14 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Tickets
                 .Include(t => t.PricePhase)
-                    .ThenInclude(t=>t.ConferencePrice)
-                .Where(t => t.UserId == userId && t.PricePhase!=null&& t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
+                    .ThenInclude(t => t.ConferencePrice)
+                .Where(t => t.UserId == userId && t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
                 .FirstOrDefaultAsync();
         }
 
         public async Task<Ticket> GetTicketById(string ticketId)
         {
-            return await _context.Tickets.FirstOrDefaultAsync(t => t.TicketId ==  ticketId);
+            return await _context.Tickets.FirstOrDefaultAsync(t => t.TicketId == ticketId);
         }
     }
 }

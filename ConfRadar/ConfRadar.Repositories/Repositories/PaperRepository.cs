@@ -48,7 +48,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByIdAsync(string paperId)
         {
             return await _context.Papers
-                .Include(p=>p.ResearchConferencePhase)
+                .Include(p => p.ResearchConferencePhase)
                 .Include(p => p.PaperAuthors)
                 .Include(p => p.PaperPhase)
                 .Include(p => p.Conference)
@@ -127,7 +127,7 @@ namespace ConfRadar.Repositories.Repositories
         {
 
             var paper = await _context.Papers.AsNoTracking()
-                            .Include(p=> p.ResearchConferencePhase)
+                            .Include(p => p.ResearchConferencePhase)
                              //paper phase
                              .Include(p => p.PaperPhase)
                             //full paper
@@ -152,7 +152,7 @@ namespace ConfRadar.Repositories.Repositories
             {
                 return null;
             }
-            
+
 
             var paperDetailResponse = new PaperDetailForReviewerResponse();
             if (paper.PaperPhase != null)
@@ -163,39 +163,39 @@ namespace ConfRadar.Repositories.Repositories
                     PhaseName = paper.PaperPhase?.PhaseName,
                 };
             }
-           
-                    var currentActivePhase = paper.ResearchConferencePhase;
-                    if (currentActivePhase != null)
-                    {
-                        paperDetailResponse.CurrentResearchConferencePhase = new CurrentResearchConferencePhaseForReviewerResponse()
-                        {
-                            ResearchConferencePhaseId = currentActivePhase.ResearchConferencePhaseId,
-                            ConferenceId = currentActivePhase.ConferenceId,
-                            RegistrationStartDate = currentActivePhase.RegistrationStartDate,
-                            RegistrationEndDate = currentActivePhase.RegistrationEndDate,
-                            FullPaperStartDate = currentActivePhase.FullPaperStartDate,
-                            FullPaperEndDate = currentActivePhase.FullPaperEndDate,
-                            ReviewStartDate = currentActivePhase.ReviewStartDate,
-                            ReviewEndDate = currentActivePhase.ReviewEndDate,
-                            ReviseStartDate = currentActivePhase.ReviseStartDate,
-                            ReviseEndDate = currentActivePhase.ReviseEndDate,
-                            CameraReadyStartDate = currentActivePhase.CameraReadyStartDate,
-                            CameraReadyEndDate = currentActivePhase.CameraReadyEndDate,
-                            IsActive = currentActivePhase.IsActive,
-                            IsWaitlist = currentActivePhase.IsWaitlist,
-                            RevisionRoundsDetail = currentActivePhase.RevisionRoundDeadlines.Any() ? currentActivePhase.RevisionRoundDeadlines.Select(rrd => new RevisionRoundDeadLineDetailForReviewerResponse()
-                            {
-                                RevisionRoundDeadlineId = rrd.RevisionRoundDeadlineId,
-                                StartSubmissionDate = rrd.StartSubmissionDate,
-                                EndSubmissionDate = rrd.EndSubmissionDate,
-                                ResearchConferencePhaseId = rrd.ResearchConferencePhaseId,
-                                RoundNumber = rrd.RoundNumber
-                            }).ToList() : new List<RevisionRoundDeadLineDetailForReviewerResponse>()
-                        };
-                    }
 
-                
-            
+            var currentActivePhase = paper.ResearchConferencePhase;
+            if (currentActivePhase != null)
+            {
+                paperDetailResponse.CurrentResearchConferencePhase = new CurrentResearchConferencePhaseForReviewerResponse()
+                {
+                    ResearchConferencePhaseId = currentActivePhase.ResearchConferencePhaseId,
+                    ConferenceId = currentActivePhase.ConferenceId,
+                    RegistrationStartDate = currentActivePhase.RegistrationStartDate,
+                    RegistrationEndDate = currentActivePhase.RegistrationEndDate,
+                    FullPaperStartDate = currentActivePhase.FullPaperStartDate,
+                    FullPaperEndDate = currentActivePhase.FullPaperEndDate,
+                    ReviewStartDate = currentActivePhase.ReviewStartDate,
+                    ReviewEndDate = currentActivePhase.ReviewEndDate,
+                    ReviseStartDate = currentActivePhase.ReviseStartDate,
+                    ReviseEndDate = currentActivePhase.ReviseEndDate,
+                    CameraReadyStartDate = currentActivePhase.CameraReadyStartDate,
+                    CameraReadyEndDate = currentActivePhase.CameraReadyEndDate,
+                    IsActive = currentActivePhase.IsActive,
+                    IsWaitlist = currentActivePhase.IsWaitlist,
+                    RevisionRoundsDetail = currentActivePhase.RevisionRoundDeadlines.Any() ? currentActivePhase.RevisionRoundDeadlines.Select(rrd => new RevisionRoundDeadLineDetailForReviewerResponse()
+                    {
+                        RevisionRoundDeadlineId = rrd.RevisionRoundDeadlineId,
+                        StartSubmissionDate = rrd.StartSubmissionDate,
+                        EndSubmissionDate = rrd.EndSubmissionDate,
+                        ResearchConferencePhaseId = rrd.ResearchConferencePhaseId,
+                        RoundNumber = rrd.RoundNumber
+                    }).ToList() : new List<RevisionRoundDeadLineDetailForReviewerResponse>()
+                };
+            }
+
+
+
             var headReviewer = paper.PaperReviewers.FirstOrDefault(x => x.UserId == userId && x.IsHeadReviewer == true);
             bool isHeadReviewer = headReviewer != null;
             paperDetailResponse.IsHeadReviewer = isHeadReviewer;
@@ -371,7 +371,7 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
-        
+
     }
-    
+
 }

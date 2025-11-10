@@ -69,7 +69,7 @@ namespace ConfRadar.Services.Services
 
             await foreach (var key in server.KeysAsync(pattern: pattern))
             {
-              keys.Add(key.ToString());
+                keys.Add(key.ToString());
             }
 
             return keys.Select(k => (string)k);

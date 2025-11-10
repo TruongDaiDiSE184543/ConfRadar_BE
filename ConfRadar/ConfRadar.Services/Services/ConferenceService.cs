@@ -1956,7 +1956,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Không tìm thấy phiên với mã {request.ConferenceSessionId}");
             }
             var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(request.ConferenceSessionId, userId);
-            if (userCheckInFound == null) 
+            if (userCheckInFound == null)
             {
                 throw new BadRequestException($"Bạn chưa mua bất cứ vé nào nên không thể đánh giá");
             }

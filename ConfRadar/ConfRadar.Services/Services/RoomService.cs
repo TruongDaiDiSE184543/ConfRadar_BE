@@ -22,7 +22,7 @@ namespace ConfRadar.Services.Services
         Task<List<TimeSpanResponse>> GetUnoccupiedTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
-        Task<List<RoomAvailablity>>  RoomAvailableBetweenDate(string roomId,  DateTime startDate, DateTime endDate);
+        Task<List<RoomAvailablity>> RoomAvailableBetweenDate(string roomId, DateTime startDate, DateTime endDate);
 
     }
 
@@ -478,16 +478,16 @@ namespace ConfRadar.Services.Services
             //days interval must be less than 30
             int daysBetween = startDate.DayNumber - endDate.DayNumber;
             if (daysBetween > 30) throw new Exception($"{startDate.ToString("dd/MM/yyyy")} cách ${endDate.ToString("dd/MM/yyyy")} hơn 30 ngày");
-            List<RoomAvailablity> response = new(); 
+            List<RoomAvailablity> response = new();
             for (var date = startDate; date <= endDate; date = date.AddDays(1))
             {
                 var occupiedSession = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdAndDateAsync(roomId, date);
-                var startDay = new TimeOnly(0,0,0);
-                var endDay = new TimeOnly(23,59,59);
+                var startDay = new TimeOnly(0, 0, 0);
+                var endDay = new TimeOnly(23, 59, 59);
                 var occupiedTimeS = occupiedSession.Where(os => os.SessionDate == date && os.StartTime.HasValue && os.EndTime.HasValue).
                     Select(os => new
                     {
-                        startTime = TimeOnly.FromDateTime( os.StartTime.Value),
+                        startTime = TimeOnly.FromDateTime(os.StartTime.Value),
                         endTime = TimeOnly.FromDateTime(os.EndTime.Value),
                     }).OrderBy(os => os.startTime)
                     .ToList();
@@ -512,7 +512,7 @@ namespace ConfRadar.Services.Services
                     });
                 }
 
-                for ( int i = 0;i < occupiedTimeS.Count - 1; i++)
+                for (int i = 0; i < occupiedTimeS.Count - 1; i++)
                 {
                     TimeOnly currentEnd = occupiedTimeS[i].endTime;
                     TimeOnly nextStart = occupiedTimeS[i + 1].startTime;

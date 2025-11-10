@@ -8,7 +8,7 @@ namespace ConfRadar.Services.DTOs.FullPaper
     {
         [Required(ErrorMessage = "Full paper file là bắt buộc")]
         public IFormFile FullPaperFile { get; set; }
-        [Required(ErrorMessage = "Paper id là bắt buộc")]
+        [Required(ErrorMessage = "Mã bài báo là bắt buộc")]
         public string PaperId { get; set; }
         [Required(ErrorMessage = "Tiêu đề cho full paper là bắt buộc")]
 
