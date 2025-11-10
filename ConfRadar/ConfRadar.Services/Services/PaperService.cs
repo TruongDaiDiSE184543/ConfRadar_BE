@@ -21,7 +21,7 @@ namespace ConfRadar.Services.Services
         Task<int> SubmitAbstract(CreateAbstractRequest request, string userId);
         Task<int> UpdateAbstract(UpdateAbstractRequest request, string userId);
         Task<int> DecideAbstractPaperStatus(UpdateAbstractPaperStatusRequest request, string userId);
-        Task<List<PendingAbstractResponse>> GetListPendingAbstract();
+        Task<List<PendingAbstractResponse>> GetListPendingAbstract(string? confId);
 
         //Task<FullPaperResponse> SubmitFullPaper (CreateFullPaperRequest request, string userId);
         Task<int> SubmitFullPaper(CreateFullPaperRequest request, string userId);
@@ -1454,7 +1454,8 @@ namespace ConfRadar.Services.Services
                 throw new KeyNotFoundException($"Không tìm thấy paper với id {paperId}");
             }
 
-            var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(paper.ConferenceId);
+            var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByPaperId(paper.PaperId);
+            if (researchConferencePhase == null) throw new BadRequestException("Paper này chưa thuộc về researchPhase nào");
             var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(researchConferencePhase.ResearchConferencePhaseId);
 
             //get all authors
@@ -1503,20 +1504,35 @@ namespace ConfRadar.Services.Services
                     UserId = user.UserId,
                     FullName = user.FullName
                 }).ToList(),
-                ResearchPhase = researchConferencePhase != null ? new ResearchPhaseDtoDetail
+                //ResearchPhase = researchConferencePhase != null ? new ResearchPhaseDtoDetail
+                //{
+                //    ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
+                //    RegistrationStartDate = researchConferencePhase.RegistrationStartDate,
+                //    RegistrationEndDate = researchConferencePhase.RegistrationEndDate,
+                //    FullPaperStartDate = researchConferencePhase.FullPaperStartDate,
+                //    FullPaperEndDate = researchConferencePhase.FullPaperEndDate,
+                //    ReviewStartDate = researchConferencePhase.ReviewStartDate,
+                //    ReviewEndDate = researchConferencePhase.ReviewEndDate,
+                //    ReviseStartDate = researchConferencePhase.ReviseStartDate,
+                //    ReviseEndDate = researchConferencePhase.ReviseEndDate,
+                //    CameraReadyStartDate = researchConferencePhase.CameraReadyStartDate,
+                //    CameraReadyEndDate = researchConferencePhase.ReviewEndDate,
+                //    ConferenceId = researchConferencePhase.ConferenceId
+                //} : null,
+                ResearchPhase = paper.ResearchConferencePhase != null ? new ResearchPhaseDtoDetail
                 {
-                    ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
-                    RegistrationStartDate = researchConferencePhase.RegistrationStartDate,
-                    RegistrationEndDate = researchConferencePhase.RegistrationEndDate,
-                    FullPaperStartDate = researchConferencePhase.FullPaperStartDate,
-                    FullPaperEndDate = researchConferencePhase.FullPaperEndDate,
-                    ReviewStartDate = researchConferencePhase.ReviewStartDate,
-                    ReviewEndDate = researchConferencePhase.ReviewEndDate,
-                    ReviseStartDate = researchConferencePhase.ReviseStartDate,
-                    ReviseEndDate = researchConferencePhase.ReviseEndDate,
-                    CameraReadyStartDate = researchConferencePhase.CameraReadyStartDate,
-                    CameraReadyEndDate = researchConferencePhase.ReviewEndDate,
-                    ConferenceId = researchConferencePhase.ConferenceId
+                    ResearchConferencePhaseId = paper.ResearchConferencePhase.ResearchConferencePhaseId,
+                    RegistrationStartDate = paper.ResearchConferencePhase.RegistrationStartDate,
+                    RegistrationEndDate = paper.ResearchConferencePhase.RegistrationEndDate,
+                    FullPaperStartDate = paper.ResearchConferencePhase.FullPaperStartDate,
+                    FullPaperEndDate = paper.ResearchConferencePhase.FullPaperEndDate,
+                    ReviewStartDate = paper.ResearchConferencePhase.ReviewStartDate,
+                    ReviewEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    ReviseStartDate = paper.ResearchConferencePhase.ReviewStartDate,
+                    ReviseEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    CameraReadyStartDate = paper.ResearchConferencePhase.CameraReadyStartDate,
+                    CameraReadyEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    ConferenceId = paper.ConferenceId
                 } : null,
 
                 // Map properties we already have from the initial query
@@ -1603,6 +1619,7 @@ namespace ConfRadar.Services.Services
                     FileUrl = sub.RevisionPaperUrl,
                     Title = sub.Title,
                     Description = sub.Description,
+                    RevisionRoundId = sub.RevisionDeadlineRoundId,
                     Feedbacks = sub.RevisionSubmissionFeedbacks?.Select(fb => new FeedbackDtoDetail
                     {
                         FeedbackId = fb.RevisionSubmissionFeedbackId,
@@ -1616,7 +1633,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        public async Task<List<PendingAbstractResponse>> GetListPendingAbstract()
+        public async Task<List<PendingAbstractResponse>> GetListPendingAbstract(string? confId)
         {
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (pendingGlobalStatus == null)
@@ -1624,6 +1641,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
             var listAbstract = await _unitOfWork.AbstractRepository.GetAllPendingAbstractsAsync(pendingGlobalStatus.GlobalStatusId);
+            if (!string.IsNullOrEmpty(confId)) listAbstract = listAbstract.Where(abs => abs.ConferenceId == confId).ToList();
             return listAbstract;
         }
 

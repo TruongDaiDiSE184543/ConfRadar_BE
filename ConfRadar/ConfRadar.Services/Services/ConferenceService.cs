@@ -70,6 +70,7 @@ namespace ConfRadar.Services.Services
 
         Task<int> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request, string userId);
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId);
+        Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId);
     }
 
     public class ConferenceService : IConferenceService
@@ -1989,6 +1990,39 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("Không tìm thấy trạng thái ready cho hội nghị");
             }
             return await _unitOfWork.ConferenceRepository.GetListConferencesForScheduleByUserId(userId, ExtensionHelper.GetVietnamDate(), readyStatusConference.ConferenceStatusId);
+        }
+
+        public async Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId)
+        {
+            List<PaperReviewer> AssignPaper = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
+            List<Conference> AssignedConference = AssignPaper.Select(ap => ap.Paper.Conference).ToList();
+            List<ConferenceResponse> responses = new();
+            foreach(var conference in AssignedConference)
+            {
+                ConferenceResponse conferenceResponse = new ConferenceResponse
+                {
+                    ConferenceId = conference.ConferenceId,
+                    ConferenceName = conference.ConferenceName,
+                    Description = conference.Description,
+                    StartDate = conference.StartDate,
+                    EndDate = conference.EndDate,
+                    TotalSlot = conference.TotalSlot,
+                    AvailableSlot = conference.AvailableSlot,
+                    Address = conference.Address,
+                    BannerImageUrl = conference.BannerImageUrl,
+                    CreatedAt = conference.CreatedAt,
+                    TicketSaleStart = conference.TicketSaleStart,
+                    TicketSaleEnd = conference.TicketSaleEnd,
+                    IsInternalHosted = conference.IsInternalHosted,
+                    IsResearchConference = conference.IsResearchConference,
+                    CityId = conference.CityId,
+                    CreatedBy = conference.CreatedBy,
+                    ConferenceCategoryId = conference.ConferenceCategoryId,
+                    ConferenceStatusId = conference.ConferenceStatusId
+                };
+                responses.Add(conferenceResponse);
+            }
+            return responses;
         }
     }
 }
