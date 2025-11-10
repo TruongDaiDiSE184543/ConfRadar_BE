@@ -26,7 +26,7 @@ namespace ConfRadar.Services.Mappers
                 CreatedBy = userid,
                 ConferenceCategoryId = request.ConferenceCategoryId,
                 ConferenceStatusId = status.ConferenceStatusId,
-                CreatedAt = now
+                CreatedAt = now,
             };
             return conferenceObject;
         }

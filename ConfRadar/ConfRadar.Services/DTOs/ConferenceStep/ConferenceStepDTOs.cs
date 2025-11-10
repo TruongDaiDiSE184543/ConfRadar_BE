@@ -46,6 +46,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         //public string? createdby {  get; set; }
         [Required(ErrorMessage = "Đối tượng mục tiêu là bắt buộc")]
         public string? targetAudienceTechnicalConference { get; set; }
+        [Required(ErrorMessage ="Cần có URL của hợp đồng")]
+        public string contractURL { get; set; }
+        [Required]
+        [Range(0, 100)]
+        public int commission { get; set; }
     }
 
     // Step 2: Price Phase and Conference Prices
@@ -218,6 +223,9 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? CityId { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
+        public string? contractURL { get; set; }
+        public int? commission { get; set; }
+        public string? targetaudience {  get; set; }
     }
 
     public class UpdateConferencePriceRequest
