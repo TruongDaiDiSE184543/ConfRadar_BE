@@ -1454,7 +1454,8 @@ namespace ConfRadar.Services.Services
                 throw new KeyNotFoundException($"Không tìm thấy paper với id {paperId}");
             }
 
-            var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(paper.ConferenceId);
+            var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByPaperId(paper.PaperId);
+            if (researchConferencePhase == null) throw new BadRequestException("Paper này chưa thuộc về researchPhase nào");
             var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(researchConferencePhase.ResearchConferencePhaseId);
 
             //get all authors
@@ -1503,20 +1504,35 @@ namespace ConfRadar.Services.Services
                     UserId = user.UserId,
                     FullName = user.FullName
                 }).ToList(),
-                ResearchPhase = researchConferencePhase != null ? new ResearchPhaseDtoDetail
+                //ResearchPhase = researchConferencePhase != null ? new ResearchPhaseDtoDetail
+                //{
+                //    ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
+                //    RegistrationStartDate = researchConferencePhase.RegistrationStartDate,
+                //    RegistrationEndDate = researchConferencePhase.RegistrationEndDate,
+                //    FullPaperStartDate = researchConferencePhase.FullPaperStartDate,
+                //    FullPaperEndDate = researchConferencePhase.FullPaperEndDate,
+                //    ReviewStartDate = researchConferencePhase.ReviewStartDate,
+                //    ReviewEndDate = researchConferencePhase.ReviewEndDate,
+                //    ReviseStartDate = researchConferencePhase.ReviseStartDate,
+                //    ReviseEndDate = researchConferencePhase.ReviseEndDate,
+                //    CameraReadyStartDate = researchConferencePhase.CameraReadyStartDate,
+                //    CameraReadyEndDate = researchConferencePhase.ReviewEndDate,
+                //    ConferenceId = researchConferencePhase.ConferenceId
+                //} : null,
+                ResearchPhase = paper.ResearchConferencePhase != null ? new ResearchPhaseDtoDetail
                 {
-                    ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
-                    RegistrationStartDate = researchConferencePhase.RegistrationStartDate,
-                    RegistrationEndDate = researchConferencePhase.RegistrationEndDate,
-                    FullPaperStartDate = researchConferencePhase.FullPaperStartDate,
-                    FullPaperEndDate = researchConferencePhase.FullPaperEndDate,
-                    ReviewStartDate = researchConferencePhase.ReviewStartDate,
-                    ReviewEndDate = researchConferencePhase.ReviewEndDate,
-                    ReviseStartDate = researchConferencePhase.ReviseStartDate,
-                    ReviseEndDate = researchConferencePhase.ReviseEndDate,
-                    CameraReadyStartDate = researchConferencePhase.CameraReadyStartDate,
-                    CameraReadyEndDate = researchConferencePhase.ReviewEndDate,
-                    ConferenceId = researchConferencePhase.ConferenceId
+                    ResearchConferencePhaseId = paper.ResearchConferencePhase.ResearchConferencePhaseId,
+                    RegistrationStartDate = paper.ResearchConferencePhase.RegistrationStartDate,
+                    RegistrationEndDate = paper.ResearchConferencePhase.RegistrationEndDate,
+                    FullPaperStartDate = paper.ResearchConferencePhase.FullPaperStartDate,
+                    FullPaperEndDate = paper.ResearchConferencePhase.FullPaperEndDate,
+                    ReviewStartDate = paper.ResearchConferencePhase.ReviewStartDate,
+                    ReviewEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    ReviseStartDate = paper.ResearchConferencePhase.ReviewStartDate,
+                    ReviseEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    CameraReadyStartDate = paper.ResearchConferencePhase.CameraReadyStartDate,
+                    CameraReadyEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    ConferenceId = paper.ConferenceId
                 } : null,
 
                 // Map properties we already have from the initial query
@@ -1603,6 +1619,7 @@ namespace ConfRadar.Services.Services
                     FileUrl = sub.RevisionPaperUrl,
                     Title = sub.Title,
                     Description = sub.Description,
+                    RevisionRoundId = sub.RevisionDeadlineRoundId,
                     Feedbacks = sub.RevisionSubmissionFeedbacks?.Select(fb => new FeedbackDtoDetail
                     {
                         FeedbackId = fb.RevisionSubmissionFeedbackId,
