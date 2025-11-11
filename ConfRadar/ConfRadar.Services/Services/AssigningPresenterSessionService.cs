@@ -16,9 +16,9 @@ namespace ConfRadar.Services.Services
         Task<bool> ApprovePresenterChangeRequest(ApprovePresenterChangeRequest request, string approvedById);
         Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests();
 
-        //Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
-        //Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests();
-        //Task<string> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
+        Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
+        Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests();
+        Task<string> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
     }
 
     public class AssigningPresenterSessionService : IAssigningPresenterSessionService
@@ -615,11 +615,11 @@ namespace ConfRadar.Services.Services
                 if (request.IsApproved)
                 {
                     var acceptedStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-                    if (acceptedStatus == null) throw new InvalidOperationException("Không tìm thấy trạng thái 'Accepted'.");
+                    if (acceptedStatus == null) throw new BadRequestException("Không tìm thấy trạng thái 'Accepted'.");
 
                     // 1. Lấy thông tin session cũ từ PresentAuthor
                     var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(sessionChangeRequest.PaperId);
-                    if (presentAuthor == null) throw new InvalidOperationException($"Paper ID {sessionChangeRequest.PaperId} không còn được gán cho session nào.");
+                    if (presentAuthor == null) throw new BadRequestException($"Paper ID {sessionChangeRequest.PaperId} không còn được gán cho session nào.");
 
                     string oldSessionId = presentAuthor.ConferenceSessionId;
                     string newSessionId = sessionChangeRequest.NewConferenceSessionId;
@@ -629,8 +629,8 @@ namespace ConfRadar.Services.Services
                     var oldUserCheckin = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(userId, oldSessionId);
                     var newUserCheckin = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(userId, newSessionId);
 
-                    if (oldUserCheckin == null) throw new InvalidOperationException("Không tìm thấy thông tin check-in của presenter tại session cũ.");
-                    if (newUserCheckin == null) throw new InvalidOperationException("Không tìm thấy thông tin check-in của presenter tại session mới.");
+                    if (oldUserCheckin == null) throw new BadRequestException("Không tìm thấy thông tin check-in của presenter tại session cũ.");
+                    if (newUserCheckin == null) throw new BadRequestException("Không tìm thấy thông tin check-in c    ủa presenter tại session mới.");
 
                     // 3. Cập nhật trạng thái IsPresenter
                     oldUserCheckin.IsPresenter = false;
@@ -658,7 +658,7 @@ namespace ConfRadar.Services.Services
                 else // Trường hợp từ chối
                 {
                     var rejectStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-                    if (rejectStatus == null) throw new InvalidOperationException("Không tìm thấy trạng thái 'Rejected'.");
+                    if (rejectStatus == null) throw new BadRequestException("Không tìm thấy trạng thái 'Rejected'.");
 
                     sessionChangeRequest.GlobalStatusId = rejectStatus.GlobalStatusId;
                     sessionChangeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
@@ -679,229 +679,5 @@ namespace ConfRadar.Services.Services
 
 
 
-        //public async Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById)
-        //{
-        //    await _unitOfWork.BeginTransactionAsync();
-        //    try
-        //    {
-        //        // Validate that the requested user exists
-        //        var user = await _unitOfWork.UserRepository.GetUserByUserId(requestedById);
-        //        if (user == null)
-        //        {
-        //            throw new BadRequestException("Người yêu cầu không tồn tại.");
-        //        }
-
-        //        //validate ticket exists
-        //        var ticket = await _unitOfWork.TicketRepository.GetTicketById(request.TicketId);
-        //        if (ticket == null) throw new Exception($"Ticket {request.TicketId} không tồn tại");
-        //        // Validate that the current session exists
-        //        var usercheckin = await _unitOfWork.UserCheckInRepository.GetPresenterByTicket(request.TicketId);
-        //        var currentSession = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(usercheckin.id);
-        //        if (currentSession == null)
-        //        {
-        //            throw new BadRequestException("Session không tồn tại.");
-        //        }
-
-        //        // Validate that the new session exists
-        //        var newSession = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(request.NewSessionId);
-        //        if (newSession == null)
-        //        {
-        //            throw new BadRequestException("Phiên mới không tồn tại.");
-        //        }
-
-        //        // Validate that the paper exists
-        //        var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
-        //        if (paper == null)
-        //        {
-        //            throw new BadRequestException("Bài báo không tồn tại.");
-        //        }
-
-        //        // Check if the user is the presenter of the paper
-        //        var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(request.PaperId);
-        //        var presenter = paperAuthors.FirstOrDefault(pa => pa.UserId == requestedById && pa.IsPresenter == true);
-        //        if (presenter == null)
-        //        {
-        //            throw new BadRequestException("Người yêu cầu không phải là người trình bày của bài báo này.");
-        //        }
-
-        //        // Check if there's already a present author record for this paper
-        //        var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(request.PaperId);
-        //        if (presentAuthor == null)
-        //        {
-        //            throw new BadRequestException("Bài báo chưa được gán phiên trình bày.");
-        //        }
-
-        //        // Check if the current session matches the one in the present author record
-        //        if (presentAuthor.ConferenceSessionId != currentSession.ConferenceSessionId)
-        //        {
-        //            throw new BadRequestException("Phiên hiện tại không khớp với phiên được gán cho bài báo.");
-        //        }
-
-        //        // Check if there's already a session change request for this paper that is pending
-        //        var existingRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsAsync();
-        //        var pendingRequest = existingRequests.FirstOrDefault(r => 
-        //            r.PaperId == request.PaperId && 
-        //            r.GlobalStatusId == (await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription())).GlobalStatusId
-        //        );
-
-        //        if (pendingRequest != null)
-        //        {
-        //            throw new BadRequestException("Đã có yêu cầu thay đổi phiên đang chờ xử lý cho bài báo này.");
-        //        }
-
-        //        // Create the session change request
-        //        var sessionChangeRequest = new ConfRadar.Repositories.Models.SessionChangeRequest
-        //        {
-        //            SessionChangeRequestId = Guid.NewGuid().ToString(),
-        //            CurrentSessionId = currentSession.ConferenceSessionId,
-        //            NewSessionId = request.NewSessionId,
-        //            PaperId = request.PaperId,
-        //            RequestedById = requestedById,
-        //            Reason = request.Reason,
-        //            RequestAt = ExtensionHelper.GetVietnamTime()
-        //        };
-
-        //        // Set the status to pending
-        //        var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-        //        if (pendingStatus == null)
-        //        {
-        //            throw new BadRequestException("Không tìm thấy trạng thái đang chờ.");
-        //        }
-
-        //        sessionChangeRequest.GlobalStatusId = pendingStatus.GlobalStatusId;
-
-        //        await _unitOfWork.SessionChangeRequestRepository.CreateSessionChangeRequestAsync(sessionChangeRequest);
-        //        await _unitOfWork.CommitAsync();
-
-        //        return "Yêu cầu thay đổi phiên đã được tạo thành công.";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await _unitOfWork.RollbackAsync();
-        //        throw ex;
-        //    }
-        //}
-
-        //public async Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests()
-        //{
-        //    var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-        //    if (pendingStatus == null)
-        //    {
-        //        return new List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>();
-        //    }
-
-        //    var allChangeRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsAsync();
-        //    var pendingRequests = allChangeRequests.Where(scr => scr.GlobalStatusId == pendingStatus.GlobalStatusId).ToList();
-
-        //    var responseList = new List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>();
-        //    foreach (var request in pendingRequests)
-        //    {
-        //        var requestedUser = await _unitOfWork.UserRepository.GetByIdAsync(request.RequestedById);
-        //        var globalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByIdAsync(request.GlobalStatusId);
-
-        //        responseList.Add(new ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse
-        //        {
-        //            SessionChangeRequestId = request.SessionChangeRequestId,
-        //            CurrentSessionId = request.CurrentSessionId,
-        //            NewSessionId = request.NewSessionId,
-        //            PaperId = request.PaperId,
-        //            RequestedById = request.RequestedById,
-        //            RequestedByName = requestedUser?.FullName,
-        //            GlobalStatusId = request.GlobalStatusId,
-        //            GlobalStatusName = globalStatus?.Name,
-        //            Reason = request.Reason,
-        //            RequestAt = request.RequestAt,
-        //            ReviewedAt = request.ReviewedAt
-        //        });
-        //    }
-
-        //    return responseList;
-        //}
-
-        //public async Task<string> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById)
-        //{
-        //    await _unitOfWork.BeginTransactionAsync();
-        //    try
-        //    {
-        //        var changeRequest = await _unitOfWork.SessionChangeRequestRepository.GetSessionChangeRequestByIdAsync(request.SessionChangeRequestId);
-        //        if (changeRequest == null)
-        //        {
-        //            throw new BadRequestException($"Không tìm thấy yêu cầu thay đổi phiên với ID {request.SessionChangeRequestId}.");
-        //        }
-
-        //        ConfRadar.Repositories.Models.GlobalStatus targetStatus;
-        //        string resultMessage;
-
-        //        if (request.IsApproved)
-        //        {
-        //            // Get the accepted global status
-        //            targetStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-        //            if (targetStatus == null)
-        //            {
-        //                throw new BadRequestException("Không tìm thấy trạng thái chấp nhận.");
-        //            }
-
-        //            resultMessage = "Yêu cầu thay đổi phiên đã được chấp thuận thành công.";
-
-        //            // Update the PresentAuthor table to reflect the new session
-        //            var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(changeRequest.PaperId);
-        //            if (presentAuthor != null)
-        //            {
-        //                presentAuthor.ConferenceSessionId = changeRequest.NewSessionId;
-        //                await _unitOfWork.PresentAuthorRepository.UpdatePresentAuthorAsync(presentAuthor);
-
-        //                // Update UserCheckIn records to reflect the session change
-        //                // Find all presenters for the paper
-        //                var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(changeRequest.PaperId);
-        //                var presenters = paperAuthors.Where(pa => pa.IsPresenter == true).ToList();
-
-        //                foreach (var presenter in presenters)
-        //                {
-        //                    // Update old session check-in (current session)
-        //                    var oldUserCheckIn = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(presenter.UserId, changeRequest.CurrentSessionId);
-        //                    if (oldUserCheckIn != null)
-        //                    {
-        //                        oldUserCheckIn.IsPresenter = false;
-        //                        await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(oldUserCheckIn);
-        //                    }
-
-        //                    // Update new session check-in (new session)
-        //                    var newUserCheckIn = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(presenter.UserId, changeRequest.NewSessionId);
-        //                    if (newUserCheckIn != null)
-        //                    {
-        //                        newUserCheckIn.IsPresenter = true;
-        //                        await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(newUserCheckIn);
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // Get the rejected global status
-        //            targetStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-        //            if (targetStatus == null)
-        //            {
-        //                throw new BadRequestException("Không tìm thấy trạng thái từ chối.");
-        //            }
-
-        //            resultMessage = "Yêu cầu thay đổi phiên đã bị từ chối.";
-        //        }
-
-        //        // Update the request status
-        //        changeRequest.GlobalStatusId = targetStatus.GlobalStatusId;
-        //        changeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
-
-        //        await _unitOfWork.SessionChangeRequestRepository.UpdateSessionChangeRequestAsync(changeRequest);
-
-        //        await _unitOfWork.CommitAsync();
-
-        //        return resultMessage;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await _unitOfWork.RollbackAsync();
-        //        throw ex;
-        //    }
-        //}
     }
 }
