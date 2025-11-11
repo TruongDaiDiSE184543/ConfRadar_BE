@@ -2,7 +2,7 @@
 {
     public class CustomerPaidTicketResponse
     {
-        public string TicketId { get; set; } = null!;
+        public string? TicketId { get; set; } = null!;
 
         public DateOnly? RegisteredDate { get; set; }
 
@@ -13,14 +13,52 @@
         public List<CustomerTransactionDetailRespone> Transactions { get; set; }
 
         public List<CustomerCheckInDetailResponse> UserCheckIns { get; set; }
+        public CustomerTicketPricePhaseDetailResponse TicketPricePhase { get; set; }
+        public bool HasRefundPolicy { get;set;}
+
+    }
+    public class CustomerTicketPricePhaseDetailResponse
+    {
+        public string? PricePhaseId { get; set; } = null!;
+
+        public string? PhaseName { get; set; }
+
+        public DateOnly? StartDate { get; set; }
+
+        public DateOnly? EndDate { get; set; }
+
+        public decimal? ApplyPercent { get; set; }
+
+        public int? TotalSlot { get; set; }
+
+        public int? AvailableSlot { get; set; }
+
+        public string? ConferencePriceId { get; set; }
+        public List<CustomerTicketRefundPoliciesDetailResponse> RefundPolicies;
+    }
 
 
+    public class CustomerTicketRefundPoliciesDetailResponse
+    {
+        public string? RefundPolicyId { get; set; } = null!;
+        public string? ConferenceId { get; set; }
+        public string? PricePhaseId { get; set; }
+        public int? PercentRefund { get; set; }
+        public DateOnly? PricePhaseStartDate { get; set; }
+        public DateOnly? RefundDeadline { get; set; }
+        public int? RefundOrder { get; set; }
 
     }
 
+
+
+
+
+
+
     public class CustomerTransactionDetailRespone
     {
-        public string TransactionId { get; set; } = null!;
+        public string? TransactionId { get; set; }
         public string? Currency { get; set; }
         public decimal? Amount { get; set; }
         public DateTime? CreatedAt { get; set; }
@@ -32,7 +70,7 @@
     }
     public class CustomerCheckInDetailResponse
     {
-        public string UserCheckinId { get; set; } = null!;
+        public string? UserCheckinId { get; set; } 
         public bool? IsPresenter { get; set; }
         public string? CheckinStatusId { get; set; }
         public string? CheckinStatusName { get; set; }
@@ -46,7 +84,7 @@
     }
     public class CustomerSessionDetailResponse
     {
-        public string ConferenceSessionId { get; set; } = null!;
+        public string? ConferenceSessionId { get; set; } 
         public string? Title { get; set; }
         public string? Description { get; set; }
         public DateTime? StartTime { get; set; }

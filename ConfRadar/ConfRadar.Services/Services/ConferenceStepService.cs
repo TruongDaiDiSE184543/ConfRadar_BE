@@ -48,7 +48,7 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteSponsorAsync(string sponsorId);
 
         // Step 7: Add Refund Policies
-        Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId,string pricephaseId, AddRefundPoliciesRequest request, string userId);
+        Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, string pricephaseId, AddRefundPoliciesRequest request, string userId);
         Task<List<RefundPolicyResponse>> GetRefundPoliciesAsync(string conferenceId);
         Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request, string userId);
         Task<bool> DeleteRefundPolicyAsync(string refundPolicyId, string userId);
@@ -93,7 +93,7 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId);
 
         // PricePhase CRUD operations - Create with conferencePriceId, RUD with its own id
-        Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request,string userId);
+        Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request, string userId);
         Task<List<PricePhaseResponse>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId);
         Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request);
         Task<bool> DeletePricePhaseAsync(string pricePhaseId);
@@ -599,12 +599,13 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
                 await _unitOfWork.CommitAsync();
                 return await GetConferenceBasicAsync(conferenceId);
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
                 throw ex;
             }
-           
+
         }
 
         #endregion
@@ -652,7 +653,7 @@ namespace ConfRadar.Services.Services
                 if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot) throw new BadRequestException($"Số lượng totalSlot của từng loại vé tổng phải nhỏ hơn hoặc bằng capicity của conference: {existingTotalSlot}+ {totalSlotFromToBeTickets} > {conference.TotalSlot} ");
                 foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest)
                 {
-                   
+
                     //Phase for each ticket type
                     List<PricePhaseResponse> pricePhaseResponses = new();
                     if (existingConferencePrice.Any(p => p.TicketName.Equals(toBeConferencePrice.TicketName, StringComparison.OrdinalIgnoreCase)))
@@ -701,19 +702,19 @@ namespace ConfRadar.Services.Services
                         await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(CreatedPricePhase);
 
 
-                           // Xử lý Refund Policies cho phase này
+                        // Xử lý Refund Policies cho phase này
                         if (createPricePhaseRequest.refundInPhase != null && createPricePhaseRequest.refundInPhase.Any())
                         {
-                           
+
                             var sortedRefunds = createPricePhaseRequest.refundInPhase.OrderBy(r => r.RefundDeadline).ToList();
                             for (int i = 0; i < sortedRefunds.Count; i++)
                             {
                                 var refundRequest = sortedRefunds[i];
-                                
+
                                 if (!refundRequest.PercentRefund.HasValue || !refundRequest.RefundDeadline.HasValue)
                                     throw new BadRequestException("Chính sách hoàn tiền phải có đủ phần trăm và hạn chót.");
-                                        if (refundRequest.PercentRefund.Value < 0 || refundRequest.PercentRefund.Value > 100)
-                                            throw new BadRequestException("PerentRefund phải nằm trong khoảng 0-100");
+                                if (refundRequest.PercentRefund.Value < 0 || refundRequest.PercentRefund.Value > 100)
+                                    throw new BadRequestException("PerentRefund phải nằm trong khoảng 0-100");
 
                                 // *** VALIDATION MỚI: Deadline của refund policy ***
                                 // 1. Phải sau ngày bắt đầu của phase
@@ -726,8 +727,8 @@ namespace ConfRadar.Services.Services
                                 {
                                     throw new BadRequestException($"Trong giai đoạn '{createPricePhaseRequest.PhaseName}', hạn chót hoàn tiền ({refundRequest.RefundDeadline.Value:dd/MM/yyyy}) phải trước ngày kết thúc bán vé của hội nghị ({conference.TicketSaleEnd:dd/MM/yyyy}).");
                                 }
-                                
-                                
+
+
                                 var refundModel = new RefundPolicy
                                 {
                                     RefundPolicyId = Guid.NewGuid().ToString(),
@@ -1450,7 +1451,8 @@ namespace ConfRadar.Services.Services
                 }
                 await _unitOfWork.CommitAsync();
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 await _unitOfWork.RollbackAsync();
                 throw ex;
             }
@@ -2256,14 +2258,14 @@ namespace ConfRadar.Services.Services
 
         #region PricePhase CRUD Operations
 
-        public async Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request,string userId)
+        public async Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request, string userId)
         {
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(conferencePriceId);
             if (conferencePrice == null) throw new NotFoundException($"Không tìm thấy loại vé với ID {conferencePriceId}");
 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferencePrice.ConferenceId);
 
-            
+
             if (conference.CreatedBy != userId)
                 throw new ForbiddenException("Bạn không có quyền thêm giai đoạn cho loại vé này.");
             await EnsureConferenceIsEditable(conference);
@@ -2296,7 +2298,7 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var pricePhaseRequest in request.PricePhases)
                     {
-                       
+
                         var pricePhase = pricePhaseRequest.ToModel(conferencePriceId);
                         await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(pricePhase);
                         responses.Add(pricePhase.ToResponse());

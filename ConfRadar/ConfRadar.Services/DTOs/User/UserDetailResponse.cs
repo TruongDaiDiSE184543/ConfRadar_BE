@@ -14,6 +14,8 @@
     }
     public class ListUserDetailForAdminAndOrganizerResponse
     {
+        public string RoleId { get; set; }
+        public string RoleName { get; set; }
         public List<UserDetailForAdminAndOrganizerResponse> Users { get; set; }
     }
     public class UserDetailForAdminAndOrganizerResponse
@@ -25,7 +27,10 @@
         public string? Gender { get; set; }
         public string? AvatarUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
-        public List<string> Roles { get; set; }
+        public bool? IsActive { get; set; }
+        public bool? IsEmailConfirmed { get; set; }
+
+        //public List<string> Roles { get; set; }
     }
     public class ReviewerDetailResponse
     {

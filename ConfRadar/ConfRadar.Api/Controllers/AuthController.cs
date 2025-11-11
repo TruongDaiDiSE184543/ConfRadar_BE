@@ -108,7 +108,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetUserListForAdminAndOrganizer()
         {
             var result = await _serviceManager.AuthService.ListUserForAdminAndOrganizer();
-            return Ok(ApiResponse<ListUserDetailForAdminAndOrganizerResponse>.SuccessResponse(result, $"Danh sách người dùng:"));
+            return Ok(ApiResponse<List<ListUserDetailForAdminAndOrganizerResponse>>.SuccessResponse(result, $"Danh sách người dùng:"));
         }
 
         [Authorize(Roles = "Conference Organizer")]
@@ -123,6 +123,20 @@ namespace ConfRadar.Api.Controllers
         {
             var result = await _serviceManager.AuthService.ListAllReviewer();
             return Ok(ApiResponse<List<ReviewerDetailResponse>>.SuccessResponse(result, $"Danh sách reviewer"));
+        }
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPut("suspend-external-reviewer/{userId}")]
+        public async Task<IActionResult> SuspendExternalReviewer([FromRoute] string userId)
+        {
+            var result = await _serviceManager.AuthService.SuspendExternalReviewerAccount(userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã suspend người reviewer outsource với id {userId}"));
+        }
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPut("activate-external-reviewer/{userId}")]
+        public async Task<IActionResult> ActivateExternalReviewer([FromRoute] string userId)
+        {
+            var result = await _serviceManager.AuthService.ActivateExternalReviewerAccount(userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã activate người reviewer outsource với id {userId}"));
         }
 
     }

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.Shared.DTO.Wallet
+﻿namespace ConfRadar.Shared.DTO.Wallet
 {
     public class OwnWalletDetailResponse
     {
-        public string? WalletId { get; set; } 
+        public string? WalletId { get; set; }
         public decimal? Balance { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -16,7 +10,7 @@ namespace ConfRadar.Shared.DTO.Wallet
     }
     public class OwnWalletTransactionDetailResponse
     {
-        public string? WalletTransactionId { get; set; } 
+        public string? WalletTransactionId { get; set; }
         public string? WalletId { get; set; }
         public decimal? Amount { get; set; }
         public string? TransactionType { get; set; }

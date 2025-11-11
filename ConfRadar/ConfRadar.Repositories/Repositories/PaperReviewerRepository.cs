@@ -54,8 +54,8 @@ namespace ConfRadar.Repositories.Repositories
          .AsNoTracking()
          .Where(pr => pr.UserId == userId && pr.Paper != null)
          .Select(pr => pr.Paper!)
-         .Include(p => p.Conference) 
-         .Include(p => p.PaperPhase) 
+         .Include(p => p.Conference)
+         .Include(p => p.PaperPhase)
          .ToListAsync();
         }
 
