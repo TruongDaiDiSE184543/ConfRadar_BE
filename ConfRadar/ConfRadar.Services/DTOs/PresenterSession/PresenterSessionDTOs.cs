@@ -34,8 +34,6 @@ namespace ConfRadar.Services.DTOs.PresenterSession
     {
         [Required]
         public string? TicketId { get; set; }
-        [Required]
-        public string? SessionId { get; set; }
 
         [Required]
         public string? PaperId { get; set; }
@@ -66,6 +64,9 @@ namespace ConfRadar.Services.DTOs.PresenterSession
 
         [Required]
         public string? TicketId { get; set; }
+        [Required]
+        public string? PaperId { get; set; }
+
         [Required]
         public string? Reason { get; set; }
     }

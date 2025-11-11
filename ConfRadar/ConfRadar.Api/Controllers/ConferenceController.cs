@@ -7,6 +7,7 @@ using ConfRadar.Shared.DTO.Conference;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -259,7 +260,7 @@ namespace ConfRadar.Api.Controllers
         }
 
 
-        [Authorize]
+        [Authorize(Roles = "Local Reviewer")]
         [HttpGet("get-conferences-assigned-papers-belong-to")]
         public async Task<IActionResult> GetAssignConferenceList()
         {
@@ -267,5 +268,16 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.GetConferenceByAssignedPapers(userId);
             return Ok(ApiResponse<List<ConferenceResponse>>.SuccessResponse(result, "Lấy thành công danh sách conference có papers được assigned cho local reviewer"));
         }
+
+        [HttpPut("request-a-conference-to-be-approved")]
+        [Authorize(Roles = "Collaborator")]
+        public async Task<IActionResult> RequestPendingConference([FromQuery] string confId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.RequestOrganizerApproval(userId, confId);
+            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
+            return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
+        }
+
     }
 }

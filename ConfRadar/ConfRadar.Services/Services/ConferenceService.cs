@@ -71,6 +71,7 @@ namespace ConfRadar.Services.Services
         Task<int> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request, string userId);
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId);
         Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId);
+        Task<bool> RequestOrganizerApproval(string confId, string userId);
     }
 
     public class ConferenceService : IConferenceService
@@ -2023,6 +2024,18 @@ namespace ConfRadar.Services.Services
                 responses.Add(conferenceResponse);
             }
             return responses;
+        }
+
+        public async Task<bool> RequestOrganizerApproval(string confId,string userId)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
+            if (conference == null) throw new BadRequestException($"Không tìm thấy hội nghị với ID: {confId}");
+            if (conference.CreatedBy != userId) throw new BadRequestException("Bạn không có quyền gửi yêu cầu được approve cho hội nghị này");
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
+            if (conference.ConferenceStatusId != draftStatus.ConferenceStatusId) throw new BadRequestException($" conference với ID {confId} phải đang là draft status mới có thể yêu cầu duyệt được");
+            var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new BadRequestException("Hội nghị đang chờ được duyệt!");
+            return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với ID: {userId} đang request conference với ID: {confId} để được duyệt");
         }
     }
 }

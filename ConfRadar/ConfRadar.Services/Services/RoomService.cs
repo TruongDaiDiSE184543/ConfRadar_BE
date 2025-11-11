@@ -23,6 +23,7 @@ namespace ConfRadar.Services.Services
         Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
         Task<List<RoomAvailablity>> RoomAvailableBetweenDate(string roomId, DateOnly startDate, DateOnly endDate);
+        Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate);
     }
 
     public class RoomService : IRoomService
@@ -580,6 +581,131 @@ namespace ConfRadar.Services.Services
             }
 
             return response;
+        }
+
+        public async Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate)
+        {
+            // Validate date range
+            if (endDate < startDate)
+            {
+                throw new BadRequestException("End date không thể trước start date");
+            }
+
+            // Days interval must be less than or equal to 7
+            int daysBetween = endDate.DayNumber - startDate.DayNumber;
+            if (daysBetween > 7)
+            {
+                throw new BadRequestException($"Khoảng cách start date và end date không thể vượt 7 ngày. {startDate:dd/MM/yyyy} đến {endDate:dd/MM/yyyy} là {daysBetween} ngày");
+            }
+
+            // Get all rooms in the system
+            var allRooms = await _unitOfWork.RoomRepository.GetAllRoomsAsync();
+            if (!allRooms.Any())
+            {
+                return new List<AvailableRoomResponse>();
+            }
+
+            List<AvailableRoomResponse> response = new();
+
+            // Check each room for each date
+            foreach (var room in allRooms)
+            {
+                for (var date = startDate; date <= endDate; date = date.AddDays(1))
+                {
+                    // Get all sessions for this room on this specific date
+                    var occupiedSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(room.RoomId, date);
+
+                    // If no sessions exist for the day, the entire day is available
+                    if (!occupiedSessions.Any())
+                    {
+                        response.Add(new AvailableRoomResponse
+                        {
+                            RoomId = room.RoomId,
+                            RoomNumber = room.Number,
+                            RoomDisplayName = room.DisplayName,
+                            Date = date,
+                            AvailableTimeSpans = new List<TimeSpanResponse>
+                            {
+                                new TimeSpanResponse
+                                {
+                                    StartTime = new TimeOnly(0, 0, 0),
+                                    EndTime = new TimeOnly(23, 59, 59)
+                                }
+                            },
+                            IsAvailableWholeday = true
+                        });
+                        continue;
+                    }
+
+                    // Process occupied sessions and calculate available time spans
+                    var occupiedTimeSlots = occupiedSessions
+                        .Where(os => os.StartTime.HasValue && os.EndTime.HasValue)
+                        .Select(os => new
+                        {
+                            startTime = TimeOnly.FromDateTime(os.StartTime.Value),
+                            endTime = TimeOnly.FromDateTime(os.EndTime.Value)
+                        })
+                        .OrderBy(os => os.startTime)
+                        .ToList();
+
+                    List<TimeSpanResponse> availableTimeSpans = new();
+                    var dayStart = new TimeOnly(0, 0, 0);
+                    var dayEnd = new TimeOnly(23, 59, 59);
+
+                    // Check for available time before the first session
+                    if (occupiedTimeSlots.Any() && dayStart < occupiedTimeSlots.First().startTime)
+                    {
+                        availableTimeSpans.Add(new TimeSpanResponse
+                        {
+                            StartTime = dayStart,
+                            EndTime = occupiedTimeSlots.First().startTime
+                        });
+                    }
+
+                    // Check for available time between sessions
+                    for (int i = 0; i < occupiedTimeSlots.Count - 1; i++)
+                    {
+                        TimeOnly currentEnd = occupiedTimeSlots[i].endTime;
+                        TimeOnly nextStart = occupiedTimeSlots[i + 1].startTime;
+
+                        if (currentEnd < nextStart)
+                        {
+                            availableTimeSpans.Add(new TimeSpanResponse
+                            {
+                                StartTime = currentEnd,
+                                EndTime = nextStart
+                            });
+                        }
+                    }
+
+                    // Check for available time after the last session
+                    if (occupiedTimeSlots.Any() && occupiedTimeSlots.Last().endTime < dayEnd)
+                    {
+                        availableTimeSpans.Add(new TimeSpanResponse
+                        {
+                            StartTime = occupiedTimeSlots.Last().endTime,
+                            EndTime = dayEnd
+                        });
+                    }
+
+                    // Only add to response if there are available time spans
+                    if (availableTimeSpans.Any())
+                    {
+                        response.Add(new AvailableRoomResponse
+                        {
+                            RoomId = room.RoomId,
+                            RoomNumber = room.Number,
+                            RoomDisplayName = room.DisplayName,
+                            Date = date,
+                            AvailableTimeSpans = availableTimeSpans,
+                            IsAvailableWholeday = false
+                        });
+                    }
+                }
+            }
+
+            // Sort the response by date then by room number for consistent output
+            return response.OrderBy(r => r.Date).ThenBy(r => r.RoomNumber).ToList();
         }
 
 

@@ -232,20 +232,20 @@ namespace ConfRadar.Api.Controllers
         //}
 
         [HttpGet("get-assigned-papers")]
-        public async Task<IActionResult> GetAssignedPapersByReviewerId()
+        public async Task<IActionResult> GetAssignedPapersByReviewerId([FromQuery] string? confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.GetAssignedPapersByReviewerId(userId);
-            return Ok(ApiResponse<List<Paper>>.SuccessResponse(result, "Lấy thành công những paper được assigned theo reviewerId"));
+            var result = await _serviceManager.PaperService.GetAssignedPapersByReviewerId(userId, confId);
+            return Ok(ApiResponse<List<ConferenceWithAssignedPapersResponse>>.SuccessResponse(result, "Lấy thành công những paper được assigned theo reviewerId"));
         }
 
 
 
         [HttpGet("get-all-submitted-papers-for-customer")]
-        public async Task<IActionResult> getSubmittedPapers()
+        public async Task<IActionResult> getSubmittedPapers([FromQuery] string? confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.GetSubmittedPaper(userId);
+            var result = await _serviceManager.PaperService.GetSubmittedPaper(userId, confId);
             return Ok(ApiResponse<List<Paper>>.SuccessResponse(result, "Lấy thành công paper mà user đã nộp"));
         }
 
@@ -316,5 +316,6 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.AddWaitList(userId, request.ConferenceId);
             return Ok(ApiResponse<AddWaitListResponse>.SuccessResponse(result, "Đã thêm vào  hàng đợi"));
         }
+
     }
 }

@@ -52,13 +52,14 @@ namespace ConfRadar.Services.Services
         Task<int> UpdateCameraReady(UpdateCameraReadyRequest request, string userId);
 
         Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);
-        Task<List<Paper>> GetSubmittedPaper(string userId);
+        Task<List<Paper>> GetSubmittedPaper(string userId, string? confId);
         Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId);
 
 
 
         Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases();
-        Task<List<Paper>> GetAssignedPapersByReviewerId(string userId);
+        Task<List<ConferenceWithAssignedPapersResponse>> GetAssignedPapersByReviewerId(string userId, string? confId);
+        //Task<List<ConferenceWithAssignedPapersResponse>> GetAssignedPapersGroupedByConference(string userId, string? confId);
         Task<List<CameraReadyDtoDetail>> ListPendingCameraReady();
         Task<List<FullPaperDtoDetail>> ListPendingfullpaper();
 
@@ -258,7 +259,7 @@ namespace ConfRadar.Services.Services
             var dateNow = ExtensionHelper.GetVietnamDate();
             if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
             {
-                throw new BadRequestException($"Đã quá hạn quyết định abstract");
+                throw new BadRequestException($"Phải trong khoảng Registration Date để có thể cập nhật trạng thái abstract này: trong registation start {activeCurrentPhase.RegistrationStartDate.ToString()} và registration end {activeCurrentPhase.RegistrationEndDate.ToString()}");
             }
             if (basePaper.PaperPhaseId != abstractPaperPhase.PaperPhaseId)
             {
@@ -1423,10 +1424,11 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<List<Paper>> GetSubmittedPaper(string userId)
+        public async Task<List<Paper>> GetSubmittedPaper(string userId,string? confId)
         {
             // Use the new repository method to get papers by user ID in a single query
             var submittedPapers = await _unitOfWork.PaperAuthorRepository.GetPapersByUserIdAsync(userId);
+            if (confId != null) submittedPapers.Where(p => p.ConferenceId == confId).ToList();
 
             return submittedPapers;
         }
@@ -1639,18 +1641,125 @@ namespace ConfRadar.Services.Services
         }
 
 
-        public async Task<List<Paper>> GetAssignedPapersByReviewerId(string userId)
+        public async Task<List<ConferenceWithAssignedPapersResponse>> GetAssignedPapersByReviewerId(string userId, string? confId)
         {
-            //var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetAllPaperReviewersAsync();
-            //List<string?> paperIds = paperReviewer.Where( p => p.UserId == userId).Select(s => s.PaperId).ToList();
-            //var AssignedPapers = new List<Paper>();
-            //foreach (string p in paperIds)
-            //{
-            //    if (p != null) AssignedPapers.Add(await _unitOfWork.PaperRepository.GetPaperByIdAsync(p));
-            //}
-            var AssignedPapers = await _unitOfWork.PaperReviewerRepository.getAllAssignedPapers(userId);
-            return AssignedPapers;
+            var allAssignedPapers = await _unitOfWork.PaperReviewerRepository.getAllAssignedPapers(userId);
+
+            
+            if (!string.IsNullOrEmpty(confId))
+            {
+                allAssignedPapers = allAssignedPapers.Where(p => p.ConferenceId == confId).ToList();
+            }
+
+            var groupedByConference = allAssignedPapers.GroupBy(p => p.ConferenceId).ToList();
+            List<ConferenceWithAssignedPapersResponse> response = new();
+            foreach (var conferenceGroup in groupedByConference) 
+            {
+                var firstPaperInGroup = conferenceGroup.First();
+                if (firstPaperInGroup.ConferenceId == null) continue;
+                var conferenceResponse = new ConferenceWithAssignedPapersResponse()
+                {
+                    ConferenceId = conferenceGroup.Key,
+                    ConferenceName = firstPaperInGroup.Conference.ConferenceName,
+                    AssignedPapers = new List<BasicAssignedPaperResponse>()
+                };
+                foreach(var paper in conferenceGroup)
+                {
+                    var paperResponse = new BasicAssignedPaperResponse
+                    {
+                        PaperId = paper.PaperId,
+                        Title = paper.Title,
+                        
+                        Description = paper.Description,
+                        CreatedAt = paper.CreatedAt,
+                        PaperPhaseId = paper.PaperPhaseId,
+                        
+                        PaperPhaseName = paper.PaperPhase?.PhaseName,
+
+                        
+                        AbstractId = paper.AbstractId,
+                        FullPaperId = paper.FullPaperId,
+                        CameraReadyId = paper.CameraReadyId,
+                        RevisionPaperId = paper.RevisionPaperId
+                    };
+                    conferenceResponse.AssignedPapers.Add(paperResponse);
+                }
+
+                response.Add(conferenceResponse);
+            }
+            return response;
         }
+
+        //public async Task<List<ConferenceWithAssignedPapersResponse>> GetAssignedPapersGroupedByConference(string userId, string? confId)
+        //{
+
+        //    // Get assigned papers using the existing method logic
+        //    var assignedPapers = await GetAssignedPapersByReviewerId(userId, confId);
+        //    if (!assignedPapers.Any())
+        //    {
+        //        return new List<ConferenceWithAssignedPapersResponse>();
+        //    }
+
+        //    // Get paper reviewer info to include reviewer details
+        //    var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
+
+        //    // Group papers by conference
+        //    var groupedPapers = assignedPapers.GroupBy(p => p.ConferenceId).ToList();
+        //    var response = new List<ConferenceWithAssignedPapersResponse>();
+
+        //    foreach (var conferenceGroup in groupedPapers)
+        //    {
+        //        var firstPaper = conferenceGroup.First();
+        //        var conference = firstPaper.Conference;
+
+        //        if (conference == null) continue;
+
+        //        var assignedPapersForConference = new List<BasicAssignedPaperResponse>();
+
+        //        foreach (var paper in conferenceGroup)
+        //        {
+        //            var reviewerInfo = paperReviewers.FirstOrDefault(pr => pr.PaperId == paper.PaperId);
+
+        //            assignedPapersForConference.Add(new BasicAssignedPaperResponse
+        //            {
+        //                PaperId = paper.PaperId,
+        //                Title = paper.Title,
+        //                Description = paper.Description,
+        //                CreatedAt = paper.CreatedAt,
+        //                PaperPhaseId = paper.PaperPhaseId,
+        //                PaperPhaseName = paper.PaperPhase?.PaperPhaseName,
+
+        //                // Basic IDs only - no full objects as requested
+        //                AbstractId = paper.AbstractId,
+        //                FullPaperId = paper.FullPaperId,
+        //                CameraReadyId = paper.CameraReadyId,
+        //                RevisionPaperId = paper.RevisionPaperId,
+
+        //                // Reviewer info
+        //                IsHeadReviewer = reviewerInfo?.IsHeadReviewer ?? false,
+        //                AssignedAt = reviewerInfo?.CreatedAt
+        //            });
+        //        }
+
+        //        response.Add(new ConferenceWithAssignedPapersResponse
+        //        {
+        //            ConferenceId = conference.ConferenceId,
+        //            ConferenceName = conference.ConferenceName,
+        //            AssignedPapers = assignedPapersForConference.OrderBy(ap => ap.CreatedAt).ToList()
+        //        });
+        //    }
+
+        //    // Sort by conference name for consistent output
+        //    return response.OrderBy(r => r.ConferenceName).ToList();
+
+        //    //foreach (string p in paperIds)
+        //    //{
+        //    //    if (p != null) AssignedPapers.Add(await _unitOfWork.PaperRepository.GetPaperByIdAsync(p));
+        //    //}
+        //    var AssignedPapers = await _unitOfWork.PaperReviewerRepository.getAllAssignedPapers(userId);
+
+        //    return AssignedPapers;
+        //}
 
         public async Task<List<CameraReadyDtoDetail>> ListPendingCameraReady()
         {

@@ -12,6 +12,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<bool> DeleteSessionChangeRequestAsync(SessionChangeRequest sessionChangeRequest);
         Task<SessionChangeRequest?> GetSessionChangeRequestByIdAsync(string sessionChangeRequestId);
         Task<List<SessionChangeRequest>> GetAllSessionChangeRequestsAsync();
+        Task<List<SessionChangeRequest>> GetSessionChangeRequestByPaperIdAndSessionId(string paperId, string sessionId);
     }
 
     public class SessionChangeRequestRepository : GenericRepository<SessionChangeRequest>, ISessionChangeRequestRepository
@@ -51,6 +52,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<SessionChangeRequest>> GetAllSessionChangeRequestsAsync()
         {
             return await _context.SessionChangeRequests.ToListAsync();
+        }
+
+        public async Task<List<SessionChangeRequest>> GetSessionChangeRequestByPaperIdAndSessionId(string paperId, string sessionId)
+        {
+            return await _context.SessionChangeRequests.Where(scr => scr.NewConferenceSessionId == sessionId && scr.PaperId == paperId).ToListAsync();
         }
     }
 }

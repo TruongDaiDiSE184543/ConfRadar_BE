@@ -14,6 +14,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<RefundPolicy?> GetConferenceRefundPolicyByIdAsync(string refundPolicyId);
         Task<List<RefundPolicy>> GetAllConferenceRefundPoliciesAsync();
         Task<List<RefundPolicy>> GetRefundPoliciesByConferenceIdAsync(string conferenceId);
+        Task<List<RefundPolicy>> GetRefundPoliciesByPricePhaseId(string pricePhaseId);
     }
     public class ConferenceRefundPolicyRepository
     : GenericRepository<RefundPolicy>, IConferenceRefundPolicyRepository
@@ -58,6 +59,11 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.RefundPolicies
                 .Where(rp => rp.ConferenceId == conferenceId)
                 .ToListAsync();
+        }
+
+        public async Task<List<RefundPolicy>> GetRefundPoliciesByPricePhaseId(string pricePhaseId)
+        {
+            return await _context.RefundPolicies.Where(rp => rp.PricePhaseId == pricePhaseId).ToListAsync();
         }
     }
 }

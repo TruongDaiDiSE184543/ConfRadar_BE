@@ -1,4 +1,5 @@
 using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using Microsoft.AspNetCore.Authorization;
@@ -274,10 +275,10 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
 
         [HttpPost("{conferenceId}/refund-policies")]
-        public async Task<IActionResult> AddRefundPolicies(string conferenceId, [FromBody] AddRefundPoliciesRequest request)
+        public async Task<IActionResult> AddRefundPolicies([FromQuery]string conferenceId, [FromQuery]string PricePhaseId, [FromBody] AddRefundPoliciesRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var refundPolicies = await _serviceManager.ConferenceStepService.AddRefundPoliciesAsync(conferenceId, request, userId);
+            var refundPolicies = await _serviceManager.ConferenceStepService.AddRefundPoliciesAsync(conferenceId, PricePhaseId, request, userId);
             return Ok(ApiResponse<List<RefundPolicyResponse>>.SuccessResponse(refundPolicies, "Chính sách hoàn trả được thêm thành công"));
         }
 
@@ -568,7 +569,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request)
         {
-            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request,userId);
             return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được thêm thành công"));
         }
 
