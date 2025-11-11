@@ -214,7 +214,7 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId,  CreatePresenterChangeRequest request)
+        public async Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId, CreatePresenterChangeRequest request)
         {
 
 
@@ -302,7 +302,7 @@ namespace ConfRadar.Services.Services
                     RequestAt = ExtensionHelper.GetVietnamTime(),
                     PaperId = request.PaperId,
                     GlobalStatusId = pendingStatus.GlobalStatusId,
-                    
+
                 };
 
 
@@ -323,7 +323,7 @@ namespace ConfRadar.Services.Services
                     RequestAt = changeRequest.RequestAt,
                     PaperId = request.PaperId,
                     SessionId = presentAuthor.ConferenceSessionId,
-                    GlobalStatusName =  changeRequest.GlobalStatus?.Name,
+                    GlobalStatusName = changeRequest.GlobalStatus?.Name,
                     NewPresenterName = newUser.FullName,
                     RequestedByName = currentRootAuthor.User.FullName
                 };

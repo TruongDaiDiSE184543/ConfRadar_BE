@@ -7,7 +7,6 @@ using ConfRadar.Shared.DTO.Conference;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace ConfRadar.Api.Controllers
 {

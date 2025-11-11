@@ -15,13 +15,13 @@ namespace ConfRadar.Services.DTOs.Paper
         public DateTime? CreatedAt { get; set; }
         public string? PaperPhaseId { get; set; }
         public string? PaperPhaseName { get; set; }
-        
+
         // Basic IDs only - no full objects
         public string? AbstractId { get; set; }
         public string? FullPaperId { get; set; }
         public string? CameraReadyId { get; set; }
         public string? RevisionPaperId { get; set; }
-        
-      
+
+
     }
 }

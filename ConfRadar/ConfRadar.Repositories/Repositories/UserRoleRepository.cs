@@ -29,7 +29,9 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<UserRole?> GetUserRoleByUserAndRole(string userId, string roleId)
         {
-            return await _context.UserRoles.Include(x => x.Role).FirstOrDefaultAsync(x => x.UserId == userId && x.RoleId == roleId);
+            return await _context.UserRoles
+                .Include(x => x.Role)
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.RoleId == roleId);
         }
     }
 }

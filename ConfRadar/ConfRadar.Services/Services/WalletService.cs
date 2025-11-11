@@ -1,10 +1,5 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Shared.DTO.Wallet;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -12,7 +7,7 @@ namespace ConfRadar.Services.Services
     {
         Task<OwnWalletDetailResponse?> ViewOwnWallet(string userId);
     }
-    public class WalletService :IWalletService
+    public class WalletService : IWalletService
     {
         private readonly IUnitOfWork _unitOfWork;
         public WalletService(IUnitOfWork unitOfWork)

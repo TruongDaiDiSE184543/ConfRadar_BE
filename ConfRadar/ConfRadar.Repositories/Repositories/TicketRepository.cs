@@ -87,6 +87,31 @@ namespace ConfRadar.Repositories.Repositories
             RegisteredDate = t.RegisteredDate,
             IsRefunded = t.IsRefunded,
             ActualPrice = t.ActualPrice,
+            HasRefundPolicy =t.PricePhase!=null &&  t.PricePhase.RefundPolicies.Any() ? true :false,
+            TicketPricePhase  = t.PricePhase !=null ? new CustomerTicketPricePhaseDetailResponse()
+            {
+                PricePhaseId = t.PricePhaseId,
+                PhaseName = t.PricePhase.PhaseName,
+                StartDate = t.PricePhase.StartDate,
+                EndDate = t.PricePhase.EndDate,
+                ApplyPercent = t.PricePhase.ApplyPercent,
+                TotalSlot = t.PricePhase.TotalSlot,
+                AvailableSlot = t.PricePhase.AvailableSlot,
+                ConferencePriceId = t.PricePhase.ConferencePriceId,
+                RefundPolicies =t.PricePhase.RefundPolicies.Select(rp=> new CustomerTicketRefundPoliciesDetailResponse()
+                {
+                    RefundPolicyId = rp.RefundPolicyId,
+                    ConferenceId = rp.ConferenceId,
+                    PricePhaseId=rp.PricePhaseId,
+                    PercentRefund = rp.PercentRefund,
+                    PricePhaseStartDate = t.PricePhase.StartDate,
+                    RefundDeadline = rp.RefundDeadline,
+                    RefundOrder= rp.RefundOrder,
+                    
+                }).ToList(),
+            } : new CustomerTicketPricePhaseDetailResponse(),
+
+
 
             Transactions = t.Transactions.Select(transac => new CustomerTransactionDetailRespone
             {
@@ -227,7 +252,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<int> UpdateTicketAsync(Ticket ticket)
         {
-           return await UpdateAsync(ticket);
+            return await UpdateAsync(ticket);
         }
     }
 }

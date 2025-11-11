@@ -221,10 +221,10 @@ namespace ConfRadar.Services.Common
         //Withdraw,          
 
         [Description("Refund")]
-        Refund,            
+        Refund,
 
         [Description("Purchase")]
-        Purchase,       
+        Purchase,
 
         //[Description("Adjustment")]
         //Adjustment,        

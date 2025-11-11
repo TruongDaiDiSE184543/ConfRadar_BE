@@ -31,7 +31,11 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> CreateReviewerContract(CreateReviewerContractRequest request)
         {
-
+            var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ExternalReviewer.GetDescription());
+            if (externalReviewerRole == null) 
+            {
+                throw new NotFoundException("Không tìm thấy external reviewer role trong hệ thống");
+            }
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(request.ConferenceId);
             if (conference == null)
             {
@@ -101,6 +105,17 @@ namespace ConfRadar.Services.Services
                 ContractUrl = contractFileUrl,
                 ConferenceId = request.ConferenceId,
             };
+            var userExternalRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(reviewer.UserId, externalReviewerRole.RoleId);
+            if (userExternalRole == null)
+            {
+                var userRoleObj = new UserRole()
+                {
+                    AssignedAt = ExtensionHelper.GetVietnamTime(),
+                    RoleId = externalReviewerRole.RoleId,
+                    UserId = reviewer.UserId,
+                };
+                await _unitOfWork.UserRoleRepository.CreateUserRoleAsync(userRoleObj);
+            } 
             return await _unitOfWork.ReviewerContractRepository.CreateReviewerContractAsync(newContractObj);
         }
 

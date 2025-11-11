@@ -62,7 +62,7 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize(Roles = "Conference Organizer")]
         [HttpGet("list-pending-abstract")]
-        public async Task<IActionResult> ListPendingAbstract([FromQuery]string? confId)
+        public async Task<IActionResult> ListPendingAbstract([FromQuery] string? confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.GetListPendingAbstract(confId);
@@ -184,7 +184,30 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.CreateCameraReady(request, userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, "Camera ready created successfully"));
         }
-
+        [HttpPut("update-abstract")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAbstract([FromForm] UpdateAbstractRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.UpdateAbstract(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công abstract"));
+        }
+        [HttpPut("update-fullpaper")]
+        [Authorize]
+        public async Task<IActionResult> UpdateFullPaper([FromForm] UpdateFullPaperRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.UpdateFullPaper(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công fullpaper"));
+        }
+        [HttpPut("update-revision-submission")]
+        [Authorize]
+        public async Task<IActionResult> UpdateFullPaper([FromForm] UpdateRevisionPaperRevisionSubmissionRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.UpdateRevisionPaperSubmission(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công revision paper submission"));
+        }
         [HttpPut("update-camera-ready")]
         [Authorize]
         public async Task<IActionResult> UpdateCameraReady([FromForm] UpdateCameraReadyRequest request)

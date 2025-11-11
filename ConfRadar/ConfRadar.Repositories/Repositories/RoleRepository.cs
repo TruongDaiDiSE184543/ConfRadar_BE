@@ -7,6 +7,7 @@ namespace ConfRadar.Repositories.Repositories
 {
     public interface IRoleRepository
     {
+        //test
         Task<int> CreateRoleAsync(Role role);
         Task<Role?> GetRoleByRoleName(string roleName);
         Task<int> CreateMutipleRoleAsync(IEnumerable<Role> roles);
