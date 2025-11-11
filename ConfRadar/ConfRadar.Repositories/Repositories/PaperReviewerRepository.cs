@@ -1,4 +1,4 @@
-using ConfRadar.Repositories.Base;
+﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
@@ -50,13 +50,14 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<Paper>> getAllAssignedPapers(string userId)
         {
-            return await _context.PaperReviewers
-         .AsNoTracking()
-         .Where(pr => pr.UserId == userId && pr.Paper != null)
-         .Select(pr => pr.Paper!)
-         .Include(p => p.Conference)
-         .Include(p => p.PaperPhase)
-         .ToListAsync();
+            return await _context.Papers
+             .AsNoTracking()
+             
+             .Include(p => p.Conference)
+             .Include(p => p.PaperPhase)
+             
+             .Where(p => p.PaperReviewers.Any(pr => pr.UserId == userId))
+             .ToListAsync();
         }
 
         public async Task<List<PaperReviewer>> GetPaperReviewersByPaperIdAsync(string paperId)
