@@ -310,7 +310,7 @@ namespace ConfRadar.Services.Services
             var Preparing = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
-            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId) ;
+            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId) 
             {
                 throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
