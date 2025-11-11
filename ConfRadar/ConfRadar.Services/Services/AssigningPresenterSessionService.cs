@@ -16,9 +16,9 @@ namespace ConfRadar.Services.Services
         Task<string> ApprovePresenterChangeRequest(ApprovePresenterChangeRequest request, string approvedById);
         Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests();
 
-        Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
-        Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests();
-        Task<string> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
+        //Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
+        //Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests();
+        //Task<string> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
     }
 
     public class AssigningPresenterSessionService : IAssigningPresenterSessionService
@@ -499,70 +499,70 @@ namespace ConfRadar.Services.Services
             return responseList;
         }
 
-        public async Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById)
-        {
-            var paper =await  _unitOfWork.PaperRepository.GetAllIncludeById(request.PaperId);
-            if (paper == null) throw new BadRequestException($"Không tìm thấy paper với ID {request.PaperId}");
+        //public async Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById)
+        //{
+        //    var paper =await  _unitOfWork.PaperRepository.GetAllIncludeById(request.PaperId);
+        //    if (paper == null) throw new BadRequestException($"Không tìm thấy paper với ID {request.PaperId}");
 
-            //check if the request user is the presenter of the paper
-            var newSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(request.NewSessionId);
-            if (newSession == null) throw new BadRequestException($"Session {request.NewSessionId} không tồn tại");
+        //    //check if the request user is the presenter of the paper
+        //    var newSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(request.NewSessionId);
+        //    if (newSession == null) throw new BadRequestException($"Session {request.NewSessionId} không tồn tại");
 
-            var alltAuthors =  await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(request.PaperId);
-            var rootAuthor = alltAuthors.FirstOrDefault(a => a.IsPresenter == true);
-            if (requestedById != rootAuthor.UserId) throw new Exception($"Bạn không là presenter của paper với ID {request.PaperId} để đổi session");
+        //    var alltAuthors =  await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(request.PaperId);
+        //    var rootAuthor = alltAuthors.FirstOrDefault(a => a.IsPresenter == true);
+        //    if (requestedById != rootAuthor.UserId) throw new Exception($"Bạn không là presenter của paper với ID {request.PaperId} để đổi session");
 
-            //get current presentauthor
-            var currentPresentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(request.PaperId);
+        //    //get current presentauthor
+        //    var currentPresentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(request.PaperId);
 
 
-            //get current UserCheckin whose isPresenter is true for this paper 
-            var currentUserCheckin = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(requestedById, currentPresentAuthor.ConferenceSessionId);
+        //    //get current UserCheckin whose isPresenter is true for this paper 
+        //    var currentUserCheckin = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(requestedById, currentPresentAuthor.ConferenceSessionId);
 
          
 
 
-            //get ticket
-            var ticket = await _unitOfWork.TicketRepository.GetTicketById(currentUserCheckin.TicketId);
-            //get pending status
-            var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+        //    //get ticket
+        //    var ticket = await _unitOfWork.TicketRepository.GetTicketById(currentUserCheckin.TicketId);
+        //    //get pending status
+        //    var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
 
-            //check if there alreay is a request for this paper
-            var existingPendingRequest = await _unitOfWork.SessionChangeRequestRepository.GetSessionChangeRequestByPaperIdAndSessionId(request.PaperId, request.NewSessionId);
-            if (existingPendingRequest.Any(scr => scr.GlobalStatusId == pendingStatus.GlobalStatusId)) throw new BadRequestException("Đã có yêu cầu request đổi session cho paper này rồi");
+        //    //check if there alreay is a request for this paper
+        //    var existingPendingRequest = await _unitOfWork.SessionChangeRequestRepository.GetSessionChangeRequestByPaperIdAndSessionId(request.PaperId, request.NewSessionId);
+        //    if (existingPendingRequest.Any(scr => scr.GlobalStatusId == pendingStatus.GlobalStatusId)) throw new BadRequestException("Đã có yêu cầu request đổi session cho paper này rồi");
 
-            //get usercheckin whose isPresenter needs to changed to true
-            var toNewUserCheckin = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(requestedById,request.NewSessionId);
-            if (toNewUserCheckin == null) throw new BadRequestException($"Không tim thấy usercheckin với userId: {requestedById} và session {request.NewSessionId} để cập nhật presenter");
+        //    //get usercheckin whose isPresenter needs to changed to true
+        //    var toNewUserCheckin = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(requestedById,request.NewSessionId);
+        //    if (toNewUserCheckin == null) throw new BadRequestException($"Không tim thấy usercheckin với userId: {requestedById} và session {request.NewSessionId} để cập nhật presenter");
 
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                currentUserCheckin.IsPresenter = false; 
-                toNewUserCheckin.IsPresenter = true;
-                await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(currentUserCheckin);
-                await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(toNewUserCheckin);
+        //    await _unitOfWork.BeginTransactionAsync();
+        //    try
+        //    {
+        //        currentUserCheckin.IsPresenter = false; 
+        //        toNewUserCheckin.IsPresenter = true;
+        //        await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(currentUserCheckin);
+        //        await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(toNewUserCheckin);
 
-                SessionChangeRequest sessionChangeRequest = new SessionChangeRequest
-                {
-                    SessionChangeRequestId = Guid.NewGuid().ToString(),
-                    TicketId = request.TicketId,
-                    NewConferenceSessionId = request.NewSessionId,
-                    Reason = request.Reason,
-                    RequestAt = ExtensionHelper.GetVietnamTime(),
-                    CustomerId = requestedById,
-                    GlobalStatusId = pendingStatus.GlobalStatusId,
-                    PaperId = request.PaperId
+        //        SessionChangeRequest sessionChangeRequest = new SessionChangeRequest
+        //        {
+        //            SessionChangeRequestId = Guid.NewGuid().ToString(),
+        //            TicketId = request.TicketId,
+        //            NewConferenceSessionId = request.NewSessionId,
+        //            Reason = request.Reason,
+        //            RequestAt = ExtensionHelper.GetVietnamTime(),
+        //            CustomerId = requestedById,
+        //            GlobalStatusId = pendingStatus.GlobalStatusId,
+        //            PaperId = request.PaperId
 
-                };
-                await _unitOfWork.SessionChangeRequestRepository.CreateSessionChangeRequestAsync(sessionChangeRequest);
-            }
-            catch(Exception ex)
-            {
-                await _unitOfWork.RollbackAsync();
-                throw ex;
-            }
-        }
+        //        };
+        //        await _unitOfWork.SessionChangeRequestRepository.CreateSessionChangeRequestAsync(sessionChangeRequest);
+        //    }
+        //    catch(Exception ex)
+        //    {
+        //        await _unitOfWork.RollbackAsync();
+        //        throw ex;
+        //    }
+        //}
 
         public Task<List<SessionChangeRequestResponse>> GetPendingSessionChangeRequests()
         {
