@@ -171,7 +171,8 @@ namespace ConfRadar.Services.Services
             IQueryable<Conference> query = _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferencePrices)
                     .ThenInclude(cp => cp.PricePhases)
-                    .Where(c => c.ConferenceStatusId == readyStatus.ConferenceStatusId);
+                    .Where(c => c.ConferenceStatusId == readyStatus.ConferenceStatusId)
+                    .OrderByDescending(c => c.CreatedAt);
 
             // Apply filters
             if (!string.IsNullOrEmpty(searchKeyword))
@@ -1497,13 +1498,13 @@ namespace ConfRadar.Services.Services
             {
                 // Organizers can see all research conferences
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => c.IsResearchConference == true);
+                    .Where(c => c.IsResearchConference == true).OrderByDescending(c => c.CreatedAt);
             }
             else
             {
                 // Collaborators can only see research conferences they created
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => c.IsResearchConference == true && c.CreatedBy == userId);
+                    .Where(c => c.IsResearchConference == true && c.CreatedBy == userId).OrderByDescending(c => c.CreatedAt); 
             }
 
             // Apply status filter if provided
@@ -1728,13 +1729,13 @@ namespace ConfRadar.Services.Services
             {
                 // Organizers can see all technical conferences
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => c.IsResearchConference == false || c.IsResearchConference == null); // null means it's a technical conference by default
+                    .Where(c => c.IsResearchConference == false || c.IsResearchConference == null).OrderByDescending(c => c.CreatedAt); ; // null means it's a technical conference by default
             }
             else
             {
                 // Collaborators can only see technical conferences they created
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) && c.CreatedBy == userId);
+                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) && c.CreatedBy == userId).OrderByDescending(c => c.CreatedAt); ;
             }
 
             // Apply status filter if provided
@@ -1996,7 +1997,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId)
         {
             List<PaperReviewer> AssignPaper = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
-            List<Conference> AssignedConference = AssignPaper.Select(ap => ap.Paper.Conference).ToList();
+            List<Conference> AssignedConference = AssignPaper.Select(ap => ap.Paper.Conference).OrderByDescending(c => c.CreatedAt).ToList();
             List<ConferenceResponse> responses = new();
             foreach (var conference in AssignedConference)
             {

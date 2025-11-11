@@ -49,7 +49,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AssigningPresenterSessionService.ApprovePresenterChangeRequest(request, userId);
-            return Ok(ApiResponse<string>.SuccessResponse(result, "Xử lý yêu cầu thay đổi người trình bày thành công"));
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Xử lý yêu cầu thay đổi người trình bày thành công"));
         }
 
         //[Authorize(Roles = "Conference Organizer,Admin")]

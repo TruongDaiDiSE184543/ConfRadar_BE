@@ -51,12 +51,14 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Paper>> getAllAssignedPapers(string userId)
         {
             return await _context.PaperReviewers
-         .AsNoTracking()
-         .Where(pr => pr.UserId == userId && pr.Paper != null)
-         .Select(pr => pr.Paper!)
-         .Include(p => p.Conference) 
-         .Include(p => p.PaperPhase) 
-         .ToListAsync();
+                .AsNoTracking()
+                .Where(pr => pr.UserId == userId && pr.Paper != null)
+                .Include(pr => pr.Paper)
+                    .ThenInclude(p => p!.Conference)
+                .Include(pr => pr.Paper)
+                    .ThenInclude(p => p!.PaperPhase)
+                .Select(pr => pr.Paper!)
+                .ToListAsync();
         }
 
         public async Task<List<PaperReviewer>> GetPaperReviewersByPaperIdAsync(string paperId)
