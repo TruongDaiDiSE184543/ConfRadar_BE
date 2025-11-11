@@ -4,6 +4,7 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Ticket;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.General;
+using ConfRadar.Shared.DTO.RefundRequest;
 using ConfRadar.Shared.DTO.Ticket;
 
 namespace ConfRadar.Services.Services
@@ -13,6 +14,8 @@ namespace ConfRadar.Services.Services
         Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
         Task<List<PaidTicketResponse>> GetTicketListByConferenceId(string conferenceId);
         Task<int> CreateRefundTicketRequest(RefundTicketRequest request, string userId);
+        Task<List<RefundRequestResponse>> GetRefundRequestByConferenceId(string conferenceId);
+        Task<List<RefundRequestResponse>> GetAllRefundRequests();
     }
     public class TicketService : ITicketService
     {
@@ -196,6 +199,16 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<List<RefundRequestResponse>> GetRefundRequestByConferenceId(string conferenceId)
+        {
+            return await _unitOfWork.RefundRequestRepository.GetRefundRequestByConferenceId(conferenceId);
+        }
+
+        public async Task<List<RefundRequestResponse>> GetAllRefundRequests()
+        {
+            return await _unitOfWork.RefundRequestRepository.GetAllRefundRequest();
         }
     }
 }
