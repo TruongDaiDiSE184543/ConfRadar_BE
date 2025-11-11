@@ -295,7 +295,7 @@ namespace ConfRadar.Services.Services
                 var changeRequest = new ConfRadar.Repositories.Models.PresenterChangeRequest
                 {
                     PresenterChangeRequestId = Guid.NewGuid().ToString(),
-                    TicketId = changeRequestTicket?.TicketId, 
+                    TicketId = changeRequestTicket?.TicketId,
                     RequestedById = requesterId,
                     NewPresenterId = request.NewUserId,
                     Reason = request.Reason,
@@ -308,7 +308,7 @@ namespace ConfRadar.Services.Services
 
                 await _unitOfWork.PresenterChangeRequestRepository.CreatePresenterChangeRequestAsync(changeRequest);
 
-             
+
 
                 await _unitOfWork.CommitAsync();
 
@@ -353,8 +353,8 @@ namespace ConfRadar.Services.Services
 
                 if (request.IsApproved)
                 {
-                    
-                  
+
+
 
                     //approve the request
                     changeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
@@ -447,7 +447,7 @@ namespace ConfRadar.Services.Services
 
                 }
 
-              
+
             }
             catch (Exception ex)
             {
@@ -582,7 +582,7 @@ namespace ConfRadar.Services.Services
             var allRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsAsync();
             var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var PendingRequests = allRequests.Where(p => p.GlobalStatusId == pendingStatus.GlobalStatusId).ToList();
-            foreach ( var pendingRequest in PendingRequests)
+            foreach (var pendingRequest in PendingRequests)
             {
                 var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(pendingRequest.PaperId);
                 SessionChangeRequestResponse sessionChangeRequestResponse = new SessionChangeRequestResponse
@@ -644,7 +644,7 @@ namespace ConfRadar.Services.Services
                     {
                         ConferenceSessionId = newSessionId,
                         PaperId = sessionChangeRequest.PaperId,
-                        AssignedAt = ExtensionHelper.GetVietnamTime() 
+                        AssignedAt = ExtensionHelper.GetVietnamTime()
                     });
 
                     // 5. Cập nhật trạng thái của yêu cầu

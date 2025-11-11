@@ -5,7 +5,7 @@ namespace ConfRadar.Services.DTOs.Paper
 {
     public class UpdateCameraReadyRequest
     {
-        [Required(ErrorMessage ="Mã camera ready là bắt buộc")]
+        [Required(ErrorMessage = "Mã camera ready là bắt buộc")]
         public string CameraReadyId { get; set; }
         public IFormFile? CameraReadyFile { get; set; }
         public string? Title { get; set; }

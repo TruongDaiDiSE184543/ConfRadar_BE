@@ -80,6 +80,8 @@
         public int? RevisionRound { get; set; }
         public string? GlobalStatusId { get; set; }
         public string? GlobalStatusName { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? ReviewAt { get; set; }
         public bool? IsAllSubmittedRevisionPaperReview { get; set; }
         public bool? IsAnsweredAllDiscussion { get; set; }
         public DateOnly? ReviewStartDate { get; set; }

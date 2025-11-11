@@ -14,7 +14,7 @@
 
         public List<CustomerCheckInDetailResponse> UserCheckIns { get; set; }
         public CustomerTicketPricePhaseDetailResponse TicketPricePhase { get; set; }
-        public bool HasRefundPolicy { get;set;}
+        public bool HasRefundPolicy { get; set; }
 
     }
     public class CustomerTicketPricePhaseDetailResponse
@@ -70,7 +70,7 @@
     }
     public class CustomerCheckInDetailResponse
     {
-        public string? UserCheckinId { get; set; } 
+        public string? UserCheckinId { get; set; }
         public bool? IsPresenter { get; set; }
         public string? CheckinStatusId { get; set; }
         public string? CheckinStatusName { get; set; }
@@ -84,7 +84,7 @@
     }
     public class CustomerSessionDetailResponse
     {
-        public string? ConferenceSessionId { get; set; } 
+        public string? ConferenceSessionId { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
         public DateTime? StartTime { get; set; }

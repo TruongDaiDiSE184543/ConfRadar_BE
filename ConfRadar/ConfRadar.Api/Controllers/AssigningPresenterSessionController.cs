@@ -75,7 +75,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> RequestChangeSession([FromBody] CreateSessionChangeRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.AssigningPresenterSessionService.CreateSessionChangeRequest(request,userId);
+            var result = await _serviceManager.AssigningPresenterSessionService.CreateSessionChangeRequest(request, userId);
             return Ok(ApiResponse<SessionChangeRequestResponse>.SuccessResponse(result, "Yêu cầu thay đổi phiên đã được gửi"));
         }
 
