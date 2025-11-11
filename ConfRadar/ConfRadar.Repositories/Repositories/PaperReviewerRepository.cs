@@ -52,10 +52,10 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
              .AsNoTracking()
-             
+
              .Include(p => p.Conference)
              .Include(p => p.PaperPhase)
-             
+
              .Where(p => p.PaperReviewers.Any(pr => pr.UserId == userId))
              .ToListAsync();
         }

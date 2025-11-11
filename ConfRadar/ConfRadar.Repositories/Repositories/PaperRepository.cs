@@ -57,7 +57,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.Conference)
                     .ThenInclude(c => c.ResearchConferenceDetail)
                 .AsSplitQuery()
-       .FirstOrDefaultAsync(p => p.PaperId == paperId);
+                .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
 
         public async Task<List<Paper>> GetAllPapersAsync()
@@ -252,7 +252,8 @@ namespace ConfRadar.Repositories.Repositories
                     GlobalStatusName = paper.RevisionPaper.GlobalStatus?.Name,
                     ReviewStartDate = currentActivePhase?.ReviewStartDate,
                     ReviewEndDate = currentActivePhase?.ReviewEndDate,
-
+                    CreatedAt = paper.RevisionPaper.CreatedAt,
+                    ReviewAt = paper.RevisionPaper.ReviewAt,
                 };
                 var revisionPaperSubmission = await _context.RevisionPaperSubmissions
                                                                                     .Include(rps => rps.RevisionDeadlineRound)

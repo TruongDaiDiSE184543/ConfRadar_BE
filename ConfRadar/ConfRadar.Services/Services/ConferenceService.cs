@@ -1533,7 +1533,7 @@ namespace ConfRadar.Services.Services
             {
                 // Collaborators can only see research conferences they created
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => c.IsResearchConference == true && c.CreatedBy == userId).OrderByDescending(c => c.CreatedAt); 
+                    .Where(c => c.IsResearchConference == true && c.CreatedBy == userId).OrderByDescending(c => c.CreatedAt);
             }
 
             // Apply status filter if provided
