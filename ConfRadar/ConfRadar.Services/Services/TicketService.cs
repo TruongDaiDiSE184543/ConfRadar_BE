@@ -58,7 +58,7 @@ namespace ConfRadar.Services.Services
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
             var rejectedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
             var walletPaymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.Wallet.GetDescription());
-            if (acceptedGlobalStatus == null || rejectedGlobalStatus == null || walletPaymentMethod==null)
+            if (acceptedGlobalStatus == null || rejectedGlobalStatus == null || walletPaymentMethod == null)
             {
                 throw new NotFoundException("Không tìm thấy các trạng thái cho status trong hệ thống");
             }
@@ -105,8 +105,8 @@ namespace ConfRadar.Services.Services
                 refundRequestReason = "Xin lỗi bạn, hiện tại chính sách này không cho phép được hoàn tiền";
                 finalGlobalStatus = rejectedGlobalStatus;
             }
-            var currentPhaseStartDate = ticket.PricePhase?.StartDate;
-            var validRefundPolicy = refundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow && currentPhaseStartDate <= dateNow && currentPhaseStartDate != null );
+            var sortedRefundPolicies = refundPolicies.OrderBy(r => r.RefundDeadline).ToList();
+            var validRefundPolicy = sortedRefundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow);
             if (validRefundPolicy == null)
             {
                 throw new BadRequestException("Xin lỗi bạn, hiện tại bạn đã quá hạn hoặc không thuộc chính sách hoàn tiền hợp lệ.");
@@ -116,11 +116,11 @@ namespace ConfRadar.Services.Services
                 refundRequestReason = $"Đã hoàn tiền {validRefundPolicy.PercentRefund}% trước hạn {validRefundPolicy.RefundDeadline}.Vui lòng kiểm tra transaction";
                 finalGlobalStatus = acceptedGlobalStatus;
             }
-            int result=0;
+            int result = 0;
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-               
+
                 if (finalGlobalStatus == acceptedGlobalStatus)
                 {
                     //logic + tiền về lại ví
@@ -174,9 +174,10 @@ namespace ConfRadar.Services.Services
                         PaymentMethodId = walletPaymentMethod.PaymentMethodId,
                         TicketId = ticket.TicketId,
                     };
-                    
+
                     result += await _unitOfWork.TransactionRepository.CreateTransactionAsync(transactionObj);
-                }else
+                }
+                else
                 {
                     ticket.IsRefunded = false;
                 }

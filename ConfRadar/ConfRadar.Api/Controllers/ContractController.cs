@@ -46,5 +46,6 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ContractService.GetUsersForReviewerContract(request);
             return Ok(ApiResponse<List<GetUsersForReviewerContractResponse>>.SuccessResponse(result, "Danh sách người dùng"));
         }
+
     }
 }

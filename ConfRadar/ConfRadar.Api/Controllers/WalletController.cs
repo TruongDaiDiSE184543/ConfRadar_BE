@@ -1,9 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
-using ConfRadar.Shared.DTO.Ticket;
 using ConfRadar.Shared.DTO.Wallet;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 

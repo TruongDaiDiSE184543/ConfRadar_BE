@@ -62,8 +62,8 @@ namespace ConfRadar.Repositories.Repositories
         {
             var refundRequests = await _context.RefundRequests
                 .AsNoTracking()
-                .Where(r => r.Ticket!=null && r.Ticket.PricePhase!=null 
-                && r.Ticket.PricePhase.ConferencePrice!=null
+                .Where(r => r.Ticket != null && r.Ticket.PricePhase != null
+                && r.Ticket.PricePhase.ConferencePrice != null
                 && r.Ticket.PricePhase.ConferencePrice.ConferenceId == conferenceId)
                 .OrderByDescending(r => r.CreatedAt)
                 .Select(r => new RefundRequestResponse()
@@ -78,16 +78,16 @@ namespace ConfRadar.Repositories.Repositories
                     Ticket = new RefundTicketDetailResponse()
                     {
                         TicketId = r.TicketId,
-                        RegisteredDate = r.Ticket !=null ? r.Ticket.RegisteredDate :null,
+                        RegisteredDate = r.Ticket != null ? r.Ticket.RegisteredDate : null,
                         IsRefunded = r.Ticket != null ? r.Ticket.IsRefunded : null,
                         ActualPrice = r.Ticket != null ? r.Ticket.ActualPrice : null,
                         UserId = r.Ticket != null ? r.Ticket.UserId : null,
-                        AvatarUrl =  r.Ticket != null && r.Ticket.User != null ? r.Ticket.User.AvatarUrl : null,
-                        PricePhaseId = r.Ticket != null ? r.Ticket.PricePhaseId: null,
+                        AvatarUrl = r.Ticket != null && r.Ticket.User != null ? r.Ticket.User.AvatarUrl : null,
+                        PricePhaseId = r.Ticket != null ? r.Ticket.PricePhaseId : null,
                         PricePhaseName = r.Ticket != null && r.Ticket.PricePhase != null ? r.Ticket.PricePhase.PhaseName : null,
                         PricePhaseStartDate = r.Ticket != null && r.Ticket.PricePhase != null ? r.Ticket.PricePhase.StartDate : null,
                         PricePhaseEndDate = r.Ticket != null && r.Ticket.PricePhase != null ? r.Ticket.PricePhase.EndDate : null,
-                        PricePhaseApplyPercent = r.Ticket != null && r.Ticket.PricePhase!=null ? r.Ticket.PricePhase.ApplyPercent : null,
+                        PricePhaseApplyPercent = r.Ticket != null && r.Ticket.PricePhase != null ? r.Ticket.PricePhase.ApplyPercent : null,
                         PricePhaseTotalSlot = r.Ticket != null && r.Ticket.PricePhase != null ? r.Ticket.PricePhase.TotalSlot : null,
                         PricePhaseAvailableSlot = r.Ticket != null && r.Ticket.PricePhase != null ? r.Ticket.PricePhase.AvailableSlot : null,
                     }

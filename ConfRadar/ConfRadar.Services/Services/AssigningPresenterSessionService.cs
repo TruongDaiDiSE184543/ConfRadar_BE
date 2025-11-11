@@ -214,7 +214,7 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId,  CreatePresenterChangeRequest request)
+        public async Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId, CreatePresenterChangeRequest request)
         {
 
 
@@ -302,7 +302,7 @@ namespace ConfRadar.Services.Services
                     RequestAt = ExtensionHelper.GetVietnamTime(),
                     PaperId = request.PaperId,
                     GlobalStatusId = pendingStatus.GlobalStatusId,
-                    
+
                 };
 
 
@@ -349,7 +349,7 @@ namespace ConfRadar.Services.Services
                     RequestAt = changeRequest.RequestAt,
                     PaperId = request.PaperId,
                     SessionId = presentAuthor.ConferenceSessionId,
-                    GlobalStatusName =  changeRequest.GlobalStatus?.Name,
+                    GlobalStatusName = changeRequest.GlobalStatus?.Name,
                     NewPresenterName = newUser.FullName,
                     RequestedByName = currentRootAuthor.User.FullName
                 };
@@ -378,7 +378,7 @@ namespace ConfRadar.Services.Services
 
                 if (request.IsApproved)
                 {
-                    
+
                     // Get the accepted global status
                     targetStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
                     if (targetStatus == null)
@@ -403,7 +403,7 @@ namespace ConfRadar.Services.Services
                     {
                         // Find the session information from PresentAuthor table
                         var targetPresentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(newPresenterPaperAuthor.PaperId);
-                        
+
 
                         if (targetPresentAuthor != null)
                         {
@@ -519,7 +519,7 @@ namespace ConfRadar.Services.Services
         //    //get current UserCheckin whose isPresenter is true for this paper 
         //    var currentUserCheckin = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(requestedById, currentPresentAuthor.ConferenceSessionId);
 
-         
+
 
 
         //    //get ticket

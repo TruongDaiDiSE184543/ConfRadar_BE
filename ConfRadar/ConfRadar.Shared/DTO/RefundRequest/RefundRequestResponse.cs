@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Transactions;
-
-namespace ConfRadar.Shared.DTO.RefundRequest
+﻿namespace ConfRadar.Shared.DTO.RefundRequest
 {
     public class RefundRequestResponse
     {
-        public string? RefundRequestId { get; set; } 
+        public string? RefundRequestId { get; set; }
         public string? TransactionId { get; set; }
         public string? TicketId { get; set; }
         public RefundTicketDetailResponse Ticket { get; set; } = new RefundTicketDetailResponse();
@@ -21,7 +14,7 @@ namespace ConfRadar.Shared.DTO.RefundRequest
     }
     public class RefundTicketDetailResponse
     {
-        public string? TicketId { get; set; } 
+        public string? TicketId { get; set; }
         public DateOnly? RegisteredDate { get; set; }
         public bool? IsRefunded { get; set; }
         public decimal? ActualPrice { get; set; }

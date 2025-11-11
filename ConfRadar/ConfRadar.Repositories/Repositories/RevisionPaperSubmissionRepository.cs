@@ -35,6 +35,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.RevisionPaperSubmissions
                 .Include(rps => rps.RevisionPaper)
+                .Include(rps=>rps.RevisionDeadlineRound)
                 .FirstOrDefaultAsync(rps => rps.RevisionPaperSubmissionId == revisionPaperSubmissionId);
         }
         public async Task<int> UpdateRevisionPaperSubmissionAsync(RevisionPaperSubmission submission)

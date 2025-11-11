@@ -61,7 +61,7 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
         public List<RevisionPaperSubmissionFeedbackResponse> Responses { get; set; }
         [Required(ErrorMessage = "RevisionPaperSubmissionId là bắt buộc")]
 
-        public string? RevisionPaperSubmissionId { get; set; }
+        public string RevisionPaperSubmissionId { get; set; }
         [Required(ErrorMessage = "PaperId là bắt buộc")]
 
         public string PaperId { get; set; }

@@ -31,10 +31,10 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> RefundTicket([FromBody] RefundTicketRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.TicketService.CreateRefundTicketRequest(request,userId);
+            var result = await _serviceManager.TicketService.CreateRefundTicketRequest(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Hãy check yêu cầu lịch sử refund để biết thêm thông tin chi tiết"));
         }
-        [Authorize(Roles ="Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpGet("conferences/{conferenceId}/refunds-request")]
         public async Task<IActionResult> GetRefundRequestByConferenceId([FromRoute] string conferenceId)
         {

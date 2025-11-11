@@ -93,7 +93,9 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<User?> GetUserByUserId(string userId)
         {
-            return await _context.Users.Include(x => x.UserRoles).ThenInclude(x => x.Role).FirstOrDefaultAsync(x => x.UserId == userId);
+            return await _context.Users
+                .Include(x => x.UserRoles)
+                .ThenInclude(x => x.Role).FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
         public async Task<int> UpdateUserAsync(User user)

@@ -39,7 +39,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> RequestChangePresenter([FromBody] CreatePresenterChangeRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.AssigningPresenterSessionService.ChangePresenterSession(userId,  request);
+            var result = await _serviceManager.AssigningPresenterSessionService.ChangePresenterSession(userId, request);
             return Ok(ApiResponse<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>.SuccessResponse(result, "Yêu cầu thay đổi người trình bày đã được gửi"));
         }
 

@@ -2026,7 +2026,7 @@ namespace ConfRadar.Services.Services
             return responses;
         }
 
-        public async Task<bool> RequestOrganizerApproval(string confId,string userId)
+        public async Task<bool> RequestOrganizerApproval(string confId, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
             if (conference == null) throw new BadRequestException($"Không tìm thấy hội nghị với ID: {confId}");
