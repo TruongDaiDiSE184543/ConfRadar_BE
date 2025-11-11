@@ -310,7 +310,7 @@ namespace ConfRadar.Services.Services
             var Preparing = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
-            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId) 
+            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId)
             {
                 throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
@@ -461,6 +461,7 @@ namespace ConfRadar.Services.Services
                 //If user is in role Collaborator => confstatus = pendings
                 var userRole = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userid);
                 var OrganizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("Conference Organizer");
+                var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("Collaborator");
                 var roleOfUser = userRole.Select(S => S.RoleId);
                 Conference toBeCreatedConference;
 
@@ -470,15 +471,23 @@ namespace ConfRadar.Services.Services
                 else toBeCreatedConference = ConferenceStepBasicCreateToModel.creatBasicConference(request, confStatus.Where(s => s.ConferenceStatusName == "Draft").FirstOrDefault(), vietNamTimeZoneNow, userid);
 
                 await _unitOfWork.ConferenceRepository.CreateConferenceAsync(toBeCreatedConference);
-                await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(new TechnicalConferenceDetail
+                TechnicalConferenceDetail technicalConferenceDetail = new TechnicalConferenceDetail
                 {
                     ConferenceId = toBeCreatedConference.ConferenceId,
                     TargetAudience = request.targetAudienceTechnicalConference,
-                    Commission = request.commission,
-                    ContractUrl = request.contractURL
-                });
 
-                await _unitOfWork.CommitAsync();
+                };
+
+                if (roleOfUser.Contains(collabRole.RoleId))
+                {
+                    if (request.commission < 0 || request.commission > 100) throw new BadRequestException("Commission phải nằm trong 0-100");
+                    if (string.IsNullOrEmpty(request.contractURL)) throw new BadRequestException("Phải cần có contract URL");
+                    technicalConferenceDetail.Commission = request.commission;
+                    technicalConferenceDetail.ContractUrl = request.contractURL;
+                }
+                await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
+
+                    await _unitOfWork.CommitAsync();
                 return await GetConferenceBasicAsync(toBeCreatedConference.ConferenceId);
             }
             catch (Exception)
