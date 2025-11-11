@@ -20,7 +20,6 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PricePhase>> GetAllPricePhasesAsync();
         // Additional methods for CRUD operations on PricePhase
         Task<int> CreatePricePhasesForConferencePriceAsync(string conferencePriceId, List<PricePhase> pricePhases);
-        Task<PricePhase> GetPricePhase
     }
     public class PricePhaseRepository : GenericRepository<PricePhase>, IPricePhaseRepository
     {
