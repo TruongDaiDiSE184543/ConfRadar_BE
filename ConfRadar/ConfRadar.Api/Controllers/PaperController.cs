@@ -230,7 +230,7 @@ namespace ConfRadar.Api.Controllers
         //    var result = await _serviceManager.PaperService.GetAllAssignedPapersToAReviewer(userId,conferenceId);
         //    return Ok(ApiResponse<List<PapersAssignedToReviewerResponse>>.SuccessResponse(result, "Lấy thành công papers đã assigned cho reviewer"));
         //}
-        //[Authorize(Roles = "Local Reviewer, External Reviewer")]
+        [Authorize(Roles = "Local Reviewer, External Reviewer")]
         [HttpGet("get-assigned-papers")]
         public async Task<IActionResult> GetAssignedPapersByReviewerId([FromQuery] string? confId)
         {
