@@ -4,53 +4,64 @@ using System.ComponentModel.DataAnnotations;
 namespace ConfRadar.Services.DTOs.ConferenceStep
 {
     // Step 1: Basic Conference Information
+    // DÁN PHIÊN BẢN NÀY ĐỂ THAY THẾ DTO CŨ CỦA BẠN
+
     public class CreateTechnicalConferenceBasicRequest
     {
-        [Required(ErrorMessage = "Tên hội nghị là bắt buộc")]
-        [MaxLength(255)]
+        [Required(ErrorMessage = "Tên hội nghị là bắt buộc.")]
+        [MaxLength(255, ErrorMessage = "Tên hội nghị không được vượt quá 255 ký tự.")]
         public string ConferenceName { get; set; }
 
-        [MaxLength(500)]
+        [MaxLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự.")]
         public string Description { get; set; }
 
-        [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
+        [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc.")]
         public DateOnly StartDate { get; set; }
 
-        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
+        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc.")]
         public DateOnly EndDate { get; set; }
-        [Required(ErrorMessage = "Tổng số slot là bắt buộc")]
+
+        [Required(ErrorMessage = "Tổng số vé là bắt buộc.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Tổng số vé phải là một số dương.")]
         public int TotalSlot { get; set; }
 
-        [MaxLength(255)]
-        public string? Address { get; set; }
+        [Required(ErrorMessage = "Địa chỉ là bắt buộc.")]
+        [MaxLength(255, ErrorMessage = "Địa chỉ không được vượt quá 255 ký tự.")]
+        public string Address { get; set; }
 
+        [Required(ErrorMessage = "Ảnh bìa là bắt buộc.")]
         public IFormFile BannerImageFile { get; set; }
+
+        // Thuộc tính này chỉ dùng nội bộ, không cần validation
         public string? bannerImageFileUrl { get; set; }
 
-        [Required(ErrorMessage = "Bạn cần xác định hội nghị này do nội bộ tổ chức hay không")]
+        [Required(ErrorMessage = "Bạn cần xác định hội nghị có do nội bộ tổ chức hay không.")]
         public bool? IsInternalHosted { get; set; }
-        [Required(ErrorMessage = "Đây có phải là hội nghị nghiên cứu không?")]
 
+        [Required(ErrorMessage = "Bạn cần xác định đây có phải là hội nghị nghiên cứu không.")]
         public bool? IsResearchConference { get; set; }
 
-        [Required(ErrorMessage = "ID danh mục là bắt buộc")]
+        [Required(ErrorMessage = "ID danh mục là bắt buộc.")]
         [MaxLength(50)]
         public string ConferenceCategoryId { get; set; }
 
-        [Required(ErrorMessage = "ID thành phố là bắt buộc")]
+        [Required(ErrorMessage = "ID thành phố là bắt buộc.")]
         public string CityId { get; set; }
-        [Required(ErrorMessage = "Ngày bắt đầu bán vé là bắt buộc")]
+
+        [Required(ErrorMessage = "Ngày bắt đầu bán vé là bắt buộc.")]
         public DateOnly TicketSaleStart { get; set; }
-        [Required(ErrorMessage = "Ngày kết thúc bán vé là bắt buộc")]
+
+        [Required(ErrorMessage = "Ngày kết thúc bán vé là bắt buộc.")]
         public DateOnly TicketSaleEnd { get; set; }
-        //public string? createdby {  get; set; }
-        [Required(ErrorMessage = "Đối tượng mục tiêu là bắt buộc")]
-        public string? targetAudienceTechnicalConference { get; set; }
-        [Required(ErrorMessage = "Cần có URL của hợp đồng")]
-        public string contractURL { get; set; }
-        [Required]
-        [Range(0, 100)]
-        public int commission { get; set; }
+
+        [Required(ErrorMessage = "Đối tượng mục tiêu là bắt buộc.")]
+        public string targetAudienceTechnicalConference { get; set; }
+
+        // Các trường dành riêng cho Collaborator, không bắt buộc với Organizer
+        public string? contractURL { get; set; }
+
+        [Range(0, 100, ErrorMessage = "Hoa hồng phải nằm trong khoảng từ 0 đến 100.")]
+        public int? commission { get; set; }
     }
 
     // Step 2: Price Phase and Conference Prices
