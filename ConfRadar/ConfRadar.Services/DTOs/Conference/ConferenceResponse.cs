@@ -174,6 +174,8 @@ namespace ConfRadar.Services.DTOs.Conference
         public List<ConferenceSessionWithSpeakersResponse>? Sessions { get; set; }
         public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
         public List<ConferenceTimelineResponse>? ConferenceTimelines { get; set; } // Include conference timeline data
+        public PurchasedInfo? purchasedInfo { get; set; }
+
     }
 
     public class ResearchConferenceDetailResponse
@@ -223,6 +225,14 @@ namespace ConfRadar.Services.DTOs.Conference
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
         public List<ConferenceTimelineResponse>? ConferenceTimelines { get; set; } // Include conference timeline data
+        public PurchasedInfo? purchasedInfo { get; set; }
+    }
+
+    public class PurchasedInfo
+    {
+        public string ticketId {  get; set; }
+        public string conferencePriceId {  get; set; }
+        public string pricePhaseId {  get; set; }
     }
 
     public class ConferencePolicyResponse

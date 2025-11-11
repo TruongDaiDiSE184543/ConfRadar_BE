@@ -22,7 +22,7 @@ namespace ConfRadar.Services.Services
         Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
 
         // Endpoint 2: Get detailed technical conference data
-        Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId);
+        Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId,string? userId);
 
         // Endpoint 3: Get conferences by status ID with filtering
         Task<PagedResult<ConferenceResponse>> GetConferencesByStatusAsync(string conferenceStatusId, int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
@@ -40,7 +40,7 @@ namespace ConfRadar.Services.Services
         Task<bool> UpdateConferenceStatusAsync(string conferenceId, string newStatusName, string? reason = null);
 
         // NEW ENDPOINT 7: Get detailed research conference data
-        Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId);
+        Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId,string? userId);
 
         // NEW ENDPOINT 8: Get research conference step completion status
         Task<PagedResult<DTOs.Conference.ResearchConferenceStepCompletionStatusResponse>> GetResearchConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
@@ -253,8 +253,17 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId)
+        public async Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId,string? userId)
         {
+            string ticketId = "", pricePhaseId = "", conferencePriceId = "";
+            if (userId != null)
+            {
+                var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
+                ticketId = ticket?.TicketId;
+                pricePhaseId = ticket?.PricePhaseId;
+                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferenceId;
+            }
+
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
@@ -372,7 +381,13 @@ namespace ConfRadar.Services.Services
                         TotalSlot = pp.TotalSlot,
                         AvailableSlot = pp.AvailableSlot
                     }).ToList()
-                }).ToList()
+                }).ToList(),
+                purchasedInfo = new PurchasedInfo
+                {
+                    ticketId = ticketId,
+                    conferencePriceId = conferencePriceId,
+                    pricePhaseId = pricePhaseId
+                }
             };
         }
 
@@ -692,8 +707,16 @@ namespace ConfRadar.Services.Services
 
         }
 
-        public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId)
+        public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId,string? userId)
         {
+            string ticketId = "", pricePhaseId = "", conferencePriceId = "";
+            if (userId != null)
+            {
+                var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
+                ticketId = ticket?.TicketId;
+                pricePhaseId = ticket?.PricePhaseId;
+                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferenceId;
+            }
             // Get the main conference with related data
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferenceCategory)
@@ -871,7 +894,13 @@ namespace ConfRadar.Services.Services
                         TotalSlot = pp.TotalSlot,
                         AvailableSlot = pp.AvailableSlot
                     }).ToList()
-                }).ToList()
+                }).ToList(),
+                purchasedInfo = new PurchasedInfo
+                {
+                    ticketId = ticketId,
+                    conferencePriceId = conferencePriceId,
+                    pricePhaseId = pricePhaseId
+                }
             };
         }
 
