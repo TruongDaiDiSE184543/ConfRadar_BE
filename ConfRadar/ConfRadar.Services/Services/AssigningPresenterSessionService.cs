@@ -16,9 +16,9 @@ namespace ConfRadar.Services.Services
         Task<bool> ApprovePresenterChangeRequest(ApprovePresenterChangeRequest request, string approvedById);
         Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests();
 
-        Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
+        Task<SessionChangeRequestResponse> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
         Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests();
-        Task<string> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
+        Task<bool> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
     }
 
     public class AssigningPresenterSessionService : IAssigningPresenterSessionService
