@@ -30,7 +30,7 @@ namespace ConfRadar.Services
         public IFavouriteConferenceService FavoriteConferenceService { get; }
         public IReportService ReportService { get; }
         public IContractService ContractService { get; }
-
+        public IWalletService WalletService { get; }
         //public ICityService CityService { get; }
 
     }
@@ -64,6 +64,7 @@ namespace ConfRadar.Services
         private readonly IReportService _reportService;
         private readonly IAssigningPresenterSessionService _assigningPresenterSessionService;
         private readonly IContractService _contractService;
+        private readonly IWalletService _walletService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -92,7 +93,9 @@ namespace ConfRadar.Services
             IReportService reportService,
 
             IContractService contractService,
-            IAssigningPresenterSessionService assigningPresenterSessionService
+            IAssigningPresenterSessionService assigningPresenterSessionService,
+            IWalletService walletService
+
            )
         {
             _authService = authService;
@@ -121,6 +124,7 @@ namespace ConfRadar.Services
 
             _reportService = reportService;
             _assigningPresenterSessionService = assigningPresenterSessionService;
+            _walletService = walletService;
         }
 
         public IAuthService AuthService => _authService;
@@ -157,7 +161,7 @@ namespace ConfRadar.Services
         public IContractService ContractService => _contractService;
         public IAssigningPresenterSessionService AssigningPresenterSessionService => _assigningPresenterSessionService;
 
-
+        public IWalletService WalletService => _walletService;
     }
 
 }

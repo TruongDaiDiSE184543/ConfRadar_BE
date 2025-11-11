@@ -428,6 +428,7 @@ namespace ConfRadar.Services.Services
                 ConferencePriceId = request.ConferencePriceId,
                 ConferenceSessionIds = sessionIdsList,
                 ConferenceId = conferencePrice.ConferenceId,
+                ResearchConferencePhaseId = activeResearchConferencePhase.ResearchConferencePhaseId,
                 PaymentConferenceLockKey = lockKeyConference,
                 PaymentPhaseLockKey = lockKeyPhase,
                 PricePhaseId = currentPhase.PricePhaseId,
@@ -852,6 +853,7 @@ namespace ConfRadar.Services.Services
             {
                 PaperId = Guid.NewGuid().ToString(),
                 ConferenceId = transacDataHolder.ConferenceId,
+                ResearchConferencePhaseId = transacDataHolder.ResearchConferencePhaseId,
                 CreatedAt = ExtensionHelper.GetVietnamTime(),
                 PaperPhaseId = currentPaperPhase.PaperPhaseId,
                 Title = transacDataHolder.Title,

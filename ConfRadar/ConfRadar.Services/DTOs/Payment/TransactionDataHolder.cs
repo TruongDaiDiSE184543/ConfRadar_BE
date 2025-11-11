@@ -10,6 +10,7 @@
         public string ConferenceId { get; set; }
         public string PaymentConferenceLockKey { get; set; }
         public string PaymentPhaseLockKey { get; set; }
+        public string ResearchConferencePhaseId { get; set; } = null;
         public List<string> ConferenceSessionIds { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }

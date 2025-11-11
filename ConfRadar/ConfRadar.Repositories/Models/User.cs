@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class User
 {
@@ -83,4 +86,6 @@ public partial class User
     public virtual ICollection<UserRefreshToken> UserRefreshTokens { get; set; } = new List<UserRefreshToken>();
 
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+    public virtual Wallet? Wallet { get; set; }
 }

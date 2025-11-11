@@ -569,31 +569,19 @@ namespace ConfRadar.Services.Services
 
             //var dateNow = ExtensionHelper.GetVietnamDate();
             string revisionDeadlineId = string.Empty;
-            var researchConferencePhasesFound = paper.Conference.ResearchConferencePhases;
-            foreach (var phase in researchConferencePhasesFound)
+            var researchConferencePhasesFound = paper.ResearchConferencePhase;
+            if (researchConferencePhasesFound == null)
             {
-                if (phase.ReviseStartDate != null && phase.ReviseEndDate != null && dateNow >= phase.ReviseStartDate && dateNow <= phase.ReviseEndDate)
-                {
-                    foreach (var deadline in phase.RevisionRoundDeadlines)
-                    {
-                        if (deadline.EndSubmissionDate != null && deadline.StartSubmissionDate != null && deadline.StartSubmissionDate <= dateNow && dateNow <= deadline.EndSubmissionDate)
-                        {
-                            revisionDeadlineId = deadline.RevisionRoundDeadlineId;
-
-                            break;
-                        }
-                    }
-                    if (!string.IsNullOrEmpty(revisionDeadlineId))
-                    {
-                        break;
-                    }
-                }
+                throw new NotFoundException("Không tìm thấy các giai đoạn trong hội nghị nghiên cứu");
             }
-            if (string.IsNullOrEmpty(revisionDeadlineId))
+            var researchConferenceDeadLine = researchConferencePhasesFound.RevisionRoundDeadlines;
+
+            var validRevisionDeadline = researchConferenceDeadLine.FirstOrDefault(rcd => rcd.StartSubmissionDate <= dateNow && dateNow <= rcd.EndSubmissionDate);
+            if (validRevisionDeadline == null)
             {
-                throw new NotFoundException($"Không thể tìm thấy bất cứ hạn chót revision trong hệ thống vui lòng liên hệ conference organizer để xử lí");
+                throw new NotFoundException("Không tìm thấy các deadline hợp lệ");
             }
-
+            revisionDeadlineId = validRevisionDeadline.RevisionRoundDeadlineId;
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -621,7 +609,7 @@ namespace ConfRadar.Services.Services
                     {
                         throw new BadRequestException($"Revision paper id {paper.RevisionPaperId} không tìm thấy trong hệ thống");
                     }
-
+                    revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
                     if (!string.IsNullOrEmpty(revisionDeadlineId))
                     {
                         var revisionPaperSubmissionFound = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByRevisionPaperIdAndDeadlineId(paper.RevisionPaperId, revisionDeadlineId);

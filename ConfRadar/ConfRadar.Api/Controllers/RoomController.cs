@@ -220,7 +220,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> Roomavailability(string roomId, [FromQuery] DateOnly dayStart, [FromQuery] DateOnly dayEnd)
         {
             var result = await _serviceManager.RoomService.RoomAvailableBetweenDate(roomId, dayStart, dayEnd);
-            return Ok(ApiResponse<List<RoomAvailablity>>.SuccessResponse(result,"lấy danh sách ngày trống thành công"));
+            return Ok(ApiResponse<List<RoomAvailablity>>.SuccessResponse(result, "lấy danh sách ngày trống thành công"));
         }
 
         [Authorize(Roles = "Conference Organizer, Admin, Collaborator")]

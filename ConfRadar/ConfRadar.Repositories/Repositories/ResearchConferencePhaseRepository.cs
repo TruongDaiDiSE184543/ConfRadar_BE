@@ -65,7 +65,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<ResearchConferencePhase> GetResearchConferencePhaseByPaperId(string PaperId)
         {
-            var paperWithResearchPhase =  await _context.Papers.Include(p => p.ResearchConferencePhase).FirstOrDefaultAsync(p => p.PaperId == PaperId);
+            var paperWithResearchPhase = await _context.Papers.Include(p => p.ResearchConferencePhase).FirstOrDefaultAsync(p => p.PaperId == PaperId);
             return paperWithResearchPhase?.ResearchConferencePhase;
         }
     }

@@ -1,6 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -138,6 +140,10 @@ public partial class ConfRadarDbContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     public virtual DbSet<WaitListStatus> WaitListStatuses { get; set; }
+
+    public virtual DbSet<Wallet> Wallets { get; set; }
+
+    public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
     public static string GetConnectionString(string connectionStringName)
     {
@@ -1268,6 +1274,41 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.WaitListStatusId).HasMaxLength(50);
             entity.Property(e => e.Name).HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<Wallet>(entity =>
+        {
+            entity.HasKey(e => e.WalletId).HasName("Wallet_pkey");
+
+            entity.ToTable("Wallet");
+
+            entity.HasIndex(e => e.UserId, "Wallet_UserId_key").IsUnique();
+
+            entity.Property(e => e.WalletId).HasMaxLength(50);
+            entity.Property(e => e.Balance).HasPrecision(18, 2);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.UserId).HasMaxLength(50);
+
+            entity.HasOne(d => d.User).WithOne(p => p.Wallet)
+                .HasForeignKey<Wallet>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<WalletTransaction>(entity =>
+        {
+            entity.HasKey(e => e.WalletTransactionId).HasName("WalletTransaction_pkey");
+
+            entity.ToTable("WalletTransaction");
+
+            entity.Property(e => e.WalletTransactionId).HasMaxLength(50);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.Description).HasMaxLength(255);
+            entity.Property(e => e.TransactionType).HasMaxLength(50);
+            entity.Property(e => e.WalletId).HasMaxLength(50);
+
+            entity.HasOne(d => d.Wallet).WithMany(p => p.WalletTransactions).HasForeignKey(d => d.WalletId);
         });
 
         OnModelCreatingPartial(modelBuilder);
