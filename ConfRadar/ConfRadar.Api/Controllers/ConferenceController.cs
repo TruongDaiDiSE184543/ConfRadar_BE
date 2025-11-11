@@ -57,7 +57,8 @@ namespace ConfRadar.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetTechnicalConferenceDetail(string conferenceId)
         {
-            var conferenceDetail = await _serviceManager.ConferenceService.GetTechnicalConferenceDetailAsync(conferenceId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var conferenceDetail = await _serviceManager.ConferenceService.GetTechnicalConferenceDetailAsync(conferenceId, userId);
             return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully"));
         }
 
@@ -123,7 +124,8 @@ namespace ConfRadar.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
         {
-            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId,userId);
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully"));
         }
 
