@@ -102,12 +102,11 @@ namespace ConfRadar.Services.Services
                 refundRequestReason = "Xin lỗi bạn, hiện tại chính sách này không cho phép được hoàn tiền";
                 finalGlobalStatus = rejectedGlobalStatus;
             }
-
-            var validRefundPolicy = refundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow);
+            var currentPhaseStartDate = ticket.PricePhase?.StartDate;
+            var validRefundPolicy = refundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow && currentPhaseStartDate <= dateNow && currentPhaseStartDate != null );
             if (validRefundPolicy == null)
             {
-                refundRequestReason = "Xin lỗi bạn, hiện tại bạn đã quá hạn các chính sách hoàn tiền trong hệ thống.";
-                finalGlobalStatus = rejectedGlobalStatus;
+                throw new BadRequestException("Xin lỗi bạn, hiện tại bạn đã quá hạn hoặc không thuộc chính sách hoàn tiền hợp lệ.");
             }
             else
             {
