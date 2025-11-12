@@ -390,105 +390,95 @@ namespace ConfRadar.Services.Services
 
         public async Task<TechnicalConferenceBasicStepResponse> CreateTechnicalConferenceBasicAsync(CreateTechnicalConferenceBasicRequest request, string userid)
         {
+            
             if (string.IsNullOrWhiteSpace(request.ConferenceName))
                 throw new BadRequestException("Tên hội nghị là bắt buộc.");
-            if (string.IsNullOrWhiteSpace(request.Address))
-                throw new BadRequestException("Địa chỉ là bắt buộc.");
-            if (string.IsNullOrWhiteSpace(request.ConferenceCategoryId))
-                throw new BadRequestException("ID danh mục hội nghị là bắt buộc.");
-            if (string.IsNullOrWhiteSpace(request.CityId))
-                throw new BadRequestException("ID thành phố là bắt buộc.");
-            if (string.IsNullOrWhiteSpace(request.targetAudienceTechnicalConference))
-                throw new BadRequestException("Đối tượng tham dự là bắt buộc đối với hội nghị kỹ thuật.");
+            
+            if (request.IsResearchConference == true)
+                throw new BadRequestException("Chức năng này dùng để tạo hội nghị kỹ thuật, 'IsResearchConference' phải là false.");
+            if (request.TotalSlot <= 0)
+                throw new BadRequestException("Tổng số vé phải là một số dương.");
+
+            
+            if (!IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd).Result)
+                throw new BadRequestException("Ngày tháng cung cấp không hợp lệ. Vui lòng đảm bảo các ngày không nằm trong quá khứ, ngày bắt đầu/kết thúc theo đúng thứ tự, và ngày bán vé phải kết thúc trước khi hội nghị bắt đầu.");
+
+            
+            if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
+                throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
+            if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
+                throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
+
+            // 1.5. Validation file banner
+            if (request.BannerImageFile == null)
+                throw new BadRequestException("Ảnh bìa (banner) là bắt buộc.");
+            if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
+                throw new BadRequestException($"Loại ảnh bìa không được hỗ trợ: '{request.BannerImageFile.ContentType}'.");
+            const long maxBannerSize = 5 * 1024 * 1024; // 5 MB
+            if (request.BannerImageFile.Length > maxBannerSize)
+                throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
+
+            // 1.6. Validation dựa trên vai trò người dùng (Collaborator)
+            var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userid);
+            var roleNames = userRoles.Select(ur => ur.Role?.RoleName).ToHashSet(); // Giả sử có navigation property
+            bool isCollaborator = roleNames.Contains(SystemRoleEnum.Collaborator.GetDescription());
+
+            string? contractLink = null; // Biến để lưu link hợp đồng sau khi upload
+            if (isCollaborator)
+            {
+                if (request.contractURL == null)
+                    throw new BadRequestException("Cần phải có tệp hợp đồng (contractURL) cho cộng tác viên.");
+                if (request.commission == null || request.commission < 0 || request.commission > 100)
+                    throw new BadRequestException("Hoa hồng (commission) phải nằm trong khoảng từ 0 đến 100 cho cộng tác viên.");
+                if (!_objectStorageFileService.IsValidDocumentFile(request.contractURL))
+                    throw new BadRequestException($"Không hỗ trợ định dạng hợp đồng '{request.contractURL.ContentType}'. Vui lòng sử dụng PDF hoặc DOC/DOCX.");
+            }
+            
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var category = await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId);
-                if (category == null)
+                
+
+                // 2.1. Tải file banner
+                using var bannerStream = request.BannerImageFile.OpenReadStream();
+                var bannerFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
+                request.bannerImageFileUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), bannerFileName, bannerStream, request.BannerImageFile.ContentType);
+
+                // 2.2. Tải file hợp đồng (nếu là collaborator)
+                if (isCollaborator)
                 {
-                    throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
+                    using var contractStream = request.contractURL!.OpenReadStream();
+                    var contractFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.contractURL.FileName);
+                    contractLink = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), contractFileName, contractStream, request.contractURL.ContentType);
                 }
 
-                //Banner image must be image
-                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile)) throw new BadRequestException($"Không hỗ trợ banner ảnh với đuôi {request.BannerImageFile.ContentType}");
+                // 2.3. Xác định trạng thái ban đầu
+                string initialStatusName = isCollaborator ? ConferenceStatusEnum.Draft.GetDescription() : ConferenceStatusEnum.Preparing.GetDescription();
+                var initialStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(initialStatusName);
 
+                // 2.4. Tạo Conference
+                var conference = ConferenceStepBasicCreateToModel.creatBasicConference(request, initialStatus, ExtensionHelper.GetVietnamDate(), userid);
+                await _unitOfWork.ConferenceRepository.CreateConferenceAsync(conference);
 
-                //Must be conference of type technical
-                if (!request.IsResearchConference.HasValue || request.IsResearchConference.Value) throw new BadRequestException("Hội nghị công nghệ yêu cầu IsResearchConference là false");
-
-                if (request.BannerImageFile == null)
-                    throw new BadRequestException("Ảnh bìa (banner) là bắt buộc để tạo hội nghị.");
-
-                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
-                    throw new BadRequestException($"Loại ảnh bìa không được hỗ trợ: '{request.BannerImageFile.ContentType}'. Vui lòng sử dụng định dạng ảnh hợp lệ.");
-
-                const long maxFileSize = 5 * 1024 * 1024; // 5 MB
-                if (request.BannerImageFile.Length > maxFileSize)
-                    throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
-
-                using var stream = request.BannerImageFile.OpenReadStream();
-                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
-                request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
-                request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
-
-
-
-                //Must have category
-                if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
-                    throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
-
-                //Cần có city id
-                if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
-                    throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
-
-
-                // check if any of the date is before today and ticketsale Start/end must before start/end date
-
-                var isValidDateValues = IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
-                if (!isValidDateValues.Result) throw new BadRequestException("Ngày tháng cung cấp không hợp lệ. Vui lòng đảm bảo các ngày không nằm trong quá khứ, ngày bắt đầu/kết thúc theo đúng thứ tự, và ngày kết thúc bán vé phải trước ngày bắt đầu hội nghị.");
-
-                // must have target audience for the technical detail
-                if (string.IsNullOrEmpty(request.targetAudienceTechnicalConference)) throw new BadRequestException("Cần phải có khán giả hướng tới cho buổi hội nghị công nghệ");
-
-
-                //Total slot for conference must be > 0
-                if (request.TotalSlot < 0) throw new Exception("Total slot must be positive");
-
-                //get current time for conference.createAt
-                var vietNamTimeZoneNow = ExtensionHelper.GetVietnamDate();
-
-                //check if user is in role Organizer => confstatus = preparing
-                //If user is in role Collaborator => confstatus = pendings
-                var userRole = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userid);
-                var OrganizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("Conference Organizer");
-                var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("Collaborator");
-                var roleOfUser = userRole.Select(S => S.RoleId);
-                Conference toBeCreatedConference;
-
-
-                var confStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
-                if (roleOfUser.Contains(OrganizerRole.RoleId)) toBeCreatedConference = ConferenceStepBasicCreateToModel.creatBasicConference(request, confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), vietNamTimeZoneNow, userid);
-                else toBeCreatedConference = ConferenceStepBasicCreateToModel.creatBasicConference(request, confStatus.Where(s => s.ConferenceStatusName == "Draft").FirstOrDefault(), vietNamTimeZoneNow, userid);
-
-                await _unitOfWork.ConferenceRepository.CreateConferenceAsync(toBeCreatedConference);
-                TechnicalConferenceDetail technicalConferenceDetail = new TechnicalConferenceDetail
+                // 2.5. Tạo TechnicalConferenceDetail
+                var technicalConferenceDetail = new TechnicalConferenceDetail
                 {
-                    ConferenceId = toBeCreatedConference.ConferenceId,
+                    ConferenceId = conference.ConferenceId,
                     TargetAudience = request.targetAudienceTechnicalConference,
-
                 };
-
-                if (roleOfUser.Contains(collabRole.RoleId))
+                if (isCollaborator)
                 {
-                    if (request.commission < 0 || request.commission > 100) throw new BadRequestException("Commission phải nằm trong 0-100");
-                    if (string.IsNullOrEmpty(request.contractURL)) throw new BadRequestException("Phải cần có contract URL");
                     technicalConferenceDetail.Commission = request.commission;
-                    technicalConferenceDetail.ContractUrl = request.contractURL;
+                    technicalConferenceDetail.ContractUrl = contractLink; 
                 }
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
 
-                    await _unitOfWork.CommitAsync();
-                return await GetConferenceBasicAsync(toBeCreatedConference.ConferenceId);
+                // 2.6. Commit
+                await _unitOfWork.CommitAsync();
+
+                
+
+                return await GetConferenceBasicAsync(conference.ConferenceId);
             }
             catch (Exception)
             {
@@ -529,92 +519,113 @@ namespace ConfRadar.Services.Services
         public async Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new BadRequestException($"Hội nghị với ID {conferenceId} không tìm thấy");
+            if (conference == null) throw new NotFoundException($"Hội nghị với ID {conferenceId} không tìm thấy");
 
+           
+            var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
+            if (technicalDetail == null) throw new NotFoundException($"Không tìm thấy chi tiết kỹ thuật (technical detail) cho hội nghị ID {conferenceId}");
+
+
+            
             if (conference.CreatedBy != userId)
-            {
-                throw new BadRequestException("Bạn không có quyền cập nhật hội nghị này.");
-            }
-
-            var conferenceStatusName = conference.ConferenceStatusId;
+                throw new ForbiddenException("Bạn không có quyền cập nhật hội nghị này.");
             await EnsureConferenceIsEditable(conference);
+
+          
 
             var finalStartDate = request.StartDate ?? conference.StartDate;
             var finalEndDate = request.EndDate ?? conference.EndDate;
             var finalTicketSaleStart = request.TicketSaleStart ?? conference.TicketSaleStart;
             var finalTicketSaleEnd = request.TicketSaleEnd ?? conference.TicketSaleEnd;
-            bool isValidDateValues = await IsValidConferenceAndTicketSaleDates(
-            finalStartDate.Value,
-            finalEndDate.Value,
-            finalTicketSaleStart.Value,
-            finalTicketSaleEnd.Value
-        );
-
-            if (!isValidDateValues) throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn và tất cả phải trước hôm nay");
-
-            if (request.TotalSlot <= 0) throw new BadRequestException("Totalslot phải lớn hơn 0");
-
-
-            if (!string.IsNullOrWhiteSpace(request.ConferenceCategoryId) && request.ConferenceCategoryId != conference.ConferenceCategoryId)
+            if (finalStartDate.HasValue && finalEndDate.HasValue && finalTicketSaleStart.HasValue && finalTicketSaleEnd.HasValue)
             {
-                if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
-                    throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
-            }
-            if (!string.IsNullOrWhiteSpace(request.CityId) && request.CityId != conference.CityId)
-            {
-                if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
-                    throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
+                if (!IsValidConferenceAndTicketSaleDates(finalStartDate.Value, finalEndDate.Value, finalTicketSaleStart.Value, finalTicketSaleEnd.Value).Result)
+                    throw new BadRequestException("Ngày tháng cung cấp không hợp lệ.");
             }
 
-            if (request.BannerImageFile != null)
+            
+            if (request.TotalSlot.HasValue)
             {
-                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
-                    throw new BadRequestException($"Loại ảnh bìa không được hỗ trợ: '{request.BannerImageFile.ContentType}'. Vui lòng sử dụng định dạng ảnh hợp lệ.");
-
-                const long maxFileSize = 5 * 1024 * 1024; // 5 MB
-                if (request.BannerImageFile.Length > maxFileSize)
-                    throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
+                int soldTickets = (conference.TotalSlot ?? 0) - (conference.AvailableSlot ?? 0);
+                if (request.TotalSlot.Value < soldTickets)
+                    throw new BadRequestException($"Không thể giảm tổng số vé xuống {request.TotalSlot.Value} vì đã có {soldTickets} vé được bán.");
             }
 
-            var technicaldetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
-            if (technicaldetail != null) throw new BadRequestException($"Không tìm thấy technical detail với ID {conferenceId}");
+           
+            if (request.BannerImageFile != null && !_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
+                throw new BadRequestException("Định dạng ảnh bìa không được hỗ trợ.");
+
+            var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(conference.CreatedBy);
+            var roleNames = userRoles.Select(ur => ur.Role?.RoleName).ToHashSet();
+            bool isCollaborator = roleNames.Contains(SystemRoleEnum.Collaborator.GetDescription());
+
+            if (isCollaborator && request.contractURL != null && !_objectStorageFileService.IsValidDocumentFile(request.contractURL))
+                throw new BadRequestException("Định dạng tệp hợp đồng không được hỗ trợ.");
+
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
+               
+
+                // 2.1. Cập nhật các thuộc tính của Conference
                 conference.ConferenceName = request.ConferenceName ?? conference.ConferenceName;
                 conference.Description = request.Description ?? conference.Description;
-                conference.StartDate = request.StartDate ?? conference.StartDate;  // Fixed nullable DateOnly
-                conference.EndDate = request.EndDate ?? conference.EndDate;         // Fixed nullable DateOnly
-                conference.TotalSlot = request.TotalSlot ?? conference.TotalSlot;
-                conference.AvailableSlot = request.TotalSlot ?? conference.AvailableSlot; // Update available slot if total is changed
+                conference.StartDate = request.StartDate ?? conference.StartDate;
+                conference.EndDate = request.EndDate ?? conference.EndDate;
                 conference.Address = request.Address ?? conference.Address;
-                //conference.IsInternalHosted = request.IsInternalHosted ?? conference.IsInternalHosted;
-                //conference.IsResearchConference = request.IsResearchConference ?? conference.IsResearchConference;
                 conference.ConferenceCategoryId = request.ConferenceCategoryId ?? conference.ConferenceCategoryId;
                 conference.CityId = request.CityId ?? conference.CityId;
                 conference.TicketSaleStart = request.TicketSaleStart ?? conference.TicketSaleStart;
                 conference.TicketSaleEnd = request.TicketSaleEnd ?? conference.TicketSaleEnd;
-                technicaldetail.TargetAudience = request.targetaudience ?? technicaldetail.TargetAudience;
-                technicaldetail.ContractUrl = request.contractURL ?? technicaldetail.ContractUrl;
-                technicaldetail.Commission = request.commission ?? technicaldetail.Commission;
 
+                // Cập nhật TotalSlot và AvailableSlot một cách chính xác
+                if (request.TotalSlot.HasValue)
+                {
+                    conference.TotalSlot = request.TotalSlot.Value;
+                    conference.AvailableSlot = request.TotalSlot.Value;
+                }
+
+                // 2.2. Tải và cập nhật URL file banner nếu có
                 if (request.BannerImageFile != null)
                 {
                     using var stream = request.BannerImageFile.OpenReadStream();
                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
-                    conference.BannerImageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
+                    conference.BannerImageUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
                 }
 
+                // 2.3. Cập nhật các thuộc tính của TechnicalDetail
+                technicalDetail.TargetAudience = request.targetaudience ?? technicalDetail.TargetAudience;
+
+                // Chỉ cho phép Collaborator cập nhật commission và contract
+                if (isCollaborator)
+                {
+                    technicalDetail.Commission = request.commission ?? technicalDetail.Commission;
+
+                    // Tải và cập nhật URL file hợp đồng nếu có
+                    if (request.contractURL != null)
+                    {
+                        using var stream = request.contractURL.OpenReadStream();
+                        var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.contractURL.FileName);
+                        technicalDetail.ContractUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), uniqueFileName, stream, request.contractURL.ContentType);
+                    }
+                }
+
+                // 2.4. Lưu các thay đổi vào DB
                 await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
+                await _unitOfWork.TechnicalConferenceDetailRepository.UpdateTechnicalAsync(technicalDetail);
+
                 await _unitOfWork.CommitAsync();
+
+              
+
                 return await GetConferenceBasicAsync(conferenceId);
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                throw ex;
+                throw;
             }
-
         }
 
         #endregion
@@ -1669,7 +1680,7 @@ namespace ConfRadar.Services.Services
             {
                 using var stream = request.BannerImageFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
-                conference.BannerImageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
+                conference.BannerImageUrl =_objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
             }
 
             await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
@@ -1986,7 +1997,7 @@ namespace ConfRadar.Services.Services
                             {
                                 using var stream = mediaRequest.MediaFile.OpenReadStream();
                                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(mediaRequest.MediaFile.FileName);
-                                mediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
+                                mediaUrl =_objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencesessionmedia.ToString(), uniqueFileName, stream, mediaRequest.MediaFile.ContentType);
                             }
                             var conferenceSessionMedia = mediaRequest.ToModel(conferenceSession.ConferenceSessionId, mediaUrl);
                             await _unitOfWork.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(conferenceSessionMedia);
@@ -2150,7 +2161,7 @@ namespace ConfRadar.Services.Services
             {
                 using var stream = request.File.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
-                materialDownload.FileName = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
+                materialDownload.FileName = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
             }
 
             await _unitOfWork.MaterialDownloadRepository.UpdateMaterialDownloadAsync(materialDownload);

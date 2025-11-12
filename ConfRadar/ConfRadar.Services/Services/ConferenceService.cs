@@ -423,6 +423,7 @@ namespace ConfRadar.Services.Services
                 .OrderBy(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = pagedConferences.Select(conference => new ConferenceResponse
@@ -1570,6 +1571,7 @@ namespace ConfRadar.Services.Services
                 .OrderBy(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = new List<DTOs.Conference.ResearchConferenceDetailResponse>();
@@ -1752,19 +1754,25 @@ namespace ConfRadar.Services.Services
             string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
             string? userId = null, bool isOrganizer = false)
         {
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             IQueryable<Conference> query;
 
+            if(isOrganizer && !string.IsNullOrEmpty(conferenceStatusId)  && conferenceStatusId == draftStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException("Organizers không được phép xem hoặc lọc theo trạng thái 'Draft'.");
+            }
             if (isOrganizer)
             {
                 // Organizers can see all technical conferences
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => c.IsResearchConference == false || c.IsResearchConference == null).OrderByDescending(c => c.CreatedAt); ; // null means it's a technical conference by default
-            }
+                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) 
+                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId) ; 
+            }4
             else
             {
                 // Collaborators can only see technical conferences they created
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) && c.CreatedBy == userId).OrderByDescending(c => c.CreatedAt); ;
+                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) && c.CreatedBy == userId);
             }
 
             // Apply status filter if provided
@@ -1801,6 +1809,7 @@ namespace ConfRadar.Services.Services
                 .OrderBy(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = new List<DTOs.Conference.TechnicalConferenceDetailResponse>();
