@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class PricePhase
 {
@@ -18,9 +21,13 @@ public partial class PricePhase
 
     public string? ConferencePriceId { get; set; }
 
+    public string? ResearchConferencePhaseId { get; set; }
+
     public virtual ConferencePrice? ConferencePrice { get; set; }
 
     public virtual ICollection<RefundPolicy> RefundPolicies { get; set; } = new List<RefundPolicy>();
+
+    public virtual ResearchConferencePhase? ResearchConferencePhase { get; set; }
 
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }

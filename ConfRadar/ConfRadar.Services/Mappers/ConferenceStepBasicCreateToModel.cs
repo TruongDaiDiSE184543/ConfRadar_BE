@@ -5,7 +5,7 @@ namespace ConfRadar.Services.Mappers
 {
     public static class ConferenceStepBasicCreateToModel
     {
-        public static Conference creatBasicConference(CreateTechnicalConferenceBasicRequest request, Repositories.Models.ConferenceStatus status, DateOnly now, string userid)
+        public static Conference creatBasicConference(CreateTechnicalConferenceBasicRequest request, Repositories.Models.ConferenceStatus status, DateTime now, string userid)
         {
             var conferenceObject = new Conference
             {

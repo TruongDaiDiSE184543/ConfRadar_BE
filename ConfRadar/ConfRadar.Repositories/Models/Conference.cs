@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class Conference
 {
@@ -20,7 +23,7 @@ public partial class Conference
 
     public string? BannerImageUrl { get; set; }
 
-    public DateOnly? CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     public DateOnly? TicketSaleStart { get; set; }
 
