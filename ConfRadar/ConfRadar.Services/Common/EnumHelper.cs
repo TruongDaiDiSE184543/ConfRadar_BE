@@ -160,7 +160,8 @@ namespace ConfRadar.Services.Common
         Draft,
 
         [Description("Deleted")]
-        Deleted
+        Deleted,
+        Rejected,
     }
     public enum PaperPhaseEnum
     {
