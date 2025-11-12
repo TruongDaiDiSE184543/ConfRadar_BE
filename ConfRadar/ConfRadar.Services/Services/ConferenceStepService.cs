@@ -474,7 +474,7 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
 
                 await _unitOfWork.CommitAsync();
-                return await GetConferenceBasicAsync(toBeCreatedConference.ConferenceId);
+                return await GetConferenceBasicAsync(conference.ConferenceId);
 
             }
             catch (Exception)
@@ -541,12 +541,12 @@ namespace ConfRadar.Services.Services
             }
 
             
-            if (request.TotalSlot.HasValue)
-            {
-                int soldTickets = (conference.TotalSlot ?? 0) - (conference.AvailableSlot ?? 0);
-                if (request.TotalSlot.Value < soldTickets)
-                    throw new BadRequestException($"Không thể giảm tổng số vé xuống {request.TotalSlot.Value} vì đã có {soldTickets} vé được bán.");
-            }
+            //if (request.TotalSlot.HasValue)
+            //{
+            //    int soldTickets = (conference.TotalSlot ?? 0) - (conference.AvailableSlot ?? 0);
+            //    if (request.TotalSlot.Value < soldTickets)
+            //        throw new BadRequestException($"Không thể giảm tổng số vé xuống {request.TotalSlot.Value} vì đã có {soldTickets} vé được bán.");
+            //}
 
            
             if (request.BannerImageFile != null && !_objectStorageFileService.IsValidImageFile(request.BannerImageFile))

@@ -1767,7 +1767,7 @@ namespace ConfRadar.Services.Services
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
                     .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) 
                     && c.ConferenceStatusId != draftStatus.ConferenceStatusId) ; 
-            }4
+            }
             else
             {
                 // Collaborators can only see technical conferences they created
