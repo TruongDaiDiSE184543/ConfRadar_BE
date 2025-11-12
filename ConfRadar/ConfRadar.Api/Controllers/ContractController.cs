@@ -41,7 +41,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("users-for-reviewer-contract")]
-        public async Task<IActionResult> GetUsersForReviewerContract([FromQuery]GetUsersForReviewerContractRequest request)
+        public async Task<IActionResult> GetUsersForReviewerContract([FromQuery] GetUsersForReviewerContractRequest request)
         {
             var result = await _serviceManager.ContractService.GetUsersForReviewerContract(request);
             return Ok(ApiResponse<List<GetUsersForReviewerContractResponse>>.SuccessResponse(result, "Danh sách người dùng"));

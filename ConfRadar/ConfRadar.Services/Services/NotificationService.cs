@@ -69,7 +69,7 @@ namespace ConfRadar.Services.Services
             var pendingWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Pending.GetDescription());
             var notifiedWaitListStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Notified.GetDescription());
 
-            if (readyConferenceStatus == null|| pendingWaitListStatus==null || notifiedWaitListStatus==null)
+            if (readyConferenceStatus == null || pendingWaitListStatus == null || notifiedWaitListStatus == null)
             {
                 return;
             }

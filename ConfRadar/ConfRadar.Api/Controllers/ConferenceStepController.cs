@@ -1,7 +1,6 @@
 using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.ConferenceStep;
-using ConfRadar.Services.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -303,7 +302,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DeleteRefundPolicy(string refundPolicyId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStepService.DeleteRefundPolicyAsync(refundPolicyId,userId);
+            var result = await _serviceManager.ConferenceStepService.DeleteRefundPolicyAsync(refundPolicyId, userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Chính sách hoàn trả được xóa thành công"));
@@ -351,7 +350,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreateResearchConferenceDetail(string conferenceId, [FromBody] CreateResearchConferenceDetailRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var detail = await _serviceManager.ConferenceStepService.CreateResearchConferenceDetailAsync(conferenceId, request,userId);
+            var detail = await _serviceManager.ConferenceStepService.CreateResearchConferenceDetailAsync(conferenceId, request, userId);
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được tạo thành công"));
         }
 
@@ -368,7 +367,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdateResearchConferenceDetail(string conferenceId, [FromBody] UpdateResearchConferenceDetailRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var detail = await _serviceManager.ConferenceStepService.UpdateResearchConferenceDetailAsync(conferenceId, request,userId);
+            var detail = await _serviceManager.ConferenceStepService.UpdateResearchConferenceDetailAsync(conferenceId, request, userId);
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(detail, "Chi tiết hội nghị nghiên cứu được cập nhật thành công"));
         }
 
@@ -381,7 +380,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreateResearchConferencePhase(string conferenceId, [FromBody] CreateResearchConferencePhasesRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var phase = await _serviceManager.ConferenceStepService.CreateResearchConferencePhaseAsync(conferenceId, request,userId);
+            var phase = await _serviceManager.ConferenceStepService.CreateResearchConferencePhaseAsync(conferenceId, request, userId);
             return Ok(ApiResponse<CreatePhasesResponse>.SuccessResponse(phase, "Giai đoạn hội nghị nghiên cứu được tạo thành công"));
         }
 
@@ -397,7 +396,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdateResearchConferencePhase(string phaseId, [FromBody] UpdateResearchConferencePhaseRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var phase = await _serviceManager.ConferenceStepService.UpdateResearchConferencePhaseAsync(phaseId, request,userId);
+            var phase = await _serviceManager.ConferenceStepService.UpdateResearchConferencePhaseAsync(phaseId, request, userId);
             return Ok(ApiResponse<ResearchConferencePhaseResponse>.SuccessResponse(phase, "Giai đoạn hội nghị nghiên cứu được cập nhật thành công"));
         }
 
@@ -481,7 +480,7 @@ namespace ConfRadar.Api.Controllers
 
         #endregion
 
-       
+
         #region Research Conference Step 4: Research Conference Sessions (without speakers)
 
         [HttpPost("{conferenceId}/research/sessions")]
@@ -489,7 +488,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> AddResearchSessions(string conferenceId, [FromForm] AddResearchSessionsRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var sessions = await _serviceManager.ConferenceStepService.AddResearchSessionsAsync(conferenceId, request,userId);
+            var sessions = await _serviceManager.ConferenceStepService.AddResearchSessionsAsync(conferenceId, request, userId);
             return Ok(ApiResponse<List<ResearchSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị nghiên cứu được thêm thành công"));
         }
 
@@ -505,7 +504,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdateResearchSession(string sessionId, [FromBody] UpdateConferenceSessionRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var session = await _serviceManager.ConferenceStepService.UpdateResearchSessionAsync(sessionId, request,userId);
+            var session = await _serviceManager.ConferenceStepService.UpdateResearchSessionAsync(sessionId, request, userId);
             return Ok(ApiResponse<ResearchSessionWithMediaResponse>.SuccessResponse(session, "Phiên hội nghị nghiên cứu được cập nhật thành công"));
         }
 
@@ -514,7 +513,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DeleteResearchSession(string sessionId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStepService.DeleteResearchSessionAsync(sessionId,userId);
+            var result = await _serviceManager.ConferenceStepService.DeleteResearchSessionAsync(sessionId, userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Phiên hội nghị nghiên cứu được xóa thành công"));
@@ -648,7 +647,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> AddRevisionRoundDeadlines(string researchConferencePhaseId, [FromBody] List<CreateRevisionRoundDeadlineRequest> request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var deadlines = await _serviceManager.ConferenceStepService.AddRevisionRoundDeadlinesAsync(researchConferencePhaseId, request,userId);
+            var deadlines = await _serviceManager.ConferenceStepService.AddRevisionRoundDeadlinesAsync(researchConferencePhaseId, request, userId);
             return Ok(ApiResponse<List<RevisionRoundDeadlineResponse>>.SuccessResponse(deadlines, "Giai đoạn chỉnh sửa được thêm thành công"));
         }
 
@@ -664,7 +663,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdateRevisionRoundDeadline(string revisionRoundDeadlineId, [FromBody] UpdateRevisionRoundDeadlineRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var deadline = await _serviceManager.ConferenceStepService.UpdateRevisionRoundDeadlineAsync(revisionRoundDeadlineId, request,userId);
+            var deadline = await _serviceManager.ConferenceStepService.UpdateRevisionRoundDeadlineAsync(revisionRoundDeadlineId, request, userId);
             return Ok(ApiResponse<RevisionRoundDeadlineResponse>.SuccessResponse(deadline, "Giai đoạn chỉnh sửa được cập nhật thành công"));
         }
 

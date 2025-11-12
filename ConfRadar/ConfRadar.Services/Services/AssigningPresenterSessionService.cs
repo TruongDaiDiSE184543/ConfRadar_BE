@@ -1,16 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ConfRadar.Repositories.Models;
-using ConfRadar.Services.DTOs.PresenterSession;
-using ConfRadar.Services.Common;
-using ConfRadar.Services.Exceptions;
 using ConfRadar.Repositories;
-using Org.BouncyCastle.Asn1.Ocsp;
+using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Paper;
-using Microsoft.VisualBasic;
+using ConfRadar.Services.DTOs.PresenterSession;
+using ConfRadar.Services.Exceptions;
 
 namespace ConfRadar.Services.Services
 {
@@ -22,7 +15,7 @@ namespace ConfRadar.Services.Services
         Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId, string paperId, CreatePresenterChangeRequest request); //check if paper and user exist, user is author of paper in the paperauthor is the user whose record in paper author ispresenter is true and the same as the request.newuserid? can't change to the same user, check if paper is complete throw exception if not, check if this new userId already bought a conferenceprice of this conference (just check to see the conferenceprice) and have a conferenceprice of type isauthor = true so they are eligible to be nominated as the new presenter of paper
         Task<string> ApprovePresenterChangeRequest(ApprovePresenterChangeRequest request, string approvedById);
         Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests();
-        
+
         //Task<string> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
         //Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests();
         //Task<string> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
@@ -38,16 +31,16 @@ namespace ConfRadar.Services.Services
             _unitOfWork = unitOfWork;
             _tokenService = tokenService;
         }
-        public  async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper()
+        public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper()
         {
             var acceptedStatus = _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription()).Result;
             var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus);
-            List<PaperDetailResponseDtoDetail>  paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
+            List<PaperDetailResponseDtoDetail> paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
             {
                 PaperId = paper.PaperId,
                 Title = paper.Title,
                 Description = paper.Description,
-            }).ToList(); 
+            }).ToList();
             return paperDetailResponseDTOs;
         }
 
@@ -117,7 +110,7 @@ namespace ConfRadar.Services.Services
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-            // Create PresentAuthor record
+                // Create PresentAuthor record
                 var presentAuthor = new PresentAuthor
                 {
                     ConferenceSessionId = sessionId,
@@ -223,8 +216,8 @@ namespace ConfRadar.Services.Services
 
         public async Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId, string paperId, CreatePresenterChangeRequest request)
         {
-            
-            
+
+
             // Check if paper exists
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paperId);
             if (paper == null)
@@ -239,9 +232,9 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"User với ID {request.NewUserId} không tồn tại.");
             }
 
-           
-            
-             // Check if user is author of paper in the PaperAuthor table
+
+
+            // Check if user is author of paper in the PaperAuthor table
             var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paperId);
             var existingPaperAuthor = paperAuthors.FirstOrDefault(pa => pa.UserId == request.NewUserId);
             if (existingPaperAuthor == null)
@@ -251,7 +244,7 @@ namespace ConfRadar.Services.Services
 
             //check if the the user is actually the rootauthor aka the default presenter of the paper
             var currentRootAuthor = paperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == currentRootAuthorId);
-            if (currentRootAuthor == null )
+            if (currentRootAuthor == null)
             {
                 throw new BadRequestException("Bạn không phải là rootauthor của paper bạn không thể nhượng quyền");
             }
@@ -319,7 +312,7 @@ namespace ConfRadar.Services.Services
                 }
 
                 await _unitOfWork.PresenterChangeRequestRepository.CreatePresenterChangeRequestAsync(changeRequest);
-                
+
                 // Update PaperAuthor to set the new user as presenter and the old presenter as not presenter
                 if (currentPresenter != null)
                 {
@@ -364,12 +357,12 @@ namespace ConfRadar.Services.Services
                     SessionId = request.SessionId
                 };
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
                 throw ex;
             }
-        
+
         }
 
         public async Task<string> ApprovePresenterChangeRequest(ApprovePresenterChangeRequest request, string approvedById)
@@ -394,9 +387,9 @@ namespace ConfRadar.Services.Services
                     {
                         throw new BadRequestException("Không tìm thấy trạng thái chấp nhận.");
                     }
-                    
+
                     resultMessage = "Yêu cầu thay đổi người trình bày đã được chấp thuận thành công.";
-                    
+
                     // Find the paper associated with the new presenter to identify the session
                     // We need to find which paper this presenter is associated with
                     var newPresenterPaperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByUserIdAsync(changeRequest.NewPresenterId);
@@ -443,14 +436,14 @@ namespace ConfRadar.Services.Services
                     {
                         throw new BadRequestException("Không tìm thấy trạng thái từ chối.");
                     }
-                    
+
                     resultMessage = "Yêu cầu thay đổi người trình bày đã bị từ chối.";
                 }
 
                 // Update the request status
                 changeRequest.GlobalStatusId = targetStatus.GlobalStatusId;
                 changeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
-                
+
                 await _unitOfWork.PresenterChangeRequestRepository.UpdatePresenterChangeRequestAsync(changeRequest);
 
                 await _unitOfWork.CommitAsync();
@@ -502,7 +495,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        
+
 
 
 

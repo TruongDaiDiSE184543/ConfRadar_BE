@@ -35,7 +35,9 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<FullPaper?> GetFullPaperByIdAsync(string fullPaperId)
         {
-            return await _context.FullPapers.Where(fp => fp.FullPaperId == fullPaperId).Include(fp => fp.ReviewStatus).FirstOrDefaultAsync();
+            return await _context.FullPapers
+                .Include(fp => fp.ReviewStatus)
+                .FirstOrDefaultAsync(fp => fp.FullPaperId == fullPaperId);
         }
 
         public async Task<List<FullPaper>> GetAllFullPapersAsync()

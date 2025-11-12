@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using ConfRadar.Repositories.Models;
 
 namespace ConfRadar.Services.DTOs.PresenterSession
 {
@@ -34,34 +33,34 @@ namespace ConfRadar.Services.DTOs.PresenterSession
     public class CreatePresenterChangeRequest
     {
         [Required]
-        public string? TicketId {get; set;}
+        public string? TicketId { get; set; }
         [Required]
         public string? SessionId { get; set; }
-        
+
         [Required]
         public string? PaperId { get; set; }
-        
+
         [Required]
         public string? NewUserId { get; set; }
-        
+
         [Required]
         public string? Reason { get; set; }
     }
-    
+
     public class ApprovePresenterChangeRequest
     {
         [Required]
         public string? PresenterChangeRequestId { get; set; }
-        
+
         [Required]
         public bool IsApproved { get; set; }
-        
+
         public string? ReviewerComment { get; set; }
     }
-    
+
     public class CreateSessionChangeRequest
     {
-        
+
         [Required]
         public string? NewSessionId { get; set; }
 
@@ -70,18 +69,18 @@ namespace ConfRadar.Services.DTOs.PresenterSession
         [Required]
         public string? Reason { get; set; }
     }
-    
+
     public class ApproveSessionChangeRequest
     {
         [Required]
         public string? SessionChangeRequestId { get; set; }
-        
+
         [Required]
         public bool IsApproved { get; set; }
-        
+
         public string? ReviewerComment { get; set; }
     }
-    
+
     public class SessionChangeRequestResponse
     {
         public string? SessionChangeRequestId { get; set; }
