@@ -125,7 +125,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId,userId);
+            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId, userId);
             return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully"));
         }
 

@@ -48,6 +48,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByIdAsync(string paperId)
         {
             return await _context.Papers
+
                 .Include(p => p.ResearchConferencePhase)
                 .Include(p => p.PaperAuthors)
                 .Include(p => p.PaperPhase)
@@ -71,20 +72,21 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<Paper?> GetPaperByPaperIdAndUserIdAsync(string paperId, string userId)
         {
-            return await _context.Papers.FirstOrDefaultAsync(p => p.PaperId == paperId /*&& p.PresenterId == userId*/);
+            return await _context.Papers
+                .FirstOrDefaultAsync(p => p.PaperId == paperId && p.PaperAuthors.Any(pa => pa.UserId == userId));
         }
 
         public async Task<Paper?> GetPaperByCameraReadyIdAsync(string cameraReadyId)
         {
             return await _context.Papers
-                //.Include(p => p.Presenter)
+
                 .FirstOrDefaultAsync(p => p.CameraReadyId == cameraReadyId);
         }
 
         public async Task<Paper?> GetPaperByFullPaperIdAsync(string fullPaperId)
         {
             return await _context.Papers
-                //.Include(p => p.Presenter)
+
                 .FirstOrDefaultAsync(p => p.FullPaperId == fullPaperId);
         }
 
@@ -100,8 +102,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId)
         {
             return await _context.Papers
+
                .Include(p => p.Conference)
-               .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId /* p.PresenterId == userId*/);
+               .Include(p => p.Abstract)
+                    .ThenInclude(a => a.GlobalStatus)
+               .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == userId));
         }
 
         public async Task<List<UnAssignAbstractResponse>> GetUnAssignAbstract()

@@ -15,6 +15,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateTicketAsync(Ticket ticket);
         Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId);
         Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId);
+        Task<Ticket?> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
+        Task<Ticket?> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<Ticket> GetTicketById(string ticketId);
         Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId);
         Task<int> UpdateTicketAsync(Ticket ticket);
@@ -109,6 +111,43 @@ namespace ConfRadar.Repositories.Repositories
                     RefundOrder = rp.RefundOrder,
 
                 }).ToList(),
+                ConferencePrice = new CustomerTicketConferencePriceDetailResponse()
+                {
+                    ConferencePriceId = t.PricePhase.ConferencePriceId,
+                    TicketPrice =t.PricePhase!=null && t.PricePhase.ConferencePrice!=null ? t.PricePhase.ConferencePrice.TicketPrice:null,
+                    TicketName = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketName : null,
+                    TicketDescription = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketDescription : null,
+                    TotalSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TotalSlot : null,
+                    AvailableSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.AvailableSlot : null,
+                    ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.ConferenceId : null,
+                    IsAuthor = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.IsAuthor : null,
+
+                    PaperId = _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa=>pa.UserId == userId)
+                    &&  t.PricePhase != null 
+                    && t.PricePhase.ConferencePrice != null 
+                    && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
+                    .Select(p => p.PaperId)
+                    .FirstOrDefault(),
+
+                    RegistrationStartDate = _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
+                    && p.ResearchConferencePhase != null && t.PricePhase != null 
+                    && t.PricePhase.ConferencePrice != null&& p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
+                    .Select(p => p.ResearchConferencePhase!.RegistrationStartDate)
+                    .FirstOrDefault(),
+
+                    RegistrationEndDate = _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId) 
+                    && p.ResearchConferencePhase != null && t.PricePhase != null 
+                    && t.PricePhase.ConferencePrice != null && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
+                    .Select(p => p.ResearchConferencePhase!.RegistrationEndDate)
+                    .FirstOrDefault(),
+
+
+
+
+                }
             } : new CustomerTicketPricePhaseDetailResponse(),
 
 
@@ -246,13 +285,38 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Tickets
                 .Include(t => t.PricePhase)
                     .ThenInclude(pp => pp.RefundPolicies)
+                .Include(t => t.PricePhase)
+                    .ThenInclude(pp => pp.ConferencePrice)
                 .Include(t => t.Transactions)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(t => t.TicketId == ticketId && t.UserId == userId);
         }
 
         public async Task<int> UpdateTicketAsync(Ticket ticket)
         {
             return await UpdateAsync(ticket);
+        }
+
+        public async Task<Ticket?> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId)
+        {
+            return await _context.Tickets
+               .Include(t => t.PricePhase)
+                   .ThenInclude(t => t.ConferencePrice)
+               .FirstOrDefaultAsync(t => t.UserId == userId
+               && t.PricePhase != null
+               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor==true
+               && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
+        }
+
+        public async Task<Ticket?> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId)
+        {
+            return await _context.Tickets
+               .Include(t => t.PricePhase)
+                   .ThenInclude(t => t.ConferencePrice)
+               .FirstOrDefaultAsync(t => t.UserId == userId
+               && t.PricePhase != null
+               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
+               && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
         }
     }
 }

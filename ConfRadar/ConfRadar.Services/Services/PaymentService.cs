@@ -129,7 +129,7 @@ namespace ConfRadar.Services.Services
 
 
 
-            var ticketFound = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId!);
+            var ticketFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId!);
             if (ticketFound != null)
             {
                 throw new BadRequestException("Bạn đã mua vé cho sự kiện này rồi!");
@@ -142,6 +142,10 @@ namespace ConfRadar.Services.Services
             if (conferencePrice.Conference?.TicketSaleEnd < dateNow)
             {
                 throw new BadRequestException("Đã hết thời hạn mua vé.");
+            }
+            if (conferencePrice.IsAuthor == true)
+            {
+                throw new BadRequestException("Vé này chỉ dành cho người tham dự.");
             }
 
             var validPhases = conferencePrice.PricePhases.Where(p => p.StartDate <= dateNow && p.EndDate >= dateNow).OrderBy(p => p.StartDate).ToList();
@@ -334,7 +338,7 @@ namespace ConfRadar.Services.Services
 
 
 
-            var ticketFound = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
+            var ticketFound = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
             if (ticketFound != null)
             {
                 throw new BadRequestException($"Bạn chỉ có thể mua vé 1 lần cho sự kiện này");
@@ -561,7 +565,7 @@ namespace ConfRadar.Services.Services
 
 
 
-            var ticketFound = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
+            var ticketFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
             if (ticketFound != null)
             {
                 throw new BadRequestException($"Bạn chỉ có thể mua vé 1 lần cho sự kiện này");
