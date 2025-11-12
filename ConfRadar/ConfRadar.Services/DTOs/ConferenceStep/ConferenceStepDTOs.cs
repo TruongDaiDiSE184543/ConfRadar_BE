@@ -341,6 +341,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? TicketSaleEnd { get; set; }
         public string? createdby { get; set; }
         public string? TargetAudience { get; set; }
+        public string? contractURL { get; set; }
+        public int? commission { get; set; }
     }
 
     public class ConferencePriceStepResponse

@@ -209,7 +209,15 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.ChangeConferenceStatus(userId, confid, newStatus, reason);
+            if (result)
+            {
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
+
+            }
+            else
+            {
+                return Ok(ApiResponse<bool>.FailResponse("Update Hội nghị thất bại"));
+            }
         }
 
         // NEW ENDPOINT 14: Get detailed research conference data for organizer with timeline
@@ -275,7 +283,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> RequestPendingConference([FromQuery] string confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceService.RequestOrganizerApproval(userId, confId);
+            var result = await _serviceManager.ConferenceService.RequestOrganizerApproval(confId,userId);
             if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
             return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
         }

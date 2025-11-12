@@ -44,10 +44,10 @@ using (var scope = app.Services.CreateScope())
     //await seedDataService.SeedReviewStatusesAsync();
     //await seedDataService.SeedPaperPhasesAsync();
     //await seedDataService.SeedTransactionStatusAsync();
-    await seedDataService.SeedPaymentMethodsAsync();
+    //await seedDataService.SeedPaymentMethodsAsync();
     //await seedDataService.SeedTransactionTypeAsync();
-    await seedDataService.SeedCheckInStatusAsync();
-    await seedDataService.SeedWaitListStatusesAsync();
+    //await seedDataService.SeedCheckInStatusAsync();
+    //await seedDataService.SeedWaitListStatusesAsync();
 }
 app.UseCors("AllowAll");
 app.UseSwagger();
