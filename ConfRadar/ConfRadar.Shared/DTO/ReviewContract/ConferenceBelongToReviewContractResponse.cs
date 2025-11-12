@@ -11,7 +11,7 @@
         public int? AvailableSlot { get; set; }
         public string? Address { get; set; }
         public string? BannerImageUrl { get; set; }
-        public DateOnly? CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
         public bool? IsInternalHosted { get; set; }
