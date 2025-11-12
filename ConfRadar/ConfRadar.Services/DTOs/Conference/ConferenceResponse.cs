@@ -122,6 +122,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public decimal? ApplyPercent { get; set; }
         public int? TotalSlot { get; set; }
         public int? AvailableSlot { get; set; }
+        public List<RefundPolicyResponse>? RefundPolicies { get; set; }
     }
 
     public class ConferenceWithPricesResponse
@@ -167,7 +168,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
         public string? TargetAudience { get; set; } // Technical conference detail
-        public List<RefundPolicyResponse>? RefundPolicies { get; set; }
+      
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
@@ -221,7 +222,6 @@ namespace ConfRadar.Services.DTOs.Conference
         // Shared tables data (same as technical conference)
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
-        public List<RefundPolicyResponse>? RefundPolicies { get; set; }
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
         public List<ConferenceTimelineResponse>? ConferenceTimelines { get; set; } // Include conference timeline data
@@ -349,6 +349,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public int? PercentRefund { get; set; }
         public DateOnly? RefundDeadline { get; set; }
         public int? RefundOrder { get; set; }
+        public string? PricePhaseID {  get; set; }
     }
 
     public class ConferenceMediaResponse

@@ -308,13 +308,13 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                {
-                    RefundPolicyId = rp.RefundPolicyId,
-                    PercentRefund = rp.PercentRefund,
-                    RefundDeadline = rp.RefundDeadline,
-                    RefundOrder = rp.RefundOrder
-                }).ToList(),
+                //RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                //{
+                //    RefundPolicyId = rp.RefundPolicyId,
+                //    PercentRefund = rp.PercentRefund,
+                //    RefundDeadline = rp.RefundDeadline,
+                //    RefundOrder = rp.RefundOrder
+                //}).ToList(),
                 Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
                 {
                     PolicyId = p.PolicyId,
@@ -379,7 +379,15 @@ namespace ConfRadar.Services.Services
                         EndDate = pp.EndDate,
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot
+                        AvailableSlot = pp.AvailableSlot,
+                        RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        {
+                            RefundPolicyId = rp.RefundPolicyId,
+                            PercentRefund = rp.PercentRefund,
+                            RefundDeadline = rp.RefundDeadline,
+                            RefundOrder = rp.RefundOrder,
+                            PricePhaseID = pp.PricePhaseId
+                        }).ToList(),
                     }).ToList()
                 }).ToList(),
                 purchasedInfo = new PurchasedInfo
@@ -643,9 +651,13 @@ namespace ConfRadar.Services.Services
 
             //Collaborator's technical confs need to be approved to preparing status first only then they can change the status
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing first để có thể thay đổi trạng thái");
+            if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId) throw new Exception("Conference cần request lên pending để Organizer approve lên preparing first để có thể thay đổi trạng thái");
+            var newStatusEntity = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(newStatus);
+            if (newStatusEntity == null) throw new BadRequestException($"Không tim thấy conference status với ID{newStatus}");
 
-            return UpdateConferenceStatusAsync(conferenceId, newStatus, reason).Result;
+            return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
 
         public async Task<bool> UpdateConferenceStatusAsync(string conferenceId, string newStatusName, string? reason = null)
@@ -703,6 +715,7 @@ namespace ConfRadar.Services.Services
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                throw ex;
                 return false;
             }
 
@@ -864,13 +877,13 @@ namespace ConfRadar.Services.Services
                     Name = s.Name,
                     ImageUrl = s.ImageUrl
                 }).ToList(),
-                RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                {
-                    RefundPolicyId = rp.RefundPolicyId,
-                    PercentRefund = rp.PercentRefund,
-                    RefundDeadline = rp.RefundDeadline,
-                    RefundOrder = rp.RefundOrder
-                }).ToList(),
+                //RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                //{
+                //    RefundPolicyId = rp.RefundPolicyId,
+                //    PercentRefund = rp.PercentRefund,
+                //    RefundDeadline = rp.RefundDeadline,
+                //    RefundOrder = rp.RefundOrder
+                //}).ToList(),
                 ConferenceMedia = conference.ConferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
                 {
                     MediaId = cm.ConferenceMediaId,
@@ -893,7 +906,14 @@ namespace ConfRadar.Services.Services
                         EndDate = pp.EndDate,
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot
+                        AvailableSlot = pp.AvailableSlot,
+                        RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        {
+                            RefundPolicyId = rp.RefundPolicyId,
+                            PercentRefund = rp.PercentRefund,
+                            RefundDeadline = rp.RefundDeadline,
+                            RefundOrder = rp.RefundOrder
+                        }).ToList(),
                     }).ToList()
                 }).ToList(),
                 purchasedInfo = new PurchasedInfo
@@ -1058,13 +1078,13 @@ namespace ConfRadar.Services.Services
                     Name = s.Name,
                     ImageUrl = s.ImageUrl
                 }).ToList(),
-                RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                {
-                    RefundPolicyId = rp.RefundPolicyId,
-                    PercentRefund = rp.PercentRefund,
-                    RefundDeadline = rp.RefundDeadline,
-                    RefundOrder = rp.RefundOrder
-                }).ToList(),
+                //RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                //{
+                //    RefundPolicyId = rp.RefundPolicyId,
+                //    PercentRefund = rp.PercentRefund,
+                //    RefundDeadline = rp.RefundDeadline,
+                //    RefundOrder = rp.RefundOrder
+                //}).ToList(),
                 ConferenceMedia = conference.ConferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
                 {
                     MediaId = cm.ConferenceMediaId,
@@ -1087,8 +1107,17 @@ namespace ConfRadar.Services.Services
                         EndDate = pp.EndDate,
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot
-                    }).ToList()
+                        AvailableSlot = pp.AvailableSlot,
+                        RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        {
+                            RefundPolicyId = rp.RefundPolicyId,
+                            PercentRefund = rp.PercentRefund,
+                            RefundDeadline = rp.RefundDeadline,
+                            RefundOrder = rp.RefundOrder,
+                            PricePhaseID = pp.PricePhaseId
+                        }).ToList(),
+                    }).ToList(),
+
                 }).ToList(),
 
                 // Include conference timeline data
@@ -1178,13 +1207,13 @@ namespace ConfRadar.Services.Services
                 ConferenceStatusId = fullConference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
 
-                RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                {
-                    RefundPolicyId = rp.RefundPolicyId,
-                    PercentRefund = rp.PercentRefund,
-                    RefundDeadline = rp.RefundDeadline,
-                    RefundOrder = rp.RefundOrder
-                }).ToList(),
+                //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                //{
+                //    RefundPolicyId = rp.RefundPolicyId,
+                //    PercentRefund = rp.PercentRefund,
+                //    RefundDeadline = rp.RefundDeadline,
+                //    RefundOrder = rp.RefundOrder
+                //}).ToList(),
                 Policies = fullConference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
                 {
                     PolicyId = p.PolicyId,
@@ -1249,7 +1278,15 @@ namespace ConfRadar.Services.Services
                         EndDate = pp.EndDate,
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot
+                        AvailableSlot = pp.AvailableSlot,
+                        RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        {
+                            RefundPolicyId = rp.RefundPolicyId,
+                            PercentRefund = rp.PercentRefund,
+                            RefundDeadline = rp.RefundDeadline,
+                            RefundOrder = rp.RefundOrder,
+                            PricePhaseID = pp.PricePhaseId
+                        }).ToList(),
                     }).ToList()
                 }).ToList(),
 
@@ -1703,13 +1740,13 @@ namespace ConfRadar.Services.Services
                         Name = s.Name,
                         ImageUrl = s.ImageUrl
                     }).ToList(),
-                    RefundPolicies = refundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                    {
-                        RefundPolicyId = rp.RefundPolicyId,
-                        PercentRefund = rp.PercentRefund,
-                        RefundDeadline = rp.RefundDeadline,
-                        RefundOrder = rp.RefundOrder
-                    }).ToList(),
+                    //RefundPolicies = refundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                    //{
+                    //    RefundPolicyId = rp.RefundPolicyId,
+                    //    PercentRefund = rp.PercentRefund,
+                    //    RefundDeadline = rp.RefundDeadline,
+                    //    RefundOrder = rp.RefundOrder
+                    //}).ToList(),
                     ConferenceMedia = conferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
                     {
                         MediaId = cm.ConferenceMediaId,
@@ -1732,7 +1769,15 @@ namespace ConfRadar.Services.Services
                             EndDate = pp.EndDate,
                             ApplyPercent = pp.ApplyPercent,
                             TotalSlot = pp.TotalSlot,
-                            AvailableSlot = pp.AvailableSlot
+                            AvailableSlot = pp.AvailableSlot,
+                            RefundPolicies = refundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                            {
+                                RefundPolicyId = rp.RefundPolicyId,
+                                PercentRefund = rp.PercentRefund,
+                                RefundDeadline = rp.RefundDeadline,
+                                RefundOrder = rp.RefundOrder,
+                                PricePhaseID = pp.PricePhaseId
+                            }).ToList(),
                         }).ToList()
                     }).ToList()
                 };
@@ -1861,13 +1906,13 @@ namespace ConfRadar.Services.Services
                         ConferenceStatusId = fullConference.ConferenceStatusId,
                         TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
 
-                        RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                        {
-                            RefundPolicyId = rp.RefundPolicyId,
-                            PercentRefund = rp.PercentRefund,
-                            RefundDeadline = rp.RefundDeadline,
-                            RefundOrder = rp.RefundOrder
-                        }).ToList(),
+                        //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        //{
+                        //    RefundPolicyId = rp.RefundPolicyId,
+                        //    PercentRefund = rp.PercentRefund,
+                        //    RefundDeadline = rp.RefundDeadline,
+                        //    RefundOrder = rp.RefundOrder
+                        //}).ToList(),
                         Policies = fullConference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
                         {
                             PolicyId = p.PolicyId,
@@ -1932,7 +1977,15 @@ namespace ConfRadar.Services.Services
                                 EndDate = pp.EndDate,
                                 ApplyPercent = pp.ApplyPercent,
                                 TotalSlot = pp.TotalSlot,
-                                AvailableSlot = pp.AvailableSlot
+                                AvailableSlot = pp.AvailableSlot,
+                                RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                                {
+                                    RefundPolicyId = rp.RefundPolicyId,
+                                    PercentRefund = rp.PercentRefund,
+                                    RefundDeadline = rp.RefundDeadline,
+                                    RefundOrder = rp.RefundOrder,
+                                    PricePhaseID = pp.PricePhaseId
+                                }).ToList(),
                             }).ToList()
                         }).ToList()
                     };
