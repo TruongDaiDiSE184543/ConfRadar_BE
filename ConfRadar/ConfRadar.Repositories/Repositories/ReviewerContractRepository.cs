@@ -69,8 +69,8 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<ReviewerContract?> GetContractByUserAndConferenceAsync(string userId, string conferenceId)
         {
             return await _context.ReviewerContracts
-                .Include(rc=>rc.User)
-                .Include(rc=>rc.Conference)
+                .Include(rc => rc.User)
+                .Include(rc => rc.Conference)
                 .FirstOrDefaultAsync(rc => rc.UserId == userId && rc.ConferenceId == conferenceId);
         }
 

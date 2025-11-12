@@ -473,12 +473,9 @@ namespace ConfRadar.Services.Services
                 }
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
 
-                // 2.6. Commit
                 await _unitOfWork.CommitAsync();
+                return await GetConferenceBasicAsync(toBeCreatedConference.ConferenceId);
 
-                
-
-                return await GetConferenceBasicAsync(conference.ConferenceId);
             }
             catch (Exception)
             {

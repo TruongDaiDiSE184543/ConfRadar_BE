@@ -35,7 +35,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.RevisionPaperSubmissions
                 .Include(rps => rps.RevisionPaper)
-                .Include(rps=>rps.RevisionDeadlineRound)
+                .Include(rps => rps.RevisionDeadlineRound)
                 .FirstOrDefaultAsync(rps => rps.RevisionPaperSubmissionId == revisionPaperSubmissionId);
         }
         public async Task<int> UpdateRevisionPaperSubmissionAsync(RevisionPaperSubmission submission)
@@ -45,7 +45,9 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<RevisionPaperSubmission?> GetRevisionPaperSubmissionByRevisionPaperIdAndDeadlineId(string revisionPaperId, string deadlineId)
         {
-            return await _context.RevisionPaperSubmissions.Include(rp => rp.RevisionDeadlineRound).FirstOrDefaultAsync(x => x.RevisionPaperId == revisionPaperId && x.RevisionDeadlineRoundId == deadlineId);
+            return await _context.RevisionPaperSubmissions
+                .Include(rp => rp.RevisionDeadlineRound)
+                .FirstOrDefaultAsync(x => x.RevisionPaperId == revisionPaperId && x.RevisionDeadlineRoundId == deadlineId);
         }
 
         public async Task<List<RevisionPaperSubmission>> GetRevisionPaperSubmissionByDeadlineId(string deadlineId)

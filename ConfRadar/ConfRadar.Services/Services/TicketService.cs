@@ -99,23 +99,39 @@ namespace ConfRadar.Services.Services
             //cho init ban đầu là accept, qua từng filter , nào ko hợp => reject
             var refundPolicies = ticket.PricePhase.RefundPolicies;
 
-
+            RefundPolicy? validRefundPolicy = null;
             if (refundPolicies.Count <= 0)
             {
                 refundRequestReason = "Xin lỗi bạn, hiện tại chính sách này không cho phép được hoàn tiền";
                 finalGlobalStatus = rejectedGlobalStatus;
             }
-            var sortedRefundPolicies = refundPolicies.OrderBy(r => r.RefundDeadline).ToList();
-            var validRefundPolicy = sortedRefundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow);
-            if (validRefundPolicy == null)
-            {
-                throw new BadRequestException("Xin lỗi bạn, hiện tại bạn đã quá hạn hoặc không thuộc chính sách hoàn tiền hợp lệ.");
-            }
             else
             {
-                refundRequestReason = $"Đã hoàn tiền {validRefundPolicy.PercentRefund}% trước hạn {validRefundPolicy.RefundDeadline}.Vui lòng kiểm tra transaction";
-                finalGlobalStatus = acceptedGlobalStatus;
+                var sortedRefundPolicies = refundPolicies.OrderBy(r => r.RefundDeadline).ToList();
+                validRefundPolicy = sortedRefundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow);
+                bool allRejectedPolicies = refundPolicies.All(rp => rp.RefundDeadline < dateNow);
+
+                if (allRejectedPolicies)
+                {
+                    int rejectRefundPoliciesCount = refundPolicies.Count;
+                    refundRequestReason = $"Tổng có {rejectRefundPoliciesCount} chính sách hoàn tiền đã hết hạn. Các deadline gồm: ";
+                    foreach (var refund in sortedRefundPolicies)
+                    {
+                        refundRequestReason += $"{refund.RefundDeadline}, ";
+                    }
+                    finalGlobalStatus = rejectedGlobalStatus;
+                }
+                else if (validRefundPolicy != null)
+                {
+                    refundRequestReason = $"Đã hoàn tiền {validRefundPolicy.PercentRefund}% trước hạn {validRefundPolicy.RefundDeadline}.Vui lòng kiểm tra transaction";
+                    finalGlobalStatus = acceptedGlobalStatus;
+                }
+                else
+                {
+                    throw new BadRequestException("Xin lỗi bạn, hiện tại bạn đã quá hạn hoặc không thuộc chính sách hoàn tiền hợp lệ.");
+                }
             }
+
             int result = 0;
             await _unitOfWork.BeginTransactionAsync();
             try

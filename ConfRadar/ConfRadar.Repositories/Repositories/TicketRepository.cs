@@ -87,8 +87,8 @@ namespace ConfRadar.Repositories.Repositories
             RegisteredDate = t.RegisteredDate,
             IsRefunded = t.IsRefunded,
             ActualPrice = t.ActualPrice,
-            HasRefundPolicy =t.PricePhase!=null &&  t.PricePhase.RefundPolicies.Any() ? true :false,
-            TicketPricePhase  = t.PricePhase !=null ? new CustomerTicketPricePhaseDetailResponse()
+            HasRefundPolicy = t.PricePhase != null && t.PricePhase.RefundPolicies.Any() ? true : false,
+            TicketPricePhase = t.PricePhase != null ? new CustomerTicketPricePhaseDetailResponse()
             {
                 PricePhaseId = t.PricePhaseId,
                 PhaseName = t.PricePhase.PhaseName,
@@ -98,16 +98,16 @@ namespace ConfRadar.Repositories.Repositories
                 TotalSlot = t.PricePhase.TotalSlot,
                 AvailableSlot = t.PricePhase.AvailableSlot,
                 ConferencePriceId = t.PricePhase.ConferencePriceId,
-                RefundPolicies =t.PricePhase.RefundPolicies.Select(rp=> new CustomerTicketRefundPoliciesDetailResponse()
+                RefundPolicies = t.PricePhase.RefundPolicies.Select(rp => new CustomerTicketRefundPoliciesDetailResponse()
                 {
                     RefundPolicyId = rp.RefundPolicyId,
                     ConferenceId = rp.ConferenceId,
-                    PricePhaseId=rp.PricePhaseId,
+                    PricePhaseId = rp.PricePhaseId,
                     PercentRefund = rp.PercentRefund,
                     PricePhaseStartDate = t.PricePhase.StartDate,
                     RefundDeadline = rp.RefundDeadline,
-                    RefundOrder= rp.RefundOrder,
-                    
+                    RefundOrder = rp.RefundOrder,
+
                 }).ToList(),
             } : new CustomerTicketPricePhaseDetailResponse(),
 

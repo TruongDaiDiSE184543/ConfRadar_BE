@@ -32,7 +32,7 @@ namespace ConfRadar.Services.Services
         public async Task<int> CreateReviewerContract(CreateReviewerContractRequest request)
         {
             var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ExternalReviewer.GetDescription());
-            if (externalReviewerRole == null) 
+            if (externalReviewerRole == null)
             {
                 throw new NotFoundException("Không tìm thấy external reviewer role trong hệ thống");
             }
@@ -115,7 +115,7 @@ namespace ConfRadar.Services.Services
                     UserId = reviewer.UserId,
                 };
                 await _unitOfWork.UserRoleRepository.CreateUserRoleAsync(userRoleObj);
-            } 
+            }
             return await _unitOfWork.ReviewerContractRepository.CreateReviewerContractAsync(newContractObj);
         }
 
