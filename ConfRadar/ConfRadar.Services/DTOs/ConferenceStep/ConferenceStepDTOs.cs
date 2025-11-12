@@ -58,7 +58,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string targetAudienceTechnicalConference { get; set; }
 
         // Các trường dành riêng cho Collaborator, không bắt buộc với Organizer
-        public string? contractURL { get; set; }
+        public IFormFile? contractURL { get; set; }
 
         [Range(0, 100, ErrorMessage = "Hoa hồng phải nằm trong khoảng từ 0 đến 100.")]
         public int? commission { get; set; }
@@ -215,6 +215,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? StartDate { get; set; }
 
         public DateOnly? EndDate { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Tổng số vé phải là một số dương.")]
         public int? TotalSlot { get; set; }
 
         [MaxLength(255)]
@@ -222,11 +223,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         public IFormFile? BannerImageFile { get; set; }
 
-        //[Required(ErrorMessage = "Bạn cần xác định hội nghị này do nội bộ tổ chức hay không")]
-        //public bool? IsInternalHosted { get; set; }
-        //[Required(ErrorMessage = "Đây có phải là hội nghị nghiên cứu không?")]
-
-        //public bool? IsResearchConference { get; set; }
 
         [MaxLength(50)]
         public string? ConferenceCategoryId { get; set; }
@@ -234,8 +230,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? CityId { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
-        public string? contractURL { get; set; }
+        public IFormFile? contractURL { get; set; }
+
+        [Range(0, 100, ErrorMessage = "Hoa hồng phải nằm trong khoảng từ 0 đến 100.")]
         public int? commission { get; set; }
+
         public string? targetaudience { get; set; }
     }
 

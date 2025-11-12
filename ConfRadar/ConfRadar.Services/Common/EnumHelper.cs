@@ -62,7 +62,7 @@ namespace ConfRadar.Services.Common
         camerareadyfile,
         materialdownload,
         feedbackmaterial,
-
+        contract,
         sessionmedia,
         speakermedia,
         //abstractfile,
