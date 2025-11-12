@@ -230,9 +230,9 @@ namespace ConfRadar.Services.DTOs.Conference
 
     public class PurchasedInfo
     {
-        public string ticketId {  get; set; }
-        public string conferencePriceId {  get; set; }
-        public string pricePhaseId {  get; set; }
+        public string ticketId { get; set; }
+        public string conferencePriceId { get; set; }
+        public string pricePhaseId { get; set; }
     }
 
     public class ConferencePolicyResponse

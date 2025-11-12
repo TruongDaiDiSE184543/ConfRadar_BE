@@ -95,13 +95,15 @@ namespace ConfRadar.Services.Services
         private readonly ITokenService _tokenService;
         private readonly IOptions<ObjectStorageSettings> _objectStorageSettings;
         private readonly IObjectStorageFileService _objectStorageFileService;
-        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService)
+        private readonly ITicketService _ticketService;
+        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService)
         {
             _unitOfWork = unitOfWork;
             _momoService = momoService;
             _tokenService = tokenService;
             _objectStorageSettings = objectStorageSettings;
             _objectStorageFileService = objectStorageFileService;
+            _ticketService = ticketService;
         }
 
         public async Task<int> SubmitAbstract(CreateAbstractRequest request, string userId)
@@ -215,11 +217,11 @@ namespace ConfRadar.Services.Services
             }
 
 
-            
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                int finalResult=0;
+                int finalResult = 0;
                 finalResult += await _unitOfWork.AbstractRepository.CreateAbstractAsync(abstractObj);
                 finalResult += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
                 if (paperAuthorList.Count > 0)
@@ -294,6 +296,11 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Rejected:
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = ExtensionHelper.GetVietnamTime();
+                        var rootAuthor = basePaper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                        var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, basePaper.ConferenceId!);
+                        await _ticketService.RefundCloneFunction(rootAuthor!.UserId,ticket.TicketId,"Abstract bạn đã bị từ chối");
+
+
                         break;
                     default:
                         throw new BadRequestException("Trạng thái không khả dụng");
@@ -402,7 +409,7 @@ namespace ConfRadar.Services.Services
                 Title = request.Title,
             };
             paper.FullPaperId = fullPaper.FullPaperId;
-           
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -498,6 +505,9 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = rejectedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = ExtensionHelper.GetVietnamTime();
+                        var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                        var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
+                        await _ticketService.RefundCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Full paper bạn đã bị từ chối");
                         break;
                     case ReviewStatusEnum.Revise:
 
@@ -581,7 +591,7 @@ namespace ConfRadar.Services.Services
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                RevisionPaper? revisionPaper=null;
+                RevisionPaper? revisionPaper = null;
 
                 if (paper.RevisionPaperId == null)
                 {
@@ -787,11 +797,11 @@ namespace ConfRadar.Services.Services
 
 
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
-            if (acceptedGlobalStatus == null || currentRevisePhase == null|| pendingGlobalStatus==null||rejectGlobalStautus==null)
+            if (acceptedGlobalStatus == null || currentRevisePhase == null || pendingGlobalStatus == null || rejectGlobalStautus == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái tương ứng trong hệ thống");
             }
-            
+
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
@@ -807,7 +817,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
             }
-            
+
 
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {
@@ -948,6 +958,9 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Rejected:
                         revisionPaper.GlobalStatusId = rejectGlobalStautus.GlobalStatusId;
                         revisionPaper.ReviewAt = ExtensionHelper.GetVietnamTime();
+                        var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                        var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
+                        await _ticketService.RefundCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Revise paper của bạn đã bị từ chối");
                         break;
 
                     default:
@@ -1211,7 +1224,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"user với ID {userId} không tồn tại.");
             }
-            if (request.reviewStatus == ReviewStatusEnum.Pending) 
+            if (request.reviewStatus == ReviewStatusEnum.Pending)
             {
                 throw new BadRequestException("Không thể thành pending cho. Chỉ có thể accept hoặc reject");
             }
@@ -1454,6 +1467,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"bài báo với camera id {request.CameraReadyId} không tồn tại hoặc không liên kết với nhau.");
             }
+            var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
 
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paper.PaperId);
             if (paperReviewer == null)
@@ -1473,6 +1487,9 @@ namespace ConfRadar.Services.Services
                     break;
                 case GlobalStatusEnum.Rejected:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+                    var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                    var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, basePaper.ConferenceId!);
+                    await _ticketService.RefundCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Camera ready paper của bạn đã bị từ chối");
                     break;
                 case GlobalStatusEnum.Pending:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
@@ -2156,7 +2173,7 @@ namespace ConfRadar.Services.Services
 
 
 
-            
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {

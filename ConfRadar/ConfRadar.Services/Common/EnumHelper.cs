@@ -69,7 +69,8 @@ namespace ConfRadar.Services.Common
         //fullpaperfile,
         //revisionpaperfile,
         revisionpaperreviewfile,
-        reviewercontractfile
+        reviewercontractfile,
+        qrcodefile
 
     }
 
