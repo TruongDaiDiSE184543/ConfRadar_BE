@@ -309,7 +309,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Research Conference Mappers
-        public static Conference ToModel(this CreateResearchConferenceBasicRequest request, ConferenceStatus status, DateOnly createdAt)
+        public static Conference ToModel(this CreateResearchConferenceBasicRequest request, ConferenceStatus status, DateTime createdAt)
         {
             return new Conference
             {
