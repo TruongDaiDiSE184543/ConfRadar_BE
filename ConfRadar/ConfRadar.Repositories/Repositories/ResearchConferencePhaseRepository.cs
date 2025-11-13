@@ -10,7 +10,9 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
         Task<int> UpdateResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
         Task<int> DeleteResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
-        Task<ResearchConferencePhase?> GetResearchConferencePhaseByConferenceIdAsync(string conferenceId);
+        Task<ResearchConferencePhase?> GetResearchConferencePhaseNotWaitListByConferenceIdAsync(string conferenceId);
+        Task<ResearchConferencePhase?> GetResearchConferencePhaseIsWaitListByConferenceIdAsync(string conferenceId);
+        Task<ResearchConferencePhase?> GetActiveResearchConferencePhaseByConferenceIdAsync(string conferenceId);
         Task<ResearchConferencePhase?> GetResearchConferencePhaseByIdAsync(string phaseId);
         Task<List<RevisionRoundDeadline>> GetRevisionRoundDeadlinesByPhaseIdAsync(string phaseId);
         Task<List<ResearchConferencePhase>> GetResearchPhaseByConfId(string confId);
@@ -38,11 +40,11 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseByConferenceIdAsync(string conferenceId)
+        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseNotWaitListByConferenceIdAsync(string conferenceId)
         {
             return await _context.ResearchConferencePhases
-                .Include(r => r.RevisionRoundDeadlines) // Include related RevisionRoundDeadlines
-                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId);
+                .Include(r => r.RevisionRoundDeadlines) 
+                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsWaitlist == false);
         }
 
         public async Task<ResearchConferencePhase?> GetResearchConferencePhaseByIdAsync(string phaseId)
@@ -67,6 +69,20 @@ namespace ConfRadar.Repositories.Repositories
         {
             var paperWithResearchPhase = await _context.Papers.Include(p => p.ResearchConferencePhase).FirstOrDefaultAsync(p => p.PaperId == PaperId);
             return paperWithResearchPhase?.ResearchConferencePhase;
+        }
+
+        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseIsWaitListByConferenceIdAsync(string conferenceId)
+        {
+            return await _context.ResearchConferencePhases
+                .Include(r => r.RevisionRoundDeadlines)
+                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsWaitlist == true);
+        }
+
+        public async Task<ResearchConferencePhase?> GetActiveResearchConferencePhaseByConferenceIdAsync(string conferenceId)
+        {
+            return await _context.ResearchConferencePhases
+              .Include(r => r.RevisionRoundDeadlines)
+              .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsActive == true);
         }
     }
 }

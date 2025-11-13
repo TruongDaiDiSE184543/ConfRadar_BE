@@ -18,6 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferencePrice>> GetPricesByConferenceIdAsync(string conferenceId);
         IQueryable<ConferencePrice> GetConferencePricesWithIncludes();
         Task<ConferencePrice?> GetConferencePriceWithIncludesAsync(string priceId);
+        Task<List<ConferencePrice>> GetNumberOfIsAuthorByConferenceId(string confId);
 
     }
 
@@ -96,6 +97,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             await _context.ConferencePrices.AddRangeAsync(price);
             return await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<ConferencePrice>> GetNumberOfIsAuthorByConferenceId(string confId)
+        {
+            return await _context.ConferencePrices.Where( cp => cp.ConferenceId ==  confId && cp.IsAuthor == true).ToListAsync();
         }
     }
 }
