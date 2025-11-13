@@ -34,8 +34,30 @@
         public int? AvailableSlot { get; set; }
 
         public string? ConferencePriceId { get; set; }
-        public List<CustomerTicketRefundPoliciesDetailResponse> RefundPolicies;
+        public CustomerTicketConferencePriceDetailResponse ConferencePrice { get; set; }
+        public List<CustomerTicketRefundPoliciesDetailResponse> RefundPolicies { get; set; }
     }
+
+    public class CustomerTicketConferencePriceDetailResponse
+    {
+        public string? ConferencePriceId { get; set; } 
+        public decimal? TicketPrice { get; set; }
+        public string? TicketName { get; set; }
+        public string? TicketDescription { get; set; }
+        public bool? IsAuthor { get; set; }
+        public int? TotalSlot { get; set; }
+        public int? AvailableSlot { get; set; }
+        public string? ConferenceId { get; set; }
+        public string? PaperId { get; set; }
+        public DateOnly? RegistrationStartDate { get; set; }
+        public DateOnly? RegistrationEndDate { get; set; }
+    }
+
+
+
+
+
+
 
 
     public class CustomerTicketRefundPoliciesDetailResponse
