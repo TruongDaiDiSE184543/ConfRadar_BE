@@ -13,6 +13,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<PresentAuthor?> GetPresentAuthorByIdAsync(string conferenceSessionId, string paperId);
         Task<List<PresentAuthor>> GetAllPresentAuthorsAsync();
         Task<PresentAuthor?> GetPresentAuthorByPaperIdAsync(string paperId);
+        Task<List<PresentAuthor>> GetPresentAuthorsBySessionIdAsync (string sessionId);
     }
 
     public class PresentAuthorRepository : GenericRepository<PresentAuthor>, IPresentAuthorRepository
@@ -59,6 +60,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.PresentAuthors
                 .FirstOrDefaultAsync(pa => pa.PaperId == paperId);
+        }
+
+        public async Task<List<PresentAuthor>> GetPresentAuthorsBySessionIdAsync(string sessionId)
+        {
+            return await _context.PresentAuthors.Where(pa => pa.ConferenceSessionId ==  sessionId).ToListAsync();
         }
     }
 }

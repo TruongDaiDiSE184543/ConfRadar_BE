@@ -288,5 +288,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
         }
 
+        [HttpPut("activate-waitlist")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> WaitListBegin([FromQuery] string confId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.ActivateWaitlist(confId, userId);
+            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
+            return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
+        }
     }
 }

@@ -880,6 +880,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         [Required(ErrorMessage = "Số lượng vé cho giai đoạn này là bắt buộc")]
         public int TotalSlot { get; set; }
+        public bool ForWaitlist { get; set; } = false;
     }
 
     public class UpdatePricePhaseRequest
@@ -910,6 +911,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public int? TotalSlot { get; set; }
         public int? AvailableSlot { get; set; }
         public string? ConferencePriceId { get; set; }
+        public string? ResearchConferencePhaseId { get; set; }
         public List<RefundPolicyResponse> RefundPolicy { get; set; }
     }
 
