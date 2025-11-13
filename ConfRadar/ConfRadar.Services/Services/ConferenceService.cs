@@ -72,6 +72,7 @@ namespace ConfRadar.Services.Services
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId);
         Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId);
         Task<bool> RequestOrganizerApproval(string confId, string userId);
+        Task<bool> ActivateWaitlist(string confId, string userId);
     }
 
     public class ConferenceService : IConferenceService
@@ -308,6 +309,8 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
+                contractURL = technicalDetail.ContractUrl,
+                commission = technicalDetail.Commission,
                 //RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                 //{
                 //    RefundPolicyId = rp.RefundPolicyId,
@@ -1905,7 +1908,8 @@ namespace ConfRadar.Services.Services
                         ConferenceCategoryId = fullConference.ConferenceCategoryId,
                         ConferenceStatusId = fullConference.ConferenceStatusId,
                         TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-
+                        contractURL = technicalDetail?.ContractUrl,
+                        commission = technicalDetail?.Commission,
                         //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                         //{
                         //    RefundPolicyId = rp.RefundPolicyId,
@@ -2128,6 +2132,74 @@ namespace ConfRadar.Services.Services
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new BadRequestException("Hội nghị đang chờ được duyệt!");
             return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với ID: {userId} đang request conference với ID: {confId} để được duyệt");
+        }
+
+        public async Task<bool> ActivateWaitlist(string confId, string userId)
+        {
+            var basicConf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
+            if (basicConf == null)
+                throw new Exception($"Không tìm thấy hội nghị với ID {confId}");
+            if (basicConf.IsResearchConference != true)
+                throw new BadRequestException("Cần là hội nghị nghiên cứu để có thể kích hoạt waitlist");
+            if (basicConf.CreatedBy != userId)
+                throw new Exception("Bạn không có quyền kích hoạt chế độ waitlist cho hội nghị này");
+
+            var researchdetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(confId);
+            if (researchdetail == null) 
+                throw new BadRequestException($"Không tìm ra research detail cho hội nghị nghiên cứu với ID{confId}");
+
+            var notWaitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseNotWaitListByConferenceIdAsync(confId);
+            var isWaitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(confId);
+            if (isWaitlistPhase.IsActive == true && notWaitlistPhase.IsActive == false)
+                throw new BadRequestException($"Research conference với ID {confId} đã được kích hoạt waitlist rồi");
+
+            //check for pricephase to see if the creator have added more price phase for the isauthor conference price so that there are some eligible phases that are available 
+            //in the registration window of the waitlist phase with the available slot equal to the same conference price (because for every reject paper the available
+            //slot will  +1 again to cancel out the -1 whenever the isauthor conference price is bought) so the total slot conference price sold in the waitlist phase
+            //will be the remaining sum of available slot of the same isauthor conference price in the not waitlist phase
+
+            //get conference price is author of the conference
+            var existingIsAuthorCP = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(confId);
+
+            //check to see is there any remaining slot to sell when the waitlist phase
+            var sumExistingIsAuthor = existingIsAuthorCP.Sum(ia => ia.AvailableSlot);
+            if (sumExistingIsAuthor == 0)
+                throw new BadRequestException("Tát cả vé isAuthor đã bán hết trong phase chính rồi không thể mở waitlist vì không available slot cho loại vé IsAuthor nữa");
+
+            //check if the current day is after the end of the not waitlist phase and in the registration window of the waitlist phase
+            var today = ExtensionHelper.GetVietnamDate(); //get dateonly here
+            if (notWaitlistPhase.CameraReadyEndDate > today)
+                throw new Exception($"Không thể mở watilist vì chưa hết thời gian trong khung phase đầu:ngày kết thúc cameraready trong phase đầu là {notWaitlistPhase.CameraReadyEndDate:dd/MM/yyyy}  ngày hôm nay là {today:dd/MM/yyyy}");
+            if (isWaitlistPhase.RegistrationStartDate > today || today > isWaitlistPhase.RegistrationEndDate)
+                throw new Exception($"Chỉ có thể kích hoạt waitlist khi trong thời gian mở registration cho phase waitlist: {isWaitlistPhase.RegistrationStartDate:dd/MM/yyyy} {isWaitlistPhase.RegistrationEndDate:dd/MM/yyyy} ngày hôm nay là {today:dd/MM/yyyy}");
+
+            //check if there is price phase of isauthor for the conference that is linked to the waitlist phase
+            var pricePhases = await _unitOfWork.PricePhaseRepository.GetPricePhaseByconferenceIdThatIsAuthor(confId);
+
+            //check if the creator make any pricephase as supplements that linked to the waitlist phase instead of the not waitList phase
+            List<PricePhase> waitListPricePhase = new();
+            foreach(PricePhase pricePhase in pricePhases)
+            {
+                if (pricePhase.ResearchConferencePhaseId == isWaitlistPhase.ResearchConferencePhaseId)
+                    waitListPricePhase.Add(pricePhase);
+            }
+
+            if (!waitListPricePhase.Any())
+                throw new Exception("Vui lòng tạo thêm price phase cho những vé isauthor mở trong thời gian registration trong phase waitlist nhằm có thể phù hợp để bán");
+
+            //all is set now change the isactive flag of these two phases
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                isWaitlistPhase.IsActive = true;
+                notWaitlistPhase.IsActive = false;
+                await _unitOfWork.CommitAsync();
+                return true;
+            }catch(Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw ex;
+            }
         }
     }
 }

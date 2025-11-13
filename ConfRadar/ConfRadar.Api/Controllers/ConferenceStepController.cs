@@ -566,10 +566,10 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPost("prices/{conferencePriceId}/phases")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request)
+        public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request, [FromQuery] bool PhaseForWwaitlist)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request, userId);
+            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request, userId,PhaseForWwaitlist);
             return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được thêm thành công"));
         }
 
@@ -582,9 +582,9 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPut("phases/{pricePhaseId}")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> UpdatePricePhase(string pricePhaseId, [FromBody] UpdatePricePhaseRequest request)
+        public async Task<IActionResult> UpdatePricePhase(string pricePhaseId, [FromBody] UpdatePricePhaseRequest request, [FromQuery] bool PhaseForWwaitlist)
         {
-            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request);
+            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request, PhaseForWwaitlist);
             return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(pricePhase, "Giai đoạn giá vé được cập nhật thành công"));
         }
 

@@ -6,7 +6,7 @@ namespace ConfRadar.Services.Mappers
     public static class ConferenceStepMappers
     {
         // Conference Price Mappers
-        public static ConferencePrice ToModel(this CreateConferencePriceRequest request, string conferenceId,string researchPhaseId)
+        public static ConferencePrice ToModel(this CreateConferencePriceRequest request, string conferenceId)
         {
             return new ConferencePrice
             {
@@ -48,7 +48,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Price Phase Mappers
-        public static PricePhase ToModel(this CreatePricePhaseRequest request, string conferencePriceId)
+        public static PricePhase ToModel(this CreatePricePhaseRequest request, string conferencePriceId,string researchPhaseId)
         {
             return new PricePhase
             {
@@ -59,7 +59,8 @@ namespace ConfRadar.Services.Mappers
                 EndDate = request.EndDate,
                 TotalSlot = request.Totalslot,
                 AvailableSlot = request.Totalslot, // Initialize available slot to total slot
-                ConferencePriceId = conferencePriceId
+                ConferencePriceId = conferencePriceId,
+                ResearchConferencePhaseId = researchPhaseId
             };
         }
 
@@ -603,7 +604,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Price Phase Mappers - Extension methods for PricePhase DTOs
-        public static PricePhase ToModel(this CreatePricePhaseRequestForConferencePrice request, string conferencePriceId)
+        public static PricePhase ToModel(this CreatePricePhaseRequestForConferencePrice request, string conferencePriceId,string? researchPhaseId)
         {
             return new PricePhase
             {
@@ -614,7 +615,8 @@ namespace ConfRadar.Services.Mappers
                 EndDate = request.EndDate,
                 TotalSlot = request.TotalSlot,
                 AvailableSlot = request.TotalSlot, // Initialize available slot to total slot
-                ConferencePriceId = conferencePriceId
+                ConferencePriceId = conferencePriceId,
+                ResearchConferencePhaseId = researchPhaseId
             };
         }
 
