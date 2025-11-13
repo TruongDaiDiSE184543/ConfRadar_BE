@@ -457,7 +457,7 @@ namespace ConfRadar.Services.Services
                 var initialStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(initialStatusName);
 
                 // 2.4. Tạo Conference
-                var conference = ConferenceStepBasicCreateToModel.creatBasicConference(request, initialStatus, ExtensionHelper.GetVietnamDate(), userid);
+                var conference = ConferenceStepBasicCreateToModel.creatBasicConference(request, initialStatus, ExtensionHelper.GetVietnamTime(), userid);
                 await _unitOfWork.ConferenceRepository.CreateConferenceAsync(conference);
 
                 // 2.5. Tạo TechnicalConferenceDetail
@@ -1631,7 +1631,7 @@ namespace ConfRadar.Services.Services
 
                 Conference toBeCreatedConference;
                 var confStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
-                toBeCreatedConference = request.ToModel(confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), ExtensionHelper.GetVietnamDate());
+                toBeCreatedConference = request.ToModel(confStatus.Where(s => s.ConferenceStatusName == "Preparing").FirstOrDefault(), ExtensionHelper.GetVietnamTime());
 
                 await _unitOfWork.ConferenceRepository.CreateConferenceAsync(toBeCreatedConference);
                 // Note: No TechnicalConferenceDetail for research conference

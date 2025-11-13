@@ -336,7 +336,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? ConferenceCategoryId { get; set; }
 
         public string? CityId { get; set; }
-        public DateOnly? createdAt { get; set; }
+        public DateTime? createdAt { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
         public string? createdby { get; set; }
@@ -572,7 +572,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? ConferenceCategoryId { get; set; }
 
         public string? CityId { get; set; }
-        public DateOnly? createdAt { get; set; }
+        public DateTime? createdAt { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
         public string? createdby { get; set; }
