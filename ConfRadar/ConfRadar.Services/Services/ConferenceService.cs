@@ -199,7 +199,7 @@ namespace ConfRadar.Services.Services
             var totalCount = await query.CountAsync();
 
             var pagedConferences = await query
-                .OrderBy(c => c.CreatedAt)
+                .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -431,10 +431,9 @@ namespace ConfRadar.Services.Services
             var totalCount = await query.CountAsync();
 
             var pagedConferences = await query
-                .OrderBy(c => c.CreatedAt)
+                .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = pagedConferences.Select(conference => new ConferenceResponse
@@ -603,7 +602,7 @@ namespace ConfRadar.Services.Services
             var totalCount = await query.CountAsync();
 
             var pagedConferences = await query
-                .OrderBy(c => c.CreatedAt)
+                .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -1209,7 +1208,8 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = fullConference.ConferenceCategoryId,
                 ConferenceStatusId = fullConference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-
+                commission = technicalDetail?.Commission,
+                contractURL = technicalDetail?.ContractUrl,
                 //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                 //{
                 //    RefundPolicyId = rp.RefundPolicyId,
@@ -1608,10 +1608,9 @@ namespace ConfRadar.Services.Services
             var totalCount = await query.CountAsync();
 
             var pagedConferences = await query
-                .OrderBy(c => c.CreatedAt)
+                .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = new List<DTOs.Conference.ResearchConferenceDetailResponse>();
@@ -1814,7 +1813,7 @@ namespace ConfRadar.Services.Services
                 // Organizers can see all technical conferences
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
                     .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) 
-                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId) ; 
+                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId); 
             }
             else
             {
@@ -1854,10 +1853,9 @@ namespace ConfRadar.Services.Services
             var totalCount = await query.CountAsync();
 
             var pagedConferences = await query
-                .OrderBy(c => c.CreatedAt)
+                .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = new List<DTOs.Conference.TechnicalConferenceDetailResponse>();
@@ -2011,6 +2009,7 @@ namespace ConfRadar.Services.Services
         {
             // Get conferences for the user and by status
             var conferences = await _unitOfWork.ConferenceRepository.GetConferencesByUserIdAndStatusAsync(userId, statusId);
+            conferences = conferences.OrderByDescending(c => c.CreatedAt).ToList();
 
             var responses = new List<ConferenceWithStatusNameResponse>();
 
