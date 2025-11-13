@@ -171,7 +171,7 @@ namespace ConfRadar.Services.Services
             var readyStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
             IQueryable<Conference> query = _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhases)
+                    .ThenInclude(cp => cp.PricePhases).ThenInclude(pp => pp.RefundPolicies)
                     .Where(c => c.ConferenceStatusId == readyStatus.ConferenceStatusId)
                     .OrderByDescending(c => c.CreatedAt);
 
@@ -240,7 +240,15 @@ namespace ConfRadar.Services.Services
                         EndDate = pp.EndDate,
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot
+                        AvailableSlot = pp.AvailableSlot,
+                        RefundPolicies = pp?.RefundPolicies.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        {
+                            RefundPolicyId = rp.RefundPolicyId,
+                            PercentRefund = rp.PercentRefund,
+                            PricePhaseID = rp.PricePhaseId,
+                            RefundDeadline = rp.RefundDeadline,
+                            RefundOrder = rp.RefundOrder
+                        }).ToList()
                     }).ToList()
                 }).ToList()
             }).ToList();
@@ -271,6 +279,7 @@ namespace ConfRadar.Services.Services
                 .Include(c => c.Policies)
                 .Include(c => c.ConferencePrices)
                     .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Speakers)
                 .Include(c => c.ConferenceSessions)
@@ -383,7 +392,7 @@ namespace ConfRadar.Services.Services
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
                         AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                         {
                             RefundPolicyId = rp.RefundPolicyId,
                             PercentRefund = rp.PercentRefund,
@@ -740,6 +749,7 @@ namespace ConfRadar.Services.Services
                 .Include(c => c.Policies)
                 .Include(c => c.ConferencePrices)
                     .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
                 .Include(c => c.ConferenceSessions)
@@ -909,7 +919,7 @@ namespace ConfRadar.Services.Services
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
                         AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                         {
                             RefundPolicyId = rp.RefundPolicyId,
                             PercentRefund = rp.PercentRefund,
@@ -936,6 +946,7 @@ namespace ConfRadar.Services.Services
                 .Include(c => c.Policies)
                 .Include(c => c.ConferencePrices)
                     .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
                 .Include(c => c.ConferenceSessions)
@@ -1110,7 +1121,7 @@ namespace ConfRadar.Services.Services
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
                         AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                         {
                             RefundPolicyId = rp.RefundPolicyId,
                             PercentRefund = rp.PercentRefund,
@@ -1165,6 +1176,7 @@ namespace ConfRadar.Services.Services
                 .Include(c => c.Policies)
                 .Include(c => c.ConferencePrices)
                     .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Speakers)
                 .Include(c => c.ConferenceSessions)
@@ -1282,7 +1294,7 @@ namespace ConfRadar.Services.Services
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
                         AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                         {
                             RefundPolicyId = rp.RefundPolicyId,
                             PercentRefund = rp.PercentRefund,
@@ -1871,6 +1883,7 @@ namespace ConfRadar.Services.Services
                     .Include(c => c.Policies)
                     .Include(c => c.ConferencePrices)
                         .ThenInclude(cp => cp.PricePhases)
+                            .ThenInclude(pp => pp.RefundPolicies)
                     .Include(c => c.ConferenceSessions)
                         .ThenInclude(cs => cs.Speakers)
                     .Include(c => c.ConferenceSessions)
@@ -1980,7 +1993,7 @@ namespace ConfRadar.Services.Services
                                 ApplyPercent = pp.ApplyPercent,
                                 TotalSlot = pp.TotalSlot,
                                 AvailableSlot = pp.AvailableSlot,
-                                RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
+                                RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                                 {
                                     RefundPolicyId = rp.RefundPolicyId,
                                     PercentRefund = rp.PercentRefund,

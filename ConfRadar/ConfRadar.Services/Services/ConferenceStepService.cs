@@ -957,6 +957,22 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("Yêu cầu phải chứa ít nhất một phiên (session).");
             }
 
+            //check if session in request overlap
+
+            //group by same roomId and same date
+            var sessionGroupByRoomAndDate = request.Sessions.GroupBy(s => new { s.RoomId, s.Date });
+            foreach(var group in sessionGroupByRoomAndDate)
+            {
+                var sortedSession = group.OrderBy(g => g.StartTime).ToList();
+                for (int i = 0; i < sortedSession.Count - 1; i++)
+                {
+                    var currentSession = sortedSession[i];
+                    var nextSession = sortedSession[i+1];
+                    if (currentSession.EndTime > nextSession.StartTime)
+                        throw new Exception($"Dữ liệu request không hợp lệ: Phiên '{currentSession.Title}' (kết thúc lúc {currentSession.EndTime}) bị chồng chéo thời gian với phiên '{nextSession.Title}' (bắt đầu lúc {nextSession.StartTime}) trong cùng một phòng roomId {group.Key.RoomId} và cùng một ngày {group.Key.Date}.");
+            }
+            }
+
             var responses = new List<ConferenceSessionWithMediaResponse>();
 
             await _unitOfWork.BeginTransactionAsync();
@@ -1106,6 +1122,8 @@ namespace ConfRadar.Services.Services
             endDateTime = endDateTime.AddHours(newEndTime.Hour).AddMinutes(newEndTime.Minute);
 
             await ValidateSessionTimeAvailability(startDateTime, endDateTime, newRoomId, sessionId);
+
+
 
             session.Title = request.Title ?? session.Title;
             session.Description = request.Description ?? session.Description;
@@ -2390,12 +2408,19 @@ namespace ConfRadar.Services.Services
         public async Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request, bool PhaseForWwaitlist)
         {
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(pricePhaseId);
-            if (pricePhase == null) throw new NotFoundException($"Price phase with ID {pricePhaseId} not found");
+            if (pricePhase == null) throw new NotFoundException($"Price phase với ID {pricePhaseId} không tìm thấy được");
 
-            if (!string.IsNullOrEmpty(request.PhaseName)) pricePhase.PhaseName = request.PhaseName;
-            if (request.ApplyPercent.HasValue) pricePhase.ApplyPercent = request.ApplyPercent;
-            if (request.StartDate.HasValue) pricePhase.StartDate = request.StartDate;
-            if (request.EndDate.HasValue) pricePhase.EndDate = request.EndDate;
+            
+            if (!string.IsNullOrEmpty(request.PhaseName))
+            {
+                var existingPricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(pricePhase.ConferencePriceId);
+                if (existingPricePhase.Any(pp => pp.PhaseName.Equals(request.PhaseName)))
+                    throw new BadRequestException($"{request.PhaseName} đã được sử dụng cho pricephase trong cùng conference price với ID {pricePhase.ConferencePriceId}");
+            }
+            DateOnly? finalStartDate = request.StartDate ?? pricePhase.StartDate;
+            DateOnly? finalEndDate = request.EndDate ?? pricePhase.EndDate;
+            
+            //must between
             if (request.TotalSlot.HasValue)
             {
                 pricePhase.TotalSlot = request.TotalSlot;
