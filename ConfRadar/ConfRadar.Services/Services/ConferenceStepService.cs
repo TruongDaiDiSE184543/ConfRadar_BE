@@ -241,7 +241,17 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("Hội nghị nghiên cứu cần có ít nhất một loại vé dành cho tác giả.");
             }
 
+
+
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+            var IsAuthorConferencePrice = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(conferenceId);
+            var sumOfExistingIssAuthor = IsAuthorConferencePrice.Sum(cp => cp.TotalSlot);
+            var sumOfRequestIsAuthor = request.TypeOfTicket.Where(cp => cp.isAuthor == true).Sum(cp => cp.TotalSlot);
+
+            //existing isAuthor + request sum of isAuthor must net exceed numberOfAcceptedPaper in researchDetail
+            if (sumOfExistingIssAuthor + sumOfRequestIsAuthor > researchDetail.NumberPaperAccept)
+                throw new Exception($"Tổng vé is author đã có {sumOfExistingIssAuthor} và các vé trong request loại isauthor{sumOfRequestIsAuthor} không thể vượt numberOfAccepted in researchDetail{researchDetail.NumberPaperAccept}");
+
             if (researchDetail.AllowListener == true)
             {
                 if (!request.TypeOfTicket.Any(tot => tot.isAuthor == false))
@@ -250,7 +260,7 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-            return await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
+            return await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
         }
 
 
@@ -692,7 +702,7 @@ namespace ConfRadar.Services.Services
                             throw new BadRequestException($"Trong vé '{toBeConferencePrice.TicketName}', giai đoạn '{sortedPhases[i].PhaseName}' (kết thúc vào {sortedPhases[i].EndDate:dd/MM/yyyy}) bị chồng chéo hoặc quá sát với giai đoạn '{sortedPhases[i + 1].PhaseName}' (bắt đầu vào {sortedPhases[i + 1].StartDate:dd/MM/yyyy}).");
                         }
                     }
-                    var CreatedConferencePrice = toBeConferencePrice.ToModel(conferenceId);
+                    var CreatedConferencePrice = toBeConferencePrice.ToModel(conferenceId,"");
                     await _unitOfWork.ConferencePriceRepository.CreateConferencePriceAsync(CreatedConferencePrice);
                     foreach (CreatePricePhaseRequest createPricePhaseRequest in toBeConferencePrice.Phases)
                     {
@@ -1890,7 +1900,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<ResearchConferencePhaseResponse> GetResearchConferencePhaseAsync(string conferenceId)
         {
-            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(conferenceId);
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
             if (phase == null) throw new NotFoundException($"Research conference phase for conference ID {conferenceId} not found");
 
             return phase.ToResponse();
@@ -1898,7 +1908,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request, string userId)
         {
-            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByConferenceIdAsync(phaseId);
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(phaseId);
             if (phase == null) throw new NotFoundException($"Research conference phase with ID {phaseId} not found");
 
             phase.RegistrationStartDate = request.RegistrationStartDate ?? phase.RegistrationStartDate;

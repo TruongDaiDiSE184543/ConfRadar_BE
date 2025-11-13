@@ -6,7 +6,7 @@ namespace ConfRadar.Services.Mappers
     public static class ConferenceStepMappers
     {
         // Conference Price Mappers
-        public static ConferencePrice ToModel(this CreateConferencePriceRequest request, string conferenceId)
+        public static ConferencePrice ToModel(this CreateConferencePriceRequest request, string conferenceId,string researchPhaseId)
         {
             return new ConferencePrice
             {
@@ -17,7 +17,8 @@ namespace ConfRadar.Services.Mappers
                 IsAuthor = request.isAuthor,
                 TotalSlot = request.TotalSlot,
                 AvailableSlot = request.TotalSlot, // Initialize available slot to total slot
-                ConferenceId = conferenceId
+                ConferenceId = conferenceId,
+                
             };
         }
 
