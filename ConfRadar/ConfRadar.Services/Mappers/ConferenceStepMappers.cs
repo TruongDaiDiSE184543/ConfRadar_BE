@@ -75,7 +75,8 @@ namespace ConfRadar.Services.Mappers
                 ApplyPercent = model.ApplyPercent,
                 TotalSlot = model.TotalSlot,
                 AvailableSlot = model.AvailableSlot,
-                ConferencePriceId = model.ConferencePriceId
+                ConferencePriceId = model.ConferencePriceId,
+                ResearchConferencePhaseId = model.ResearchConferencePhaseId
             };
         }
 

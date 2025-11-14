@@ -248,7 +248,7 @@ namespace ConfRadar.Services.Services
                             PricePhaseID = rp.PricePhaseId,
                             RefundDeadline = rp.RefundDeadline,
                             RefundOrder = rp.RefundOrder
-                        }).ToList()
+                        }).OrderBy(rp => rp.RefundOrder).ToList()
                     }).ToList()
                 }).ToList()
             }).ToList();
@@ -399,7 +399,7 @@ namespace ConfRadar.Services.Services
                             RefundDeadline = rp.RefundDeadline,
                             RefundOrder = rp.RefundOrder,
                             PricePhaseID = pp.PricePhaseId
-                        }).ToList(),
+                        }).OrderBy(rp => rp.RefundOrder).ToList(),
                     }).ToList()
                 }).ToList(),
                 purchasedInfo = new PurchasedInfo
@@ -661,12 +661,15 @@ namespace ConfRadar.Services.Services
             if (conference.CreatedBy != userId) throw new BadRequestException("Chỉ có người tạo ra conference mới thay đổi được trạng thái");
 
             //Collaborator's technical confs need to be approved to preparing status first only then they can change the status
+            var newStatusEntity = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(newStatus);
+            if (newStatusEntity == null) throw new BadRequestException($"Không tim thấy conference status với ID {newStatus}");
+
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing first để có thể thay đổi trạng thái");
-            if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId) throw new Exception("Conference cần request lên pending để Organizer approve lên preparing first để có thể thay đổi trạng thái");
-            var newStatusEntity = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(newStatus);
-            if (newStatusEntity == null) throw new BadRequestException($"Không tim thấy conference status với ID{newStatus}");
+            var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing first để có thể thay đổi trạng thái");
+            if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete.Conference cần request lên pending để Organizer approve lên preparing first để có thể thay đổi trạng thái khác");
+            
 
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
@@ -925,7 +928,7 @@ namespace ConfRadar.Services.Services
                             PercentRefund = rp.PercentRefund,
                             RefundDeadline = rp.RefundDeadline,
                             RefundOrder = rp.RefundOrder
-                        }).ToList(),
+                        }).OrderBy(rp => rp.RefundOrder).ToList(),
                     }).ToList()
                 }).ToList(),
                 purchasedInfo = new PurchasedInfo
@@ -1128,7 +1131,7 @@ namespace ConfRadar.Services.Services
                             RefundDeadline = rp.RefundDeadline,
                             RefundOrder = rp.RefundOrder,
                             PricePhaseID = pp.PricePhaseId
-                        }).ToList(),
+                        }).OrderBy(rp => rp.RefundOrder).ToList(),
                     }).ToList(),
 
                 }).ToList(),
@@ -1301,7 +1304,7 @@ namespace ConfRadar.Services.Services
                             RefundDeadline = rp.RefundDeadline,
                             RefundOrder = rp.RefundOrder,
                             PricePhaseID = pp.PricePhaseId
-                        }).ToList(),
+                        }).OrderBy(rp => rp.RefundOrder).ToList(),
                     }).ToList()
                 }).ToList(),
 
@@ -2000,7 +2003,7 @@ namespace ConfRadar.Services.Services
                                     RefundDeadline = rp.RefundDeadline,
                                     RefundOrder = rp.RefundOrder,
                                     PricePhaseID = pp.PricePhaseId
-                                }).ToList(),
+                                }).OrderBy(rp => rp.RefundOrder).ToList(),
                             }).ToList()
                         }).ToList()
                     };
@@ -2146,73 +2149,85 @@ namespace ConfRadar.Services.Services
             return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với ID: {userId} đang request conference với ID: {confId} để được duyệt");
         }
 
+        // DÁN TOÀN BỘ PHIÊN BẢN NÀY ĐỂ THAY THẾ PHIÊN BẢN CŨ
+
         public async Task<bool> ActivateWaitlist(string confId, string userId)
         {
-            var basicConf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
-            if (basicConf == null)
-                throw new Exception($"Không tìm thấy hội nghị với ID {confId}");
-            if (basicConf.IsResearchConference != true)
-                throw new BadRequestException("Cần là hội nghị nghiên cứu để có thể kích hoạt waitlist");
-            if (basicConf.CreatedBy != userId)
-                throw new Exception("Bạn không có quyền kích hoạt chế độ waitlist cho hội nghị này");
+            #region === 1. LẤY DỮ LIỆU VÀ VALIDATION CƠ BẢN ===
 
-            var researchdetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(confId);
-            if (researchdetail == null)
-                throw new BadRequestException($"Không tìm ra research detail cho hội nghị nghiên cứu với ID{confId}");
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
+            if (conference == null)
+                throw new NotFoundException($"Không tìm thấy hội nghị với ID {confId}");
 
+            // 1.1. Phân quyền và loại hội nghị
+            if (conference.CreatedBy != userId)
+                throw new BadRequestException("Bạn không có quyền kích hoạt chế độ waitlist cho hội nghị này.");
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
+
+            // 1.2. Lấy các Phase và kiểm tra sự tồn tại
             var notWaitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseNotWaitListByConferenceIdAsync(confId);
-            var isWaitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(confId);
-            if (isWaitlistPhase.IsActive == true && notWaitlistPhase.IsActive == false)
-                throw new BadRequestException($"Research conference với ID {confId} đã được kích hoạt waitlist rồi");
+            var waitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(confId);
+            if (notWaitlistPhase == null || waitlistPhase == null)
+                throw new InvalidOperationException("Hội nghị chưa được cấu hình đầy đủ phase chính và phase waitlist.");
 
-            //check for pricephase to see if the creator have added more price phase for the isauthor conference price so that there are some eligible phases that are available 
-            //in the registration window of the waitlist phase with the available slot equal to the same conference price (because for every reject paper the available
-            //slot will  +1 again to cancel out the -1 whenever the isauthor conference price is bought) so the total slot conference price sold in the waitlist phase
-            //will be the remaining sum of available slot of the same isauthor conference price in the not waitlist phase
+            // 1.3. Kiểm tra xem waitlist đã được kích hoạt chưa
+            if (waitlistPhase.IsActive == true) // Chỉ cần kiểm tra phase waitlist là đủ
+                throw new BadRequestException($"Waitlist cho hội nghị này đã được kích hoạt trước đó.");
 
-            //get conference price is author of the conference
-            var existingIsAuthorCP = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(confId);
+            // 1.4. Lấy Research Detail (cần cho các bước sau)
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(confId);
+            if (researchDetail == null)
+                throw new InvalidOperationException($"Hội nghị chưa có chi tiết nghiên cứu (Research Detail).");
 
-            //check to see is there any remaining slot to sell when the waitlist phase
-            var sumExistingIsAuthor = existingIsAuthorCP.Sum(ia => ia.AvailableSlot);
-            if (sumExistingIsAuthor == 0)
-                throw new BadRequestException("Tát cả vé isAuthor đã bán hết trong phase chính rồi không thể mở waitlist vì không available slot cho loại vé IsAuthor nữa");
+            #endregion
 
-            //check if the current day is after the end of the not waitlist phase and in the registration window of the waitlist phase
-            var today = ExtensionHelper.GetVietnamDate(); //get dateonly here
-            if (notWaitlistPhase.CameraReadyEndDate > today)
-                throw new Exception($"Không thể mở watilist vì chưa hết thời gian trong khung phase đầu:ngày kết thúc cameraready trong phase đầu là {notWaitlistPhase.CameraReadyEndDate:dd/MM/yyyy}  ngày hôm nay là {today:dd/MM/yyyy}");
-            if (isWaitlistPhase.RegistrationStartDate > today || today > isWaitlistPhase.RegistrationEndDate)
-                throw new Exception($"Chỉ có thể kích hoạt waitlist khi trong thời gian mở registration cho phase waitlist: {isWaitlistPhase.RegistrationStartDate:dd/MM/yyyy} {isWaitlistPhase.RegistrationEndDate:dd/MM/yyyy} ngày hôm nay là {today:dd/MM/yyyy}");
+            #region === 2. VALIDATION LOGIC NGHIỆP VỤ ===
 
-            //check if there is price phase of isauthor for the conference that is linked to the waitlist phase
-            var pricePhases = await _unitOfWork.PricePhaseRepository.GetPricePhaseByconferenceIdThatIsAuthor(confId);
+            // 2.1. Kiểm tra số lượng vé Author còn lại
+            var authorConferencePrices = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(confId);
+            var remainingAuthorSlots = authorConferencePrices.Sum(cp => cp.AvailableSlot ?? 0);
+            if (remainingAuthorSlots <= 0)
+                throw new BadRequestException("Không thể kích hoạt waitlist vì tất cả các suất dành cho tác giả (vé 'isAuthor') đã được bán hết.");
 
-            //check if the creator make any pricephase as supplements that linked to the waitlist phase instead of the not waitList phase
-            List<PricePhase> waitListPricePhase = new();
-            foreach (PricePhase pricePhase in pricePhases)
-            {
-                if (pricePhase.ResearchConferencePhaseId == isWaitlistPhase.ResearchConferencePhaseId)
-                    waitListPricePhase.Add(pricePhase);
-            }
+            // 2.2. Kiểm tra điều kiện thời gian
+            var today = ExtensionHelper.GetVietnamDate();
+            // 2.2a. Phải sau khi phase chính kết thúc hoàn toàn (kết thúc Camera Ready)
+            if (today <= notWaitlistPhase.CameraReadyEndDate)
+                throw new BadRequestException($"Không thể kích hoạt waitlist khi phase chính chưa kết thúc. Phase chính kết thúc vào ngày: {notWaitlistPhase.CameraReadyEndDate:dd/MM/yyyy}.");
 
-            if (!waitListPricePhase.Any())
-                throw new Exception("Vui lòng tạo thêm price phase cho những vé isauthor mở trong thời gian registration trong phase waitlist nhằm có thể phù hợp để bán");
+            // 2.2b. Phải nằm trong khoảng thời gian đăng ký của phase waitlist
+            if (today < waitlistPhase.RegistrationStartDate || today > waitlistPhase.RegistrationEndDate)
+                throw new BadRequestException($"Chỉ có thể kích hoạt waitlist trong khoảng thời gian đăng ký của nó ({waitlistPhase.RegistrationStartDate:dd/MM/yyyy} - {waitlistPhase.RegistrationEndDate:dd/MM/yyyy}).");
 
-            //all is set now change the isactive flag of these two phases
+            // 2.3. Kiểm tra xem người tổ chức đã tạo PricePhase cho vé Author trong giai đoạn Waitlist chưa
+            var allAuthorPricePhases = await _unitOfWork.PricePhaseRepository.GetPricePhaseByconferenceIdThatIsAuthor(confId);
+            bool hasPricePhaseForWaitlist = allAuthorPricePhases.Any(pp => pp.ResearchConferencePhaseId == waitlistPhase.ResearchConferencePhaseId);
+
+            if (!hasPricePhaseForWaitlist)
+                throw new BadRequestException("Không thể kích hoạt waitlist. Vui lòng tạo ít nhất một 'Giai đoạn bán vé' (Price Phase) cho loại vé 'isAuthor' có khoảng thời gian nằm trong giai đoạn đăng ký của waitlist.");
+
+            #endregion
+
+            #region === 3. THỰC THI THAY ĐỔI ===
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                isWaitlistPhase.IsActive = true;
+                waitlistPhase.IsActive = true;
                 notWaitlistPhase.IsActive = false;
+
+                await _unitOfWork.ResearchConferencePhaseRepository.UpdateResearchConferencePhaseAsync(waitlistPhase);
+                await _unitOfWork.ResearchConferencePhaseRepository.UpdateResearchConferencePhaseAsync(notWaitlistPhase);
+
                 await _unitOfWork.CommitAsync();
                 return true;
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                throw ex;
+                throw;
             }
+            #endregion
         }
     }
 }

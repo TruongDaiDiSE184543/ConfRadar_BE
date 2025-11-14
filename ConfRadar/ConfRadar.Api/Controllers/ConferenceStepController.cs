@@ -566,10 +566,10 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPost("prices/{conferencePriceId}/phases")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request, [FromQuery] bool PhaseForWwaitlist)
+        public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request, userId, PhaseForWwaitlist);
+            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request, userId);
             return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được thêm thành công"));
         }
 
@@ -582,9 +582,10 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPut("phases/{pricePhaseId}")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> UpdatePricePhase(string pricePhaseId, [FromBody] UpdatePricePhaseRequest request, [FromQuery] bool PhaseForWwaitlist)
+        public async Task<IActionResult> UpdatePricePhase(string pricePhaseId, [FromBody] UpdatePricePhaseRequest request)
         {
-            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request, PhaseForWwaitlist);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request,userId);
             return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(pricePhase, "Giai đoạn giá vé được cập nhật thành công"));
         }
 
@@ -599,6 +600,16 @@ namespace ConfRadar.Api.Controllers
             }
             return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy giai đoạn giá vé"));
         }
+
+        [HttpPut("add-pricephase-for-waitlist")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> AddWaitListPhase([FromQuery] string conferencePriceId,[FromBody]AddPricePhasesRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.AddPricePhaseForWaitList(conferencePriceId, request,userId);
+            return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(null, "Giai đoạn giá vé cho waitlist được thêm thành công"));
+        }
+
 
         #endregion
 
