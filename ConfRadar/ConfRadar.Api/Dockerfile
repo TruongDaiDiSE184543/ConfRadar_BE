@@ -2,6 +2,11 @@
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+USER root
+# Cài đặt libfaketime
+RUN apt-get update && \
+    apt-get install -y libfaketime && \
+    rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 WORKDIR /app
 
