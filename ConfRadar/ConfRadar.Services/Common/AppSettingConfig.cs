@@ -81,6 +81,11 @@
             public string ReturnUrl { get; set; }
 
         }
+        public class QrSettings
+        {
+            public string HashKey { get; set; }
+            public string CheckSumKey { get; set; }
+        }
 
 
     }

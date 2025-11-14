@@ -114,7 +114,7 @@ namespace ConfRadar.Repositories.Repositories
                 ConferencePrice = new CustomerTicketConferencePriceDetailResponse()
                 {
                     ConferencePriceId = t.PricePhase.ConferencePriceId,
-                    TicketPrice =t.PricePhase!=null && t.PricePhase.ConferencePrice!=null ? t.PricePhase.ConferencePrice.TicketPrice:null,
+                    TicketPrice = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketPrice : null,
                     TicketName = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketName : null,
                     TicketDescription = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketDescription : null,
                     TotalSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TotalSlot : null,
@@ -122,27 +122,30 @@ namespace ConfRadar.Repositories.Repositories
                     ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.ConferenceId : null,
                     IsAuthor = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.IsAuthor : null,
 
-                    PaperId = _context.Papers
-                    .Where(p => p.PaperAuthors.Any(pa=>pa.UserId == userId)
-                    &&  t.PricePhase != null 
-                    && t.PricePhase.ConferencePrice != null 
+                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
+                    && t.PricePhase != null
+                    && t.PricePhase.ConferencePrice != null
                     && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
                     .Select(p => p.PaperId)
-                    .FirstOrDefault(),
+                    .FirstOrDefault() : null,
 
-                    RegistrationStartDate = _context.Papers
+                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
-                    && p.ResearchConferencePhase != null && t.PricePhase != null 
-                    && t.PricePhase.ConferencePrice != null&& p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
+                    && p.ResearchConferencePhase != null && t.PricePhase != null
+                    && t.PricePhase.ConferencePrice != null && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
                     .Select(p => p.ResearchConferencePhase!.RegistrationStartDate)
-                    .FirstOrDefault(),
+                    .FirstOrDefault() : null,
 
-                    RegistrationEndDate = _context.Papers
-                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId) 
-                    && p.ResearchConferencePhase != null && t.PricePhase != null 
+                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
+                    && p.ResearchConferencePhase != null && t.PricePhase != null
                     && t.PricePhase.ConferencePrice != null && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
                     .Select(p => p.ResearchConferencePhase!.RegistrationEndDate)
-                    .FirstOrDefault(),
+                    .FirstOrDefault() : null,
 
 
 
@@ -287,6 +290,8 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(pp => pp.RefundPolicies)
                 .Include(t => t.PricePhase)
                     .ThenInclude(pp => pp.ConferencePrice)
+                        .ThenInclude(cp => cp.Conference)
+                            .ThenInclude(c => c.ResearchConferenceDetail)
                 .Include(t => t.Transactions)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(t => t.TicketId == ticketId && t.UserId == userId);
@@ -304,7 +309,7 @@ namespace ConfRadar.Repositories.Repositories
                    .ThenInclude(t => t.ConferencePrice)
                .FirstOrDefaultAsync(t => t.UserId == userId
                && t.PricePhase != null
-               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor==true
+               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true
                && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
         }
 

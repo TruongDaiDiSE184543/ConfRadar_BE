@@ -569,7 +569,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> AddPricePhases(string conferencePriceId, [FromBody] AddPricePhasesRequest request, [FromQuery] bool PhaseForWwaitlist)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request, userId,PhaseForWwaitlist);
+            var pricePhases = await _serviceManager.ConferenceStepService.AddPricePhasesAsync(conferencePriceId, request, userId, PhaseForWwaitlist);
             return Ok(ApiResponse<List<PricePhaseResponse>>.SuccessResponse(pricePhases, "Giai đoạn giá vé được thêm thành công"));
         }
 

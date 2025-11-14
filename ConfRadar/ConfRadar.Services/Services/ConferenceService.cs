@@ -1816,7 +1816,7 @@ namespace ConfRadar.Services.Services
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             IQueryable<Conference> query;
 
-            if(isOrganizer && !string.IsNullOrEmpty(conferenceStatusId)  && conferenceStatusId == draftStatus.ConferenceStatusId)
+            if (isOrganizer && !string.IsNullOrEmpty(conferenceStatusId) && conferenceStatusId == draftStatus.ConferenceStatusId)
             {
                 throw new BadRequestException("Organizers không được phép xem hoặc lọc theo trạng thái 'Draft'.");
             }
@@ -1824,8 +1824,8 @@ namespace ConfRadar.Services.Services
             {
                 // Organizers can see all technical conferences
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) 
-                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId); 
+                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null)
+                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId);
             }
             else
             {
@@ -2157,7 +2157,7 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Bạn không có quyền kích hoạt chế độ waitlist cho hội nghị này");
 
             var researchdetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(confId);
-            if (researchdetail == null) 
+            if (researchdetail == null)
                 throw new BadRequestException($"Không tìm ra research detail cho hội nghị nghiên cứu với ID{confId}");
 
             var notWaitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseNotWaitListByConferenceIdAsync(confId);
@@ -2190,7 +2190,7 @@ namespace ConfRadar.Services.Services
 
             //check if the creator make any pricephase as supplements that linked to the waitlist phase instead of the not waitList phase
             List<PricePhase> waitListPricePhase = new();
-            foreach(PricePhase pricePhase in pricePhases)
+            foreach (PricePhase pricePhase in pricePhases)
             {
                 if (pricePhase.ResearchConferencePhaseId == isWaitlistPhase.ResearchConferencePhaseId)
                     waitListPricePhase.Add(pricePhase);
@@ -2207,7 +2207,8 @@ namespace ConfRadar.Services.Services
                 notWaitlistPhase.IsActive = false;
                 await _unitOfWork.CommitAsync();
                 return true;
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
                 throw ex;

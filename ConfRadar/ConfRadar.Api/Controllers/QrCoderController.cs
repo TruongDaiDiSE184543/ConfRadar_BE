@@ -1,6 +1,5 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Services.Common;
-using ConfRadar.Services.Services;
+using ConfRadar.Services;
 using ConfRadar.Shared.DTO.QrCode;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,34 +9,16 @@ namespace ConfRadar.Api.Controllers
     [ApiController]
     public class QrCoderController : ControllerBase
     {
-        private readonly IQRCoderService _qRCoderService;
-        private readonly ITokenService _tokenService;
-        public QrCoderController(IQRCoderService qRCoderService, ITokenService tokenService)
+        private readonly IServiceManager _serviceManager;
+        public QrCoderController(IServiceManager serviceManager)
         {
-            _qRCoderService = qRCoderService;
-            _tokenService = tokenService;
-        }
-        [HttpGet("create-qrcode")]
-        public async Task<IActionResult> GetQrCode()
-        {
-            var json = new QrDataPayload()
-            {
-                ConferenceSessionId = "1234",
-                CreatedAt = ExtensionHelper.GetVietnamTime(),
-                Signature = "12313",
-                TicketId = "1313",
-                UserCheckinId = "123",
-                UserId = "123"
-            };
-            string uniqueFileName = _tokenService.GenerateSecureRandomToken();
-            var qrLink = await _qRCoderService.GenerateQrCodeAsync(json, uniqueFileName, "image/png");
-            return Ok(ApiResponse<string>.SuccessResponse(qrLink, "qrLink"));
+            _serviceManager = serviceManager;
         }
         [HttpPost("verify-qrcode")]
-        public IActionResult VerifyQrCode([FromBody] VerifyQrDataRequest request)
+        public async Task<IActionResult> VerifyQrCode([FromBody] VerifyQrDataRequest request)
         {
-            _qRCoderService.ProcessScanQr(request.Content);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "qrLink"));
+            var message = await _serviceManager.QRCoderService.ProceedQrCode(request);
+            return Ok(ApiResponse<object>.SuccessResponse(message, "đã check in thành công"));
         }
     }
 }
