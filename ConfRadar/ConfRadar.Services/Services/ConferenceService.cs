@@ -270,7 +270,7 @@ namespace ConfRadar.Services.Services
                 var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
                 ticketId = ticket?.TicketId;
                 pricePhaseId = ticket?.PricePhaseId;
-                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferenceId;
+                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferencePriceId;
             }
 
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
@@ -743,7 +743,7 @@ namespace ConfRadar.Services.Services
                 var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
                 ticketId = ticket?.TicketId;
                 pricePhaseId = ticket?.PricePhaseId;
-                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferenceId;
+                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferencePriceId;
             }
             // Get the main conference with related data
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
