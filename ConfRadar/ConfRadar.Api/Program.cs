@@ -18,7 +18,7 @@ using (var scope = app.Services.CreateScope())
     var seedDataService = scope.ServiceProvider.GetRequiredService<ISeedDataService>();
     //await seedDataService.SeedRolesAsync();
     //await seedDataService.SeedGlobalStatusesAsync();
-    await seedDataService.SeedConferenceStatusesAsync();
+    //await seedDataService.SeedConferenceStatusesAsync();
     //await seedDataService.SeedRankingCategoriesAsync();
     //await seedDataService.SeedReviewStatusesAsync();
     //await seedDataService.SeedPaperPhasesAsync();

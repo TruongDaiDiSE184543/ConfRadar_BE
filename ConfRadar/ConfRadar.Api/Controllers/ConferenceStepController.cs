@@ -333,7 +333,7 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPut("{conferenceId}/research/basic")]
         [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> UpdateResearchConferenceBasic(string conferenceId, [FromForm] UpdateConferenceBasicRequest request)
+        public async Task<IActionResult> UpdateResearchConferenceBasic(string conferenceId, [FromForm] UpdateResearchConferenceBasicRequest request)
         {
             var conference = await _serviceManager.ConferenceStepService.UpdateResearchConferenceBasicAsync(conferenceId, request);
             return Ok(ApiResponse<ResearchConferenceBasicStepResponse>.SuccessResponse(conference, "Thông tin hội nghị nghiên cứu được cập nhật thành công"));
@@ -656,7 +656,7 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPost("research/phases/{researchConferencePhaseId}/revision-round-deadlines")]
         [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> AddRevisionRoundDeadlines(string researchConferencePhaseId, [FromBody] List<CreateRevisionRoundDeadlineRequest> request)
+        public async Task<IActionResult> AddRevisionRoundDeadlines(string researchConferencePhaseId, [FromBody] addRevisionRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var deadlines = await _serviceManager.ConferenceStepService.AddRevisionRoundDeadlinesAsync(researchConferencePhaseId, request, userId);

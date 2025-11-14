@@ -238,6 +238,37 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? targetaudience { get; set; }
     }
 
+
+
+    public class UpdateResearchConferenceBasicRequest
+    {
+        [MaxLength(255)]
+        public string? ConferenceName { get; set; }
+
+        [MaxLength(500)]
+        public string? Description { get; set; }
+
+
+        public DateOnly? StartDate { get; set; }
+
+        public DateOnly? EndDate { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Tổng số vé phải là một số dương.")]
+        public int? TotalSlot { get; set; }
+
+        [MaxLength(255)]
+        public string? Address { get; set; }
+
+        public IFormFile? BannerImageFile { get; set; }
+
+
+        [MaxLength(50)]
+        public string? ConferenceCategoryId { get; set; }
+
+        public string? CityId { get; set; }
+        public DateOnly? TicketSaleStart { get; set; }
+        public DateOnly? TicketSaleEnd { get; set; }
+    }
+
     public class UpdateConferencePriceRequest
     {
         public decimal? TicketPrice { get; set; }
@@ -723,6 +754,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public List<CreateRevisionRoundDeadlineRequest>? RevisionRoundDeadlines { get; set; }
     }
 
+    public class addRevisionRequest
+    {
+        public List<CreateRevisionRoundDeadlineRequest> revision { get; set;}
+    }
+
     public class CreateRevisionRoundDeadlineRequest
     {
         [Required(ErrorMessage = "Ngày bắt đầu nộp bài là bắt buộc.")]
@@ -745,8 +781,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? ReviseEndDate { get; set; }
         public DateOnly? CameraReadyStartDate { get; set; }
         public DateOnly? CameraReadyEndDate { get; set; }
-        public bool? IsWaitlist { get; set; }
-        public bool? IsActive { get; set; }
     }
 
     public class UpdateRevisionRoundDeadlineRequest
