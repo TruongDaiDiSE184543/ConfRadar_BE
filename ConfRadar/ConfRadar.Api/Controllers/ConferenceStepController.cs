@@ -25,11 +25,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreateConferenceBasic([FromForm] CreateTechnicalConferenceBasicRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(ApiResponse<object>.FailResponse("Người dùng chưa xác thực"));
-            }
-
+          
             var conference = await _serviceManager.ConferenceStepService.CreateTechnicalConferenceBasicAsync(request, userId);
             return Ok(ApiResponse<TechnicalConferenceBasicStepResponse>.SuccessResponse(conference, "Hội nghị được tạo thành công"));
         }
