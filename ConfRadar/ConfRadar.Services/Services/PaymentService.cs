@@ -5,6 +5,7 @@ using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.DTOs.Transaction;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.Payment;
+using ConfRadar.Shared.DTO.QrCode;
 using Microsoft.Extensions.Options;
 using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
@@ -41,7 +42,8 @@ namespace ConfRadar.Services.Services
         private readonly IMomoService _momoService;
         private readonly IPayOsService _payOsService;
         private readonly IVnPayService _vnPayService;
-        public PaymentService(IUnitOfWork unitOfWork, IOptions<MomoSettings> momoSettings, IRedisService redisService, ITokenService tokenService, IMomoService momoService, IPayOsService payOsService, IOptions<PayOsSettings> payOsSettings, IVnPayService vnPayService)
+        private readonly IQRCoderService _qRCoderService;
+        public PaymentService(IUnitOfWork unitOfWork, IOptions<MomoSettings> momoSettings, IRedisService redisService, ITokenService tokenService, IMomoService momoService, IPayOsService payOsService, IOptions<PayOsSettings> payOsSettings, IVnPayService vnPayService, IQRCoderService qRCoderService)
         {
             _unitOfWork = unitOfWork;
             _momoSettings = momoSettings;
@@ -51,6 +53,7 @@ namespace ConfRadar.Services.Services
             _payOsSettings = payOsSettings;
             _payOsService = payOsService;
             _vnPayService = vnPayService;
+            _qRCoderService = qRCoderService;
         }
 
         public async Task<List<PaymentMethod>> GetListPaymentMethod()
@@ -760,6 +763,18 @@ namespace ConfRadar.Services.Services
                     ConferenceSessionId = sessionId,
 
                 };
+                var qrData = new QrDataPayload()
+                {
+                    userCheckinId = userCheckInObj.UserCheckinId,
+                    userId = transacDataHolder.UserId,
+                    ticketId = transacDataHolder.TicketId,
+                    conferenceSessionId = sessionId,
+                    createAt = timeNow,
+
+                };
+                var finalQrData = _qRCoderService.CreateQrDataPayload(qrData);
+                var qrUrl = await _qRCoderService.GenerateQrCode(finalQrData);
+                userCheckInObj.QrUrl = qrUrl;
                 ticketObj.UserCheckIns.Add(userCheckInObj);
             }
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
@@ -851,6 +866,18 @@ namespace ConfRadar.Services.Services
                     TicketId = transacDataHolder.TicketId,
                     ConferenceSessionId = sessionId
                 };
+                var qrData = new QrDataPayload()
+                {
+                    userCheckinId = userCheckInObj.UserCheckinId,
+                    userId = transacDataHolder.UserId,
+                    ticketId = transacDataHolder.TicketId,
+                    conferenceSessionId = sessionId,
+                    createAt = timeNow,
+
+                };
+                var finalQrData = _qRCoderService.CreateQrDataPayload(qrData);
+                var qrUrl = await _qRCoderService.GenerateQrCode(finalQrData);
+                userCheckInObj.QrUrl = qrUrl;
                 ticketObj.UserCheckIns.Add(userCheckInObj);
             }
             var paperObj = new Paper()
@@ -967,6 +994,18 @@ namespace ConfRadar.Services.Services
                     TicketId = transacDataHolder.TicketId,
                     ConferenceSessionId = sessionId
                 };
+                var qrData = new QrDataPayload()
+                {
+                    userCheckinId = userCheckInObj.UserCheckinId,
+                    userId = transacDataHolder.UserId,
+                    ticketId = transacDataHolder.TicketId,
+                    conferenceSessionId = sessionId,
+                    createAt = timeNow,
+
+                };
+                var finalQrData = _qRCoderService.CreateQrDataPayload(qrData);
+                var qrUrl = await _qRCoderService.GenerateQrCode(finalQrData);
+                userCheckInObj.QrUrl = qrUrl;
                 ticketObj.UserCheckIns.Add(userCheckInObj);
             }
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);

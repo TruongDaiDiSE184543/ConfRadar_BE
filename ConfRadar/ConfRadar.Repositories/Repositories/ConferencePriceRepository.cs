@@ -101,7 +101,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<ConferencePrice>> GetNumberOfIsAuthorByConferenceId(string confId)
         {
-            return await _context.ConferencePrices.Where( cp => cp.ConferenceId ==  confId && cp.IsAuthor == true).ToListAsync();
+            return await _context.ConferencePrices.Where(cp => cp.ConferenceId == confId && cp.IsAuthor == true).ToListAsync();
         }
     }
 }

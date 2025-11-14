@@ -102,8 +102,8 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId)
         {
             return await _context.Papers
-
                .Include(p => p.Conference)
+               .Include(p => p.PaperPhase)
                .Include(p => p.Abstract)
                     .ThenInclude(a => a.GlobalStatus)
                .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == userId));

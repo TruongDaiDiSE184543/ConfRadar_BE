@@ -1819,7 +1819,7 @@ namespace ConfRadar.Services.Services
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             IQueryable<Conference> query;
 
-            if(isOrganizer && !string.IsNullOrEmpty(conferenceStatusId)  && conferenceStatusId == draftStatus.ConferenceStatusId)
+            if (isOrganizer && !string.IsNullOrEmpty(conferenceStatusId) && conferenceStatusId == draftStatus.ConferenceStatusId)
             {
                 throw new BadRequestException("Organizers không được phép xem hoặc lọc theo trạng thái 'Draft'.");
             }
@@ -1827,8 +1827,8 @@ namespace ConfRadar.Services.Services
             {
                 // Organizers can see all technical conferences
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) 
-                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId); 
+                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null)
+                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId);
             }
             else
             {

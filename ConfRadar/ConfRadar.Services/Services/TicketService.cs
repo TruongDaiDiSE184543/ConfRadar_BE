@@ -17,7 +17,7 @@ namespace ConfRadar.Services.Services
         Task<int> CreateRefundTicketRequest(RefundTicketRequest request, string userId);
         Task<List<RefundRequestResponse>> GetRefundRequestByConferenceId(string conferenceId);
         Task<List<RefundRequestResponse>> GetAllRefundRequests();
-        Task<int> RefundCloneFunction(string userId, string ticketId, string walletTransactionDescription);
+        Task<int> RefundAuthorCloneFunction(string userId, string ticketId, string walletTransactionDescription);
     }
     public class TicketService : ITicketService
     {
@@ -59,6 +59,8 @@ namespace ConfRadar.Services.Services
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
             var rejectedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+
+
             var walletPaymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.Wallet.GetDescription());
             if (acceptedGlobalStatus == null || rejectedGlobalStatus == null || walletPaymentMethod == null || pendingGlobalStatus == null)
             {
@@ -93,205 +95,52 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn đã gửi yêu cầu hoàn tiền vào ngày {refundRequestAlreadyExisted.CreatedAt}. Chúng tôi đề nghị bạn không được spam!");
             }
-            var conferencePriceDetail = ticket.PricePhase.ConferencePrice;
-            if (conferencePriceDetail == null)
-            {
-                throw new NotFoundException("Không tìm thấy conference price detail");
-            }
-
-
-
-
-
-
             //check để thêm data vô bảng refund request
             var dateNow = ExtensionHelper.GetVietnamDate();
             var dateTime = ExtensionHelper.GetVietnamTime();
 
             string refundRequestReason = string.Empty;
-            GlobalStatus finalGlobalStatus = acceptedGlobalStatus;
-            //cho init ban đầu là accept, qua từng filter , nào ko hợp => reject
+
+            decimal refundAmount = 0;
+            //cho init ban đầu là accept, qua từng filter , nào ko hợp => lỗi
+            
             var refundPolicies = ticket.PricePhase.RefundPolicies;
-
-            RefundPolicy? validRefundPolicy = null;
-            if (refundPolicies.Count <= 0)
+            if (!refundPolicies.Any())
             {
-                refundRequestReason = "Xin lỗi bạn, hiện tại chính sách này không cho phép được hoàn tiền";
-                finalGlobalStatus = rejectedGlobalStatus;
+                throw new BadRequestException("Không có chính sách hoàn tiền cho vé này");
             }
-            else
+            var validPolicy = refundPolicies
+                    .OrderBy(r => r.RefundDeadline)
+                    .FirstOrDefault(rp => rp.RefundDeadline >= dateNow);
+            if (validPolicy == null)
             {
-                var sortedRefundPolicies = refundPolicies.OrderBy(r => r.RefundDeadline).ToList();
-                validRefundPolicy = sortedRefundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow);
-                bool allRejectedPolicies = refundPolicies.All(rp => rp.RefundDeadline < dateNow);
-                if (validRefundPolicy != null)
-                {
-                    refundRequestReason = $"Đã hoàn tiền {validRefundPolicy.PercentRefund}% trước hạn {validRefundPolicy.RefundDeadline}.Vui lòng kiểm tra transaction";
-                    finalGlobalStatus = acceptedGlobalStatus;
-                }
-                else
-                {
-                    throw new BadRequestException("Xin lỗi bạn, hiện tại bạn đã quá hạn hoặc không thuộc chính sách hoàn tiền hợp lệ.");
-                }
-                if (allRejectedPolicies)
-                {
-                    int rejectRefundPoliciesCount = refundPolicies.Count;
-                    refundRequestReason = $"Tổng có {rejectRefundPoliciesCount} chính sách hoàn tiền đã hết hạn. Các deadline gồm: ";
-                    foreach (var refund in sortedRefundPolicies)
-                    {
-                        refundRequestReason += $"{refund.RefundDeadline}, ";
-                    }
-                    finalGlobalStatus = rejectedGlobalStatus;
-                }
-                else if (conferencePriceDetail!.IsAuthor == true)
-                {
-                    var purchasedPaper = await _unitOfWork.PaperRepository.GetPaperByUserAndConference(conferencePriceDetail.ConferenceId!, userId);
-                    if (purchasedPaper != null)
-                    {
-                        var abstractPaperDetail = purchasedPaper.Abstract;
-                        if (abstractPaperDetail != null)
-                        {
-                            if (abstractPaperDetail.GlobalStatus != pendingGlobalStatus)
-                            {
-                                refundRequestReason = $"Abstract này đã được conference organizer accept hoặc reject nên bạn không thể yêu cầu refund";
-                                finalGlobalStatus = rejectedGlobalStatus;
-                            }
-                        }
-                    }
-
-                }
-
-
+                throw new BadRequestException("Tất cả chính sách hoàn tiền đã quá hạn");
             }
-
+            var isAuthorTicket = ticket.PricePhase.ConferencePrice.IsAuthor;
+            if (isAuthorTicket == true)
+            {
+                var purchasedPaper = await _unitOfWork.PaperRepository.GetPaperByUserAndConference(ticket.PricePhase.ConferencePrice.ConferenceId, userId);
+                if (purchasedPaper != null)
+                {
+                    var abstractPaperDetail = purchasedPaper.Abstract;
+                    // nếu abstract chưa nộp=> hoàn 100%
+                    if (abstractPaperDetail != null && abstractPaperDetail.GlobalStatus != pendingGlobalStatus)
+                    {
+                        throw new BadRequestException("Abstract đã được xét duyệt, không thể refund");
+                    }
+                }
+            }
+            refundRequestReason = $"Hoàn tiền theo refund policy {validPolicy.PercentRefund}% trước hạn refund deadline: {validPolicy.RefundDeadline}";
+            refundAmount = (decimal)(transaction.Amount * validPolicy.PercentRefund / 100);
             int result = 0;
             await _unitOfWork.BeginTransactionAsync();
             try
             {
 
-                if (finalGlobalStatus == acceptedGlobalStatus)
-                {
-                    //logic + tiền về lại ví
 
-                    var refundAmount = (decimal)(transaction.Amount * validRefundPolicy!.PercentRefund / 100);
-                    var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
-                    if (userWallet == null)
-                    {
-                        throw new NotFoundException("Không tìm thấy ví của bạn");
-                    }
-                    userWallet.UpdatedAt = dateTime;
-                    userWallet.Balance = userWallet.Balance + refundAmount;
-                    result += await _unitOfWork.WalletRepository.UpdateWalletAsync(userWallet);
+                //logic + tiền về lại ví
 
 
-                    //logic thêm biến động giao dịch cho ví
-                    var userWalletTransactionObj = new WalletTransaction()
-                    {
-                        WalletTransactionId = Guid.NewGuid().ToString(),
-                        WalletId = userWallet.WalletId,
-                        Amount = refundAmount,
-                        TransactionType = WalletTransactionTypeEnum.Refund.GetDescription(),
-                        Description = "Bạn đã hoàn tiền cho vé",
-                        CreatedAt = dateTime,
-                    };
-                    result += await _unitOfWork.WalletTransactionRepository.CreateWalletTransactionAsync(userWalletTransactionObj);
-                    //logic nhả lại slot cho conference
-                    var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(ticket.PricePhaseId!);
-                    if (pricePhase == null)
-                    {
-                        throw new NotFoundException($"Không tìm price phase với id {ticket.PricePhaseId}");
-                    }
-                    pricePhase.AvailableSlot = pricePhase.AvailableSlot + 1;
-                    pricePhase.ConferencePrice!.AvailableSlot = pricePhase.ConferencePrice!.AvailableSlot + 1;
-                    pricePhase.ConferencePrice!.Conference!.AvailableSlot = pricePhase.ConferencePrice!.Conference!.AvailableSlot + 1;
-                    result += await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
-
-                    //logic chuyển ticket refund =true
-                    ticket.IsRefunded = true;
-
-                    //logic thêm transaction với dạng là refund
-                    var transactionId = Guid.NewGuid().ToString();
-                    var transactionObj = new Transaction()
-                    {
-                        TransactionId = transactionId,
-                        UserId = userId,
-                        Currency = "VND",
-                        Amount = +refundAmount,
-                        CreatedAt = dateTime,
-                        IsRefunded = true,
-                        PaymentMethodId = walletPaymentMethod.PaymentMethodId,
-                        TicketId = ticket.TicketId,
-                    };
-
-                    result += await _unitOfWork.TransactionRepository.CreateTransactionAsync(transactionObj);
-                }
-                else
-                {
-                    ticket.IsRefunded = false;
-                }
-                var refundRequestObj = new RefundRequest()
-                {
-                    RefundRequestId = Guid.NewGuid().ToString(),
-                    TransactionId = request.TransactionId,
-                    TicketId = request.TicketId,
-                    Reason = refundRequestReason,
-                    CreatedAt = dateTime,
-                    GlobalStatus = finalGlobalStatus,
-                };
-                result += await _unitOfWork.TicketRepository.UpdateTicketAsync(ticket);
-                result += await _unitOfWork.RefundRequestRepository.CreateRefundRequestAsync(refundRequestObj);
-                await _unitOfWork.CommitAsync();
-                return result;
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackAsync();
-                throw;
-            }
-        }
-
-        public async Task<List<RefundRequestResponse>> GetRefundRequestByConferenceId(string conferenceId)
-        {
-            return await _unitOfWork.RefundRequestRepository.GetRefundRequestByConferenceId(conferenceId);
-        }
-
-        public async Task<List<RefundRequestResponse>> GetAllRefundRequests()
-        {
-            return await _unitOfWork.RefundRequestRepository.GetAllRefundRequest();
-        }
-
-        public async Task<int> RefundCloneFunction(string userId, string ticketId, string walletTransactionDescription)
-        {
-            int result = 0;
-            var dateTime = ExtensionHelper.GetVietnamTime();
-            var dateNow = ExtensionHelper.GetVietnamDate();
-            var walletPaymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.Wallet.GetDescription());
-            if (walletPaymentMethod == null )
-            {
-                throw new NotFoundException("Không tìm thấy các trạng thái cho status trong hệ thống");
-            }
-            var ticket = await _unitOfWork.TicketRepository.GetTicketByTicketIdAndUserId(ticketId, userId);
-            if (ticket == null)
-            {
-                throw new NotFoundException($"Không tìm thấy ticket với id {ticketId}");
-            }
-            var refundPolicies = ticket.PricePhase!.RefundPolicies;
-            if (!refundPolicies.Any())
-            {
-                return 0;
-            }
-            RefundPolicy? validRefundPolicy = null;
-            var sortedRefundPolicies = refundPolicies.OrderBy(r => r.RefundDeadline).ToList();
-            validRefundPolicy = sortedRefundPolicies.FirstOrDefault(rp => rp.RefundDeadline >= dateNow);
-
-            if (validRefundPolicy != null)
-            {
-                var transaction = ticket.Transactions.FirstOrDefault(t => t.IsRefunded == false);
-                if (transaction == null)
-                {
-                    throw new BadRequestException("Không tìm thấy transaction hợp lệ để hoàn tiền");
-                }
-                var refundAmount = (decimal)(transaction.Amount * validRefundPolicy!.PercentRefund / 100);
                 var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
                 if (userWallet == null)
                 {
@@ -309,7 +158,7 @@ namespace ConfRadar.Services.Services
                     WalletId = userWallet.WalletId,
                     Amount = refundAmount,
                     TransactionType = WalletTransactionTypeEnum.Refund.GetDescription(),
-                    Description = walletTransactionDescription,
+                    Description = refundRequestReason,
                     CreatedAt = dateTime,
                 };
                 result += await _unitOfWork.WalletTransactionRepository.CreateWalletTransactionAsync(userWalletTransactionObj);
@@ -342,8 +191,128 @@ namespace ConfRadar.Services.Services
                 };
 
                 result += await _unitOfWork.TransactionRepository.CreateTransactionAsync(transactionObj);
+                var refundRequestObj = new RefundRequest()
+                {
+                    RefundRequestId = Guid.NewGuid().ToString(),
+                    TransactionId = request.TransactionId,
+                    TicketId = request.TicketId,
+                    Reason = refundRequestReason,
+                    CreatedAt = dateTime,
+                    GlobalStatus = acceptedGlobalStatus,
+                };
                 result += await _unitOfWork.TicketRepository.UpdateTicketAsync(ticket);
+                result += await _unitOfWork.RefundRequestRepository.CreateRefundRequestAsync(refundRequestObj);
+                await _unitOfWork.CommitAsync();
+                return result;
+
+
             }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<List<RefundRequestResponse>> GetRefundRequestByConferenceId(string conferenceId)
+        {
+            return await _unitOfWork.RefundRequestRepository.GetRefundRequestByConferenceId(conferenceId);
+        }
+
+        public async Task<List<RefundRequestResponse>> GetAllRefundRequests()
+        {
+            return await _unitOfWork.RefundRequestRepository.GetAllRefundRequest();
+        }
+
+        public async Task<int> RefundAuthorCloneFunction(string userId, string ticketId, string walletTransactionDescription)
+        {
+            int result = 0;
+            var dateTime = ExtensionHelper.GetVietnamTime();
+            var dateNow = ExtensionHelper.GetVietnamDate();
+            var walletPaymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodByName(PaymentMethodEnum.Wallet.GetDescription());
+            var abstractPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
+            if (walletPaymentMethod == null || abstractPaperPhase == null)
+            {
+                throw new NotFoundException("Không tìm thấy các trạng thái  trong hệ thống");
+            }
+            var ticket = await _unitOfWork.TicketRepository.GetTicketByTicketIdAndUserId(ticketId, userId);
+            if (ticket == null)
+            {
+                throw new NotFoundException($"Không tìm thấy ticket với id {ticketId}");
+            }
+            var paper = await _unitOfWork.PaperRepository.GetPaperByUserAndConference(ticket.PricePhase.ConferencePrice.ConferenceId, userId);
+            if (paper == null)
+            {
+                throw new NotFoundException($"Không tìm thấy bài báo của user với id {userId}");
+            }
+            var transaction = ticket.Transactions.FirstOrDefault(t => t.IsRefunded == false);
+            if (transaction == null)
+            {
+                throw new BadRequestException("Không tìm thấy transaction hợp lệ để hoàn tiền");
+            }
+            decimal refundAmount = 0;
+
+            var reviewFee = ticket.PricePhase!.ConferencePrice!.Conference!.ResearchConferenceDetail!.ReviewFee;
+
+            refundAmount = (decimal)(transaction.Amount - reviewFee);
+            walletTransactionDescription = walletTransactionDescription + $" .Bạn được hoàn tiền {refundAmount} và đã bao gồm phí review : {reviewFee}";
+
+
+
+
+
+            var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
+            if (userWallet == null)
+            {
+                throw new NotFoundException("Không tìm thấy ví của bạn");
+            }
+            userWallet.UpdatedAt = dateTime;
+            userWallet.Balance = userWallet.Balance + refundAmount;
+            result += await _unitOfWork.WalletRepository.UpdateWalletAsync(userWallet);
+
+
+            //logic thêm biến động giao dịch cho ví
+            var userWalletTransactionObj = new WalletTransaction()
+            {
+                WalletTransactionId = Guid.NewGuid().ToString(),
+                WalletId = userWallet.WalletId,
+                Amount = refundAmount,
+                TransactionType = WalletTransactionTypeEnum.Refund.GetDescription(),
+                Description = walletTransactionDescription,
+                CreatedAt = dateTime,
+            };
+            result += await _unitOfWork.WalletTransactionRepository.CreateWalletTransactionAsync(userWalletTransactionObj);
+            //logic nhả lại slot cho conference
+            var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(ticket.PricePhaseId!);
+            if (pricePhase == null)
+            {
+                throw new NotFoundException($"Không tìm price phase với id {ticket.PricePhaseId}");
+            }
+            pricePhase.AvailableSlot = pricePhase.AvailableSlot + 1;
+            pricePhase.ConferencePrice!.AvailableSlot = pricePhase.ConferencePrice!.AvailableSlot + 1;
+            pricePhase.ConferencePrice!.Conference!.AvailableSlot = pricePhase.ConferencePrice!.Conference!.AvailableSlot + 1;
+            result += await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
+
+            //logic chuyển ticket refund =true
+            ticket.IsRefunded = true;
+
+            //logic thêm transaction với dạng là refund
+            var transactionId = Guid.NewGuid().ToString();
+            var transactionObj = new Transaction()
+            {
+                TransactionId = transactionId,
+                UserId = userId,
+                Currency = "VND",
+                Amount = +refundAmount,
+                CreatedAt = dateTime,
+                IsRefunded = true,
+                PaymentMethodId = walletPaymentMethod.PaymentMethodId,
+                TicketId = ticket.TicketId,
+            };
+
+            result += await _unitOfWork.TransactionRepository.CreateTransactionAsync(transactionObj);
+            result += await _unitOfWork.TicketRepository.UpdateTicketAsync(ticket);
+
             return result;
         }
     }

@@ -19,6 +19,7 @@ namespace ConfRadar.Api
             services.Configure<AppSettingConfig.ZaloPaySettings>(configs.GetSection("ZaloPaySettings"));
             services.Configure<AppSettingConfig.PayOsSettings>(configs.GetSection("PayOsSettings"));
             services.Configure<AppSettingConfig.VnPaySettings>(configs.GetSection("VnPaySettings"));
+            services.Configure<AppSettingConfig.QrSettings>(configs.GetSection("QrSettings"));
             services.AddDbContext<ConfRadarDbContext>(options =>
             options.UseNpgsql(configs.GetConnectionString("ConnectionStrings")));
 

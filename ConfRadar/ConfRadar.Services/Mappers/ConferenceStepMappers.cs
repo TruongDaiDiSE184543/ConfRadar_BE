@@ -18,7 +18,7 @@ namespace ConfRadar.Services.Mappers
                 TotalSlot = request.TotalSlot,
                 AvailableSlot = request.TotalSlot, // Initialize available slot to total slot
                 ConferenceId = conferenceId,
-                
+
             };
         }
 
@@ -48,7 +48,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Price Phase Mappers
-        public static PricePhase ToModel(this CreatePricePhaseRequest request, string conferencePriceId,string researchPhaseId)
+        public static PricePhase ToModel(this CreatePricePhaseRequest request, string conferencePriceId, string researchPhaseId)
         {
             return new PricePhase
             {
@@ -605,7 +605,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Price Phase Mappers - Extension methods for PricePhase DTOs
-        public static PricePhase ToModel(this CreatePricePhaseRequestForConferencePrice request, string conferencePriceId,string? researchPhaseId)
+        public static PricePhase ToModel(this CreatePricePhaseRequestForConferencePrice request, string conferencePriceId, string? researchPhaseId)
         {
             return new PricePhase
             {

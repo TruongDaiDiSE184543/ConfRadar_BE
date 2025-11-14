@@ -1,4 +1,5 @@
-﻿using ConfRadar.Services.Common;
+﻿using ConfRadar.Repositories;
+using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.QrCode;
 using Microsoft.Extensions.Options;
@@ -10,28 +11,37 @@ namespace ConfRadar.Services.Services
 {
     public interface IQRCoderService
     {
-        Task<string> GenerateQrCodeAsync<T>(T data, string uniqueFileName, string contentType);
-        void ProcessScanQr(string data);
+        Task<string> GenerateQrCode<T>(T data);
+        //T DecryptQrContent<T>(string hasedContent);
+        QrDataPayload CreateQrDataPayload(QrDataPayload data);
+        //bool CheckValidQrPayload(QrDataPayload data);
+        Task<string> ProceedQrCode(VerifyQrDataRequest data);
     }
     public class QRCoderService : IQRCoderService
     {
         private readonly IObjectStorageFileService _objectStorageFileService;
         private readonly IOptions<ObjectStorageSettings> _objectStorageSettings;
+        private readonly IOptions<QrSettings> _qrSettings;
         private readonly ITokenService _tokenService;
-        private string secretKey = "";
+        private readonly IUnitOfWork _unitOfWork;
         public QRCoderService(IObjectStorageFileService objectStorageFileService,
             IOptions<ObjectStorageSettings> objectStorageSettings,
-            ITokenService tokenService)
+            IOptions<QrSettings> qrSettings,
+            ITokenService tokenService,
+            IUnitOfWork unitOfWork)
         {
             _objectStorageFileService = objectStorageFileService;
             _objectStorageSettings = objectStorageSettings;
+            _qrSettings = qrSettings;
             _tokenService = tokenService;
+            _unitOfWork = unitOfWork;
         }
-        public async Task<string> GenerateQrCodeAsync<T>(T data, string uniqueFileName, string contentType)
+        public async Task<string> GenerateQrCode<T>(T data)
         {
+            string contentType = "image/png";
             string jsonData = JsonSerializer.Serialize(data);
-            var hashedContent = _tokenService.EncryptString(jsonData, secretKey);
-
+            var hashedContent = _tokenService.EncryptString(jsonData, _qrSettings.Value.HashKey);
+            string uniqueFileName = _tokenService.GenerateSecureRandomToken();
 
             using var qrGenerator = new QRCodeGenerator();
             #region ecc level
@@ -52,25 +62,130 @@ namespace ConfRadar.Services.Services
 
             var baseUri = _objectStorageSettings.Value.EndPoint;
             var uploadPath = baseUri + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.qrcodefile.ToString(), uniqueFileName, ms, contentType);
-            return baseUri + uploadPath;
+            return uploadPath;
         }
-        public void ProcessScanQr(string data)
+        private T DecryptQrContent<T>(string hasedContent)
         {
             try
             {
-                var decryptContet = _tokenService.DecryptString(data, secretKey);
-                var jsonData = JsonSerializer.Deserialize<QrDataPayload>(decryptContet);
+                var decryptContet = _tokenService.DecryptString(hasedContent, _qrSettings.Value.HashKey);
+                var jsonData = JsonSerializer.Deserialize<T>(decryptContet);
                 if (jsonData == null)
                 {
-                    throw new BadRequestException("Không tìm thấy thông tin");
+                    throw new BadRequestException("Thông tin không tìm thấy");
                 }
-                Console.WriteLine(JsonSerializer.Serialize(jsonData));
-                Console.WriteLine(jsonData);
+                return jsonData;
+            }
+            catch (JsonException)
+            {
+                throw new BadRequestException("Dữ liệu QR không hợp lệ hoặc đã bị thay đổi");
             }
             catch (Exception ex)
             {
-                throw new BadRequestException("Dữ liệu không khả dụng");
+                throw new BadRequestException("Dữ liệu không khả dụng hoặc không thuộc về confradar");
             }
+        }
+        public QrDataPayload CreateQrDataPayload(QrDataPayload data)
+        {
+            var inputParams = new SortedList<string, string>(StringComparer.Ordinal);
+            inputParams.Add("usercheckinId", data.userCheckinId);
+            inputParams.Add("userId", data.userId);
+            inputParams.Add("ticketId", data.ticketId);
+            inputParams.Add("conferenceSessionId", data.conferenceSessionId);
+            inputParams.Add("createAt", data.createAt.ToString("dd/MM/yyyy HH:mm:ss"));
+            string rawData = string.Join("&", inputParams.Select(kv => $"{kv.Key}={kv.Value}"));
+            string signature = _tokenService.CreateSignature512(rawData, _qrSettings.Value.CheckSumKey);
+            data.signature = signature;
+            return data;
+        }
+        private bool CheckValidQrPayload(QrDataPayload data)
+        {
+            var inputParams = new SortedList<string, string>(StringComparer.Ordinal);
+            inputParams.Add("usercheckinId", data.userCheckinId);
+            inputParams.Add("userId", data.userId);
+            inputParams.Add("ticketId", data.ticketId);
+            inputParams.Add("conferenceSessionId", data.conferenceSessionId);
+            inputParams.Add("createAt", data.createAt.ToString("dd/MM/yyyy HH:mm:ss"));
+            string rawData = string.Join("&", inputParams.Select(kv => $"{kv.Key}={kv.Value}"));
+            string signature = _tokenService.CreateSignature512(rawData, _qrSettings.Value.CheckSumKey);
+            var result = string.Equals(signature, data.signature, StringComparison.OrdinalIgnoreCase);
+            if (result == true)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<string> ProceedQrCode(VerifyQrDataRequest data)
+        {
+            var qrDataPayload = DecryptQrContent<QrDataPayload>(data.Content);
+            var qrPayLoadChecker = CheckValidQrPayload(qrDataPayload);
+            if (!qrPayLoadChecker)
+            {
+                throw new BadRequestException("Dữ liệu trong payment không khả dụng ");
+            }
+            var checkedInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.CheckedIn.GetDescription());
+            var expiredCheckInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Expired.GetDescription());
+            if (checkedInStatus == null || expiredCheckInStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy các trạng thái checkin tương ứng");
+            }
+            var conferenceSessionDetail = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(data.ConferenceSessionId);
+            if (conferenceSessionDetail == null)
+            {
+                throw new NotFoundException($"Không tìm thấy session với id {data.ConferenceSessionId}");
+            }
+            if (data.ConferenceSessionId != qrDataPayload.conferenceSessionId)
+            {
+                throw new BadRequestException($"Bạn đã check in nhầm session rồi. Session hiện tại là " +
+                    $"{conferenceSessionDetail.Title} diễn ra từ {conferenceSessionDetail.StartTime?.ToString("dd/MM/yyyy HH:mm:ss tt")} đến {conferenceSessionDetail.EndTime?.ToString("dd/MM/yyyy HH:mm:ss tt")}");
+            }
+
+            var userCheckIn = await _unitOfWork.UserCheckInRepository.GetUserCheckInByIdAsync(qrDataPayload.userCheckinId);
+            if (userCheckIn == null)
+            {
+                throw new NotFoundException("Không tìm thấy user check in trong hệ thống");
+            }
+            if (userCheckIn.UserId != qrDataPayload.userId || userCheckIn.TicketId != qrDataPayload.ticketId || userCheckIn.ConferenceSessionId != qrDataPayload.conferenceSessionId)
+            {
+                throw new BadRequestException("Thông tin trong qr không trùng hợp với trên hệ thống");
+            }
+            var userConferenceSession = userCheckIn.ConferenceSession!;
+            var timeNow = ExtensionHelper.GetVietnamTime();
+            if (userCheckIn.CheckinStatus == expiredCheckInStatus)
+            {
+                throw new BadRequestException("Vé check in hiện đã hết hạn.");
+            }
+            if (userCheckIn.CheckinStatus == checkedInStatus && userCheckIn.CheckInTime != null)
+            {
+                string formattedTime;
+                if (userCheckIn.CheckInTime.HasValue)
+                {
+                    formattedTime = userCheckIn.CheckInTime.Value.ToString("dd/MM/yyyy HH:mm:ss tt");
+                }
+                else
+                {
+                    formattedTime = "";
+                }
+                throw new BadRequestException($"Người dùng với tên {userCheckIn.User!.FullName} đã có checked in vào lúc {formattedTime}");
+            }
+            if (timeNow < userConferenceSession.StartTime)
+            {
+                throw new BadRequestException($"Vé này chưa thể check in được vì thời gian diễn ra check in từ {userConferenceSession.StartTime}");
+            }
+            if (timeNow > userConferenceSession.EndTime)
+            {
+                throw new BadRequestException($"Vé này đã hết hạn check in vì session {userConferenceSession.Title} đã hết hạn vào lúc {userConferenceSession.EndTime}");
+            }
+            userCheckIn.CheckinStatus = checkedInStatus;
+            userCheckIn.CheckInTime = ExtensionHelper.GetVietnamTime();
+            var result = await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(userCheckIn);
+            if (result > 0)
+            {
+                return $"Người dùng với tên {userCheckIn.User!.FullName} đã check in cho hội nghị {userConferenceSession.Title} vào lúc {userCheckIn.CheckInTime?.ToString("dd/MM/yyyy HH:mm:ss tt")}";
+            }
+            return string.Empty;
+
         }
     }
 }

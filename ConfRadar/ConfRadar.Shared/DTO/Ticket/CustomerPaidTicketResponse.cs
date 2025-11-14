@@ -40,7 +40,7 @@
 
     public class CustomerTicketConferencePriceDetailResponse
     {
-        public string? ConferencePriceId { get; set; } 
+        public string? ConferencePriceId { get; set; }
         public decimal? TicketPrice { get; set; }
         public string? TicketName { get; set; }
         public string? TicketDescription { get; set; }

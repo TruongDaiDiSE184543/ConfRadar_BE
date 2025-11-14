@@ -47,7 +47,12 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<UserCheckIn?> GetUserCheckInByIdAsync(string userCheckInId)
         {
-            return await _context.UserCheckIns.FindAsync(userCheckInId);
+            return await _context.UserCheckIns
+                .Include(uci => uci.CheckinStatus)
+                .Include(uci => uci.ConferenceSession)
+                .Include(uci => uci.Ticket)
+                .Include(uci => uci.User)
+                .FirstOrDefaultAsync(uci => uci.UserCheckinId == userCheckInId);
         }
 
         public async Task<List<UserCheckIn>> GetAllUserCheckInsAsync()
