@@ -11,6 +11,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApiConfig(builder.Configuration);
 builder.Services.AddServices(builder.Configuration);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin() 
+                  .AllowAnyHeader()                     
+                  .AllowAnyMethod();                    
+        });
+});
 builder.Services.AddRepositories();
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
