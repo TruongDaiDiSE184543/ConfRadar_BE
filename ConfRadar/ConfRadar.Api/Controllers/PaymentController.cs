@@ -27,23 +27,7 @@ namespace ConfRadar.Api.Controllers
             _tokenService = tokenService;
             _payOsService = payOsService;
         }
-        [HttpGet("testpayos")]
-        public async Task<IActionResult> testpayos()
-        {
-            var listPaymentLinkItem = new List<PaymentLinkItem>()
-            {
-                new PaymentLinkItem()
-                {
-                    Name = $"Thanh toán vé cho hội nghị: ",
-                    Price = 10000,
-                    Quantity = 1,
-                }
-            };
-            var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-            var result = await _payOsService.CreatePayOsPayment(orderCode,100000,"hihi",90, listPaymentLinkItem);
-            return Ok(result);
-        }
+     
 
         [Authorize]
         [HttpPost("pay-tech")]
