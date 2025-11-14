@@ -43,7 +43,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<ResearchConferencePhase?> GetResearchConferencePhaseNotWaitListByConferenceIdAsync(string conferenceId)
         {
             return await _context.ResearchConferencePhases
-                .Include(r => r.RevisionRoundDeadlines) 
+                .Include(r => r.RevisionRoundDeadlines)
                 .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsWaitlist == false);
         }
 

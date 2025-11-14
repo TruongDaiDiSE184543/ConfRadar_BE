@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ConfRadar.Repositories.Models;
+﻿namespace ConfRadar.Repositories.Models;
 
 public partial class UserCheckIn
 {
@@ -18,6 +15,8 @@ public partial class UserCheckIn
     public string? TicketId { get; set; }
 
     public string? ConferenceSessionId { get; set; }
+
+    public string? QrUrl { get; set; }
 
     public virtual CheckinStatus? CheckinStatus { get; set; }
 

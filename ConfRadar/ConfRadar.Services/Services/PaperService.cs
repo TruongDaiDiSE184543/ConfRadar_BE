@@ -298,7 +298,7 @@ namespace ConfRadar.Services.Services
                         abstractPaper.ReviewAt = ExtensionHelper.GetVietnamTime();
                         var rootAuthor = basePaper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
                         var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, basePaper.ConferenceId!);
-                        await _ticketService.RefundCloneFunction(rootAuthor!.UserId,ticket.TicketId,"Abstract bạn đã bị từ chối");
+                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Abstract bạn đã bị từ chối");
 
 
                         break;
@@ -507,7 +507,7 @@ namespace ConfRadar.Services.Services
                         fullPaper.ReviewAt = ExtensionHelper.GetVietnamTime();
                         var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
                         var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
-                        await _ticketService.RefundCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Full paper bạn đã bị từ chối");
+                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Full paper bạn đã bị từ chối");
                         break;
                     case ReviewStatusEnum.Revise:
 
@@ -960,7 +960,7 @@ namespace ConfRadar.Services.Services
                         revisionPaper.ReviewAt = ExtensionHelper.GetVietnamTime();
                         var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
                         var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
-                        await _ticketService.RefundCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Revise paper của bạn đã bị từ chối");
+                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Revise paper của bạn đã bị từ chối");
                         break;
 
                     default:
@@ -1489,7 +1489,7 @@ namespace ConfRadar.Services.Services
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
                     var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
                     var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, basePaper.ConferenceId!);
-                    await _ticketService.RefundCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Camera ready paper của bạn đã bị từ chối");
+                    await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Camera ready paper của bạn đã bị từ chối");
                     break;
                 case GlobalStatusEnum.Pending:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());

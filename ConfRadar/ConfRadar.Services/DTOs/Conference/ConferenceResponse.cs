@@ -169,8 +169,8 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceStatusId { get; set; }
         public string? TargetAudience { get; set; } // Technical conference detail
         public string? contractURL { get; set; }
-        public int? commission {  get; set; }
-      
+        public int? commission { get; set; }
+
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
@@ -351,7 +351,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public int? PercentRefund { get; set; }
         public DateOnly? RefundDeadline { get; set; }
         public int? RefundOrder { get; set; }
-        public string? PricePhaseID {  get; set; }
+        public string? PricePhaseID { get; set; }
     }
 
     public class ConferenceMediaResponse

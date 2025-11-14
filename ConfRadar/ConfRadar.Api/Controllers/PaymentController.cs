@@ -7,6 +7,7 @@ using ConfRadar.Shared.DTO.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using PayOS.Models.V2.PaymentRequests;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -18,12 +19,16 @@ namespace ConfRadar.Api.Controllers
         private readonly IServiceManager _serviceManager;
         private readonly IZaloPayService _zaloPayService;
         private readonly ITokenService _tokenService;
-        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService, ITokenService tokenService)
+        private readonly IPayOsService _payOsService;
+        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService, ITokenService tokenService,IPayOsService payOsService)
         {
             _serviceManager = serviceManager;
             _zaloPayService = zaloPayService;
             _tokenService = tokenService;
+            _payOsService = payOsService;
         }
+     
+
         [Authorize]
         [HttpPost("pay-tech")]
         public async Task<IActionResult> CreatePaymentForTech([FromBody] CreateTechPaymentRequest request)
