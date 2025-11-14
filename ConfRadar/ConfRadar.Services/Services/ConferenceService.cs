@@ -667,7 +667,7 @@ namespace ConfRadar.Services.Services
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing first để có thể thay đổi trạng thái");
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing first để có thể thay đổi trạng thái");
             if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete.Conference cần request lên pending để Organizer approve lên preparing first để có thể thay đổi trạng thái khác");
             
 
