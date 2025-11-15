@@ -20,6 +20,9 @@ namespace ConfRadar.Api
             services.Configure<AppSettingConfig.PayOsSettings>(configs.GetSection("PayOsSettings"));
             services.Configure<AppSettingConfig.VnPaySettings>(configs.GetSection("VnPaySettings"));
             services.Configure<AppSettingConfig.QrSettings>(configs.GetSection("QrSettings"));
+            services.Configure<AppSettingConfig.FirebaseRealtimeDbSettings>(configs.GetSection("FirebaseRealtimeDbSettings"));
+
+
             services.AddDbContext<ConfRadarDbContext>(options =>
             options.UseNpgsql(configs.GetConnectionString("ConnectionStrings")));
 

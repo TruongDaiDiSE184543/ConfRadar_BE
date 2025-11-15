@@ -7,8 +7,7 @@
       - "8080:5000"
     environment:
       - DOTNET_URLS=${DOTNET_URLS}
-      - LD_PRELOAD=${FAKETIME_ENABLED:+/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1}
-      - FAKETIME=${FAKETIME_VALUE}
+      
     networks:
       - confradar-network
 

@@ -18,6 +18,8 @@ namespace ConfRadar.UnitTests.Services.AuthenticationService
         private readonly Mock<ITokenService> _mockTokenService;
         private readonly Mock<IObjectStorageFileService> _mockObjectStorageFileService;
         private readonly Mock<IFirebaseAuthService> _mockFirebaseAuthService;
+        private readonly Mock<ITimeProviderService> _mockTimeProviderService;
+
         private readonly AuthService _authService;
 
         private readonly ObjectStorageSettings _objectStorageSettings = new() { EndPoint = "https://mockstorage.com/" };
@@ -31,6 +33,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationService
             _mockTokenService = new Mock<ITokenService>();
             _mockObjectStorageFileService = new Mock<IObjectStorageFileService>();
             _mockFirebaseAuthService = new Mock<IFirebaseAuthService>();
+            _mockTimeProviderService = new Mock<ITimeProviderService>();
 
             _authService = new AuthService(
                 _mockPasswordHasher.Object,
@@ -40,7 +43,9 @@ namespace ConfRadar.UnitTests.Services.AuthenticationService
                 _mockUnitOfWork.Object,
                 _mockObjectStorageFileService.Object,
                 Options.Create(_objectStorageSettings),
-                _mockFirebaseAuthService.Object
+                _mockFirebaseAuthService.Object,
+                _mockTimeProviderService.Object
+
             );
         }
 
