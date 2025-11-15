@@ -93,7 +93,7 @@ namespace ConfRadar.Services
                 q.AddTrigger(opts => opts
                     .ForJob(jobKey)
                     .WithIdentity("NotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(5).RepeatForever()));
+                    .WithSimpleSchedule(x => x.WithIntervalInHours(10).RepeatForever()));
             });
 
             services.AddQuartz(q =>
@@ -104,7 +104,7 @@ namespace ConfRadar.Services
                 q.AddTrigger(opts => opts
                     .ForJob(jobKey)
                     .WithIdentity("ResetNotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInHours(3).RepeatForever()));
+                    .WithSimpleSchedule(x => x.WithIntervalInHours(12).RepeatForever()));
             });
 
 
