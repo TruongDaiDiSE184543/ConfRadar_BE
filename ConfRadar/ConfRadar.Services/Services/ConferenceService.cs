@@ -1,4 +1,4 @@
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Conference;
@@ -659,18 +659,18 @@ namespace ConfRadar.Services.Services
         public async Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new BadRequestException($"Kh�ng t�m th?y h?i ngh? v?i id {conferenceId}");
-            if (conference.CreatedBy != userId) throw new BadRequestException("Ch? c� ngu?i t?o ra conference m?i thay d?i du?c tr?ng th�i");
+            if (conference == null) throw new BadRequestException($"Không tìm thấy hội nghị với id {conferenceId}");
+            if (conference.CreatedBy != userId) throw new BadRequestException("Chỉ có nguời tạo ra conference mới thay đổi được trạng thái");
 
             //Collaborator's technical confs need to be approved to preparing status first only then they can change the status
             var newStatusEntity = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(newStatus);
-            if (newStatusEntity == null) throw new BadRequestException($"Kh�ng tim th?y conference status v?i ID {newStatus}");
+            if (newStatusEntity == null) throw new BadRequestException($"Không tìm thấy conference status vứi ID {newStatus}");
 
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Conference c?n Organizer approve l�n preparing first d? c� th? thay d?i tr?ng th�i");
-            if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Hi?n t?i b?n draft c?a conference ch? c� th? chuy?n sang delete.Conference c?n request l�n pending d? Organizer approve l�n preparing first d? c� th? thay d?i tr?ng th�i kh�c");
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing trước để có thể thay đổi trạng thái");
+            if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete. Conference cần request lên pending để Organizer approve lên preparing trước khi có thể thay đổi trạng thái khác");
             
 
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
@@ -681,21 +681,21 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null)
             {
-                throw new BadRequestException("Kh�ng t�m th?y conf id n�y");
+                throw new BadRequestException($"Không tìm thấy conf id {conferenceId} này");
             }
 
             // Get current status name from the conference status ID
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
             if (currentStatus == null)
             {
-                throw new BadRequestException("Kh�ng t�m th?y tr?ng th�i hi?n t?i c?a h?i ngh?");
+                throw new BadRequestException("Không tìm thấy trạnng thái hiện tại của hội nghị");
             }
 
             // Get the new status by name
             var newStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(newStatusName);
             if (newStatus == null)
             {
-                throw new BadRequestException($"Kh�ng t?n t?i tr?ng th�i {newStatus}");
+                throw new BadRequestException($"Không tìm thấy trạng thái {newStatus}");
             }
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -704,7 +704,7 @@ namespace ConfRadar.Services.Services
                 bool isValidTransition = await _conferenceStatusService.IsStatusTransitionValidAsync(currentStatus.ConferenceStatusName, newStatus.ConferenceStatusName);
                 if (!isValidTransition)
                 {
-                    throw new BadRequestException($"Chuy?n tr?ng th�i t? '{currentStatus.ConferenceStatusName}' sang '{newStatusName}' kh�ng h?p l?");
+                    throw new BadRequestException($"Chuyển trạng thái từ '{currentStatus.ConferenceStatusName}' sang '{newStatusName}' không hợp lệ");
                 }
 
                 // Update the conference status
@@ -765,7 +765,7 @@ namespace ConfRadar.Services.Services
 
             if (conference == null)
             {
-                throw new NotFoundException($"Conference with ID {conferenceId} not found");
+                throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
 
             // Get research conference detail if it exists (for research conferences)
@@ -967,7 +967,7 @@ namespace ConfRadar.Services.Services
 
             if (conference == null)
             {
-                throw new NotFoundException($"Conference with ID {conferenceId} not found");
+                throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
 
             // Get research conference detail if it exists (for research conferences)
@@ -1170,7 +1170,7 @@ namespace ConfRadar.Services.Services
             {
                 if (conference.CreatedBy != userId)
                 {
-                    throw new UnauthorizedAccessException("You are not authorized to view this conference detail.");
+                    throw new UnauthorizedAccessException("Bạn chỉ có thể thấy detail cho conference bạn tạo ra.");
                 }
             }
 
@@ -1199,7 +1199,7 @@ namespace ConfRadar.Services.Services
 
             if (fullConference == null)
             {
-                throw new NotFoundException($"Conference with ID {conferenceId} not found");
+                throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
 
             // Get technical conference detail if it exists (for technical conferences)
@@ -1585,7 +1585,7 @@ namespace ConfRadar.Services.Services
             {
                 // Organizers can see all research conferences
                 query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => c.IsResearchConference == true).OrderByDescending(c => c.CreatedAt);
+                    .Where(c => c.IsResearchConference == true && c.CreatedBy == userId).OrderByDescending(c => c.CreatedAt);
             }
             else
             {
@@ -1823,7 +1823,7 @@ namespace ConfRadar.Services.Services
 
             if (isOrganizer && !string.IsNullOrEmpty(conferenceStatusId) && conferenceStatusId == draftStatus.ConferenceStatusId)
             {
-                throw new BadRequestException("Organizers kh�ng du?c ph�p xem ho?c l?c theo tr?ng th�i 'Draft'.");
+                throw new BadRequestException("Organizers không được phép xem chọn lọc theo trạng thái 'Draft'.");
             }
             if (isOrganizer)
             {
@@ -2068,21 +2068,21 @@ namespace ConfRadar.Services.Services
             var conferenceSession = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(request.ConferenceSessionId);
             if (conferenceSession == null)
             {
-                throw new BadRequestException($"Kh�ng t�m th?y phi�n v?i m� {request.ConferenceSessionId}");
+                throw new BadRequestException($"Không tìm thấy phiên với mã {request.ConferenceSessionId}");
             }
             var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(request.ConferenceSessionId, userId);
             if (userCheckInFound == null)
             {
-                throw new BadRequestException($"B?n chua mua b?t c? v� n�o n�n kh�ng th? d�nh gi�");
+                throw new BadRequestException($"Bạn chưa mua vé nào nên không thể dánh giá");
             }
             var pendingCheckInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Pending.GetDescription());
             if (pendingCheckInStatus == null)
             {
-                throw new NotFoundException($"Kh�ng t�m th?y tr?ng th�i check in trong h? th?ng");
+                throw new NotFoundException($"Không tìm thấy trạng thái check in trong hệ thống");
             }
             if (userCheckInFound.CheckinStatusId == pendingCheckInStatus.CheckinStatusId)
             {
-                throw new BadRequestException($"B?n ph?i check in r?i m?i du?c d�nh gi�");
+                throw new BadRequestException($"Bạn phải check in rồi mới được dánh giá");
             }
             var conferenceFeedbackObj = new ConferenceFeedback()
             {
@@ -2101,7 +2101,7 @@ namespace ConfRadar.Services.Services
             var readyStatusConference = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             if (readyStatusConference == null)
             {
-                throw new NotFoundException("Kh�ng t�m th?y tr?ng th�i ready cho h?i ngh?");
+                throw new NotFoundException("Không tìm thấy trạng thái ready cho hội nghị");
             }
             return await _unitOfWork.ConferenceRepository.GetListConferencesForScheduleByUserId(userId, await _timeProviderService.GetVietnamDate(), readyStatusConference.ConferenceStatusId);
         }
@@ -2142,76 +2142,78 @@ namespace ConfRadar.Services.Services
         public async Task<bool> RequestOrganizerApproval(string confId, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
-            if (conference == null) throw new BadRequestException($"Kh�ng t�m th?y h?i ngh? v?i ID: {confId}");
-            if (conference.CreatedBy != userId) throw new BadRequestException("B?n kh�ng c� quy?n g?i y�u c?u du?c approve cho h?i ngh? n�y");
+            if (conference == null) throw new BadRequestException($"Không tìm thấy hội nghị với ID: {confId}");
+            if (conference.CreatedBy != userId) throw new BadRequestException("Bạn không có quyền gởi yêu cầu  approve cho hội nghị này");
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
-            if (conference.ConferenceStatusId != draftStatus.ConferenceStatusId) throw new BadRequestException($" conference v?i ID {confId} ph?i dang l� draft status m?i c� th? y�u c?u duy?t du?c");
+            if (conference.ConferenceStatusId != draftStatus.ConferenceStatusId) throw new BadRequestException($" conference với ID {confId} phải dang là draft status mới có thể yêu cầu duyệt được");
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new BadRequestException("H?i ngh? dang ch? du?c duy?t!");
-            return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator v?i ID: {userId} dang request conference v?i ID: {confId} d? du?c duy?t");
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new BadRequestException("Hội nghị đã gửi yêu cầu được duyệt trước đó rồi xin chờ kết quả!");
+            return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với ID: {userId} dang request conference với ID: {confId} để được duyệt");
         }
 
-        // D�N TO�N B? PHI�N B?N N�Y �? THAY TH? PHI�N B?N CU
+        // DÁN TOÀN B? PHIÊN B?N NÀY Ð? THAY TH? PHIÊN B?N CU
 
         public async Task<bool> ActivateWaitlist(string confId, string userId)
         {
-            #region === 1. L?Y D? LI?U V� VALIDATION CO B?N ===
+            
 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
             if (conference == null)
-                throw new NotFoundException($"Kh�ng t�m th?y h?i ngh? v?i ID {confId}");
+                throw new NotFoundException($"Không tìm thấy hội nghị với ID {confId}");
 
-            // 1.1. Ph�n quy?n v� lo?i h?i ngh?
+            //authorization
             if (conference.CreatedBy != userId)
-                throw new BadRequestException("B?n kh�ng c� quy?n k�ch ho?t ch? d? waitlist cho h?i ngh? n�y.");
+                throw new BadRequestException("Bạn không có quyền kích hoạt phase waitlist cho hội nghị này.");
             if (conference.IsResearchConference != true)
-                throw new BadRequestException("Ch?c nang n�y ch? d�nh cho h?i ngh? nghi�n c?u.");
+                throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
 
-            // 1.2. L?y c�c Phase v� ki?m tra s? t?n t?i
+            // 1.2. Lấy các Phase 
             var notWaitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseNotWaitListByConferenceIdAsync(confId);
             var waitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(confId);
             if (notWaitlistPhase == null || waitlistPhase == null)
-                throw new InvalidOperationException("H?i ngh? chua du?c c?u h�nh d?y d? phase ch�nh v� phase waitlist.");
+                throw new BadRequestException("Hội nghị chưa được cấu hình đầy đủ phase chính và phase waitlist.");
 
-            // 1.3. Ki?m tra xem waitlist d� du?c k�ch ho?t chua
-            if (waitlistPhase.IsActive == true) // Ch? c?n ki?m tra phase waitlist l� d?
-                throw new BadRequestException($"Waitlist cho h?i ngh? n�y d� du?c k�ch ho?t tru?c d�.");
-
-            // 1.4. L?y Research Detail (c?n cho c�c bu?c sau)
+            // 1.3. L?y Research Detail (c?n cho các bu?c sau)
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(confId);
             if (researchDetail == null)
-                throw new InvalidOperationException($"H?i ngh? chua c� chi ti?t nghi�n c?u (Research Detail).");
+                throw new InvalidOperationException($"Hội nghị chưa có chi tiết nghiên cứu (Research Detail).");
 
-            #endregion
+            // 1.4. Ki?m tra xem waitlist dã du?c kích ho?t chua
+            if (waitlistPhase.IsActive == true) // Ch? c?n ki?m tra phase waitlist là d?
+                throw new BadRequestException($"Waitlist cho hội nghị này đã kích hoạt truớc đó.");
+
+            
+
+            
 
             #region === 2. VALIDATION LOGIC NGHI?P V? ===
 
-            // 2.1. Ki?m tra s? lu?ng v� Author c�n l?i
+            // 2.1. Ki?m tra s? lu?ng vé Author còn l?i
             var authorConferencePrices = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(confId);
             var remainingAuthorSlots = authorConferencePrices.Sum(cp => cp.AvailableSlot ?? 0);
             if (remainingAuthorSlots <= 0)
-                throw new BadRequestException("Kh�ng th? k�ch ho?t waitlist v� t?t c? c�c su?t d�nh cho t�c gi? (v� 'isAuthor') d� du?c b�n h?t.");
+                throw new BadRequestException("Không th? kích ho?t waitlist vì t?t c? các su?t dành cho tác gi? (vé 'isAuthor') dã du?c bán h?t.");
 
             // 2.2. Ki?m tra di?u ki?n th?i gian
             var today = await _timeProviderService.GetVietnamDate();
-            // 2.2a. Ph?i sau khi phase ch�nh k?t th�c ho�n to�n (k?t th�c Camera Ready)
+            // 2.2a. Ph?i sau khi phase chính k?t thúc hoàn toàn (k?t thúc Camera Ready)
             if (today <= notWaitlistPhase.CameraReadyEndDate)
-                throw new BadRequestException($"Kh�ng th? k�ch ho?t waitlist khi phase ch�nh chua k?t th�c. Phase ch�nh k?t th�c v�o ng�y: {notWaitlistPhase.CameraReadyEndDate:dd/MM/yyyy}.");
+                throw new BadRequestException($"Không th? kích ho?t waitlist khi phase chính chua k?t thúc. Phase chính k?t thúc vào ngày: {notWaitlistPhase.CameraReadyEndDate:dd/MM/yyyy}.");
 
-            // 2.2b. Ph?i n?m trong kho?ng th?i gian dang k� c?a phase waitlist
+            // 2.2b. Ph?i n?m trong kho?ng th?i gian dang ký c?a phase waitlist
             if (today < waitlistPhase.RegistrationStartDate || today > waitlistPhase.RegistrationEndDate)
-                throw new BadRequestException($"Ch? c� th? k�ch ho?t waitlist trong kho?ng th?i gian dang k� c?a n� ({waitlistPhase.RegistrationStartDate:dd/MM/yyyy} - {waitlistPhase.RegistrationEndDate:dd/MM/yyyy}).");
+                throw new BadRequestException($"Ch? có th? kích ho?t waitlist trong kho?ng th?i gian dang ký c?a nó ({waitlistPhase.RegistrationStartDate:dd/MM/yyyy} - {waitlistPhase.RegistrationEndDate:dd/MM/yyyy}).");
 
-            // 2.3. Ki?m tra xem ngu?i t? ch?c d� t?o PricePhase cho v� Author trong giai do?n Waitlist chua
+            // 2.3. Ki?m tra xem ngu?i t? ch?c dã t?o PricePhase cho vé Author trong giai do?n Waitlist chua
             var allAuthorPricePhases = await _unitOfWork.PricePhaseRepository.GetPricePhaseByconferenceIdThatIsAuthor(confId);
             bool hasPricePhaseForWaitlist = allAuthorPricePhases.Any(pp => pp.ResearchConferencePhaseId == waitlistPhase.ResearchConferencePhaseId);
 
             if (!hasPricePhaseForWaitlist)
-                throw new BadRequestException("Kh�ng th? k�ch ho?t waitlist. Vui l�ng t?o �t nh?t m?t 'Giai do?n b�n v�' (Price Phase) cho lo?i v� 'isAuthor' c� kho?ng th?i gian n?m trong giai do?n dang k� c?a waitlist.");
+                throw new BadRequestException("Không th? kích ho?t waitlist. Vui lòng t?o ít nh?t m?t 'Giai do?n bán vé' (Price Phase) cho lo?i vé 'isAuthor' có kho?ng th?i gian n?m trong giai do?n dang ký c?a waitlist.");
 
             #endregion
 
-            #region === 3. TH?C THI THAY �?I ===
+            #region === 3. TH?C THI THAY Ð?I ===
             await _unitOfWork.BeginTransactionAsync();
             try
             {

@@ -9,6 +9,7 @@
         }
         public static DateOnly GetVietnamDate()
         {
+
             var vnTime = TimeZoneInfo.ConvertTimeFromUtc(
                 DateTime.UtcNow,
                 TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh")
