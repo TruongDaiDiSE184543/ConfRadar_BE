@@ -237,7 +237,7 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = momoResult.payUrl;
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
-                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalAmount, expireMinute);
+                    var vnPayResult = await _vnPayService.CreateVnPayPayment(orderCode, finalAmount, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
@@ -474,7 +474,7 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = momoResult.payUrl;
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
-                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
+                    var vnPayResult = await _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
@@ -681,7 +681,7 @@ namespace ConfRadar.Services.Services
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
                     var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
-                    checkOutUrl = vnPayResult;
+                    checkOutUrl = await vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phương thức thanh toán ZaloPay đang trong trạng thái bảo trì và bị lỏ");

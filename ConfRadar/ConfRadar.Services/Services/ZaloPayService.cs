@@ -14,15 +14,17 @@ namespace ConfRadar.Services.Services
     {
         private readonly IOptions<ZaloPaySettings> _zaloPaySettings;
         private readonly ITokenService _tokenService;
-        public ZaloPayService(IOptions<ZaloPaySettings> zaloPaySettings, ITokenService tokenService)
+        private readonly ITimeProviderService _timeProviderService;
+        public ZaloPayService(IOptions<ZaloPaySettings> zaloPaySettings, ITokenService tokenService, ITimeProviderService timeProviderService)
         {
             _zaloPaySettings = zaloPaySettings;
             _tokenService = tokenService;
+            _timeProviderService = timeProviderService;
         }
         public async Task<string> CreateZaloPayment()
         {
             string createOrderUrl = "https://sb-openapi.zalopay.vn/v2/create";
-            var vnTime = ExtensionHelper.GetVietnamTime();
+            var vnTime = await _timeProviderService.GetVietnamTime();
             string orderId = Guid.NewGuid().ToString("N").Substring(0, 6);
             string app_trans_id = $"{vnTime:yyMMdd}_{orderId}";
             string appUser = "ZaloPayDemo";
