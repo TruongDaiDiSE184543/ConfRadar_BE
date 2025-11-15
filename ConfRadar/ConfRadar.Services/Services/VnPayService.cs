@@ -7,21 +7,23 @@ namespace ConfRadar.Services.Services
 {
     public interface IVnPayService
     {
-        string CreateVnPayPayment(long orderCode, long amount, double expireMinute);
+        Task<string> CreateVnPayPayment(long orderCode, long amount, double expireMinute);
         bool VerifyVnPayPayment(VnPayResponse data);
     }
     public class VnPayService : IVnPayService
     {
         private readonly IOptions<VnPaySettings> _vnPaySettings;
         private readonly ITokenService _tokenService;
-        public VnPayService(IOptions<VnPaySettings> vnPaySettings, ITokenService tokenService)
+        private readonly ITimeProviderService _timeProviderService;
+        public VnPayService(IOptions<VnPaySettings> vnPaySettings, ITokenService tokenService, ITimeProviderService timeProviderService)
         {
             _vnPaySettings = vnPaySettings;
             _tokenService = tokenService;
+            _timeProviderService = timeProviderService;
         }
-        public string CreateVnPayPayment(long orderCode, long amount, double expireMinute)
+        public async Task<string> CreateVnPayPayment(long orderCode, long amount, double expireMinute)
         {
-            var timeNow = ExtensionHelper.GetVietnamTime();
+            var timeNow = await _timeProviderService.GetVietnamTime();
             string vnPayCreateLink = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?";
             string vnp_Version = "2.1.0";
             string vnp_Command = "pay";

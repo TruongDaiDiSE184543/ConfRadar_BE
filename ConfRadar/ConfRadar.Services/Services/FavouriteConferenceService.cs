@@ -16,9 +16,11 @@ namespace ConfRadar.Services.Services
     public class FavouriteConferenceService : IFavouriteConferenceService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public FavouriteConferenceService(IUnitOfWork unitOfWork)
+        private readonly ITimeProviderService _timeProviderService;
+        public FavouriteConferenceService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
+            _timeProviderService = timeProviderService;
         }
 
         public async Task<AddedFavouriteConfereceResponse> AddFavouriteAsync(string userId, string conferenceId)
@@ -37,7 +39,7 @@ namespace ConfRadar.Services.Services
             {
                 UserId = userId,
                 ConferenceId = conferenceId,
-                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                CreatedAt = await _timeProviderService.GetVietnamTime(),
             };
             await _unitOfWork.FavoriteConferenceRepository.AddFavouriteAsync(favouriteConferenceObj);
             return new AddedFavouriteConfereceResponse()

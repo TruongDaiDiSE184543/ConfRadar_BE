@@ -17,10 +17,12 @@ namespace ConfRadar.Services.Services
     public class ReportService : IReportService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITimeProviderService _timeProviderService;
 
-        public ReportService(IUnitOfWork unitOfWork)
+        public ReportService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
+            _timeProviderService = timeProviderService;
         }
 
         public async Task<ReportResponse> CreateReportAsync(string userId, CreateReportRequest request)
@@ -33,7 +35,7 @@ namespace ConfRadar.Services.Services
                 Reason = request.Reason,
                 Description = request.Description,
                 HasResolve = false,
-                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                CreatedAt = await _timeProviderService.GetVietnamTime(),
                 UserId = userId
             };
 

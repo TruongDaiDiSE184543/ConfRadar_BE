@@ -101,25 +101,25 @@ namespace ConfRadar.Services.Services
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.ConfirmRegistrationEmail + $"?token={verificationToken}";
-            var userCreated = UserMapper.FromCreateUserRequestToUser(request);
+            var userCreated = UserMapper.FromCreateUserRequestToUser(request, await _timeProviderService.GetVietnamTime());
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
             userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
-            userCreated.VerificationTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1);
+            userCreated.VerificationTokenExpiry = (await _timeProviderService.GetVietnamTime()).AddDays(1);
             userCreated.AvatarUrl = fileUrl;
             var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
             var userRole = new UserRole()
             {
                 UserId = userCreated.UserId,
                 RoleId = role!.RoleId,
-                AssignedAt = ExtensionHelper.GetVietnamTime(),
+                AssignedAt = await _timeProviderService.GetVietnamTime(),
             };
             var userWallet = new Wallet()
             {
                 WalletId = Guid.NewGuid().ToString(),
                 UserId = userCreated.UserId,
                 Balance = 0,
-                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                CreatedAt = await _timeProviderService.GetVietnamTime(),
                 UpdatedAt = null
             };
             userCreated.UserRoles.Add(userRole);
@@ -138,7 +138,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User is already confirmed");
             }
-            var timeNow = ExtensionHelper.GetVietnamTime();
+            var timeNow = await _timeProviderService.GetVietnamTime();
             if (user.VerificationTokenExpiry <= timeNow)
             {
                 throw new ConfRadarAuthenticationException("Token is expired");
@@ -210,7 +210,7 @@ namespace ConfRadar.Services.Services
             var resetToken = _tokenService.GenerateSecureRandomToken();
             var resetLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
-            user.PasswordResetTokenExpiry = ExtensionHelper.GetVietnamTime();
+            user.PasswordResetTokenExpiry = await _timeProviderService.GetVietnamTime();
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
             await _emailService.SendAuthenticationTemplateEmailAsync(email, user.FullName, resetLink, "Forget Password", "EmailForgetPassword.html");
         }
@@ -222,7 +222,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("Token is not found");
             }
-            var timeNow = ExtensionHelper.GetVietnamTime();
+            var timeNow = await _timeProviderService.GetVietnamTime();
             if (user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry <= timeNow)
             {
                 throw new ConfRadarAuthenticationException("Token is expired");
@@ -264,7 +264,7 @@ namespace ConfRadar.Services.Services
             string? name = nameFirebase?.ToString();
             var user = await _unitOfWork.UserRepository.GetUserByEmail(email);
 
-            var timeNow = ExtensionHelper.GetVietnamTime();
+            var timeNow = await _timeProviderService.GetVietnamTime();
             if (user == null)
             {
                 var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
@@ -294,7 +294,7 @@ namespace ConfRadar.Services.Services
                         WalletId = Guid.NewGuid().ToString(),
                         UserId = userId,
                         Balance = 0,
-                        CreatedAt = ExtensionHelper.GetVietnamTime(),
+                        CreatedAt = await _timeProviderService.GetVietnamTime(),
                         UpdatedAt = null
                     }
                 };
@@ -339,7 +339,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Refresh token not found");
             }
-            var timeNow = ExtensionHelper.GetVietnamTime();
+            var timeNow = await _timeProviderService.GetVietnamTime();
             if (timeNow >= tokenFound.Expiry)
             {
                 throw new ConfRadarAuthenticationException("Refresh token is expired!");
@@ -530,16 +530,16 @@ namespace ConfRadar.Services.Services
                 IsActive = true,
                 IsEmailConfirmed = true,
                 LoginProvider = LoginProviderEnum.Local.ToString(),
-                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                CreatedAt = await _timeProviderService.GetVietnamTime(),
                 UserRoles = new List<UserRole>(),
                 PasswordResetToken = verificationToken,
-                PasswordResetTokenExpiry = ExtensionHelper.GetVietnamTime().AddDays(1),
+                PasswordResetTokenExpiry = (await _timeProviderService.GetVietnamTime()).AddDays(1),
                 Wallet = new Wallet()
                 {
                     WalletId = Guid.NewGuid().ToString(),
                     UserId = userId,
                     Balance = 0,
-                    CreatedAt = ExtensionHelper.GetVietnamTime(),
+                    CreatedAt = await _timeProviderService.GetVietnamTime(),
                     UpdatedAt = null
                 }
             };
@@ -550,7 +550,7 @@ namespace ConfRadar.Services.Services
             }
             var userRoleObj = new UserRole()
             {
-                AssignedAt = ExtensionHelper.GetVietnamTime(),
+                AssignedAt = await _timeProviderService.GetVietnamTime(),
                 RoleId = collabRole.RoleId,
                 UserId = userCreated.UserId,
             };

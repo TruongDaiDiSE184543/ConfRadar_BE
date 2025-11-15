@@ -6,7 +6,7 @@ namespace ConfRadar.Services.Mappers
 {
     public static class UserMapper
     {
-        public static User FromCreateUserRequestToUser(CreateUserRequest request)
+        public static User FromCreateUserRequestToUser(CreateUserRequest request, DateTime createdAt)
         {
             return new User()
             {
@@ -20,7 +20,7 @@ namespace ConfRadar.Services.Mappers
                 BioDescription = request.BioDescription,
                 IsActive = true,
                 IsEmailConfirmed = false,
-                CreatedAt = ExtensionHelper.GetVietnamTime(),
+                CreatedAt = createdAt,
             };
         }
     }

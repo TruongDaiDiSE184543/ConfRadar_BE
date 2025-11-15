@@ -21,12 +21,14 @@ namespace ConfRadar.Services.Services
         private readonly ITokenService _tokenService;
         private readonly IOptions<ObjectStorageSettings> _objectStorageSettings;
         private readonly IObjectStorageFileService _objectStorageFileService;
-        public ContractService(IUnitOfWork unitOfWork, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService)
+        private readonly ITimeProviderService _timeProviderService;
+        public ContractService(IUnitOfWork unitOfWork, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
             _tokenService = tokenService;
             _objectStorageSettings = objectStorageSettings;
             _objectStorageFileService = objectStorageFileService;
+            _timeProviderService = timeProviderService;
         }
 
         public async Task<int> CreateReviewerContract(CreateReviewerContractRequest request)
@@ -41,7 +43,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Hội nghị với mã {request.ConferenceId} không tồn tại trong hệ thống");
             }
-            if (conference.EndDate == null || conference.EndDate < ExtensionHelper.GetVietnamDate())
+            if (conference.EndDate == null || conference.EndDate < await _timeProviderService.GetVietnamDate())
             {
                 throw new BadRequestException("Hội nghị này đã kết thúc, bạn không thể tạo hợp đồng cho reviewer này");
             }
@@ -110,7 +112,7 @@ namespace ConfRadar.Services.Services
             {
                 var userRoleObj = new UserRole()
                 {
-                    AssignedAt = ExtensionHelper.GetVietnamTime(),
+                    AssignedAt = await _timeProviderService.GetVietnamTime(),
                     RoleId = externalReviewerRole.RoleId,
                     UserId = reviewer.UserId,
                 };
