@@ -86,6 +86,10 @@
             public string HashKey { get; set; }
             public string CheckSumKey { get; set; }
         }
+        public class FirebaseRealtimeDbSettings
+        {
+            public string Url { get; set; }
+        }
 
 
     }

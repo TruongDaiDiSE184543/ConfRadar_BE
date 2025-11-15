@@ -56,6 +56,7 @@ namespace ConfRadar.Services
             services.AddScoped<IVnPayService, VnPayService>();
             services.AddScoped<IWalletService, WalletService>();
             services.AddScoped<IQRCoderService, QRCoderService>();
+            services.AddScoped<ITimeProviderService, TimeProviderService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
@@ -68,10 +69,15 @@ namespace ConfRadar.Services
 
             var firebaseSettings = configs.GetSection("FirebaseSettings").Get<FirebaseSettings>();
             var credential = GoogleCredential.FromFile(firebaseSettings!.ServiceAccountPath);
+            
             var firebaseApp = FirebaseApp.Create(new AppOptions()
             {
-                Credential = credential
+                Credential = credential,
             });
+
+
+
+
             services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
             //add jobs
             services.AddQuartzHostedService(options =>

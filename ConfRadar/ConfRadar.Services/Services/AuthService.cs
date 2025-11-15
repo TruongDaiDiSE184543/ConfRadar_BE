@@ -47,8 +47,9 @@ namespace ConfRadar.Services.Services
         private readonly ObjectStorageSettings _objectStorageSettings;
         private readonly IObjectStorageFileService _objectStorageFileService;
         private readonly IFirebaseAuthService _firebaseAuthService;
+        private readonly ITimeProviderService _timeProviderService;
         public AuthService(IPasswordHasher passwordHasher, IEmailService emailService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IUnitOfWork unitOfWork,
-            IObjectStorageFileService objectStorageFileService, IOptions<ObjectStorageSettings> objectStorageSettings, IFirebaseAuthService firebaseAuthService)
+            IObjectStorageFileService objectStorageFileService, IOptions<ObjectStorageSettings> objectStorageSettings, IFirebaseAuthService firebaseAuthService,ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;
@@ -58,6 +59,7 @@ namespace ConfRadar.Services.Services
             _objectStorageFileService = objectStorageFileService;
             _objectStorageSettings = objectStorageSettings.Value;
             _firebaseAuthService = firebaseAuthService;
+            _timeProviderService = timeProviderService;
         }
         public async Task<int> RegisterAccount(CreateUserRequest request)
         {
@@ -173,7 +175,7 @@ namespace ConfRadar.Services.Services
 
             var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
-            var timeNow = ExtensionHelper.GetVietnamTime();
+            var timeNow = await _timeProviderService.GetVietnamTime();
             user.LastLogin = timeNow;
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
