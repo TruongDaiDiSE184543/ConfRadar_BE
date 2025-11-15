@@ -55,13 +55,14 @@ namespace ConfRadar.Services.Services
             //H: high : m?nh, che 1/3 v?n cân du?c nhung c?n qr l?n hon
             #endregion
             using var qrData = qrGenerator.CreateQrCode(hashedContent, QRCodeGenerator.ECCLevel.M);
-            using var qrCode = new QRCode(qrData);
-            using var bitmap = qrCode.GetGraphic(20);
 
-            using var ms = new MemoryStream();
-            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            using var qrCode = new PngByteQRCode(qrData);
+            byte[] qrBytes = qrCode.GetGraphic(20);
+
+            using var ms = new MemoryStream(qrBytes);
             //reset con tr? stream v? 0 d? save
             ms.Position = 0;
+          
 
             var baseUri = _objectStorageSettings.Value.EndPoint;
             var uploadPath = baseUri + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.qrcodefile.ToString(), uniqueFileName, ms, contentType);
