@@ -1,4 +1,4 @@
-﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 
@@ -12,9 +12,11 @@ namespace ConfRadar.Services.Services
     public class NotificationService : INotificationService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public NotificationService(IUnitOfWork unitOfWork)
+        private readonly ITimeProviderService _timeProviderService;
+        public NotificationService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
+            _timeProviderService = timeProviderService;
         }
 
         public async Task NotifyWaitList()
@@ -26,7 +28,7 @@ namespace ConfRadar.Services.Services
             {
                 return;
             }
-            var listNotifiedUser = await _unitOfWork.PaperWaitListRepository.NotifyWaitListAsync(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, ExtensionHelper.GetVietnamTime());
+            var listNotifiedUser = await _unitOfWork.PaperWaitListRepository.NotifyWaitListAsync(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, await _timeProviderService.GetVietnamTime());
             if (listNotifiedUser != null && listNotifiedUser.Count > 0)
             {
                 var notifionListObj = new List<Notification>();
@@ -36,19 +38,19 @@ namespace ConfRadar.Services.Services
                     {
                         NotificationId = Guid.NewGuid().ToString(),
                         UserId = notfiedUser.UserId,
-                        CreatedAt = ExtensionHelper.GetVietnamTime(),
+                        CreatedAt = await _timeProviderService.GetVietnamTime(),
                         ReadStatus = false,
                         Type = "Paper wait list",
-                        Title = "Danh sách hàng đợi cho hội nghị",
+                        Title = "Danh s�ch h�ng d?i cho h?i ngh?",
 
                     };
-                    string message = $"Hội nghị {notfiedUser.ConferenceName} hiện đã mở lại slot đăng ký.";
+                    string message = $"H?i ngh? {notfiedUser.ConferenceName} hi?n d� m? l?i slot dang k�.";
                     if (notfiedUser.ConferencePriceDetailList.Count > 0)
                     {
-                        message += " Các vé hiện có: ";
+                        message += " C�c v� hi?n c�: ";
                         foreach (var conferencePrice in notfiedUser.ConferencePriceDetailList)
                         {
-                            message += $" Vé {conferencePrice.TicketName} — còn {conferencePrice.AvailableSlot}/{conferencePrice.TotalSlot} vé (giá {conferencePrice.TicketPrice}). ";
+                            message += $" V� {conferencePrice.TicketName} � c�n {conferencePrice.AvailableSlot}/{conferencePrice.TotalSlot} v� (gi� {conferencePrice.TicketPrice}). ";
                         }
                     }
                     userNotification.Message = message;
@@ -73,7 +75,7 @@ namespace ConfRadar.Services.Services
             {
                 return;
             }
-            await _unitOfWork.PaperWaitListRepository.ResetUserWaitList(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, ExtensionHelper.GetVietnamTime());
+            await _unitOfWork.PaperWaitListRepository.ResetUserWaitList(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, await _timeProviderService.GetVietnamTime());
         }
     }
 }

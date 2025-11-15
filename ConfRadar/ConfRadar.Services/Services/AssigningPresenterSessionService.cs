@@ -25,11 +25,13 @@ namespace ConfRadar.Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITokenService _tokenService;
+        private readonly ITimeProviderService _timeProviderService;
 
-        public AssigningPresenterSessionService(IUnitOfWork unitOfWork, ITokenService tokenService)
+        public AssigningPresenterSessionService(IUnitOfWork unitOfWork, ITokenService tokenService, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
             _tokenService = tokenService;
+            _timeProviderService = timeProviderService;
         }
         public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper()
         {
@@ -115,7 +117,7 @@ namespace ConfRadar.Services.Services
                 {
                     ConferenceSessionId = sessionId,
                     PaperId = paperId,
-                    AssignedAt = ExtensionHelper.GetVietnamTime()
+                    AssignedAt = await _timeProviderService.GetVietnamTime()
                 };
 
                 await _unitOfWork.PresentAuthorRepository.CreatePresentAuthorAsync(presentAuthor);
@@ -299,7 +301,7 @@ namespace ConfRadar.Services.Services
                     RequestedById = requesterId,
                     NewPresenterId = request.NewUserId,
                     Reason = request.Reason,
-                    RequestAt = ExtensionHelper.GetVietnamTime(),
+                    RequestAt = await _timeProviderService.GetVietnamTime(),
                     PaperId = request.PaperId,
                     GlobalStatusId = pendingStatus.GlobalStatusId,
 
@@ -357,7 +359,7 @@ namespace ConfRadar.Services.Services
 
 
                     //approve the request
-                    changeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
+                    changeRequest.ReviewedAt = await _timeProviderService.GetVietnamTime();
                     changeRequest.GlobalStatusId = acceptedStatus.GlobalStatusId;
                     await _unitOfWork.PresenterChangeRequestRepository.UpdatePresenterChangeRequestAsync(changeRequest);
 
@@ -439,7 +441,7 @@ namespace ConfRadar.Services.Services
                 }
                 else
                 {
-                    changeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
+                    changeRequest.ReviewedAt = await _timeProviderService.GetVietnamTime();
                     changeRequest.GlobalStatusId = RejectedStatus.GlobalStatusId;
                     await _unitOfWork.PresenterChangeRequestRepository.UpdatePresenterChangeRequestAsync(changeRequest);
                     await _unitOfWork.CommitAsync();
@@ -548,7 +550,7 @@ namespace ConfRadar.Services.Services
                     TicketId = toNewUserCheckin.TicketId, // Lấy ticket từ bản ghi check-in mới
                     NewConferenceSessionId = request.NewSessionId,
                     Reason = request.Reason,
-                    RequestAt = ExtensionHelper.GetVietnamTime(),
+                    RequestAt = await _timeProviderService.GetVietnamTime(),
                     CustomerId = requestedById,
                     GlobalStatusId = pendingStatus.GlobalStatusId,
                     PaperId = request.PaperId
@@ -644,12 +646,12 @@ namespace ConfRadar.Services.Services
                     {
                         ConferenceSessionId = newSessionId,
                         PaperId = sessionChangeRequest.PaperId,
-                        AssignedAt = ExtensionHelper.GetVietnamTime()
+                        AssignedAt = await _timeProviderService.GetVietnamTime()
                     });
 
                     // 5. Cập nhật trạng thái của yêu cầu
                     sessionChangeRequest.GlobalStatusId = acceptedStatus.GlobalStatusId;
-                    sessionChangeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
+                    sessionChangeRequest.ReviewedAt = await _timeProviderService.GetVietnamTime();
                     await _unitOfWork.SessionChangeRequestRepository.UpdateSessionChangeRequestAsync(sessionChangeRequest);
 
                     await _unitOfWork.CommitAsync();
@@ -661,7 +663,7 @@ namespace ConfRadar.Services.Services
                     if (rejectStatus == null) throw new BadRequestException("Không tìm thấy trạng thái 'Rejected'.");
 
                     sessionChangeRequest.GlobalStatusId = rejectStatus.GlobalStatusId;
-                    sessionChangeRequest.ReviewedAt = ExtensionHelper.GetVietnamTime();
+                    sessionChangeRequest.ReviewedAt = await _timeProviderService.GetVietnamTime();
                     // PHẢI GỌI UPDATE
                     await _unitOfWork.SessionChangeRequestRepository.UpdateSessionChangeRequestAsync(sessionChangeRequest);
 
