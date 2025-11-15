@@ -625,8 +625,8 @@ namespace ConfRadar.Services.Services
                             throw new BadRequestException($"B?n dã n?p revision, deadline di?n ra t? {revisionPaperSubmissionFound.RevisionDeadlineRound?.StartSubmissionDate} d?n {revisionPaperSubmissionFound.RevisionDeadlineRound?.EndSubmissionDate} này ");
                         }
                     }
+                    revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
                 }
-                revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
                 var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
                 if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
                 {
