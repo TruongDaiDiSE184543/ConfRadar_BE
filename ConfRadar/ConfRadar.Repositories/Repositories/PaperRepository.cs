@@ -145,10 +145,11 @@ namespace ConfRadar.Repositories.Repositories
                             .Include(p => p.CameraReady)
                                 .ThenInclude(cr => cr.GlobalStatus)
 
-
                             .Include(p => p.Conference)
-                                .ThenInclude(c => c.ResearchConferencePhases)
-                                .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
+
+                            
+                             .Include(c => c.ResearchConferencePhase)
+                             .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
 
                             .Include(p => p.PaperReviewers)
                             .AsSplitQuery()
