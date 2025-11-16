@@ -1624,10 +1624,10 @@ namespace ConfRadar.Services.Services
                     FullPaperEndDate = paper.ResearchConferencePhase.FullPaperEndDate,
                     ReviewStartDate = paper.ResearchConferencePhase.ReviewStartDate,
                     ReviewEndDate = paper.ResearchConferencePhase.ReviewEndDate,
-                    ReviseStartDate = paper.ResearchConferencePhase.ReviewStartDate,
-                    ReviseEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    ReviseStartDate = paper.ResearchConferencePhase.ReviseStartDate,
+                    ReviseEndDate = paper.ResearchConferencePhase.ReviseEndDate,
                     CameraReadyStartDate = paper.ResearchConferencePhase.CameraReadyStartDate,
-                    CameraReadyEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+                    CameraReadyEndDate = paper.ResearchConferencePhase.CameraReadyEndDate,
                     ConferenceId = paper.ConferenceId
                 } : null,
 

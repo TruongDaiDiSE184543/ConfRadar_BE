@@ -1,10 +1,5 @@
 ﻿using Firebase.Database;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -19,7 +14,7 @@ namespace ConfRadar.Services.Services
         private readonly IOptions<FirebaseRealtimeDbSettings> _fireaseRealTimeSettings;
         public TimeProviderService(IOptions<FirebaseRealtimeDbSettings> fireaseRealTimeSettings)
         {
-            _fireaseRealTimeSettings = fireaseRealTimeSettings;    
+            _fireaseRealTimeSettings = fireaseRealTimeSettings;
         }
         public async Task<TimeConfig> GetFireBaseKeyAsync(string key)
         {
@@ -58,7 +53,7 @@ namespace ConfRadar.Services.Services
             DateTime finalTime;
             if (cfg.UseFakeTime)
             {
-                finalTime = DateTime.Parse(cfg.CustomTimeUtc!,null, System.Globalization.DateTimeStyles.RoundtripKind);
+                finalTime = DateTime.Parse(cfg.CustomTimeUtc!, null, System.Globalization.DateTimeStyles.RoundtripKind);
             }
             else
             {

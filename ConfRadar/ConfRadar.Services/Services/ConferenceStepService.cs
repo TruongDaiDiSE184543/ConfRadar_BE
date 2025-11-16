@@ -6,8 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using Minio.Exceptions;
-using Npgsql.Internal;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace ConfRadar.Services.Services
 {
@@ -98,7 +96,7 @@ namespace ConfRadar.Services.Services
         Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request, string userId);
         Task<List<PricePhaseResponse>> AddPricePhaseForWaitList(string conferencePriceId, AddPricePhasesRequest request, string userId);
         Task<List<PricePhaseResponse>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId);
-        Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request,string userId);
+        Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request, string userId);
         Task<bool> DeletePricePhaseAsync(string pricePhaseId);
 
         // Speaker CRUD operations - Create with conferenceSessionId, RUD with its own id
@@ -1071,9 +1069,9 @@ namespace ConfRadar.Services.Services
             await EnsureConferenceIsEditable(conference);
             List<DateOnly> newSessionDates = request.Sessions.Where(s => s.Date.HasValue).Select(s => s.Date.Value).Distinct().ToList();
 
-            
+
             await checkEachDateHasConferenceSession(conference, newSessionDates, true);
-           
+
             //check if session in request overlap
 
             //group by same roomId and same date
@@ -1084,7 +1082,7 @@ namespace ConfRadar.Services.Services
                 for (int i = 0; i < sortedSession.Count - 1; i++)
                 {
                     var currentSession = sortedSession[i];
-                    var nextSession = sortedSession[i+1];
+                    var nextSession = sortedSession[i + 1];
                     if (currentSession.EndTime.Value > nextSession.StartTime.Value)
                         throw new Exception($"D? li?u request không h?p l?: Phiên '{currentSession.Title}' (k?t thúc lúc {currentSession.EndTime}) b? ch?ng chéo th?i gian v?i phiên '{nextSession.Title}' (b?t d?u lúc {nextSession.StartTime}) trong cùng m?t phòng roomId {group.Key.RoomId} và cùng m?t ngày {group.Key.Date}.");
                 }
@@ -2222,7 +2220,7 @@ namespace ConfRadar.Services.Services
             return phase.ToResponse();
         }
 
-   
+
 
         public async Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request, string userId)
         {

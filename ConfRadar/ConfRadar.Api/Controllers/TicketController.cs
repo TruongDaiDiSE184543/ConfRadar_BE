@@ -27,6 +27,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResultResponseDto<CustomerPaidTicketResponse>>.SuccessResponse(result, "Danh sách vé đã chi trả"));
         }
         [Authorize]
+        [HttpGet("get-own-paid-ticket-by-conference")]
+        public async Task<IActionResult> GetOwnPaidTicketDataByConferenceId([FromQuery] string conferenceId, [FromQuery] string? keyword, [FromQuery] int? pageNumber = 1, [FromQuery] int? pageSize = 10, [FromQuery] DateTime? sessionStartTime = null, [FromQuery] DateTime? sessionEndTime = null)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.TicketService.GetTicketsByUserIdAndConferenceId(conferenceId,userId, keyword, pageNumber, pageSize);
+            return Ok(ApiResponse<PagedResultResponseDto<CustomerPaidTicketResponse>>.SuccessResponse(result, "Danh sách vé đã chi trả theo hội nghị"));
+        }
+        [Authorize]
         [HttpPost("refund-ticket")]
         public async Task<IActionResult> RefundTicket([FromBody] RefundTicketRequest request)
         {

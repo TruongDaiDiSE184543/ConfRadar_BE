@@ -756,7 +756,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class addRevisionRequest
     {
-        public List<CreateRevisionRoundDeadlineRequest> revision { get; set;}
+        public List<CreateRevisionRoundDeadlineRequest> revision { get; set; }
     }
 
     public class CreateRevisionRoundDeadlineRequest

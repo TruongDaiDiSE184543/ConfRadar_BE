@@ -62,7 +62,7 @@ namespace ConfRadar.Services.Services
             using var ms = new MemoryStream(qrBytes);
             //reset con tr? stream v? 0 d? save
             ms.Position = 0;
-          
+
 
             var baseUri = _objectStorageSettings.Value.EndPoint;
             var uploadPath = baseUri + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.qrcodefile.ToString(), uniqueFileName, ms, contentType);

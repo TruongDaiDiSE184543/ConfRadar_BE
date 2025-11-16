@@ -1,6 +1,5 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.FavouriteConference;
 

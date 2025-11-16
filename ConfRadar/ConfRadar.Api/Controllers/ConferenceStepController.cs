@@ -25,7 +25,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CreateConferenceBasic([FromForm] CreateTechnicalConferenceBasicRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-          
+
             var conference = await _serviceManager.ConferenceStepService.CreateTechnicalConferenceBasicAsync(request, userId);
             return Ok(ApiResponse<TechnicalConferenceBasicStepResponse>.SuccessResponse(conference, "Hội nghị được tạo thành công"));
         }
@@ -599,7 +599,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdatePricePhase(string pricePhaseId, [FromBody] UpdatePricePhaseRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request,userId);
+            var pricePhase = await _serviceManager.ConferenceStepService.UpdatePricePhaseAsync(pricePhaseId, request, userId);
             return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(pricePhase, "Giai đoạn giá vé được cập nhật thành công"));
         }
 
@@ -617,10 +617,10 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPut("add-pricephase-for-waitlist")]
         [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> AddWaitListPhase([FromQuery] string conferencePriceId,[FromBody]AddPricePhasesRequest request)
+        public async Task<IActionResult> AddWaitListPhase([FromQuery] string conferencePriceId, [FromBody] AddPricePhasesRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStepService.AddPricePhaseForWaitList(conferencePriceId, request,userId);
+            var result = await _serviceManager.ConferenceStepService.AddPricePhaseForWaitList(conferencePriceId, request, userId);
             return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(null, "Giai đoạn giá vé cho waitlist được thêm thành công"));
         }
 
