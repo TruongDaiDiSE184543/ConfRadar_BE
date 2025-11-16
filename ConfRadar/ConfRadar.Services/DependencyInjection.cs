@@ -69,7 +69,7 @@ namespace ConfRadar.Services
 
             var firebaseSettings = configs.GetSection("FirebaseSettings").Get<FirebaseSettings>();
             var credential = GoogleCredential.FromFile(firebaseSettings!.ServiceAccountPath);
-            
+
             var firebaseApp = FirebaseApp.Create(new AppOptions()
             {
                 Credential = credential,

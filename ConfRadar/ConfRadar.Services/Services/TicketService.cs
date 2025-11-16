@@ -13,6 +13,7 @@ namespace ConfRadar.Services.Services
     public interface ITicketService
     {
         Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
+        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId, string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
         Task<List<PaidTicketResponse>> GetTicketListByConferenceId(string conferenceId);
         Task<int> CreateRefundTicketRequest(RefundTicketRequest request, string userId);
         Task<List<RefundRequestResponse>> GetRefundRequestByConferenceId(string conferenceId);
@@ -54,7 +55,12 @@ namespace ConfRadar.Services.Services
             int size = pageSize ?? 10;
             return await _unitOfWork.TicketRepository.GetTicketsByUserId(userId, keyword, page, size, sessionStartTime, sessionEndTime);
         }
-
+        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId,string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
+        {
+            int page = pageNumber ?? 1;
+            int size = pageSize ?? 10;
+            return await _unitOfWork.TicketRepository.GetTicketsByUserIdAndConferenceId(conferenceId,userId, keyword, page, size, sessionStartTime, sessionEndTime);
+        }
 
         public async Task<int> CreateRefundTicketRequest(RefundTicketRequest request, string userId)
         {
@@ -105,7 +111,7 @@ namespace ConfRadar.Services.Services
 
             decimal refundAmount = 0;
             //cho init ban d?u là accept, qua t?ng filter , nào ko h?p => l?i
-            
+
             var refundPolicies = ticket.PricePhase.RefundPolicies;
             if (!refundPolicies.Any())
             {

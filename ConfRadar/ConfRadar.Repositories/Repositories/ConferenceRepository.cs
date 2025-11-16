@@ -114,27 +114,27 @@ namespace ConfRadar.Repositories.Repositories
                                  )
                                  .Select(t => new ConferenceDetailForScheduleResponse()
                                  {
-                                     //ConferenceId = t.PricePhase.ConferencePrice.Conference.ConferenceId,
-                                     //ConferenceName = t.ConferencePrice.Conference.ConferenceName,
-                                     //Description = t.ConferencePrice.Conference.Description,
-                                     //StartDate = t.ConferencePrice.Conference.StartDate,
-                                     //EndDate = t.ConferencePrice.Conference.EndDate,
-                                     //TotalSlot = t.ConferencePrice.Conference.TotalSlot,
-                                     //AvailableSlot = t.ConferencePrice.Conference.AvailableSlot,
-                                     //Address = t.ConferencePrice.Conference.Address,
-                                     //BannerImageUrl = t.ConferencePrice.Conference.BannerImageUrl,
-                                     //CreatedAt = t.ConferencePrice.Conference.CreatedAt,
-                                     //TicketSaleStart = t.ConferencePrice.Conference.TicketSaleStart,
-                                     //TicketSaleEnd = t.ConferencePrice.Conference.TicketSaleEnd,
-                                     //IsInternalHosted = t.ConferencePrice.Conference.IsInternalHosted,
-                                     //IsResearchConference = t.ConferencePrice.Conference.IsResearchConference,
-                                     //CityId = t.ConferencePrice.Conference.CityId,
-                                     //CityName = t.ConferencePrice.Conference.City != null ? t.ConferencePrice.Conference.City.CityName : null,
-                                     //ConferenceCategoryId = t.ConferencePrice.Conference.ConferenceCategoryId,
-                                     //ConferenceCategoryName = t.ConferencePrice.Conference.ConferenceCategory != null ? t.ConferencePrice.Conference.ConferenceCategory.ConferenceCategoryName : null,
-                                     //ConferenceStatusId = t.ConferencePrice.Conference.ConferenceStatusId,
-                                     //ConferenceStatusName = t.ConferencePrice.Conference.ConferenceStatus != null ? t.ConferencePrice.Conference.ConferenceStatus.ConferenceStatusName : null,
-                                     Sessions = t.PricePhase.ConferencePrice.Conference.ConferenceSessions.Any() ? t.PricePhase.ConferencePrice.Conference.ConferenceSessions.Select(cs => new SessionDetailForScheduleResponse()
+                                     ConferenceId = t.PricePhase.ConferencePrice.Conference.ConferenceId,
+                                     ConferenceName = t.PricePhase.ConferencePrice.Conference.ConferenceName,
+                                     Description = t.PricePhase.ConferencePrice.Conference.Description,
+                                     StartDate = t.PricePhase.ConferencePrice.Conference.StartDate,
+                                     EndDate = t.PricePhase.ConferencePrice.Conference.EndDate,
+                                     TotalSlot = t.PricePhase.ConferencePrice.Conference.TotalSlot,
+                                     AvailableSlot = t.PricePhase.ConferencePrice.Conference.AvailableSlot,
+                                     Address = t.PricePhase.ConferencePrice.Conference.Address,
+                                     BannerImageUrl = t.PricePhase.ConferencePrice.Conference.BannerImageUrl,
+                                     CreatedAt = t.PricePhase.ConferencePrice.Conference.CreatedAt,
+                                     TicketSaleStart = t.PricePhase.ConferencePrice.Conference.TicketSaleStart,
+                                     TicketSaleEnd = t.PricePhase.ConferencePrice.Conference.TicketSaleEnd,
+                                     IsInternalHosted = t.PricePhase.ConferencePrice.Conference.IsInternalHosted,
+                                     IsResearchConference = t.PricePhase.ConferencePrice.Conference.IsResearchConference,
+                                     CityId = t.PricePhase.ConferencePrice.Conference.CityId,
+                                     CityName = t.PricePhase.ConferencePrice.Conference.City != null ? t.PricePhase.ConferencePrice.Conference.City.CityName : null,
+                                     ConferenceCategoryId = t.PricePhase.ConferencePrice.Conference.ConferenceCategoryId,
+                                     ConferenceCategoryName = t.PricePhase.ConferencePrice.Conference.ConferenceCategory != null ? t.PricePhase.ConferencePrice.Conference.ConferenceCategory.ConferenceCategoryName : null,
+                                     ConferenceStatusId = t.PricePhase.ConferencePrice.Conference.ConferenceStatusId,
+                                     ConferenceStatusName = t.PricePhase.ConferencePrice.Conference.ConferenceStatus != null ? t.PricePhase.ConferencePrice.Conference.ConferenceStatus.ConferenceStatusName : null,
+                                     Sessions =  t.PricePhase.ConferencePrice.Conference.ConferenceSessions.Select(cs => new SessionDetailForScheduleResponse()
                                      {
                                          ConferenceSessionId = cs.ConferenceSessionId,
                                          Title = cs.Title,
@@ -152,7 +152,30 @@ namespace ConfRadar.Repositories.Repositories
                                          DestinationStreet = cs.Room != null && cs.Room.Destination != null ? cs.Room.Destination.Street : null,
                                          CityId = cs.Room != null && cs.Room.Destination != null ? cs.Room.Destination.CityId : null,
                                          CityName = cs.Room != null && cs.Room.Destination != null && cs.Room.Destination.City != null ? cs.Room.Destination.City.CityName : null,
-                                     }).ToList() : new List<SessionDetailForScheduleResponse>()
+                                         PresenterAuthor =  cs.PresentAuthors.Select(pa=> new PresenterAuthorDetailForScheduleResponse()
+                                         {
+                                             ConferenceSessionId = cs.ConferenceSessionId,
+                                             PaperId = pa.PaperId,
+                                             AssignedAt = pa.AssignedAt,
+
+                                             ConferenceId = t.PricePhase.ConferencePrice.ConferenceId,
+                                             PaperPhaseId = pa.Paper.PaperPhaseId,
+                                             PaperPhaseName = pa.Paper.PaperPhase !=null ? pa.Paper.PaperPhase.PhaseName : null,
+                                             CreatedAt = pa.Paper.CreatedAt,
+                                             PaperTitle = pa.Paper.Title,
+                                             PaperDescription = pa.Paper.Description,
+                                             ResearchConferencePhaseId = pa.Paper.ResearchConferencePhaseId,
+                                             PaperAuthor =  pa.Paper.PaperAuthors.Select(pau => new PaperAuthorDetailForScheduleResponse()
+                                             {
+                                                 UserId = pau.UserId,
+                                                 FullName = pau.User.FullName,
+                                                 AvatarUrl = pau.User.AvatarUrl,
+                                                 PaperId = pau.PaperId,
+                                                 IsPresenter = pau.IsPresenter,
+                                                 IsRootAuthor = pau.IsRootAuthor,
+                                             }).ToList(),
+                                         }).ToList() ,
+                                     }).ToList(),
                                  })
                                  .AsSplitQuery()
                                  .ToListAsync();

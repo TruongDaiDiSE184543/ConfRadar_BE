@@ -1,5 +1,4 @@
-﻿using ConfRadar.Services.Common;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Text;
 using static ConfRadar.Services.Common.AppSettingConfig;

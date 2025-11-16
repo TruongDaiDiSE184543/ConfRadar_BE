@@ -10,6 +10,7 @@ namespace ConfRadar.Repositories.Repositories
     public interface ITicketRepository
     {
         Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserId(string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
+        Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId, string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null);
         Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId);
         Task<List<Ticket>> GetTicketListByConferenceId(string conferenceId);
         Task<int> CreateTicketAsync(Ticket ticket);
@@ -208,6 +209,214 @@ namespace ConfRadar.Repositories.Repositories
                 TotalCount = totalCount,
             };
         }
+        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId,string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
+        {
+            var query = _context.Tickets.AsNoTracking()
+                .Where(t => t.UserId == userId 
+                && t.PricePhase !=null && t.PricePhase.ConferencePrice!=null
+                && t.PricePhase.ConferencePrice.ConferenceId==conferenceId);
+            
+            
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                keyword = keyword.ToLower();
+
+                query = query.Where(t =>
+                    t.UserCheckIns.Any(uci =>
+                        (uci.ConferenceSession != null && (
+                            (uci.ConferenceSession.Title != null && uci.ConferenceSession.Title.ToLower().Contains(keyword)) ||
+                            (uci.ConferenceSession.Conference != null && uci.ConferenceSession.Conference.ConferenceName != null &&
+                                uci.ConferenceSession.Conference.ConferenceName.ToLower().Contains(keyword)) ||
+                            (uci.ConferenceSession.Room != null && (
+                                (uci.ConferenceSession.Room.Number != null && uci.ConferenceSession.Room.Number.ToLower().Contains(keyword)) ||
+                                (uci.ConferenceSession.Room.DisplayName != null && uci.ConferenceSession.Room.DisplayName.ToLower().Contains(keyword)) ||
+                                (uci.ConferenceSession.Room.Destination != null && (
+                                    (uci.ConferenceSession.Room.Destination.Name != null && uci.ConferenceSession.Room.Destination.Name.ToLower().Contains(keyword)) ||
+                                    (uci.ConferenceSession.Room.Destination.District != null && uci.ConferenceSession.Room.Destination.District.ToLower().Contains(keyword)) ||
+                                    (uci.ConferenceSession.Room.Destination.Street != null && uci.ConferenceSession.Room.Destination.Street.ToLower().Contains(keyword)) ||
+                                    (uci.ConferenceSession.Room.Destination.City != null && uci.ConferenceSession.Room.Destination.City.CityName != null && uci.ConferenceSession.Room.Destination.City.CityName.ToLower().Contains(keyword))
+                                ))
+                            ))
+                        ))
+                    )
+                    || t.Transactions.Any(tr =>
+                        (tr.TransactionId != null && tr.TransactionId.ToLower().Contains(keyword)) ||
+                        (tr.TransactionCode != null && tr.TransactionCode.ToLower().Contains(keyword)) ||
+                        (tr.PaymentMethod != null && tr.PaymentMethod.MethodName != null &&
+                            tr.PaymentMethod.MethodName.ToLower().Contains(keyword))
+                    )
+                );
+            }
+
+
+            if (sessionStartTime.HasValue)
+            {
+                query = query.Where(t =>
+                    t.UserCheckIns.Any(uci => uci.ConferenceSession!.StartTime >= sessionStartTime.Value)
+                );
+            }
+            if (sessionEndTime.HasValue)
+            {
+                query = query.Where(t =>
+                    t.UserCheckIns.Any(uci => uci.ConferenceSession!.EndTime <= sessionEndTime.Value)
+                );
+            }
+
+
+            var totalCount = await query.CountAsync();
+
+            var listTicketDetail = await query
+            .OrderByDescending(t => t.RegisteredDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+        .Select(t => new CustomerPaidTicketResponse
+        {
+            TicketId = t.TicketId,
+            RegisteredDate = t.RegisteredDate,
+            IsRefunded = t.IsRefunded,
+            ActualPrice = t.ActualPrice,
+            HasRefundPolicy = t.PricePhase != null && t.PricePhase.RefundPolicies.Any() ? true : false,
+            TicketPricePhase = t.PricePhase != null ? new CustomerTicketPricePhaseDetailResponse()
+            {
+                PricePhaseId = t.PricePhaseId,
+                PhaseName = t.PricePhase.PhaseName,
+                StartDate = t.PricePhase.StartDate,
+                EndDate = t.PricePhase.EndDate,
+                ApplyPercent = t.PricePhase.ApplyPercent,
+                TotalSlot = t.PricePhase.TotalSlot,
+                AvailableSlot = t.PricePhase.AvailableSlot,
+                ConferencePriceId = t.PricePhase.ConferencePriceId,
+                RefundPolicies = t.PricePhase.RefundPolicies.Select(rp => new CustomerTicketRefundPoliciesDetailResponse()
+                {
+                    RefundPolicyId = rp.RefundPolicyId,
+                    ConferenceId = rp.ConferenceId,
+                    PricePhaseId = rp.PricePhaseId,
+                    PercentRefund = rp.PercentRefund,
+                    PricePhaseStartDate = t.PricePhase.StartDate,
+                    RefundDeadline = rp.RefundDeadline,
+                    RefundOrder = rp.RefundOrder,
+
+                }).ToList(),
+                ConferencePrice = new CustomerTicketConferencePriceDetailResponse()
+                {
+                    ConferencePriceId = t.PricePhase.ConferencePriceId,
+                    TicketPrice = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketPrice : null,
+                    TicketName = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketName : null,
+                    TicketDescription = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TicketDescription : null,
+                    TotalSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.TotalSlot : null,
+                    AvailableSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.AvailableSlot : null,
+                    ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.ConferenceId : null,
+                    IsAuthor = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.IsAuthor : null,
+
+                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
+                    && t.PricePhase != null
+                    && t.PricePhase.ConferencePrice != null
+                    && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
+                    .Select(p => p.PaperId)
+                    .FirstOrDefault() : null,
+
+                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
+                    && p.ResearchConferencePhase != null && t.PricePhase != null
+                    && t.PricePhase.ConferencePrice != null && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
+                    .Select(p => p.ResearchConferencePhase!.RegistrationStartDate)
+                    .FirstOrDefault() : null,
+
+                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    _context.Papers
+                    .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
+                    && p.ResearchConferencePhase != null && t.PricePhase != null
+                    && t.PricePhase.ConferencePrice != null && p.ConferenceId == t.PricePhase.ConferencePrice.ConferenceId)
+                    .Select(p => p.ResearchConferencePhase!.RegistrationEndDate)
+                    .FirstOrDefault() : null,
+
+
+
+
+                }
+            } : new CustomerTicketPricePhaseDetailResponse(),
+
+
+
+            Transactions = t.Transactions.Select(transac => new CustomerTransactionDetailRespone
+            {
+                TransactionId = transac.TransactionId,
+                Currency = transac.Currency,
+                Amount = transac.Amount,
+                CreatedAt = transac.CreatedAt,
+                TransactionCode = transac.TransactionCode,
+                IsRefunded = transac.IsRefunded,
+                PaymentMethodId = transac.PaymentMethodId,
+                PaymentMethodName = transac.PaymentMethod != null ? transac.PaymentMethod.MethodName : null,
+
+            }).ToList(),
+
+            UserCheckIns = t.UserCheckIns.Select(uci => new CustomerCheckInDetailResponse
+            {
+                UserCheckinId = uci.UserCheckinId,
+                IsPresenter = uci.IsPresenter,
+                CheckinStatusId = uci.CheckinStatusId,
+                CheckinStatusName = uci.CheckinStatus != null ? uci.CheckinStatus.CheckinStatusName : null,
+                CheckInTime = uci.CheckInTime,
+                ConferenceSessionId = uci.ConferenceSessionId,
+                TicketId = uci.TicketId,
+                ConferenceSessionDetail = uci.ConferenceSession != null ? new CustomerSessionDetailResponse
+                {
+                    ConferenceSessionId = uci.ConferenceSessionId,
+                    Title = uci.ConferenceSession.Title,
+                    Description = uci.ConferenceSession.Description,
+                    StartTime = uci.ConferenceSession.StartTime,
+                    EndTime = uci.ConferenceSession.EndTime,
+                    SessionDate = uci.ConferenceSession.SessionDate,
+                    ConferenceId = uci.ConferenceSession.ConferenceId,
+                    ConferenceName = uci.ConferenceSession != null && uci.ConferenceSession.Conference != null ? uci.ConferenceSession.Conference.ConferenceName : null,
+                    RoomId = uci.ConferenceSession != null ? uci.ConferenceSession.RoomId : null,
+                    RoomNumber = uci.ConferenceSession != null && uci.ConferenceSession.Room != null ? uci.ConferenceSession.Room.Number : null,
+                    RoomDisplayName = uci.ConferenceSession != null && uci.ConferenceSession.Room != null ? uci.ConferenceSession.Room.DisplayName : null,
+                    DestinationId = uci.ConferenceSession != null && uci.ConferenceSession.Room != null ? uci.ConferenceSession.Room.DestinationId : null,
+                    DestinationName = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.Name : null,
+                    CityId = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.CityId : null,
+                    CityName = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null && uci.ConferenceSession.Room.Destination.City != null ? uci.ConferenceSession.Room.Destination.City.CityName : null,
+                    District = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.District : null,
+                    Street = uci.ConferenceSession != null && uci.ConferenceSession.Room != null && uci.ConferenceSession.Room.Destination != null ? uci.ConferenceSession.Room.Destination.Street : null,
+                } : new CustomerSessionDetailResponse()
+            }).ToList()
+        }).ToListAsync();
+
+            return new PagedResultResponseDto<CustomerPaidTicketResponse>()
+            {
+                Items = listTicketDetail,
+                Page = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+            };
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         public async Task<Ticket?> GetTicketByUserIdAndConferencePriceId(string userId, string conferencePriceId)
         {
             return await _context.Tickets.FirstOrDefaultAsync(x => x.UserId == userId && x.PricePhase != null && x.PricePhase.ConferencePriceId == conferencePriceId);

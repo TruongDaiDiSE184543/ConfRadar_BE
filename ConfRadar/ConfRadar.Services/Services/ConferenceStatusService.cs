@@ -69,7 +69,7 @@ namespace ConfRadar.Services.Services
                 {
                     conferenceStatus.Remove(draftStatus);
                 }
-                else if (roleOfUser.Contains(SystemRoleEnum.Customer.ToString())) 
+                else if (roleOfUser.Contains(SystemRoleEnum.Customer.ToString()))
                 {
                     conferenceStatus.Remove(draftStatus);
                     conferenceStatus.Remove(deletedStatus);
@@ -87,7 +87,7 @@ namespace ConfRadar.Services.Services
                 conferenceStatus.Remove(rejectedStatus);
 
             }
-                return conferenceStatus;
+            return conferenceStatus;
         }
 
         public Task<List<ConferenceStatus>> GetAllConferenceStatusesForCustomerAsync()

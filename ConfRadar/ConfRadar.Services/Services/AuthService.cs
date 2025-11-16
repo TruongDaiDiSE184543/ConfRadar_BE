@@ -49,7 +49,7 @@ namespace ConfRadar.Services.Services
         private readonly IFirebaseAuthService _firebaseAuthService;
         private readonly ITimeProviderService _timeProviderService;
         public AuthService(IPasswordHasher passwordHasher, IEmailService emailService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IUnitOfWork unitOfWork,
-            IObjectStorageFileService objectStorageFileService, IOptions<ObjectStorageSettings> objectStorageSettings, IFirebaseAuthService firebaseAuthService,ITimeProviderService timeProviderService)
+            IObjectStorageFileService objectStorageFileService, IOptions<ObjectStorageSettings> objectStorageSettings, IFirebaseAuthService firebaseAuthService, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
             _passwordHasher = passwordHasher;

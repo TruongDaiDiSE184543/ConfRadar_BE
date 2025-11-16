@@ -239,7 +239,7 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = momoResult.payUrl;
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
-                    var vnPayResult =  _vnPayService.CreateVnPayPayment(orderCode, finalAmount, expireMinute);
+                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalAmount, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
@@ -476,7 +476,7 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = momoResult.payUrl;
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
-                    var vnPayResult =  _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
+                    var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
@@ -683,7 +683,7 @@ namespace ConfRadar.Services.Services
                     break;
                 case var s when s == PaymentMethodEnum.VnPay.GetDescription():
                     var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
-                    checkOutUrl =  vnPayResult;
+                    checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phuong th?c thanh toán ZaloPay dang trong tr?ng thái b?o trì và b? l?");
