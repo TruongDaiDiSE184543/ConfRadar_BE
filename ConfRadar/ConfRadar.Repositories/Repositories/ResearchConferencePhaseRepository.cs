@@ -62,7 +62,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<ResearchConferencePhase>> GetResearchPhaseByConfId(string confId)
         {
-            return await _context.ResearchConferencePhases.Include(rp => rp.Conference).Where(rp => rp.ConferenceId == confId).ToListAsync();
+            return await _context.ResearchConferencePhases.Include(rp => rp.Conference).Include(p => p.RevisionRoundDeadlines).Where(rp => rp.ConferenceId == confId).ToListAsync();
         }
 
         public async Task<ResearchConferencePhase> GetResearchConferencePhaseByPaperId(string PaperId)

@@ -818,7 +818,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class RevisionRoundDeadlineResponse
     {
         public string? RevisionRoundDeadlineId { get; set; }
-        public DateOnly? EndDate { get; set; }
+        public DateOnly? StartSubmissionDate { get; set; }
+        public DateOnly? EndSubmissionDate { get; set; }
         public int? RoundNumber { get; set; }
         public string? ResearchConferencePhaseId { get; set; }
     }

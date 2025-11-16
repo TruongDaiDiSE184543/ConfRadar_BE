@@ -170,6 +170,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? TargetAudience { get; set; } // Technical conference detail
         public string? contractURL { get; set; }
         public int? commission { get; set; }
+        public string? createdBy { get; set; }
 
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
@@ -200,6 +201,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? CityId { get; set; }
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
+        public string? createdBy { get; set; }
 
         // Research Conference Detail specific fields
         public string? Name { get; set; }
@@ -218,7 +220,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public List<RankingFileUrlResponse>? RankingFileUrls { get; set; }
         public List<MaterialDownloadResponse>? MaterialDownloads { get; set; }
         public List<RankingReferenceUrlResponse>? RankingReferenceUrls { get; set; }
-        public ResearchConferencePhaseResponse? ResearchPhase { get; set; }
+        public List<ResearchConferencePhaseResponse>? ResearchPhase { get; set; }
         public List<ResearchSessionWithMediaResponse>? ResearchSessions { get; set; }
 
         // Shared tables data (same as technical conference)
@@ -402,7 +404,8 @@ namespace ConfRadar.Services.DTOs.Conference
     public class RevisionRoundDeadlineResponse
     {
         public string? RevisionRoundDeadlineId { get; set; }
-        public DateOnly? EndDate { get; set; }
+        public DateOnly? StartSubmissionDate { get; set; }
+        public DateOnly? EndSubmissionDate { get; set; }
         public int? RoundNumber { get; set; }
         public string? ResearchConferencePhaseId { get; set; }
     }

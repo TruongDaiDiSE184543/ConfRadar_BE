@@ -12,6 +12,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<Role?> GetRoleByRoleName(string roleName);
         Task<int> CreateMutipleRoleAsync(IEnumerable<Role> roles);
         Task<List<Role>?> GetListRoleByListRoleName(List<string> roleNameList);
+        Task<List<Role>> GetAllRoles();
+
 
     }
     public class RoleRepository : GenericRepository<Role>, IRoleRepository
@@ -37,5 +39,9 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Roles.Where(r => roleNameList.Contains(r.RoleName)).ToListAsync();
         }
 
+        public async Task<List<Role>> GetAllRoles()
+        {
+            return _context.Roles.ToList();
+        }
     }
 }

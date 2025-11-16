@@ -53,7 +53,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         // NEW ENDPOINT 2: Get detailed technical conference data
-        [HttpGet("technical-detail/{conferenceId}")]
+        [HttpGet("technical-detail-for-anon/{conferenceId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetTechnicalConferenceDetail(string conferenceId)
         {
@@ -120,7 +120,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         // NEW ENDPOINT 7: Get detailed research conference data
-        [HttpGet("research-detail/{conferenceId}")]
+        [HttpGet("research-detail-for-anon/{conferenceId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
         {
