@@ -524,7 +524,8 @@ namespace ConfRadar.Services.Mappers
             return new RevisionRoundDeadlineResponse
             {
                 RevisionRoundDeadlineId = model.RevisionRoundDeadlineId,
-                EndDate = model.EndSubmissionDate,
+                StartSubmissionDate = model.StartSubmissionDate,
+                EndSubmissionDate = model.EndSubmissionDate,
                 RoundNumber = model.RoundNumber,
                 ResearchConferencePhaseId = model.ResearchConferencePhaseId
             };
@@ -535,7 +536,8 @@ namespace ConfRadar.Services.Mappers
             return new RevisionRoundDeadlineResponse
             {
                 RevisionRoundDeadlineId = model.RevisionRoundDeadlineId,
-                EndDate = model.EndSubmissionDate,
+                StartSubmissionDate = model.StartSubmissionDate,
+                EndSubmissionDate = model.EndSubmissionDate,
                 RoundNumber = model.RoundNumber,
                 ResearchConferencePhaseId = model.ResearchConferencePhaseId
             };

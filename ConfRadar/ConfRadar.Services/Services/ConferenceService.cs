@@ -772,7 +772,7 @@ namespace ConfRadar.Services.Services
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
 
             // Get research conference phase
-            var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
+            var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
 
             // Get related research data
             var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
@@ -800,6 +800,7 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
+                createdBy = userId,
 
                 // Research Conference Detail specific fields
                 Name = researchDetail?.Name,
@@ -832,7 +833,31 @@ namespace ConfRadar.Services.Services
                     ReferenceUrlId = r.ReferenceUrlId,
                     ReferenceUrl = r.ReferenceUrl
                 }).ToList(),
-                ResearchPhase = researchPhase != null ? new DTOs.Conference.ResearchConferencePhaseResponse
+                //ResearchPhase = researchPhase != null ? new DTOs.Conference.ResearchConferencePhaseResponse
+                //{
+                //    ResearchConferencePhaseId = researchPhase.ResearchConferencePhaseId,
+                //    ConferenceId = researchPhase.ConferenceId,
+                //    RegistrationStartDate = researchPhase.RegistrationStartDate,
+                //    RegistrationEndDate = researchPhase.RegistrationEndDate,
+                //    FullPaperStartDate = researchPhase.FullPaperStartDate,
+                //    FullPaperEndDate = researchPhase.FullPaperEndDate,
+                //    ReviewStartDate = researchPhase.ReviewStartDate,
+                //    ReviewEndDate = researchPhase.ReviewEndDate,
+                //    ReviseStartDate = researchPhase.ReviseStartDate,
+                //    ReviseEndDate = researchPhase.ReviseEndDate,
+                //    CameraReadyStartDate = researchPhase.CameraReadyStartDate,
+                //    CameraReadyEndDate = researchPhase.CameraReadyEndDate,
+                //    IsWaitlist = researchPhase.IsWaitlist,
+                //    IsActive = researchPhase.IsActive,
+                //    RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
+                //    {
+                //        RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
+                //        EndDate = r.EndSubmissionDate,
+                //        RoundNumber = r.RoundNumber,
+                //        ResearchConferencePhaseId = r.ResearchConferencePhaseId
+                //    }).ToList()
+                //} : null,
+                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => new DTOs.Conference.ResearchConferencePhaseResponse
                 {
                     ResearchConferencePhaseId = researchPhase.ResearchConferencePhaseId,
                     ConferenceId = researchPhase.ConferenceId,
@@ -851,11 +876,12 @@ namespace ConfRadar.Services.Services
                     RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                     {
                         RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
-                        EndDate = r.EndSubmissionDate,
+                        StartSubmissionDate = r.StartSubmissionDate,
+                        EndSubmissionDate= r.EndSubmissionDate,
                         RoundNumber = r.RoundNumber,
                         ResearchConferencePhaseId = r.ResearchConferencePhaseId
                     }).ToList()
-                } : null,
+                }).ToList() : null,
                 ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
                 {
                     ConferenceSessionId = rs.ConferenceSessionId,
@@ -974,7 +1000,7 @@ namespace ConfRadar.Services.Services
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
 
             // Get research conference phase
-            var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
+            var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
 
             // Get related research data
             var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
@@ -1002,6 +1028,7 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
+                createdBy = conference.CreatedBy,
 
                 // Research Conference Detail specific fields
                 Name = researchDetail?.Name,
@@ -1034,7 +1061,7 @@ namespace ConfRadar.Services.Services
                     ReferenceUrlId = r.ReferenceUrlId,
                     ReferenceUrl = r.ReferenceUrl
                 }).ToList(),
-                ResearchPhase = researchPhase != null ? new DTOs.Conference.ResearchConferencePhaseResponse
+                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => new DTOs.Conference.ResearchConferencePhaseResponse
                 {
                     ResearchConferencePhaseId = researchPhase.ResearchConferencePhaseId,
                     ConferenceId = researchPhase.ConferenceId,
@@ -1053,11 +1080,12 @@ namespace ConfRadar.Services.Services
                     RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                     {
                         RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
-                        //EndDate = r.EndDate,
+                        StartSubmissionDate = r.StartSubmissionDate,
+                        EndSubmissionDate = r.EndSubmissionDate,
                         RoundNumber = r.RoundNumber,
                         ResearchConferencePhaseId = r.ResearchConferencePhaseId
                     }).ToList()
-                } : null,
+                }).ToList() : null,
                 ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
                 {
                     ConferenceSessionId = rs.ConferenceSessionId,
@@ -1227,6 +1255,7 @@ namespace ConfRadar.Services.Services
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
                 commission = technicalDetail?.Commission,
                 contractURL = technicalDetail?.ContractUrl,
+                createdBy = userId,
                 //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                 //{
                 //    RefundPolicyId = rp.RefundPolicyId,
@@ -1636,7 +1665,7 @@ namespace ConfRadar.Services.Services
             {
                 // For each conference, get the detailed research conference data
                 var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conference.ConferenceId);
-                var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conference.ConferenceId);
+                var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conference.ConferenceId);
                 var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conference.ConferenceId);
                 var materialDownloads = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conference.ConferenceId);
                 var rankingReferenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conference.ConferenceId);
@@ -1666,6 +1695,7 @@ namespace ConfRadar.Services.Services
                     CityId = conference.CityId,
                     ConferenceCategoryId = conference.ConferenceCategoryId,
                     ConferenceStatusId = conference.ConferenceStatusId,
+                    createdBy = userId,
 
                     // Research Conference Detail specific fields
                     Name = researchDetail?.Name,
@@ -1698,7 +1728,7 @@ namespace ConfRadar.Services.Services
                         ReferenceUrlId = r.ReferenceUrlId,
                         ReferenceUrl = r.ReferenceUrl
                     }).ToList(),
-                    ResearchPhase = researchPhase != null ? new DTOs.Conference.ResearchConferencePhaseResponse
+                    ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => new DTOs.Conference.ResearchConferencePhaseResponse
                     {
                         ResearchConferencePhaseId = researchPhase.ResearchConferencePhaseId,
                         ConferenceId = researchPhase.ConferenceId,
@@ -1717,11 +1747,12 @@ namespace ConfRadar.Services.Services
                         RevisionRoundDeadlines = researchPhase.RevisionRoundDeadlines?.Select(r => new DTOs.Conference.RevisionRoundDeadlineResponse
                         {
                             RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
-                            EndDate = r.EndSubmissionDate,
+                            StartSubmissionDate = r.StartSubmissionDate,
+                            EndSubmissionDate = r.EndSubmissionDate,
                             RoundNumber = r.RoundNumber,
                             ResearchConferencePhaseId = r.ResearchConferencePhaseId
                         }).ToList()
-                    } : null,
+                    }).ToList() : null,
                     ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
                     {
                         ConferenceSessionId = rs.ConferenceSessionId,
@@ -1926,6 +1957,7 @@ namespace ConfRadar.Services.Services
                         TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
                         contractURL = technicalDetail?.ContractUrl,
                         commission = technicalDetail?.Commission,
+                        createdBy = userId,
                         //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                         //{
                         //    RefundPolicyId = rp.RefundPolicyId,
