@@ -544,12 +544,12 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Material Download Mappers
-        public static MaterialDownload ToModel(this CreateMaterialDownloadRequest request, string conferenceId)
+        public static MaterialDownload ToModel(this CreateMaterialDownloadRequest request, string conferenceId,string fileName)
         {
             return new MaterialDownload
             {
                 MaterialDownloadId = Guid.NewGuid().ToString(),
-                FileName = request.FileName,
+                FileName = fileName,
                 FileDescription = request.FileDescription,
                 ConferenceId = conferenceId
             };

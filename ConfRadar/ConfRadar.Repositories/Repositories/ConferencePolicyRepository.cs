@@ -14,6 +14,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Policy?> GetConferencePolicyByIdAsync(string policyId);
         Task<List<Policy>> GetAllConferencePoliciesAsync();
         Task<List<Policy>> GetPoliciesByConferenceIdAsync(string conferenceId);
+        Task<Conference> GetConferenceByPolicyId(string policyId);
     }
 
     public class ConferencePolicyRepository : GenericRepository<Policy>, IConferencePolicyRepository
@@ -44,6 +45,12 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Policies
                 .FirstOrDefaultAsync(c => c.PolicyId == policyId);
+        }
+
+        public async Task<Conference> GetConferenceByPolicyId(string policyId)
+        {
+            var policy =  await _context.Policies.FirstOrDefaultAsync(p => p.PolicyId == policyId);
+            return await _context.Conferences.FirstOrDefaultAsync(c => c.ConferenceId == policy.ConferenceId);
         }
 
         public async Task<List<Policy>> GetAllConferencePoliciesAsync()

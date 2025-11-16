@@ -155,7 +155,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferencePolicies(string conferenceId, [FromBody] AddConferencePoliciesRequest request)
         {
-            var policies = await _serviceManager.ConferenceStepService.AddConferencePoliciesAsync(conferenceId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var policies = await _serviceManager.ConferenceStepService.AddConferencePoliciesAsync(conferenceId, request,userId);
             return Ok(ApiResponse<List<ConferencePolicyResponse>>.SuccessResponse(policies, "Chính sách hội nghị được thêm thành công"));
         }
 
@@ -170,7 +171,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferencePolicy(string policyId, [FromBody] UpdateConferencePolicyRequest request)
         {
-            var policy = await _serviceManager.ConferenceStepService.UpdateConferencePolicyAsync(policyId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var policy = await _serviceManager.ConferenceStepService.UpdateConferencePolicyAsync(policyId, request,userId);
             return Ok(ApiResponse<ConferencePolicyResponse>.SuccessResponse(policy, "Chính sách hội nghị được cập nhật thành công"));
         }
 
@@ -178,7 +180,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferencePolicy(string policyId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteConferencePolicyAsync(policyId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteConferencePolicyAsync(policyId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Chính sách hội nghị được xóa thành công"));
@@ -194,7 +197,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferenceMedia(string conferenceId, [FromForm] AddConferenceMediaRequest request)
         {
-            var media = await _serviceManager.ConferenceStepService.AddConferenceMediaAsync(conferenceId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var media = await _serviceManager.ConferenceStepService.AddConferenceMediaAsync(conferenceId, request,userId);
             return Ok(ApiResponse<List<ConferenceMediaResponse>>.SuccessResponse(media, "Phương tiện hội nghị được thêm thành công"));
         }
 
@@ -209,7 +213,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceMedia(string mediaId, [FromForm] UpdateConferenceMediaRequest request)
         {
-            var media = await _serviceManager.ConferenceStepService.UpdateConferenceMediaAsync(mediaId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var media = await _serviceManager.ConferenceStepService.UpdateConferenceMediaAsync(mediaId, request,userId);
             return Ok(ApiResponse<ConferenceMediaResponse>.SuccessResponse(media, "Phương tiện hội nghị được cập nhật thành công"));
         }
 
@@ -217,7 +222,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteConferenceMedia(string mediaId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteConferenceMediaAsync(mediaId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteConferenceMediaAsync(mediaId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Phương tiện hội nghị được xóa thành công"));
@@ -233,7 +239,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddConferenceSponsors(string conferenceId, [FromForm] AddConferenceSponsorsRequest request)
         {
-            var sponsors = await _serviceManager.ConferenceStepService.AddConferenceSponsorsAsync(conferenceId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var sponsors = await _serviceManager.ConferenceStepService.AddConferenceSponsorsAsync(conferenceId, request,userId);
             return Ok(ApiResponse<List<SponsorResponse>>.SuccessResponse(sponsors, "Nhà tài trợ hội nghị được thêm thành công"));
         }
 
@@ -248,7 +255,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateSponsor(string sponsorId, [FromForm] UpdateSponsorRequest request)
         {
-            var sponsor = await _serviceManager.ConferenceStepService.UpdateSponsorAsync(sponsorId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var sponsor = await _serviceManager.ConferenceStepService.UpdateSponsorAsync(sponsorId, request,userId);
             return Ok(ApiResponse<SponsorResponse>.SuccessResponse(sponsor, "Nhà tài trợ hội nghị được cập nhật thành công"));
         }
 
@@ -256,7 +264,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteSponsor(string sponsorId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteSponsorAsync(sponsorId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteSponsorAsync(sponsorId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Nhà tài trợ hội nghị được xóa thành công"));
@@ -404,7 +413,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateMaterialDownload(string conferenceId, [FromForm] CreateMaterialDownloadRequest request)
         {
-            var material = await _serviceManager.ConferenceStepService.CreateMaterialDownloadAsync(conferenceId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var material = await _serviceManager.ConferenceStepService.CreateMaterialDownloadAsync(conferenceId, request,userId);
             return Ok(ApiResponse<MaterialDownloadResponse>.SuccessResponse(material, "Tài liệu tải về được tạo thành công"));
         }
 
@@ -419,7 +429,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateMaterialDownload(string materialDownloadId, [FromForm] UpdateMaterialDownloadRequest request)
         {
-            var material = await _serviceManager.ConferenceStepService.UpdateMaterialDownloadAsync(materialDownloadId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var material = await _serviceManager.ConferenceStepService.UpdateMaterialDownloadAsync(materialDownloadId, request,userId);
             return Ok(ApiResponse<MaterialDownloadResponse>.SuccessResponse(material, "Tài liệu tải về được cập nhật thành công"));
         }
 
@@ -427,7 +438,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DeleteMaterialDownload(string materialDownloadId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteMaterialDownloadAsync(materialDownloadId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteMaterialDownloadAsync(materialDownloadId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Tài liệu tải về được xóa thành công"));
@@ -443,7 +455,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateRankingFileUrl(string conferenceId, [FromForm] CreateRankingFileUrlRequest request)
         {
-            var fileUrl = await _serviceManager.ConferenceStepService.CreateRankingFileUrlAsync(conferenceId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var fileUrl = await _serviceManager.ConferenceStepService.CreateRankingFileUrlAsync(conferenceId, request,userId);
             return Ok(ApiResponse<RankingFileUrlResponse>.SuccessResponse(fileUrl, "URL tệp xếp hạng được tạo thành công"));
         }
 
@@ -458,7 +471,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateRankingFileUrl(string rankingFileUrlId, [FromForm] UpdateRankingFileUrlRequest request)
         {
-            var fileUrl = await _serviceManager.ConferenceStepService.UpdateRankingFileUrlAsync(rankingFileUrlId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var fileUrl = await _serviceManager.ConferenceStepService.UpdateRankingFileUrlAsync(rankingFileUrlId, request,userId);
             return Ok(ApiResponse<RankingFileUrlResponse>.SuccessResponse(fileUrl, "URL tệp xếp hạng được cập nhật thành công"));
         }
 
@@ -466,7 +480,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DeleteRankingFileUrl(string rankingFileUrlId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteRankingFileUrlAsync(rankingFileUrlId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteRankingFileUrlAsync(rankingFileUrlId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "URL tệp xếp hạng được xóa thành công"));
@@ -525,7 +540,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> CreateRankingReferenceUrl(string conferenceId, [FromBody] CreateRankingReferenceUrlRequest request)
         {
-            var referenceUrl = await _serviceManager.ConferenceStepService.CreateRankingReferenceUrlAsync(conferenceId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var referenceUrl = await _serviceManager.ConferenceStepService.CreateRankingReferenceUrlAsync(conferenceId, request,userId);
             return Ok(ApiResponse<RankingReferenceUrlResponse>.SuccessResponse(referenceUrl, "URL tham khảo xếp hạng được tạo thành công"));
         }
 
@@ -540,7 +556,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateRankingReferenceUrl(string referenceUrlId, [FromBody] UpdateRankingReferenceUrlRequest request)
         {
-            var referenceUrl = await _serviceManager.ConferenceStepService.UpdateRankingReferenceUrlAsync(referenceUrlId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var referenceUrl = await _serviceManager.ConferenceStepService.UpdateRankingReferenceUrlAsync(referenceUrlId, request,userId);
             return Ok(ApiResponse<RankingReferenceUrlResponse>.SuccessResponse(referenceUrl, "URL tham khảo xếp hạng được cập nhật thành công"));
         }
 
@@ -548,7 +565,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DeleteRankingReferenceUrl(string referenceUrlId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteRankingReferenceUrlAsync(referenceUrlId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteRankingReferenceUrlAsync(referenceUrlId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "URL tham khảo xếp hạng được xóa thành công"));
@@ -615,7 +633,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> AddSpeakers(string conferenceSessionId, [FromForm] AddSpeakersRequest request)
         {
-            var speakers = await _serviceManager.ConferenceStepService.AddSpeakersAsync(conferenceSessionId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var speakers = await _serviceManager.ConferenceStepService.AddSpeakersAsync(conferenceSessionId, request,userId);
             return Ok(ApiResponse<List<SpeakerResponse>>.SuccessResponse(speakers, "Diễn giả được thêm thành công"));
         }
 
@@ -630,7 +649,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateSpeakerBySpeakerId(string speakerId, [FromForm] UpdateSpeakerRequestForConferenceSession request)
         {
-            var speaker = await _serviceManager.ConferenceStepService.UpdateSpeakerBySpeakerIdAsync(speakerId, request);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var speaker = await _serviceManager.ConferenceStepService.UpdateSpeakerBySpeakerIdAsync(speakerId, request,userId);
             return Ok(ApiResponse<SpeakerResponse>.SuccessResponse(speaker, "Diễn giả được cập nhật thành công"));
         }
 
@@ -638,7 +658,8 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> DeleteSpeaker(string speakerId)
         {
-            var result = await _serviceManager.ConferenceStepService.DeleteSpeakerAsync(speakerId);
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceStepService.DeleteSpeakerAsync(speakerId,userId);
             if (result)
             {
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Diễn giả được xóa thành công"));
