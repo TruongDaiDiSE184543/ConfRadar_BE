@@ -16,7 +16,7 @@
         public int? AvailableSlot { get; set; }
         public string? Address { get; set; }
         public string? BannerImageUrl { get; set; }
-        public DateOnly? CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
         public bool? IsInternalHosted { get; set; }
@@ -51,6 +51,31 @@
         public string? DestinationStreet { get; set; }
         public string? CityId { get; set; }
         public string? CityName { get; set; }
+        public List<PresenterAuthorDetailForScheduleResponse> PresenterAuthor { get; set; } = new List<PresenterAuthorDetailForScheduleResponse>();
 
+
+    }
+    public class PresenterAuthorDetailForScheduleResponse
+    {
+        public string ConferenceSessionId { get; set; } = null!;
+        public string PaperId { get; set; } = null!;
+        public DateTime? AssignedAt { get; set; }
+        public string? ConferenceId { get; set; }
+        public string? PaperPhaseId { get; set; }
+        public string? PaperPhaseName { get; set; }
+        public string? ResearchConferencePhaseId { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string? PaperTitle { get; set; }
+        public string? PaperDescription { get; set; }
+        public List<PaperAuthorDetailForScheduleResponse> PaperAuthor { get; set; } = new List<PaperAuthorDetailForScheduleResponse>();
+    }
+    public class PaperAuthorDetailForScheduleResponse
+    {
+        public string UserId { get; set; } = null!;
+        public string? FullName { get; set; }
+        public string? AvatarUrl { get; set; }
+        public string PaperId { get; set; } = null!;
+        public bool? IsPresenter { get; set; }
+        public bool? IsRootAuthor { get; set; }
     }
 }

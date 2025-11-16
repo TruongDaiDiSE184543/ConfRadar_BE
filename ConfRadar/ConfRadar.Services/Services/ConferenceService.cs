@@ -671,7 +671,7 @@ namespace ConfRadar.Services.Services
             var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
             if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing trước để có thể thay đổi trạng thái");
             if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete. Conference cần request lên pending để Organizer approve lên preparing trước khi có thể thay đổi trạng thái khác");
-            
+
 
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
@@ -877,7 +877,7 @@ namespace ConfRadar.Services.Services
                     {
                         RevisionRoundDeadlineId = r.RevisionRoundDeadlineId,
                         StartSubmissionDate = r.StartSubmissionDate,
-                        EndSubmissionDate= r.EndSubmissionDate,
+                        EndSubmissionDate = r.EndSubmissionDate,
                         RoundNumber = r.RoundNumber,
                         ResearchConferencePhaseId = r.ResearchConferencePhaseId
                     }).ToList()
@@ -2187,7 +2187,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<bool> ActivateWaitlist(string confId, string userId)
         {
-            
+
 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
             if (conference == null)
@@ -2214,9 +2214,9 @@ namespace ConfRadar.Services.Services
             if (waitlistPhase.IsActive == true) // Ch? c?n ki?m tra phase waitlist là d?
                 throw new BadRequestException($"Waitlist cho hội nghị này đã kích hoạt truớc đó.");
 
-            
 
-            
+
+
 
             #region === 2. VALIDATION LOGIC NGHI?P V? ===
 

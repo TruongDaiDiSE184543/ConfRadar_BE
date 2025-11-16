@@ -147,7 +147,7 @@ namespace ConfRadar.Repositories.Repositories
 
                             .Include(p => p.Conference)
 
-                            
+
                              .Include(c => c.ResearchConferencePhase)
                              .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
 

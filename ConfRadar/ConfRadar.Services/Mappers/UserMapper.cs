@@ -1,5 +1,4 @@
 ﻿using ConfRadar.Repositories.Models;
-using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
 
 namespace ConfRadar.Services.Mappers
