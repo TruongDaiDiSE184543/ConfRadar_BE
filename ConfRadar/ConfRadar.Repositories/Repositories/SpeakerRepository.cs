@@ -41,7 +41,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Speaker?> GetSpeakerByIdAsync(string speakerId)
         {
             //return await GetByIdAsync(speakerId);
-            return await _context.Speakers.FirstOrDefaultAsync(x => x.SpeakerId == speakerId);
+            return await _context.Speakers.Include(s => s.ConferenceSession).ThenInclude(cs => cs.Conference).FirstOrDefaultAsync(x => x.SpeakerId == speakerId);
 
         }
 

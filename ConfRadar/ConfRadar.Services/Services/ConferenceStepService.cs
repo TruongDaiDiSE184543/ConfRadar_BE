@@ -32,22 +32,22 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteConferenceSessionAsync(string sessionId);
 
         // Step 4: Add Conference Policies
-        Task<List<ConferencePolicyResponse>> AddConferencePoliciesAsync(string conferenceId, AddConferencePoliciesRequest request);
+        Task<List<ConferencePolicyResponse>> AddConferencePoliciesAsync(string conferenceId, AddConferencePoliciesRequest request, string userId);
         Task<List<ConferencePolicyResponse>> GetConferencePoliciesAsync(string conferenceId);
-        Task<ConferencePolicyResponse> UpdateConferencePolicyAsync(string policyId, UpdateConferencePolicyRequest request);
-        Task<bool> DeleteConferencePolicyAsync(string policyId);
+        Task<ConferencePolicyResponse> UpdateConferencePolicyAsync(string policyId, UpdateConferencePolicyRequest request, string userId);
+        Task<bool> DeleteConferencePolicyAsync(string policyId, string userId);
 
         // Step 5: Add Conference Media
-        Task<List<ConferenceMediaResponse>> AddConferenceMediaAsync(string conferenceId, AddConferenceMediaRequest request);
+        Task<List<ConferenceMediaResponse>> AddConferenceMediaAsync(string conferenceId, AddConferenceMediaRequest request, string userId);
         Task<List<ConferenceMediaResponse>> GetConferenceMediaAsync(string conferenceId);
-        Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request);
-        Task<bool> DeleteConferenceMediaAsync(string mediaId);
+        Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request, string userId);
+        Task<bool> DeleteConferenceMediaAsync(string mediaId, string userId);
 
         // Step 6: Add Conference Sponsors
-        Task<List<SponsorResponse>> AddConferenceSponsorsAsync(string conferenceId, AddConferenceSponsorsRequest request);
+        Task<List<SponsorResponse>> AddConferenceSponsorsAsync(string conferenceId, AddConferenceSponsorsRequest request, string userId);
         Task<List<SponsorResponse>> GetConferenceSponsorsAsync(string conferenceId);
-        Task<SponsorResponse> UpdateSponsorAsync(string sponsorId, UpdateSponsorRequest request);
-        Task<bool> DeleteSponsorAsync(string sponsorId);
+        Task<SponsorResponse> UpdateSponsorAsync(string sponsorId, UpdateSponsorRequest request, string userId);
+        Task<bool> DeleteSponsorAsync(string sponsorId, string userId);
 
         // Step 7: Add Refund Policies
         Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string conferenceId, string pricephaseId, AddRefundPoliciesRequest request, string userId);
@@ -77,22 +77,22 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteResearchSessionAsync(string sessionId, string userId);
 
         // Research Conference Step 5: Material Downloads
-        Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request);
+        Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request,string userId);
         Task<List<MaterialDownloadResponse>> GetMaterialDownloadsByConferenceIdAsync(string conferenceId);
-        Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request);
-        Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId);
+        Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request, string userId);
+        Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId, string userId);
 
         // Research Conference Step 6: Ranking File URLs
-        Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request);
+        Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request, string userId);
         Task<List<RankingFileUrlResponse>> GetRankingFileUrlsByConferenceIdAsync(string conferenceId);
-        Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request);
-        Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId);
+        Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request, string userId);
+        Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId, string userId);
 
         // Research Conference Step 7: Ranking Reference URLs
-        Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request);
+        Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request, string userId);
         Task<List<RankingReferenceUrlResponse>> GetRankingReferenceUrlsByConferenceIdAsync(string conferenceId);
-        Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request);
-        Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId);
+        Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request, string userId);
+        Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId, string userId);
 
         // PricePhase CRUD operations - Create with conferencePriceId, RUD with its own id
         Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request, string userId);
@@ -102,10 +102,10 @@ namespace ConfRadar.Services.Services
         Task<bool> DeletePricePhaseAsync(string pricePhaseId);
 
         // Speaker CRUD operations - Create with conferenceSessionId, RUD with its own id
-        Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request);
+        Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request, string userId);
         Task<List<SpeakerResponse>> GetSpeakersByConferenceSessionIdAsync(string conferenceSessionId);
-        Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request);
-        Task<bool> DeleteSpeakerAsync(string speakerId);
+        Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request, string userId);
+        Task<bool> DeleteSpeakerAsync(string speakerId, string userId);
 
         // Revision Round Deadline CRUD operations - Create with researchConferencePhaseId, RUD with its own id
         Task<List<RevisionRoundDeadlineResponse>> AddRevisionRoundDeadlinesAsync(string researchConferencePhaseId, addRevisionRequest request, string userId);
@@ -1349,10 +1349,13 @@ namespace ConfRadar.Services.Services
 
         #region Step 4: Policies
 
-        public async Task<List<ConferencePolicyResponse>> AddConferencePoliciesAsync(string conferenceId, AddConferencePoliciesRequest request)
+        public async Task<List<ConferencePolicyResponse>> AddConferencePoliciesAsync(string conferenceId, AddConferencePoliciesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
             var responses = new List<ConferencePolicyResponse>();
 
@@ -1389,10 +1392,17 @@ namespace ConfRadar.Services.Services
             return policies.Select(p => p.ToResponse()).ToList();
         }
 
-        public async Task<ConferencePolicyResponse> UpdateConferencePolicyAsync(string policyId, UpdateConferencePolicyRequest request)
+        public async Task<ConferencePolicyResponse> UpdateConferencePolicyAsync(string policyId, UpdateConferencePolicyRequest request,string userId)
         {
             var policy = await _unitOfWork.ConferencePolicyRepository.GetConferencePolicyByIdAsync(policyId);
             if (policy == null) throw new NotFoundException($"Conference policy with ID {policyId} not found");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(policy.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm thấy hội nghị nào có policy với ID {policyId}");
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
             if (!string.IsNullOrEmpty(request.PolicyName)) policy.PolicyName = request.PolicyName;
             if (!string.IsNullOrEmpty(request.Description)) policy.Description = request.Description;
@@ -1401,10 +1411,17 @@ namespace ConfRadar.Services.Services
             return policy.ToResponse();
         }
 
-        public async Task<bool> DeleteConferencePolicyAsync(string policyId)
+        public async Task<bool> DeleteConferencePolicyAsync(string policyId,string userId)
         {
             var policy = await _unitOfWork.ConferencePolicyRepository.GetConferencePolicyByIdAsync(policyId);
             if (policy == null) throw new NotFoundException($"Conference policy with ID {policyId} not found");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(policy.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm thấy hội nghị nào có policy với ID {policyId}");
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
             return await _unitOfWork.ConferencePolicyRepository.DeleteConferencePolicyAsync(policy) > 0;
         }
@@ -1413,10 +1430,16 @@ namespace ConfRadar.Services.Services
 
         #region Step 5: Media
 
-        public async Task<List<ConferenceMediaResponse>> AddConferenceMediaAsync(string conferenceId, AddConferenceMediaRequest request)
+        public async Task<List<ConferenceMediaResponse>> AddConferenceMediaAsync(string conferenceId, AddConferenceMediaRequest request,string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (!request.Media.Any())
+                throw new Exception("Cần phải có ít nhất một media");
 
             var responses = new List<ConferenceMediaResponse>();
 
@@ -1428,7 +1451,8 @@ namespace ConfRadar.Services.Services
                     string? mediaUrl = media.MediaUrl;
                     if (media.MediaFile != null)
                     {
-                        //if (await _unitOfWork.MediaTypeRepository.GetMediaTypeByIdAsync(media.MediaTypeId) == null) throw new NotFoundException($"Media type with ID {media.MediaTypeId} not found");
+                        if (!_objectStorageFileService.IsValidVideoFile(media.MediaFile) && !_objectStorageFileService.IsValidImageFile(media.MediaFile))
+                            throw new Exception($"Không hỗ trợ định dạng {media.MediaFile.ContentType}");
                         using var stream = media.MediaFile.OpenReadStream();
                         var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(media.MediaFile.FileName);
                         mediaUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, media.MediaFile.ContentType);
@@ -1452,13 +1476,26 @@ namespace ConfRadar.Services.Services
             return media.Select(m => new ConferenceMediaResponse { MediaId = m.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(m.ConferenceMediaUrl) }).ToList();
         }
 
-        public async Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request)
+        public async Task<ConferenceMediaResponse> UpdateConferenceMediaAsync(string mediaId, UpdateConferenceMediaRequest request, string userId)
         {
             var media = await _unitOfWork.ConferenceMediaRepository.GetConferenceMediaByIdAsync(mediaId);
             if (media == null) throw new NotFoundException($"Conference media with ID {mediaId} not found");
 
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(media.ConferenceId);
+            if (conference == null)
+            {
+                throw new Exception($"Không tìm thấy conference của conference media với Id {media.ConferenceMediaId}");
+            }
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
             if (request.MediaFile != null)
             {
+                if (!_objectStorageFileService.IsValidVideoFile(request.MediaFile) && !_objectStorageFileService.IsValidImageFile(request.MediaFile))
+                    throw new Exception($"Không hỗ trợ định dạng {request.MediaFile.ContentType}");
+
+                
                 using var stream = request.MediaFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.MediaFile.FileName);
                 media.ConferenceMediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, request.MediaFile.ContentType);
@@ -1471,13 +1508,24 @@ namespace ConfRadar.Services.Services
 
             //media.MediaTypeId = request.MediaTypeId ?? media.MediaTypeId;
             await _unitOfWork.ConferenceMediaRepository.UpdateConferenceMediaAsync(media);
-            return new ConferenceMediaResponse { MediaId = media.ConferenceMediaId, MediaUrl = AddBaseUrlToUrl(media.ConferenceMediaUrl) };
+            return new ConferenceMediaResponse { MediaId = media.ConferenceMediaId, MediaUrl = media.ConferenceMediaUrl };
         }
 
-        public async Task<bool> DeleteConferenceMediaAsync(string mediaId)
+        public async Task<bool> DeleteConferenceMediaAsync(string mediaId,string userId)
         {
             var media = await _unitOfWork.ConferenceMediaRepository.GetConferenceMediaByIdAsync(mediaId);
             if (media == null) throw new NotFoundException($"Conference media with ID {mediaId} not found");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(media.ConferenceId);
+            if (conference == null)
+            {
+                throw new Exception($"Không tìm thấy conference của media với Id {mediaId}");
+            }
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+
             return await _unitOfWork.ConferenceMediaRepository.DeleteConferenceMediaAsync(media) > 0;
         }
 
@@ -1485,10 +1533,13 @@ namespace ConfRadar.Services.Services
 
         #region Step 6: Sponsors
 
-        public async Task<List<SponsorResponse>> AddConferenceSponsorsAsync(string conferenceId, AddConferenceSponsorsRequest request)
+        public async Task<List<SponsorResponse>> AddConferenceSponsorsAsync(string conferenceId, AddConferenceSponsorsRequest request,string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
             var responses = new List<SponsorResponse>();
 
@@ -1499,7 +1550,7 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var sponsor in request.Sponsors)
                     {
-                        if (!_objectStorageFileService.IsValidImageFile(sponsor.ImageFile)) throw new BadRequestException($"Không h? tr?{sponsor.ImageFile.ContentType}");
+                        if (!_objectStorageFileService.IsValidImageFile(sponsor.ImageFile)) throw new BadRequestException($"Không hỗ trợ {sponsor.ImageFile.ContentType}");
                         string? imageUrl = sponsor.ImageUrl;
                         if (sponsor.ImageFile != null)
                         {
@@ -1537,33 +1588,46 @@ namespace ConfRadar.Services.Services
             return sponsors.Select(s => s.ToResponse()).ToList();
         }
 
-        public async Task<SponsorResponse> UpdateSponsorAsync(string sponsorId, UpdateSponsorRequest request)
+        public async Task<SponsorResponse> UpdateSponsorAsync(string sponsorId, UpdateSponsorRequest request,string userId)
         {
             var sponsor = await _unitOfWork.SponsorRepository.GetSponsorByIdAsync(sponsorId);
             if (sponsor == null) throw new NotFoundException($"Conference sponsor with ID {sponsorId} not found");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(sponsor.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho sponsor với ID {sponsorId}");
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
             if (!string.IsNullOrEmpty(request.Name)) sponsor.Name = request.Name;
 
             if (request.ImageFile != null)
             {
+                if (!_objectStorageFileService.IsValidImageFile(request.ImageFile)) throw new Exception($"Không hỗ trợ định dạng {request.ImageFile.ContentType} ");
                 using var stream = request.ImageFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.ImageFile.FileName);
                 sponsor.ImageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.sponsorimage.ToString(), uniqueFileName, stream, request.ImageFile.ContentType);
                 sponsor.ImageUrl = _objectStorageSettings.EndPoint + sponsor.ImageUrl;
             }
-            else if (!string.IsNullOrEmpty(request.ImageUrl))
-            {
-                sponsor.ImageUrl = request.ImageUrl;
-            }
+            string name = request.Name ?? sponsor.Name;
+            sponsor.Name = name;
 
             await _unitOfWork.SponsorRepository.UpdateSponsorAsync(sponsor);
             return sponsor.ToResponse();
         }
 
-        public async Task<bool> DeleteSponsorAsync(string sponsorId)
+        public async Task<bool> DeleteSponsorAsync(string sponsorId,string userId)
         {
             var sponsor = await _unitOfWork.SponsorRepository.GetSponsorByIdAsync(sponsorId);
             if (sponsor == null) throw new NotFoundException($"Conference sponsor with ID {sponsorId} not found");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(sponsor.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho sponsor với ID {sponsorId}");
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
             return await _unitOfWork.SponsorRepository.DeleteSponsorAsync(sponsor) > 0;
         }
@@ -2494,23 +2558,27 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 5: Material Downloads
 
-        public async Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request)
+        public async Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request,string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
 
-            var materialDownload = request.ToModel(conferenceId);
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
+            if (request.File == null)
+                throw new Exception("Cần phải có file");
+            if (!_objectStorageFileService.IsValidDocumentFile(request.File))
+                throw new Exception($"Không hỗ trợ định dạng {request.File.ContentType}");
+            string fileName = "";
             // Handle file upload if provided
-            if (request.File != null)
-            {
-                using var stream = request.File.OpenReadStream();
-                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
-                materialDownload.FileName = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
-            }
+            using var stream = request.File.OpenReadStream();
+            var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
+            fileName = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
+            var model = request.ToModel(conferenceId,fileName);
 
-            await _unitOfWork.MaterialDownloadRepository.CreateMaterialDownloadAsync(materialDownload);
-            return materialDownload.ToResponse();
+            await _unitOfWork.MaterialDownloadRepository.CreateMaterialDownloadAsync(model);
+            return model.ToResponse();
         }
 
         public async Task<List<MaterialDownloadResponse>> GetMaterialDownloadsByConferenceIdAsync(string conferenceId)
@@ -2519,13 +2587,25 @@ namespace ConfRadar.Services.Services
             return materials.Select(m => m.ToResponse()).ToList();
         }
 
-        public async Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request)
+        public async Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request,string userId)
         {
             var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
             if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
 
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(materialDownload.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho material download với ID {materialDownloadId}");
 
-            if (!string.IsNullOrEmpty(request.FileDescription)) materialDownload.FileDescription = request.FileDescription;
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (request.File == null)
+                throw new Exception("Cần phải có file");
+            if (!_objectStorageFileService.IsValidDocumentFile(request.File))
+                throw new Exception($"Không hỗ trợ định dạng {request.File.ContentType}");
+
+          
 
             // Handle file upload if provided
             if (request.File != null)
@@ -2534,15 +2614,25 @@ namespace ConfRadar.Services.Services
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
                 materialDownload.FileName = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
             }
+            materialDownload.FileDescription = request.FileDescription ?? materialDownload.FileDescription;
 
             await _unitOfWork.MaterialDownloadRepository.UpdateMaterialDownloadAsync(materialDownload);
             return materialDownload.ToResponse();
         }
 
-        public async Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId)
+        public async Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId,string userId)
         {
             var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
             if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
+
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(materialDownload.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho material download với ID {materialDownloadId}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
             return await _unitOfWork.MaterialDownloadRepository.DeleteMaterialDownloadAsync(materialDownload) > 0;
         }
@@ -2551,21 +2641,23 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 6: Ranking File URLs
 
-        public async Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request)
+        public async Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request,string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
 
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (!_objectStorageFileService.IsValidDocumentFile(request.File))
+                throw new Exception($"Không hỗ trợ định dạng {request.File.ContentType}");
+
             var rankingFileUrl = request.ToModel(conferenceId);
 
-            // Handle file upload if provided
-            if (request.File != null)
-            {
-                using var stream = request.File.OpenReadStream();
-                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
-                rankingFileUrl.FileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.rankingfile.ToString(), uniqueFileName, stream, request.File.ContentType);
-                rankingFileUrl.FileUrl = _objectStorageSettings.EndPoint + rankingFileUrl.FileUrl;
-            }
+            using var stream = request.File.OpenReadStream();
+            var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
+            rankingFileUrl.FileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.rankingfile.ToString(), uniqueFileName, stream, request.File.ContentType);
+            rankingFileUrl.FileUrl = _objectStorageSettings.EndPoint + rankingFileUrl.FileUrl;
 
             await _unitOfWork.RankingFileUrlRepository.CreateRankingFileUrlAsync(rankingFileUrl);
             return rankingFileUrl.ToResponse();
@@ -2577,30 +2669,45 @@ namespace ConfRadar.Services.Services
             return fileUrls.Select(f => f.ToResponse()).ToList();
         }
 
-        public async Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request)
+        public async Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request,string userId)
         {
             var rankingFileUrl = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlByIdAsync(rankingFileUrlId);
             if (rankingFileUrl == null) throw new NotFoundException($"Ranking file URL with ID {rankingFileUrlId} not found");
 
-            if (!string.IsNullOrEmpty(request.FileUrl)) rankingFileUrl.FileUrl = request.FileUrl;
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(rankingFileUrl.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho ranking file với ID {rankingFileUrlId}");
 
-            // Handle file upload if provided
-            if (request.File != null)
-            {
-                using var stream = request.File.OpenReadStream();
-                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
-                rankingFileUrl.FileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.rankingfile.ToString(), uniqueFileName, stream, request.File.ContentType);
-                rankingFileUrl.FileUrl = _objectStorageSettings.EndPoint + rankingFileUrl.FileUrl;
-            }
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (!_objectStorageFileService.IsValidDocumentFile(request.File))
+                throw new Exception($"Không hỗ trợ định dạng {request.File.ContentType}");
+
+            using var stream = request.File.OpenReadStream();
+            var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
+            rankingFileUrl.FileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.rankingfile.ToString(), uniqueFileName, stream, request.File.ContentType);
+            rankingFileUrl.FileUrl = _objectStorageSettings.EndPoint + rankingFileUrl.FileUrl;
 
             await _unitOfWork.RankingFileUrlRepository.UpdateRankingFileUrlAsync(rankingFileUrl);
             return rankingFileUrl.ToResponse();
         }
 
-        public async Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId)
+        public async Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId,string userId)
         {
             var rankingFileUrl = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlByIdAsync(rankingFileUrlId);
             if (rankingFileUrl == null) throw new NotFoundException($"Ranking file URL with ID {rankingFileUrlId} not found");
+
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(rankingFileUrl.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho ranking file với ID {rankingFileUrlId}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
 
             return await _unitOfWork.RankingFileUrlRepository.DeleteRankingFileUrlAsync(rankingFileUrl) > 0;
         }
@@ -2609,10 +2716,20 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 7: Ranking Reference URLs
 
-        public async Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request)
+        public async Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request,string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+
+
+
+            if (conference == null)
+                throw new Exception($"Không tìm được conference với ID {conferenceId}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
 
             var rankingReferenceUrl = request.ToModel(conferenceId);
 
@@ -2626,21 +2743,40 @@ namespace ConfRadar.Services.Services
             return referenceUrls.Select(r => r.ToResponse()).ToList();
         }
 
-        public async Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request)
+        public async Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request,string userId)
         {
             var rankingReferenceUrl = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlByIdAsync(referenceUrlId);
             if (rankingReferenceUrl == null) throw new NotFoundException($"Ranking reference URL with ID {referenceUrlId} not found");
 
-            if (!string.IsNullOrEmpty(request.ReferenceUrl)) rankingReferenceUrl.ReferenceUrl = request.ReferenceUrl;
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(rankingReferenceUrl.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho URL tham khảo ranking với ID {rankingReferenceUrl}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            rankingReferenceUrl.ReferenceUrl = request.ReferenceUrlId;
+
 
             await _unitOfWork.RankingReferenceUrlRepository.UpdateRankingReferenceUrlAsync(rankingReferenceUrl);
             return rankingReferenceUrl.ToResponse();
         }
 
-        public async Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId)
+        public async Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId,string userId)
         {
             var rankingReferenceUrl = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlByIdAsync(referenceUrlId);
             if (rankingReferenceUrl == null) throw new NotFoundException($"Ranking reference URL with ID {referenceUrlId} not found");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(rankingReferenceUrl.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho URL tham khảo ranking với ID {rankingReferenceUrl}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
 
             return await _unitOfWork.RankingReferenceUrlRepository.DeleteRankingReferenceUrlAsync(rankingReferenceUrl) > 0;
         }
@@ -3083,10 +3219,23 @@ namespace ConfRadar.Services.Services
 
         #region Speaker CRUD Operations
 
-        public async Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request)
+        public async Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request,string userId)
         {
             var conferenceSession = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(conferenceSessionId);
             if (conferenceSession == null) throw new NotFoundException($"Conference session with ID {conferenceSessionId} not found");
+
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceSession.Conference.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho conference session với ID {conferenceSessionId}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (!request.Speakers.Any())
+                throw new Exception("Phải có ít nhất một speaker");
+
 
             var responses = new List<SpeakerResponse>();
 
@@ -3100,6 +3249,8 @@ namespace ConfRadar.Services.Services
                         string? imageUrl = null;
                         if (speakerRequest.Image != null)
                         {
+                            if (!_objectStorageFileService.IsValidImageFile(speakerRequest.Image))
+                                throw new Exception($"Không hỗ trợ định dạng {speakerRequest.Image.ContentType}");
                             using var stream = speakerRequest.Image.OpenReadStream();
                             var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(speakerRequest.Image.FileName);
                             imageUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, speakerRequest.Image.ContentType);
@@ -3129,16 +3280,27 @@ namespace ConfRadar.Services.Services
             return speakers.Select(s => s.ToResponse()).ToList();
         }
 
-        public async Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request)
+        public async Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request,string userId)
         {
             var speaker = await _unitOfWork.SpeakerRepository.GetSpeakerByIdAsync(speakerId);
             if (speaker == null) throw new NotFoundException($"Speaker with ID {speakerId} not found");
 
-            if (!string.IsNullOrEmpty(request.Name)) speaker.Name = request.Name;
-            if (!string.IsNullOrEmpty(request.Description)) speaker.Description = request.Description;
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(speaker.ConferenceSession.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho speaker với ID {speakerId}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+
+            speaker.Name = request.Name ?? speaker.Name;
+            speaker.Description = request.Description ?? speaker.Description;
 
             if (request.Image != null)
             {
+                if (!_objectStorageFileService.IsValidImageFile(request.Image))
+                    throw new Exception($"Không hỗ trợ định dạng {request.Image.ContentType}");
                 using var stream = request.Image.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.Image.FileName);
                 speaker.Image = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.speakerimage.ToString(), uniqueFileName, stream, request.Image.ContentType);
@@ -3149,10 +3311,19 @@ namespace ConfRadar.Services.Services
             return speaker.ToResponse();
         }
 
-        public async Task<bool> DeleteSpeakerAsync(string speakerId)
+        public async Task<bool> DeleteSpeakerAsync(string speakerId,string userId)
         {
             var speaker = await _unitOfWork.SpeakerRepository.GetSpeakerByIdAsync(speakerId);
             if (speaker == null) throw new NotFoundException($"Speaker with ID {speakerId} not found");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(speaker.ConferenceSession.ConferenceId);
+            if (conference == null)
+                throw new Exception($"Không tìm được conference cho speaker với ID {speakerId}");
+
+
+            if (conference.CreatedBy != userId)
+                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
 
             return await _unitOfWork.SpeakerRepository.DeleteSpeakerAsync(speaker) > 0;
         }

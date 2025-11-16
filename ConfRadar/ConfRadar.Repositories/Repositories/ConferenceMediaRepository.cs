@@ -14,6 +14,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<ConferenceMedium?> GetConferenceMediaByIdAsync(string mediaId);
         Task<List<ConferenceMedium>> GetAllConferenceMediaAsync();
         Task<List<ConferenceMedium>> GetMediaByConferenceIdAsync(string conferenceId);
+        Task<Conference> GetConferenceByMediaId(string mediaId);
     }
 
     public class ConferenceMediaRepository : GenericRepository<ConferenceMedium>, IConferenceMediaRepository
@@ -59,6 +60,12 @@ namespace ConfRadar.Repositories.Repositories
         {
             await _context.ConferenceMedia.AddRangeAsync(media);
             return await _context.SaveChangesAsync();
+        }
+
+        public async Task<Conference> GetConferenceByMediaId(string mediaId)
+        {
+            var media = await _context.ConferenceMedia.FirstOrDefaultAsync(cm => cm.ConferenceMediaId == mediaId);
+            return _context.Conferences.FirstOrDefault(c => c.ConferenceId == media.ConferenceId);
         }
     }
 }

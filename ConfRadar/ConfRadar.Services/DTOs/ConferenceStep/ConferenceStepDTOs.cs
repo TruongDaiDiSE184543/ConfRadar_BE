@@ -827,9 +827,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Research Conference Step 5: Material Downloads
     public class CreateMaterialDownloadRequest
     {
-        [MaxLength(255)]
-        [Required(ErrorMessage = "Tên file là bắt buộc")]
-        public string? FileName { get; set; }
 
         [MaxLength(1000)]
         public string? FileDescription { get; set; }
@@ -858,17 +855,17 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateRankingFileUrlRequest
     {
         [MaxLength(1000)]
-        [Required(ErrorMessage = "URL tệp là bắt buộc")]
-        public string? FileUrl { get; set; }
 
-        public IFormFile? File { get; set; }
+        public string? FileUrl { get; set; }
+        [Required(ErrorMessage = "Cần phải có File là bắt buộc")]
+        public IFormFile File { get; set; }
     }
 
     public class UpdateRankingFileUrlRequest
     {
         [MaxLength(1000)]
         public string? FileUrl { get; set; }
-
+        [Required]
         public IFormFile? File { get; set; }
     }
 
@@ -888,8 +885,9 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateRankingReferenceUrlRequest
     {
+        [Required]
         [MaxLength(1000)]
-        public string? ReferenceUrl { get; set; }
+        public string ReferenceUrlId { get; set; }
     }
 
     public class RankingReferenceUrlResponse
