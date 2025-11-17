@@ -18,6 +18,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperAuthor>> GetPaperAuthorsByUserIdAsync(string userId);
         Task<int> CreateMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthor);
         Task<List<Paper>> GetPapersByUserIdAsync(string userId);
+        Task<List<Paper>> GetPapersByUserIdAndConfIdAsync(string userId,string confId);
+
     }
     public class PaperAuthorRepository : GenericRepository<PaperAuthor>, IPaperAuthorRepository
     {
@@ -77,6 +79,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             _context.PaperAuthors.RemoveRange(paperAuthors);
             return await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Paper>> GetPapersByUserIdAndConfIdAsync(string userId, string confId)
+        {
+            return await _context.Papers.Include(p => p.PaperAuthors).Where(p => p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == userId)).ToListAsync();
         }
     }
 }

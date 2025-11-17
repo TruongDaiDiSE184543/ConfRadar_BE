@@ -11,13 +11,14 @@ namespace ConfRadar.Services.Services
     {
         Task<PresenterSessionResponse> AssignPresenterToSession(string paperId, string sessionId); //paperid and session need to exist, if there is already a record for the paper then throw exception, if paperId is from the paper whose cameraready is not complete then throw exception also, if passes all then insert a record into presentauthor then change the usercheckin of the user who is the root author of this paper check the paperauthor table turn that record where has the userid and session and make the ispresenter to true
         Task<PresenterSessionResponse> GetPresentSessionbySessionAndPaperid(string sessionId, string paperId);
-        Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper();
+        Task<List<PresenterSessionResponse>> GetAllPresenterResponse(string confId);
+        Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId);
         Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId, CreatePresenterChangeRequest request); //check if paper and user exist, user is author of paper in the paperauthor is the user whose record in paper author ispresenter is true and the same as the request.newuserid? can't change to the same user, check if paper is complete throw exception if not, check if this new userId already bought a conferenceprice of this conference (just check to see the conferenceprice) and have a conferenceprice of type isauthor = true so they are eligible to be nominated as the new presenter of paper
         Task<bool> ApprovePresenterChangeRequest(ApprovePresenterChangeRequest request, string approvedById);
-        Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests();
+        Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests(string confId);
 
         Task<SessionChangeRequestResponse> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
-        Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests();
+        Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests(string confId);
         Task<bool> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
     }
 
@@ -33,10 +34,10 @@ namespace ConfRadar.Services.Services
             _tokenService = tokenService;
             _timeProviderService = timeProviderService;
         }
-        public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper()
+        public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId)
         {
             var acceptedStatus = _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription()).Result;
-            var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus);
+            var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus,confId);
             List<PaperDetailResponseDtoDetail> paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
             {
                 PaperId = paper.PaperId,
@@ -164,9 +165,9 @@ namespace ConfRadar.Services.Services
 
         }
 
-        public async Task<List<PresenterSessionResponse>> GetAllPresenterResponse()
+        public async Task<List<PresenterSessionResponse>> GetAllPresenterResponse(string confId)
         {
-            var presentAuthors = await _unitOfWork.PresentAuthorRepository.GetAllPresentAuthorsAsync();
+            var presentAuthors = await _unitOfWork.PresentAuthorRepository.GetAllPresentAuthorsByConfIdAsync(confId);
             var responses = new List<PresenterSessionResponse>();
 
             foreach (var presentAuthor in presentAuthors)
@@ -458,7 +459,7 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        public async Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests()
+        public async Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests(string confId)
         {
             var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (pendingStatus == null)
@@ -466,11 +467,10 @@ namespace ConfRadar.Services.Services
                 return new List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>();
             }
 
-            var allChangeRequests = await _unitOfWork.PresenterChangeRequestRepository.GetAllPresenterChangeRequestsAsync();
-            var pendingRequests = allChangeRequests.Where(pcr => pcr.GlobalStatusId == pendingStatus.GlobalStatusId).ToList();
+            var allChangeRequests = await _unitOfWork.PresenterChangeRequestRepository.GetAllPresenterChangeRequestsByConfIdAndStatusIdAsync(pendingStatus.GlobalStatusId,confId);
 
             var responseList = new List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>();
-            foreach (var request in pendingRequests)
+            foreach (var request in allChangeRequests)
             {
                 var requestedUser = await _unitOfWork.UserRepository.GetUserByUserId(request.RequestedById);
                 var newPresenterUser = await _unitOfWork.UserRepository.GetUserByUserId(request.NewPresenterId);
@@ -578,12 +578,17 @@ namespace ConfRadar.Services.Services
                 throw ex;
             }
         }
-        public async Task<List<SessionChangeRequestResponse>> GetPendingSessionChangeRequests()
+        public async Task<List<SessionChangeRequestResponse>> GetPendingSessionChangeRequests(string confId)
         {
+            //response dto list
             List<SessionChangeRequestResponse> sessionChangeRequestResponses = new List<SessionChangeRequestResponse>();
-            var allRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsAsync();
+
+            //get pending status
             var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            var PendingRequests = allRequests.Where(p => p.GlobalStatusId == pendingStatus.GlobalStatusId).ToList();
+
+            //get pending request
+            var PendingRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsByStatusIdAndConfIdAsync(pendingStatus.GlobalStatusId,confId);
+
             foreach (var pendingRequest in PendingRequests)
             {
                 var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(pendingRequest.PaperId);

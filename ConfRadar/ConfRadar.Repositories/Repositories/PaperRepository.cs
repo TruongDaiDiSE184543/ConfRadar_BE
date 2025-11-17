@@ -23,7 +23,7 @@ namespace ConfRadar.Repositories.Repositories
 
         Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
         Task<Paper> GetAllIncludeById(string paper);
-        Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus);
+        Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
 
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
@@ -371,11 +371,11 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync(p => p.PaperId == paper);
         }
 
-        public async Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus)
+        public async Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus,string confId)
         {
             return await _context.Papers
                 .Include(p => p.CameraReady)
-                .Where(p => p.CameraReady != null && p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId)
+                .Where(p => p.CameraReady != null && p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId && p.ConferenceId == confId)
                 .ToListAsync();
         }
 

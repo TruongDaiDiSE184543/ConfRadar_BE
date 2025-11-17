@@ -2,6 +2,7 @@ using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -14,6 +15,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PresentAuthor>> GetAllPresentAuthorsAsync();
         Task<PresentAuthor?> GetPresentAuthorByPaperIdAsync(string paperId);
         Task<List<PresentAuthor>> GetPresentAuthorsBySessionIdAsync(string sessionId);
+        Task<List<PresentAuthor>> GetAllPresentAuthorsByConfIdAsync(string confId);
     }
 
     public class PresentAuthorRepository : GenericRepository<PresentAuthor>, IPresentAuthorRepository
@@ -65,6 +67,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<PresentAuthor>> GetPresentAuthorsBySessionIdAsync(string sessionId)
         {
             return await _context.PresentAuthors.Where(pa => pa.ConferenceSessionId == sessionId).ToListAsync();
+        }
+
+        public async Task<List<PresentAuthor>> GetAllPresentAuthorsByConfIdAsync(string confId)
+        {
+            return await _context.PresentAuthors.Where(pa => pa.Paper.ConferenceId == confId).ToListAsync();
         }
     }
 }

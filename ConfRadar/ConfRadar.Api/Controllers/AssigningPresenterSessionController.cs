@@ -21,9 +21,9 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("Get-accepted-papers")]
-        public async Task<IActionResult> GetAllAcceptedPaper()
+        public async Task<IActionResult> GetAllAcceptedPaper([FromQuery] string confId)
         {
-            var result = await _serviceManager.AssigningPresenterSessionService.GetAllAcceptedPaper();
+            var result = await _serviceManager.AssigningPresenterSessionService.GetAllAcceptedPaper(confId);
             return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result, "Lấy thành công"));
         }
 
@@ -64,9 +64,9 @@ namespace ConfRadar.Api.Controllers
 
         [Authorize(Roles = "Conference Organizer")]
         [HttpGet("get-pending-presenter-change-requests")]
-        public async Task<IActionResult> GetPendingPresenterChangeRequests()
+        public async Task<IActionResult> GetPendingPresenterChangeRequests([FromQuery] string confId)
         {
-            var result = await _serviceManager.AssigningPresenterSessionService.GetPendingPresenterChangeRequests();
+            var result = await _serviceManager.AssigningPresenterSessionService.GetPendingPresenterChangeRequests(confId);
             return Ok(ApiResponse<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>>.SuccessResponse(result, "Lấy danh sách yêu cầu thay đổi người trình bày đang chờ thành công"));
         }
 
@@ -98,9 +98,9 @@ namespace ConfRadar.Api.Controllers
 
         [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpGet("get-pending-session-change-requests")]
-        public async Task<IActionResult> GetPendingSessionChangeRequests()
+        public async Task<IActionResult> GetPendingSessionChangeRequests([FromQuery] string confId)
         {
-            var result = await _serviceManager.AssigningPresenterSessionService.GetPendingSessionChangeRequests();
+            var result = await _serviceManager.AssigningPresenterSessionService.GetPendingSessionChangeRequests(confId);
             return Ok(ApiResponse<List<SessionChangeRequestResponse>>.SuccessResponse(result, "Lấy danh sách yêu cầu thay đổi phiên đang chờ thành công"));
         }
 
