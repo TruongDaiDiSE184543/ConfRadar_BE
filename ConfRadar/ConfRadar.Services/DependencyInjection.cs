@@ -57,7 +57,8 @@ namespace ConfRadar.Services
             services.AddScoped<IWalletService, WalletService>();
             services.AddScoped<IQRCoderService, QRCoderService>();
             services.AddScoped<ITimeProviderService, TimeProviderService>();
-            services.AddScoped<IOrcidService, OrcidService>();
+            services.AddHttpClient<IOrcidService, OrcidService>();
+            //services.AddScoped<IOrcidService, OrcidService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
