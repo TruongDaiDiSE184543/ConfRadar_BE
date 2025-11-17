@@ -25,11 +25,11 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("callback")]
-        public async Task<IActionResult> ExchangeForAccessToken([FromQuery]string authorizationCode)
+        public async Task<IActionResult> ExchangeForAccessToken([FromQuery]string code)
         {
-            if (authorizationCode == null)
+            if (string.IsNullOrEmpty(code))
                 throw new BadRequestException($"Không tìm thấy code");
-            var tokenResponse = await _orcidService.ExchangeCodeForTokenAsync(authorizationCode);
+            var tokenResponse = await _orcidService.ExchangeCodeForTokenAsync(code);
             return Ok(ApiResponse<OrcidAuthorizationResponse>.SuccessResponse(tokenResponse,""));
         }
 
