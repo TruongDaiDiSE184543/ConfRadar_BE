@@ -895,7 +895,7 @@ namespace ConfRadar.Services.Services
             };
             var presenterPaperAuthor = new PaperAuthor()
             {
-                IsPresenter = false,
+                IsPresenter = true,
                 UserId = transacDataHolder.UserId,
                 PaperId = paperObj.PaperId,
                 IsRootAuthor = true,
