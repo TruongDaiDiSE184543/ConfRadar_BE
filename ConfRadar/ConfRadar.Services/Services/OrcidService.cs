@@ -1,10 +1,6 @@
 ﻿using ConfRadar.Repositories;
-using ConfRadar.Services.Common;
-using static ConfRadar.Services.Common.AppSettingConfig;
-using static System.Net.WebRequestMethods;
-using Microsoft.Extensions.Options;
 using ConfRadar.Services.DTOs.Orcid;
-using Microsoft.EntityFrameworkCore.Storage.Json;
+using static System.Net.WebRequestMethods;
 using System.Net.Http.Json;
 
 namespace ConfRadar.Services.Services
@@ -18,13 +14,11 @@ namespace ConfRadar.Services.Services
     public class OrcidService : IOrcidService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IOptions<OrcidSettings> _orcidSettings;
         private readonly HttpClient _httpClient;
 
-        public OrcidService(IUnitOfWork unitOfWork, IOptions<OrcidSettings> orcidSettings, HttpClient httpClient)
+        public OrcidService(IUnitOfWork unitOfWork, HttpClient httpClient)
         {
             _unitOfWork = unitOfWork;
-            _orcidSettings = orcidSettings;
             _httpClient = httpClient;
 
             // Always use sandbox for ORCID API
@@ -35,50 +29,30 @@ namespace ConfRadar.Services.Services
 
         public string GenerateAuthorizationLink()
         {
-            var settings = _orcidSettings.Value;
-
-            if (string.IsNullOrEmpty(settings.ClientId))
-            {
-                throw new InvalidOperationException("ORCID ClientId is not configured");
-            }
-
-            if (string.IsNullOrEmpty(settings.RedirectUri))
-            {
-                throw new InvalidOperationException("ORCID RedirectUri is not configured");
-            }
+            // Hardcoded ORCID credentials
+            string clientId = "APP-VD0FICYKL76Y895Y";
+            string redirectUri = "https://confradar.io.vn/api/Orcid/callback";
 
             string orcidBaseUrl = "https://sandbox.orcid.org";
-            string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={settings.ClientId}&response_type=code&scope=/authenticate&redirect_uri={settings.RedirectUri}";
+            string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={clientId}&response_type=code&scope=/authenticate&redirect_uri={redirectUri}";
 
             return authorizationUrl;
         }
 
         public async Task<OrcidAuthorizationResponse> ExchangeCodeForTokenAsync(string authorizationCode)
         {
-            var settings = _orcidSettings.Value;
-
-            if (string.IsNullOrEmpty(settings.ClientId))
-            {
-                throw new InvalidOperationException("ORCID ClientId is not configured");
-            }
-
-            if (string.IsNullOrEmpty(settings.ClientSecret))
-            {
-                throw new InvalidOperationException("ORCID ClientSecret is not configured");
-            }
-
-            if (string.IsNullOrEmpty(settings.RedirectUri))
-            {
-                throw new InvalidOperationException("ORCID RedirectUri is not configured");
-            }
+            // Hardcoded ORCID credentials
+            string clientId = "APP-VD0FICYKL76Y895Y";
+            string clientSecret = "f8f0046f-b390-474e-a1d3-5786da93067c";
+            string redirectUri = "https://confradar.io.vn/api/Orcid/callback";
 
             var formData = new Dictionary<string, string>()
             {
-                 { "client_id", settings.ClientId },
-                 { "client_secret", settings.ClientSecret },
+                 { "client_id", clientId },
+                 { "client_secret", clientSecret },
                  { "grant_type", "authorization_code" },
                  { "code", authorizationCode },
-                 { "redirect_uri", settings.RedirectUri }
+                 { "redirect_uri", redirectUri }
             };
 
             var response = await _httpClient.PostAsync("oauth/token", new FormUrlEncodedContent(formData));
