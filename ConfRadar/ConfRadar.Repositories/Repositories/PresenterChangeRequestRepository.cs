@@ -12,6 +12,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<bool> DeletePresenterChangeRequestAsync(PresenterChangeRequest presenterChangeRequest);
         Task<PresenterChangeRequest?> GetPresenterChangeRequestByIdAsync(string presenterChangeRequestId);
         Task<List<PresenterChangeRequest>> GetAllPresenterChangeRequestsAsync();
+        Task<List<PresenterChangeRequest>> GetAllPresenterChangeRequestsByConfIdAndStatusIdAsync(string statusId, string confId);
+
     }
 
     public class PresenterChangeRequestRepository : GenericRepository<PresenterChangeRequest>, IPresenterChangeRequestRepository
@@ -51,6 +53,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<PresenterChangeRequest>> GetAllPresenterChangeRequestsAsync()
         {
             return await _context.PresenterChangeRequests.ToListAsync();
+        }
+
+        public async Task<List<PresenterChangeRequest>> GetAllPresenterChangeRequestsByConfIdAndStatusIdAsync(string statusId, string confId)
+        {
+            return await _context.PresenterChangeRequests.Where(pcr => pcr.GlobalStatusId == statusId && pcr.Paper.ConferenceId == confId).ToListAsync();
         }
     }
 }
