@@ -91,6 +91,12 @@
             public string Url { get; set; }
         }
 
+        public class OrcidSettings
+        {
+            public string ClientId { get; set; }
+            public string ClientSecret { get; set; }
+        }
+
 
     }
 }

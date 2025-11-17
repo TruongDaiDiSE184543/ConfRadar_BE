@@ -1152,7 +1152,8 @@ namespace ConfRadar.Services.Services
                             foreach (var mediaRequest in session.SessionMedias)
                             {
                                 String mediaURl = "";
-
+                                if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile))
+                                    throw new Exception("Khong ho tro dinh dang cho sessionMedia nay");
 
                                 if (mediaRequest.MediaFile != null)
                                 {

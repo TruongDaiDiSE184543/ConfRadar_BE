@@ -32,6 +32,7 @@ namespace ConfRadar.Services
         public IContractService ContractService { get; }
         public IWalletService WalletService { get; }
         public IQRCoderService QRCoderService { get; }
+        public IOrcidService OrcidService { get; }
         //public ICityService CityService { get; }
 
     }
@@ -67,6 +68,7 @@ namespace ConfRadar.Services
         private readonly IContractService _contractService;
         private readonly IWalletService _walletService;
         private readonly IQRCoderService _qrRCoderService;
+        private readonly IOrcidService _orcidService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -97,7 +99,8 @@ namespace ConfRadar.Services
             IContractService contractService,
             IAssigningPresenterSessionService assigningPresenterSessionService,
             IWalletService walletService,
-            IQRCoderService qRCoderService
+            IQRCoderService qRCoderService,
+            IOrcidService orcidService
 
            )
         {
@@ -129,6 +132,7 @@ namespace ConfRadar.Services
             _assigningPresenterSessionService = assigningPresenterSessionService;
             _walletService = walletService;
             _qrRCoderService = qRCoderService;
+            _orcidService = orcidService;
         }
 
         public IAuthService AuthService => _authService;
@@ -168,6 +172,8 @@ namespace ConfRadar.Services
         public IWalletService WalletService => _walletService;
 
         public IQRCoderService QRCoderService => _qrRCoderService;
+
+        public IOrcidService OrcidService => _orcidService;
     }
 
 }
