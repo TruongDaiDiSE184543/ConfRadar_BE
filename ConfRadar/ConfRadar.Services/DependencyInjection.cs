@@ -59,7 +59,7 @@ namespace ConfRadar.Services
             services.AddScoped<ITimeProviderService, TimeProviderService>();
             services.AddHttpClient<IOrcidService, OrcidService>();
             //services.AddScoped<IOrcidService, OrcidService>();
-            services.AddScoped<IServiceManager, ServiceManager>(); 
+            services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>
@@ -68,8 +68,6 @@ namespace ConfRadar.Services
             .WithSSL(objectStorageSettings.Secure)
             .Build());
             services.AddSingleton<IObjectStorageFileService, ObjectStorageFileService>();
-
-            services.Configure<OrcidSettings>(configs.GetSection("Orcid"));
 
             var firebaseSettings = configs.GetSection("FirebaseSettings").Get<FirebaseSettings>();
             var credential = GoogleCredential.FromFile(firebaseSettings!.ServiceAccountPath);
