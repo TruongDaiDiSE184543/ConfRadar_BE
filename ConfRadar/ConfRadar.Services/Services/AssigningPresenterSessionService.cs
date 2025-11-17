@@ -150,7 +150,7 @@ namespace ConfRadar.Services.Services
                 {
                     ConferenceSessionId = sessionId,
                     PaperId = paperId,
-                    AssignedAt = DateTime.UtcNow,
+                    AssignedAt = await _timeProviderService.GetVietnamTime(),
                     PaperTitle = paper.Title,
                     PresenterName = rootAuthor.User?.FullName, // Assuming User has FullName
                     UserId = rootAuthor.UserId

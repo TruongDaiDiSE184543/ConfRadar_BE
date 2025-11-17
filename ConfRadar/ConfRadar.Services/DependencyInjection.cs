@@ -57,6 +57,7 @@ namespace ConfRadar.Services
             services.AddScoped<IWalletService, WalletService>();
             services.AddScoped<IQRCoderService, QRCoderService>();
             services.AddScoped<ITimeProviderService, TimeProviderService>();
+            services.AddScoped<IOrcidService, OrcidService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
@@ -66,6 +67,8 @@ namespace ConfRadar.Services
             .WithSSL(objectStorageSettings.Secure)
             .Build());
             services.AddSingleton<IObjectStorageFileService, ObjectStorageFileService>();
+
+            services.Configure<OrcidSettings>(configs.GetSection("Orcid"));
 
             var firebaseSettings = configs.GetSection("FirebaseSettings").Get<FirebaseSettings>();
             var credential = GoogleCredential.FromFile(firebaseSettings!.ServiceAccountPath);
