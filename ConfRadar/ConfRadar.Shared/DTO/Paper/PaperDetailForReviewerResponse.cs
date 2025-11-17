@@ -1,5 +1,19 @@
 ﻿namespace ConfRadar.Shared.DTO.Paper
 {
+    public class ToTalPaperDetailForReviewerResponse
+    {
+        public string PaperId { get; set; } = null!;
+        public string? ConferenceId { get; set; }
+        public string? ConferenceName { get; set; }
+        public string? ConferenceBannerImageUrl { get; set; }
+        public string? PaperPhaseId { get; set; }
+        public string? PaperPhaseName { get; set; }
+        public string? ResearchConferencePhaseId { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string? PaperTitle { get; set; }
+        public string? PaperDescription { get; set; }
+        public PaperDetailForReviewerResponse PaperDetail { get; set; } = new();
+    }
     public class PaperDetailForReviewerResponse
     {
         public bool IsHeadReviewer { get; set; }
