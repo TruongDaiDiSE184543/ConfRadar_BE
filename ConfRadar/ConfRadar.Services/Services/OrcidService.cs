@@ -27,10 +27,8 @@ namespace ConfRadar.Services.Services
             _orcidSettings = orcidSettings;
             _httpClient = httpClient;
 
-            // Set base address based on sandbox setting
-            var settings = _orcidSettings.Value;
-            string baseUrl = "https://sandbox.orcid.org/";
-            _httpClient.BaseAddress = new Uri(baseUrl);
+            // Always use sandbox for ORCID API
+            _httpClient.BaseAddress = new Uri("https://sandbox.orcid.org/");
 
             _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -49,7 +47,7 @@ namespace ConfRadar.Services.Services
                 throw new InvalidOperationException("ORCID RedirectUri is not configured");
             }
 
-            string orcidBaseUrl = settings.UseSandbox ? "https://sandbox.orcid.org" : "https://orcid.org";
+            string orcidBaseUrl = "https://sandbox.orcid.org";
             string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={settings.ClientId}&response_type=code&scope=/authenticate&redirect_uri={settings.RedirectUri}";
 
             return authorizationUrl;
@@ -83,9 +81,7 @@ namespace ConfRadar.Services.Services
                  { "redirect_uri", settings.RedirectUri }
             };
 
-            // Use the correct endpoint based on sandbox setting
-            string tokenEndpoint = settings.UseSandbox ? "oauth/token" : "oauth/token";
-            var response = await _httpClient.PostAsync(tokenEndpoint, new FormUrlEncodedContent(formData));
+            var response = await _httpClient.PostAsync("oauth/token", new FormUrlEncodedContent(formData));
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
