@@ -26,18 +26,31 @@ namespace ConfRadar.Services.Services
             _unitOfWork = unitOfWork;
             _orcidSettings = orcidSettings;
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://sandbox.orcid.org/");
+
+            // Set base address based on sandbox setting
+            var settings = _orcidSettings.Value;
+            string baseUrl = "https://sandbox.orcid.org/";
+            _httpClient.BaseAddress = new Uri(baseUrl);
+
             _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
 
         public string GenerateAuthorizationLink()
         {
-            string clientId = _orcidSettings.Value.ClientId;
-            string clientSecret = _orcidSettings.Value.ClientSecret;
-            string redirectURl = "https://confradar.io.vn/api/Orcid/authorization";
-            // You can now use clientId and clientSecret from the configuration
-            // Here's an example of how ORCID authorization link might be constructed:
-            string authorizationUrl = $"https://sandbox.orcid.org/oauth/authorize?client_id={clientId}&response_type=code&scope=/authenticate&redirect_uri={redirectURl}";
+            var settings = _orcidSettings.Value;
+
+            if (string.IsNullOrEmpty(settings.ClientId))
+            {
+                throw new InvalidOperationException("ORCID ClientId is not configured");
+            }
+
+            if (string.IsNullOrEmpty(settings.RedirectUri))
+            {
+                throw new InvalidOperationException("ORCID RedirectUri is not configured");
+            }
+
+            string orcidBaseUrl = settings.UseSandbox ? "https://sandbox.orcid.org" : "https://orcid.org";
+            string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={settings.ClientId}&response_type=code&scope=/authenticate&redirect_uri={settings.RedirectUri}";
 
             return authorizationUrl;
         }
@@ -45,16 +58,34 @@ namespace ConfRadar.Services.Services
         public async Task<OrcidAuthorizationResponse> ExchangeCodeForTokenAsync(string authorizationCode)
         {
             var settings = _orcidSettings.Value;
-            var redirectUri = "https://confradar.io.vn/api/Orcid/callback";
+
+            if (string.IsNullOrEmpty(settings.ClientId))
+            {
+                throw new InvalidOperationException("ORCID ClientId is not configured");
+            }
+
+            if (string.IsNullOrEmpty(settings.ClientSecret))
+            {
+                throw new InvalidOperationException("ORCID ClientSecret is not configured");
+            }
+
+            if (string.IsNullOrEmpty(settings.RedirectUri))
+            {
+                throw new InvalidOperationException("ORCID RedirectUri is not configured");
+            }
+
             var formData = new Dictionary<string, string>()
             {
                  { "client_id", settings.ClientId },
                  { "client_secret", settings.ClientSecret },
                  { "grant_type", "authorization_code" },
                  { "code", authorizationCode },
-                 { "redirect_uri", redirectUri }
+                 { "redirect_uri", settings.RedirectUri }
             };
-            var response =await  _httpClient.PostAsync("oauth/token", new FormUrlEncodedContent(formData));
+
+            // Use the correct endpoint based on sandbox setting
+            string tokenEndpoint = settings.UseSandbox ? "oauth/token" : "oauth/token";
+            var response = await _httpClient.PostAsync(tokenEndpoint, new FormUrlEncodedContent(formData));
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
