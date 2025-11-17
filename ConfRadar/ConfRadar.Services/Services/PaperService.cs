@@ -78,7 +78,7 @@ namespace ConfRadar.Services.Services
 
         Task<List<PaperDetailResponseDTO>> GetListAllPaper();
         Task<List<UnAssignAbstractResponse>> GetUnassignAbstractList();
-        Task<PaperDetailForReviewerResponse> GetPaperDetailForReviewer(string paperId, string userId);
+        Task<ToTalPaperDetailForReviewerResponse> GetPaperDetailForReviewer(string paperId, string userId);
 
         Task<List<CustomerWaitListResponse>> GetCustomerWaitList(string userId);
         Task<LeaveWaitListResponse> LeaveWaitList(string userId, string conferenceId);
@@ -1988,7 +1988,7 @@ namespace ConfRadar.Services.Services
 
         }
 
-        public async Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
+        public async Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
         {
             var paperReviewerCheck = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paperId);
             if (paperReviewerCheck == null)
