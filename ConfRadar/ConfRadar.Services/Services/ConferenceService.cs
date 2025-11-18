@@ -136,58 +136,68 @@ namespace ConfRadar.Services.Services
             
         }
 
-        private async Task<List<string>> ValidateConferenceTimelineAsync(Conference conf,Func<DateOnly?, bool> dateOnlyValidationRule)
+        // DÁN TOÀN BỘ PHIÊN BẢN NÀY ĐỂ THAY THẾ PHIÊN BẢN CŨ
+
+        private async Task<List<string>> ValidateConferenceTimelineAsync(Conference conf, Func<DateOnly?, bool> dateOnlyValidationRule)
         {
             var invalidMessages = new List<string>();
 
-            // Hàm helper nội bộ để giảm lặp code
-            void AddIfInvalid(DateOnly? date, string name) { if (dateOnlyValidationRule(date)) invalidMessages.Add(name); }
-           
+            // Hàm helper nội bộ để giảm lặp code và xử lý null an toàn
+            void AddIfInvalid(DateOnly? date, string name)
+            {
+                if (date.HasValue && dateOnlyValidationRule(date))
+                {
+                    // Chỉ thêm vào message nếu thực sự có lỗi và có ngày để hiển thị
+                    invalidMessages.Add($"{name} ({date.Value:dd/MM/yyyy})");
+                }
+            }
+
+            // === TẢI DỮ LIỆU LIÊN QUAN TRƯỚC ĐỂ TRÁNH LỖI N+1 QUERY ===
+            // (Giả sử bạn có các phương thức repository hỗ trợ Include)
+            var allPricesWithPhasesAndPolicies = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conf.ConferenceId);
+            var allSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
 
             // 1. Kiểm tra Conference
-            AddIfInvalid(conf.StartDate, $"Ngày bắt đầu hội nghị ({conf.StartDate.Value:dd/MM/yyyy})");
-            AddIfInvalid(conf.EndDate, $"Ngày kết thúc hội nghị ({conf.EndDate.Value:dd/MM/yyyy})");
-            AddIfInvalid(conf.TicketSaleEnd, $"Ngày kết thúc bán vé ({conf.TicketSaleEnd.Value:dd/MM/yyyy})");
+            AddIfInvalid(conf.StartDate, "Ngày bắt đầu hội nghị");
+            AddIfInvalid(conf.EndDate, "Ngày kết thúc hội nghị");
+            AddIfInvalid(conf.TicketSaleEnd, "Ngày kết thúc bán vé");
 
-            // 2. Kiểm tra PricePhase và RefundPolicy
-            var allPrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conf.ConferenceId);
-            foreach (var price in allPrices)
+            // 2. Kiểm tra PricePhase và RefundPolicy (dùng dữ liệu đã tải sẵn)
+            foreach (var price in allPricesWithPhasesAndPolicies)
             {
-                var phases = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(price.ConferencePriceId);
-                foreach (var phase in phases)
+                foreach (var phase in price.PricePhases)
                 {
-                    AddIfInvalid(phase.EndDate, $"Giai đoạn bán vé '{phase.PhaseName}' ({phase.EndDate.Value:dd/MM/yyyy})");
+                    AddIfInvalid(phase.EndDate, $"Giai đoạn bán vé '{phase.PhaseName}'");
 
-                    var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByPricePhaseId(phase.PricePhaseId);
-                    foreach (var policy in refundPolicies)
+                    foreach (var policy in phase.RefundPolicies)
                     {
-                        AddIfInvalid(policy.RefundDeadline, $"Hạn chót hoàn tiền của phase '{phase.PhaseName}' ({policy.RefundDeadline.Value:dd/MM/yyyy})");
+                        AddIfInvalid(policy.RefundDeadline, $"Hạn chót hoàn tiền của phase '{phase.PhaseName}'");
                     }
                 }
             }
 
-            // 3. Kiểm tra ConferenceSession
-            var allSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+            // 3. Kiểm tra ConferenceSession (dùng dữ liệu đã tải sẵn)
             foreach (var session in allSessions)
             {
-                AddIfInvalid(session.SessionDate, $"Phiên '{session.Title}' (dự kiến vào {session.StartTime.Value:dd/MM/yyyy HH:mm})");
+                AddIfInvalid(session.SessionDate, $"Phiên '{session.Title}'");
             }
 
             // 4. Kiểm tra Research Conference (nếu có)
             if (conf.IsResearchConference == true)
             {
-                var allPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conf.ConferenceId);
-                foreach(var phase in allPhase)
-
-                if (phase != null)
+                var allResearchPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conf.ConferenceId);
+                foreach (var phase in allResearchPhases)
                 {
-                    string isWaitList = phase.IsWaitlist.Value ? "Trong phase waitlist": "Trong phase chính";
-                    AddIfInvalid(phase.RegistrationEndDate, $"{isWaitList} Hạn chót RegistrationEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
-                    AddIfInvalid(phase.FullPaperEndDate, $"{isWaitList} Hạn chót FullPaperEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
-                    AddIfInvalid(phase.ReviewEndDate, $"{isWaitList} Hạn chót ReviewEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
-                    AddIfInvalid(phase.ReviseEndDate, $"{isWaitList} Hạn chót ReviseEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
-                    AddIfInvalid(phase.CameraReadyEndDate, $"{isWaitList} Hạn chót CameraReadyEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
-                    AddIfInvalid(phase.CameraReadyEndDate, $"{isWaitList} Hạn chót Camera Ready ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
+                    string phaseType = (phase.IsWaitlist ?? false) ? "Phase Waitlist" : "Phase Chính";
+
+                    // SỬA LỖI LOGIC HIỂN THỊ NGÀY Ở ĐÂY
+                    AddIfInvalid(phase.RegistrationEndDate, $"{phaseType}: Hạn chót đăng ký");
+                    AddIfInvalid(phase.FullPaperEndDate, $"{phaseType}: Hạn chót nộp Full Paper");
+                    AddIfInvalid(phase.ReviewEndDate, $"{phaseType}: Hạn chót phản biện");
+                    AddIfInvalid(phase.ReviseEndDate, $"{phaseType}: Hạn chót sửa đổi");
+                    AddIfInvalid(phase.CameraReadyEndDate, $"{phaseType}: Hạn chót Camera Ready");
+
+                    // (Bạn có thể thêm kiểm tra cho RevisionRoundDeadline ở đây nếu cần)
                 }
             }
 
