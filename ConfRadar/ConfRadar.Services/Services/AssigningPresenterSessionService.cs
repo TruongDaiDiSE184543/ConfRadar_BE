@@ -37,7 +37,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId)
         {
             var acceptedStatus = _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription()).Result;
-            var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus,confId);
+            var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus, confId);
             List<PaperDetailResponseDtoDetail> paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
             {
                 PaperId = paper.PaperId,
@@ -467,7 +467,7 @@ namespace ConfRadar.Services.Services
                 return new List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>();
             }
 
-            var allChangeRequests = await _unitOfWork.PresenterChangeRequestRepository.GetAllPresenterChangeRequestsByConfIdAndStatusIdAsync(pendingStatus.GlobalStatusId,confId);
+            var allChangeRequests = await _unitOfWork.PresenterChangeRequestRepository.GetAllPresenterChangeRequestsByConfIdAndStatusIdAsync(pendingStatus.GlobalStatusId, confId);
 
             var responseList = new List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>();
             foreach (var request in allChangeRequests)
@@ -587,7 +587,7 @@ namespace ConfRadar.Services.Services
             var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
 
             //get pending request
-            var PendingRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsByStatusIdAndConfIdAsync(pendingStatus.GlobalStatusId,confId);
+            var PendingRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsByStatusIdAndConfIdAsync(pendingStatus.GlobalStatusId, confId);
 
             foreach (var pendingRequest in PendingRequests)
             {

@@ -48,7 +48,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<Sponsor>> GetSponsorsByConferenceIdAsync(string conferenceId)
         {
-            return await _context.Sponsors.Where(s => s.ConferenceId ==  conferenceId).ToListAsync();    
+            return await _context.Sponsors.Where(s => s.ConferenceId == conferenceId).ToListAsync();
         }
     }
 }

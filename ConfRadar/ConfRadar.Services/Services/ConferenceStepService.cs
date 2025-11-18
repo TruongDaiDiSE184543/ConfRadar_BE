@@ -75,7 +75,7 @@ namespace ConfRadar.Services.Services
         Task<bool> DeleteResearchSessionAsync(string sessionId, string userId);
 
         // Research Conference Step 5: Material Downloads
-        Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request,string userId);
+        Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request, string userId);
         Task<List<MaterialDownloadResponse>> GetMaterialDownloadsByConferenceIdAsync(string conferenceId);
         Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request, string userId);
         Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId, string userId);
@@ -1391,7 +1391,7 @@ namespace ConfRadar.Services.Services
             return policies.Select(p => p.ToResponse()).ToList();
         }
 
-        public async Task<ConferencePolicyResponse> UpdateConferencePolicyAsync(string policyId, UpdateConferencePolicyRequest request,string userId)
+        public async Task<ConferencePolicyResponse> UpdateConferencePolicyAsync(string policyId, UpdateConferencePolicyRequest request, string userId)
         {
             var policy = await _unitOfWork.ConferencePolicyRepository.GetConferencePolicyByIdAsync(policyId);
             if (policy == null) throw new NotFoundException($"Conference policy with ID {policyId} not found");
@@ -1410,7 +1410,7 @@ namespace ConfRadar.Services.Services
             return policy.ToResponse();
         }
 
-        public async Task<bool> DeleteConferencePolicyAsync(string policyId,string userId)
+        public async Task<bool> DeleteConferencePolicyAsync(string policyId, string userId)
         {
             var policy = await _unitOfWork.ConferencePolicyRepository.GetConferencePolicyByIdAsync(policyId);
             if (policy == null) throw new NotFoundException($"Conference policy with ID {policyId} not found");
@@ -1429,7 +1429,7 @@ namespace ConfRadar.Services.Services
 
         #region Step 5: Media
 
-        public async Task<List<ConferenceMediaResponse>> AddConferenceMediaAsync(string conferenceId, AddConferenceMediaRequest request,string userId)
+        public async Task<List<ConferenceMediaResponse>> AddConferenceMediaAsync(string conferenceId, AddConferenceMediaRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
@@ -1494,7 +1494,7 @@ namespace ConfRadar.Services.Services
                 if (!_objectStorageFileService.IsValidVideoFile(request.MediaFile) && !_objectStorageFileService.IsValidImageFile(request.MediaFile))
                     throw new Exception($"Không hỗ trợ định dạng {request.MediaFile.ContentType}");
 
-                
+
                 using var stream = request.MediaFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.MediaFile.FileName);
                 media.ConferenceMediaUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencemedia.ToString(), uniqueFileName, stream, request.MediaFile.ContentType);
@@ -1510,7 +1510,7 @@ namespace ConfRadar.Services.Services
             return new ConferenceMediaResponse { MediaId = media.ConferenceMediaId, MediaUrl = media.ConferenceMediaUrl };
         }
 
-        public async Task<bool> DeleteConferenceMediaAsync(string mediaId,string userId)
+        public async Task<bool> DeleteConferenceMediaAsync(string mediaId, string userId)
         {
             var media = await _unitOfWork.ConferenceMediaRepository.GetConferenceMediaByIdAsync(mediaId);
             if (media == null) throw new NotFoundException($"Conference media with ID {mediaId} not found");
@@ -1532,7 +1532,7 @@ namespace ConfRadar.Services.Services
 
         #region Step 6: Sponsors
 
-        public async Task<List<SponsorResponse>> AddConferenceSponsorsAsync(string conferenceId, AddConferenceSponsorsRequest request,string userId)
+        public async Task<List<SponsorResponse>> AddConferenceSponsorsAsync(string conferenceId, AddConferenceSponsorsRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
@@ -1587,7 +1587,7 @@ namespace ConfRadar.Services.Services
             return sponsors.Select(s => s.ToResponse()).ToList();
         }
 
-        public async Task<SponsorResponse> UpdateSponsorAsync(string sponsorId, UpdateSponsorRequest request,string userId)
+        public async Task<SponsorResponse> UpdateSponsorAsync(string sponsorId, UpdateSponsorRequest request, string userId)
         {
             var sponsor = await _unitOfWork.SponsorRepository.GetSponsorByIdAsync(sponsorId);
             if (sponsor == null) throw new NotFoundException($"Conference sponsor with ID {sponsorId} not found");
@@ -1616,7 +1616,7 @@ namespace ConfRadar.Services.Services
             return sponsor.ToResponse();
         }
 
-        public async Task<bool> DeleteSponsorAsync(string sponsorId,string userId)
+        public async Task<bool> DeleteSponsorAsync(string sponsorId, string userId)
         {
             var sponsor = await _unitOfWork.SponsorRepository.GetSponsorByIdAsync(sponsorId);
             if (sponsor == null) throw new NotFoundException($"Conference sponsor with ID {sponsorId} not found");
@@ -2557,7 +2557,7 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 5: Material Downloads
 
-        public async Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request,string userId)
+        public async Task<MaterialDownloadResponse> CreateMaterialDownloadAsync(string conferenceId, CreateMaterialDownloadRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
@@ -2574,7 +2574,7 @@ namespace ConfRadar.Services.Services
             using var stream = request.File.OpenReadStream();
             var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.File.FileName);
             fileName = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.materialdownload.ToString(), uniqueFileName, stream, request.File.ContentType);
-            var model = request.ToModel(conferenceId,fileName);
+            var model = request.ToModel(conferenceId, fileName);
 
             await _unitOfWork.MaterialDownloadRepository.CreateMaterialDownloadAsync(model);
             return model.ToResponse();
@@ -2586,7 +2586,7 @@ namespace ConfRadar.Services.Services
             return materials.Select(m => m.ToResponse()).ToList();
         }
 
-        public async Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request,string userId)
+        public async Task<MaterialDownloadResponse> UpdateMaterialDownloadAsync(string materialDownloadId, UpdateMaterialDownloadRequest request, string userId)
         {
             var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
             if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
@@ -2604,7 +2604,7 @@ namespace ConfRadar.Services.Services
             if (!_objectStorageFileService.IsValidDocumentFile(request.File))
                 throw new Exception($"Không hỗ trợ định dạng {request.File.ContentType}");
 
-          
+
 
             // Handle file upload if provided
             if (request.File != null)
@@ -2619,7 +2619,7 @@ namespace ConfRadar.Services.Services
             return materialDownload.ToResponse();
         }
 
-        public async Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId,string userId)
+        public async Task<bool> DeleteMaterialDownloadAsync(string materialDownloadId, string userId)
         {
             var materialDownload = await _unitOfWork.MaterialDownloadRepository.GetMaterialDownloadByIdAsync(materialDownloadId);
             if (materialDownload == null) throw new NotFoundException($"Material download with ID {materialDownloadId} not found");
@@ -2640,7 +2640,7 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 6: Ranking File URLs
 
-        public async Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request,string userId)
+        public async Task<RankingFileUrlResponse> CreateRankingFileUrlAsync(string conferenceId, CreateRankingFileUrlRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
@@ -2668,7 +2668,7 @@ namespace ConfRadar.Services.Services
             return fileUrls.Select(f => f.ToResponse()).ToList();
         }
 
-        public async Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request,string userId)
+        public async Task<RankingFileUrlResponse> UpdateRankingFileUrlAsync(string rankingFileUrlId, UpdateRankingFileUrlRequest request, string userId)
         {
             var rankingFileUrl = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlByIdAsync(rankingFileUrlId);
             if (rankingFileUrl == null) throw new NotFoundException($"Ranking file URL with ID {rankingFileUrlId} not found");
@@ -2693,7 +2693,7 @@ namespace ConfRadar.Services.Services
             return rankingFileUrl.ToResponse();
         }
 
-        public async Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId,string userId)
+        public async Task<bool> DeleteRankingFileUrlAsync(string rankingFileUrlId, string userId)
         {
             var rankingFileUrl = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlByIdAsync(rankingFileUrlId);
             if (rankingFileUrl == null) throw new NotFoundException($"Ranking file URL with ID {rankingFileUrlId} not found");
@@ -2715,7 +2715,7 @@ namespace ConfRadar.Services.Services
 
         #region Research Conference Step 7: Ranking Reference URLs
 
-        public async Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request,string userId)
+        public async Task<RankingReferenceUrlResponse> CreateRankingReferenceUrlAsync(string conferenceId, CreateRankingReferenceUrlRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
@@ -2742,7 +2742,7 @@ namespace ConfRadar.Services.Services
             return referenceUrls.Select(r => r.ToResponse()).ToList();
         }
 
-        public async Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request,string userId)
+        public async Task<RankingReferenceUrlResponse> UpdateRankingReferenceUrlAsync(string referenceUrlId, UpdateRankingReferenceUrlRequest request, string userId)
         {
             var rankingReferenceUrl = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlByIdAsync(referenceUrlId);
             if (rankingReferenceUrl == null) throw new NotFoundException($"Ranking reference URL with ID {referenceUrlId} not found");
@@ -2763,7 +2763,7 @@ namespace ConfRadar.Services.Services
             return rankingReferenceUrl.ToResponse();
         }
 
-        public async Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId,string userId)
+        public async Task<bool> DeleteRankingReferenceUrlAsync(string referenceUrlId, string userId)
         {
             var rankingReferenceUrl = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlByIdAsync(referenceUrlId);
             if (rankingReferenceUrl == null) throw new NotFoundException($"Ranking reference URL with ID {referenceUrlId} not found");
@@ -3218,7 +3218,7 @@ namespace ConfRadar.Services.Services
 
         #region Speaker CRUD Operations
 
-        public async Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request,string userId)
+        public async Task<List<SpeakerResponse>> AddSpeakersAsync(string conferenceSessionId, AddSpeakersRequest request, string userId)
         {
             var conferenceSession = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(conferenceSessionId);
             if (conferenceSession == null) throw new NotFoundException($"Conference session with ID {conferenceSessionId} not found");
@@ -3279,7 +3279,7 @@ namespace ConfRadar.Services.Services
             return speakers.Select(s => s.ToResponse()).ToList();
         }
 
-        public async Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request,string userId)
+        public async Task<SpeakerResponse> UpdateSpeakerBySpeakerIdAsync(string speakerId, UpdateSpeakerRequestForConferenceSession request, string userId)
         {
             var speaker = await _unitOfWork.SpeakerRepository.GetSpeakerByIdAsync(speakerId);
             if (speaker == null) throw new NotFoundException($"Speaker with ID {speakerId} not found");
@@ -3310,7 +3310,7 @@ namespace ConfRadar.Services.Services
             return speaker.ToResponse();
         }
 
-        public async Task<bool> DeleteSpeakerAsync(string speakerId,string userId)
+        public async Task<bool> DeleteSpeakerAsync(string speakerId, string userId)
         {
             var speaker = await _unitOfWork.SpeakerRepository.GetSpeakerByIdAsync(speakerId);
             if (speaker == null) throw new NotFoundException($"Speaker with ID {speakerId} not found");

@@ -16,8 +16,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateTicketAsync(Ticket ticket);
         Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId);
         Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId);
-        Task<Ticket?> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
-        Task<Ticket?> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId);
+        Task<List<Ticket>> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
+        Task<List<Ticket>> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<Ticket> GetTicketById(string ticketId);
         Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId);
         Task<int> UpdateTicketAsync(Ticket ticket);
@@ -123,7 +123,7 @@ namespace ConfRadar.Repositories.Repositories
                     ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.ConferenceId : null,
                     IsAuthor = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.IsAuthor : null,
 
-                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && t.PricePhase != null
@@ -132,7 +132,7 @@ namespace ConfRadar.Repositories.Repositories
                     .Select(p => p.PaperId)
                     .FirstOrDefault() : null,
 
-                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && p.ResearchConferencePhase != null && t.PricePhase != null
@@ -140,7 +140,7 @@ namespace ConfRadar.Repositories.Repositories
                     .Select(p => p.ResearchConferencePhase!.RegistrationStartDate)
                     .FirstOrDefault() : null,
 
-                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
+                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && p.ResearchConferencePhase != null && t.PricePhase != null
@@ -209,14 +209,14 @@ namespace ConfRadar.Repositories.Repositories
                 TotalCount = totalCount,
             };
         }
-        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId,string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
+        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId, string userId, string? keyword, int pageNumber = 1, int pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
         {
             var query = _context.Tickets.AsNoTracking()
-                .Where(t => t.UserId == userId 
-                && t.PricePhase !=null && t.PricePhase.ConferencePrice!=null
-                && t.PricePhase.ConferencePrice.ConferenceId==conferenceId);
-            
-            
+                .Where(t => t.UserId == userId
+                && t.PricePhase != null && t.PricePhase.ConferencePrice != null
+                && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
+
+
             if (!string.IsNullOrEmpty(keyword))
             {
                 keyword = keyword.ToLower();
@@ -511,26 +511,26 @@ namespace ConfRadar.Repositories.Repositories
             return await UpdateAsync(ticket);
         }
 
-        public async Task<Ticket?> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId)
+        public async Task<List<Ticket>> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId)
         {
             return await _context.Tickets
                .Include(t => t.PricePhase)
                    .ThenInclude(t => t.ConferencePrice)
-               .FirstOrDefaultAsync(t => t.UserId == userId
+               .Where(t => t.UserId == userId
                && t.PricePhase != null
                && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true
-               && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
+               && t.PricePhase.ConferencePrice.ConferenceId == conferenceId).ToListAsync();
         }
 
-        public async Task<Ticket?> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId)
+        public async Task<List<Ticket>> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId)
         {
             return await _context.Tickets
                .Include(t => t.PricePhase)
                    .ThenInclude(t => t.ConferencePrice)
-               .FirstOrDefaultAsync(t => t.UserId == userId
+               .Where(t => t.UserId == userId
                && t.PricePhase != null
                && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
-               && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
+               && t.PricePhase.ConferencePrice.ConferenceId == conferenceId).ToListAsync();
         }
     }
 }

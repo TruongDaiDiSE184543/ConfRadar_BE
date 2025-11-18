@@ -18,7 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperAuthor>> GetPaperAuthorsByUserIdAsync(string userId);
         Task<int> CreateMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthor);
         Task<List<Paper>> GetPapersByUserIdAsync(string userId);
-        Task<List<Paper>> GetPapersByUserIdAndConfIdAsync(string userId,string confId);
+        Task<List<Paper>> GetPapersByUserIdAndConfIdAsync(string userId, string confId);
 
     }
     public class PaperAuthorRepository : GenericRepository<PaperAuthor>, IPaperAuthorRepository

@@ -163,7 +163,7 @@ namespace ConfRadar.Repositories.Repositories
                 PaperId = paper.PaperId,
                 ConferenceId = paper.ConferenceId,
                 ConferenceName = paper.Conference != null ? paper.Conference.ConferenceName : null,
-                ConferenceBannerImageUrl = paper.Conference !=null ? paper.Conference.BannerImageUrl :null,
+                ConferenceBannerImageUrl = paper.Conference != null ? paper.Conference.BannerImageUrl : null,
                 PaperPhaseId = paper.PaperPhaseId,
                 PaperPhaseName = paper.PaperPhase != null ? paper.PaperPhase.PhaseName : null,
                 ResearchConferencePhaseId = paper.ResearchConferencePhaseId,
@@ -383,7 +383,7 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync(p => p.PaperId == paper);
         }
 
-        public async Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus,string confId)
+        public async Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId)
         {
             return await _context.Papers
                 .Include(p => p.CameraReady)
