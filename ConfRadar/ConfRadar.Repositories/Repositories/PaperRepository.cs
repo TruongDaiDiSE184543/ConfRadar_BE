@@ -360,7 +360,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
                 .Include(p => p.Abstract)
-                .Include(p => p.FullPaperId)
+                .Include(p => p.FullPaper)
                 .Include(p => p.RevisionPaper)
                 .Include(p => p.CameraReady)
                 .Include(p => p.PaperReviewers)

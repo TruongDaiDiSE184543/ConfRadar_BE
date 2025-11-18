@@ -250,9 +250,14 @@ namespace ConfRadar.Services.Services
 
 
 
+
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
             if (researchDetail == null)
                 throw new InvalidOperationException("Không tìm th?y chi ti?t nghiên c?u cho h?i ngh? này.");
+
+            //price must be larger than review fee
+            if (request.TypeOfTicket.Any(tot => tot.TicketPrice < researchDetail.ReviewFee && tot.isAuthor == true))
+                throw new Exception($"Không thể để giá của vé isauthor bé hơn review fee {researchDetail.ReviewFee} của conference {conferenceId}");
             var IsAuthorConferencePrice = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(conferenceId);
             var sumOfExistingIssAuthor = IsAuthorConferencePrice.Sum(cp => cp.TotalSlot);
             var sumOfRequestIsAuthor = request.TypeOfTicket.Where(cp => cp.isAuthor == true).Sum(cp => cp.TotalSlot);
@@ -807,6 +812,8 @@ namespace ConfRadar.Services.Services
                     var totalSlotFromPhases = toBeConferencePrice.Phases.Sum(phase => phase.Totalslot);
                     if (toBeConferencePrice.TotalSlot != totalSlotFromPhases)
                         throw new BadRequestException($"V?i vé '{toBeConferencePrice.TicketName}', t?ng s? vé trong các giai do?n ({totalSlotFromPhases}) không kh?p v?i t?ng s? vé c?a lo?i vé dó ({toBeConferencePrice.TotalSlot}).");
+
+                    
 
                     // *** VALIDATION M?I: Các phase trong cùng 1 ticket không du?c ch?ng chéo ***
                     var sortedPhases = toBeConferencePrice.Phases.OrderBy(p => p.StartDate).ToList();
@@ -1657,23 +1664,39 @@ namespace ConfRadar.Services.Services
             foreach (var policy in request.RefundPolicies)
             {
                 if (!policy.PercentRefund.HasValue || !policy.RefundDeadline.HasValue)
-                    throw new BadRequestException("Chính sách hoàn ti?n ph?i có d? ph?n tram và h?n chót.");
+                    throw new BadRequestException("Chính sách hoàn tiền phải có d? ph?n tram và h?n chót.");
                 if (policy.PercentRefund < 0 || policy.PercentRefund > 100)
                     throw new BadRequestException("Ph?n tram hoàn ti?n ph?i n?m trong kho?ng t? 0 d?n 100.");
                 if (policy.RefundDeadline.Value <= await _timeProviderService.GetVietnamDate())
                     throw new BadRequestException("H?n chót hoàn ti?n ph?i là m?t ngày trong tuong lai.");
-
-                // Validation quan tr?ng: Deadline hoàn ti?n ph?i TRU?C ngày b?t d?u c?a phase
-                if (policy.RefundDeadline.Value < pricePhase.StartDate)
+                if (pricePhase.ConferencePrice.IsAuthor == false)
                 {
-                    throw new BadRequestException($"H?n chót hoàn ti?n ({policy.RefundDeadline.Value:dd/MM/yyyy}) ph?i sau ngày b?t d?u c?a giai do?n bán vé ({pricePhase.StartDate:dd/MM/yyyy}).");
+                    // Validation quan tr?ng: Deadline hoàn ti?n ph?i TRU?C ngày b?t d?u c?a phase
+                    if (policy.RefundDeadline.Value < pricePhase.StartDate)
+                    {
+                        throw new BadRequestException($"Hoàn chót hoàn tiền cho vé hội nghị  ({policy.RefundDeadline.Value:dd/MM/yyyy}) phải sau ngày bắt đầu củaa giai đoạn bán vé ({pricePhase.StartDate:dd/MM/yyyy}).");
+                    }
+
+                    if (policy.RefundDeadline.Value > conference.TicketSaleEnd)
+                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {policy.RefundDeadline.Value:dd/MM/yyyy} phải trước conference ticketsaleend {conference.TicketSaleEnd.Value:dd/MM/yyyy}");
+                }
+                else
+                {
+                    var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(pricePhase.ResearchConferencePhaseId);
+                    if (researchPhase == null)
+                        throw new Exception($"Không tìm ra researPhase cho conference price của price phase {pricePhaseId}");
+                    if (policy.RefundDeadline.Value < pricePhase.StartDate)
+                    {
+                        throw new BadRequestException($"Hạn chót hoàn tiền cho vé hội nghị  ({policy.RefundDeadline.Value:dd/MM/yyyy}) phải sau ngày bắt đầu củaa giai đoạn bán vé ({pricePhase.StartDate:dd/MM/yyyy}).");
+                    }
+
+                    if (policy.RefundDeadline.Value > researchPhase.RegistrationEndDate)
+                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {policy.RefundDeadline.Value:dd/MM/yyyy} phải trước registration emd {researchPhase.ReviewEndDate.Value:dd/MM/yyyy}");
                 }
 
-                if (policy.RefundDeadline.Value > conference.TicketSaleEnd)
-                    throw new BadRequestException($"H?n chót hoàn toàn ti?n {policy.RefundDeadline.Value:dd/MM/yyyy} ph?i tru?c conference ticketsaleend {conference.TicketSaleEnd.Value:dd/MM/yyyy}");
 
                 if (!existingDeadlines.Add(policy.RefundDeadline.Value))
-                    throw new BadRequestException($"H?n chót hoàn ti?n '{policy.RefundDeadline.Value:dd/MM/yyyy}' dã t?n t?i trong giai do?n này.");
+                    throw new BadRequestException($"Hạn chót hoàn ti?n '{policy.RefundDeadline.Value:dd/MM/yyyy}' dã t?n t?i trong giai do?n này.");
             }
             #endregion
 

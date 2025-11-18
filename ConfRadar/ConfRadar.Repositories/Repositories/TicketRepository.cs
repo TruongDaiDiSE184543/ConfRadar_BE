@@ -17,6 +17,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> GetTicketCountByConferencePriceIdAsync(string conferencePriceId);
         Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<Ticket?> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
+        Task<Ticket?> GetNotRefundAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<Ticket?> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<Ticket> GetTicketById(string ticketId);
         Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId);
@@ -531,6 +532,18 @@ namespace ConfRadar.Repositories.Repositories
                && t.PricePhase != null
                && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
                && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
+        }
+
+        public async Task<Ticket?> GetNotRefundAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId)
+        {
+            return await _context.Tickets
+             .Include(t => t.PricePhase)
+                 .ThenInclude(t => t.ConferencePrice)
+             .FirstOrDefaultAsync(t => t.UserId == userId
+             && t.PricePhase != null
+             && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true
+             && t.IsRefunded == false
+             && t.PricePhase.ConferencePrice.ConferenceId == conferenceId);
         }
     }
 }
