@@ -1,4 +1,4 @@
-using ConfRadar.Repositories;
+Ôªøusing ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
@@ -55,7 +55,7 @@ namespace ConfRadar.Services.Services
         Task<List<PendingAbstractResponse>> GetListPendingAbstract(string? confId);
 
         //Task<FullPaperResponse> SubmitFullPaper (CreateFullPaperRequest request, string userId);
-        //cho head reviewer quy?t d?nh cu?i c˘ng
+        //cho head reviewer quy?t d?nh cu?i c√πng
 
         //Task<int> (UpdateFullPaperReviewStatusRequest request, string userId);
 
@@ -78,7 +78,7 @@ namespace ConfRadar.Services.Services
 
         Task<List<PaperDetailResponseDTO>> GetListAllPaper();
         Task<List<UnAssignAbstractResponse>> GetUnassignAbstractList();
-        Task<PaperDetailForReviewerResponse> GetPaperDetailForReviewer(string paperId, string userId);
+        Task<ToTalPaperDetailForReviewerResponse> GetPaperDetailForReviewer(string paperId, string userId);
 
         Task<List<CustomerWaitListResponse>> GetCustomerWaitList(string userId);
         Task<LeaveWaitListResponse> LeaveWaitList(string userId, string conferenceId);
@@ -115,17 +115,17 @@ namespace ConfRadar.Services.Services
 
             if (paperPhase == null || pendingGlobalStatus == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y paper v?i id {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y paper v?i id {request.PaperId} trong h? th?ng");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y c·c giai do?n cho h?i ngh? nghiÍn c?u {paper.Conference!.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y c√°c giai do?n cho h?i ngh? nghi√™n c?u {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
@@ -135,13 +135,13 @@ namespace ConfRadar.Services.Services
 
             if (paper.PaperPhaseId != paperPhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper hi?n t?i khÙng dang trong qu· trÏnh g?i abstract");
+                throw new BadRequestException($"Paper hi?n t?i kh√¥ng dang trong qu√° tr√¨nh g?i abstract");
             }
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
 
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
 
             var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
@@ -151,7 +151,7 @@ namespace ConfRadar.Services.Services
                 {
                     if (coauthorId == userId)
                     {
-                        throw new BadRequestException("B?n khÙng th? thÍm chÌnh mÏnh l‡m co-author.");
+                        throw new BadRequestException("B?n kh√¥ng th? th√™m ch√≠nh m√¨nh l√†m co-author.");
                     }
 
                     bool isCoauthorReviewerInPaperReviewer = submitterReviewContracts.Any(pr => pr.UserId == coauthorId);
@@ -160,12 +160,12 @@ namespace ConfRadar.Services.Services
                     {
                         if (reviewerContractFound.IsActive == true)
                         {
-                            throw new BadRequestException($"Co author v?i id {coauthorId} hi?n dang cÛ h?p d?ng review");
+                            throw new BadRequestException($"Co author v?i id {coauthorId} hi?n dang c√≥ h?p d?ng review");
                         }
                     }
                     if (isCoauthorReviewerInPaperReviewer == true)
                     {
-                        throw new BadRequestException($"Ngu?i d˘ng {coauthorId} dang l‡ reviewer c?a b‡i b·o n‡y, khÙng th? thÍm l‡m co-author.");
+                        throw new BadRequestException($"Ngu?i d√πng {coauthorId} dang l√† reviewer c?a b√†i b√°o n√†y, kh√¥ng th? th√™m l√†m co-author.");
                     }
                 }
             }
@@ -173,7 +173,7 @@ namespace ConfRadar.Services.Services
 
             if (paper.AbstractId != null)
             {
-                throw new BadRequestException("Paper n‡y d„ cÛ abstract du?c n?p r?i");
+                throw new BadRequestException("Paper n√†y d√£ c√≥ abstract du?c n?p r?i");
             }
             string abstractFileUrl = string.Empty;
             if (request.AbstractFile != null)
@@ -243,7 +243,7 @@ namespace ConfRadar.Services.Services
         {
             if (request.GlobalStatus.Equals(GlobalStatusEnum.Pending))
             {
-                throw new BadRequestException($"KhÙng th? truy?n tr?ng th·i pending cho abstract");
+                throw new BadRequestException($"Kh√¥ng th? truy?n tr?ng th√°i pending cho abstract");
             }
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
@@ -254,35 +254,35 @@ namespace ConfRadar.Services.Services
 
             if (abstractPaperPhase == null || pendingGlobalStatus == null || rejectedGlobalStatus == null || acceptedGlobalStatus == null || fullPaperPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (basePaper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y paper v?i id {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y paper v?i id {request.PaperId} trong h? th?ng");
             }
             var activeCurrentPhase = basePaper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {basePaper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {basePaper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
             {
-                throw new BadRequestException($"Ph?i trong kho?ng Registration Date d? cÛ th? c?p nh?t tr?ng th·i abstract n‡y: trong registation start {activeCurrentPhase.RegistrationStartDate.ToString()} v‡ registration end {activeCurrentPhase.RegistrationEndDate.ToString()}");
+                throw new BadRequestException($"Ph?i trong kho?ng Registration Date d? c√≥ th? c?p nh?t tr?ng th√°i abstract n√†y: trong registation start {activeCurrentPhase.RegistrationStartDate.ToString()} v√† registration end {activeCurrentPhase.RegistrationEndDate.ToString()}");
             }
             if (basePaper.PaperPhaseId != abstractPaperPhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper hi?n t?i khÙng dang trong qu· trÏnh quy?t d?nh abstract");
+                throw new BadRequestException($"Paper hi?n t?i kh√¥ng dang trong qu√° tr√¨nh quy?t d?nh abstract");
             }
             var abstractPaper = await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(request.AbstractId);
             if (abstractPaper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y abstract paper v?i id {request.AbstractId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y abstract paper v?i id {request.AbstractId} trong h? th?ng");
             }
             if (abstractPaper.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
-                throw new BadRequestException($"Abstract hi?n t?i khÙng dang trong tr?ng th·i pending, vui lÚng th? l?i sau");
+                throw new BadRequestException($"Abstract hi?n t?i kh√¥ng dang trong tr?ng th√°i pending, vui l√≤ng th? l?i sau");
             }
             int result = 0;
             await _unitOfWork.BeginTransactionAsync();
@@ -299,13 +299,18 @@ namespace ConfRadar.Services.Services
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
                         var rootAuthor = basePaper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
-                        var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, basePaper.ConferenceId!);
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Abstract b?n d„ b? t? ch?i");
+                        var ticketList = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, basePaper.ConferenceId!);
+                        var validTicket = ticketList.FirstOrDefault(t => t.IsRefunded == false);
+                        if (validTicket == null)
+                        {
+                            throw new BadRequestException("Kh√¥ng t√¨m th·∫•y v√© ho·∫∑c v√© ƒë√£ b·ªã refund");
+                        }
+                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket.TicketId, "Abstract c·ªßa b·∫°n ƒë√£ b·ªã t·ª´ ch·ªëi");
 
 
                         break;
                     default:
-                        throw new BadRequestException("Tr?ng th·i khÙng kh? d?ng");
+                        throw new BadRequestException("Tr?ng th√°i kh√¥ng kh? d?ng");
                 }
                 result += await _unitOfWork.AbstractRepository.UpdateAbstractAsync(abstractPaper);
                 result += await _unitOfWork.PaperRepository.UpdatePaperAsync(basePaper);
@@ -323,13 +328,13 @@ namespace ConfRadar.Services.Services
 
         //public async Task<int> SubmitFullPaper(CreateFullPaperRequest request, string userId)
         //{
-        //    if (request.PaperId == null) throw new Exception("C?n cÛ paperid d? n?p fullpaper");
+        //    if (request.PaperId == null) throw new Exception("C?n c√≥ paperid d? n?p fullpaper");
         //    var PaperBase = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
-        //    if (PaperBase == null) throw new Exception($"KhÙng tÏm th?y paper v?i id{request.PaperId}");
+        //    if (PaperBase == null) throw new Exception($"Kh√¥ng t√¨m th?y paper v?i id{request.PaperId}");
         //    string fullPaperURL = string.Empty;
         //    if(request.FullPaperFile != null)
         //    {
-        //        if (request.FullPaperFile.ContentType == null) throw new Exception("KhÙng cÛ d? li?u file d?u v‡o d? n?p");
+        //        if (request.FullPaperFile.ContentType == null) throw new Exception("Kh√¥ng c√≥ d? li?u file d?u v√†o d? n?p");
         //        using var stream = request.FullPaperFile.OpenReadStream();
         //        var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.FullPaperFile.FileName);
         //        fullPaperURL = _objectStorageSettings.Value.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.fullpaperfile.ToString(),uniqueFileName,stream,request.FullPaperFile.ContentType);
@@ -356,17 +361,17 @@ namespace ConfRadar.Services.Services
             var currentFullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.FullPaper.GetDescription());
             if (pendingReviewStatus == null || currentFullPaperPhase == null)
             {
-                throw new NotFoundException($"KhÙng th? tÏm th?y c·c tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng th? t√¨m th?y c√°c tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new BadRequestException($"KhÙng th? tÏm th?y paper id: {request.PaperId} cho user {userId} hi?n t?i");
+                throw new BadRequestException($"Kh√¥ng th? t√¨m th?y paper id: {request.PaperId} cho user {userId} hi?n t?i");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.FullPaperStartDate || dateNow > activeCurrentPhase.FullPaperEndDate)
@@ -375,16 +380,16 @@ namespace ConfRadar.Services.Services
             }
             if (paper.PaperPhaseId != currentFullPaperPhase.PaperPhaseId)
             {
-                throw new BadRequestException($"KhÙng th? g?i full paper vÏ paper dang khÙng trong tr?ng th·i full paper");
+                throw new BadRequestException($"Kh√¥ng th? g?i full paper v√¨ paper dang kh√¥ng trong tr?ng th√°i full paper");
             }
             if (paper.FullPaperId != null)
             {
-                throw new BadRequestException($"Full paper file d„ cÛ trong h? th?ng");
+                throw new BadRequestException($"Full paper file d√£ c√≥ trong h? th?ng");
             }
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
 
             string fullPaperFileUrl = string.Empty;
@@ -433,7 +438,7 @@ namespace ConfRadar.Services.Services
         {
             if (request.ReviewStatus == ReviewStatusEnum.Pending)
             {
-                throw new BadRequestException("KhÙng th? chuy?n tr?ng th·i full paper status Pending.");
+                throw new BadRequestException("Kh√¥ng th? chuy?n tr?ng th√°i full paper status Pending.");
             }
             var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
             var rejectedReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Rejected.GetDescription());
@@ -449,45 +454,45 @@ namespace ConfRadar.Services.Services
 
             if (pendingReviewStatus == null || rejectedReviewStatus == null || acceptedReviewStatus == null || reviseStatus == null || currentFullPaperPhase == null || cameraReadyPhase == null || revisePhase == null || pendingGlobal == null)
             {
-                throw new NotFoundException($"KhÙng th? tÏm th?y c·c tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng th? t√¨m th?y c√°c tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new BadRequestException($"KhÙng tÏm th?y paper v?i id {request.PaperId}.");
+                throw new BadRequestException($"Kh√¥ng t√¨m th?y paper v?i id {request.PaperId}.");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviewStartDate || dateNow > activeCurrentPhase.ReviewEndDate)
             {
-                throw new BadRequestException($"Giai do?n review cho b‡i b·o n‡y di?n ra t? {activeCurrentPhase.ReviewStartDate} d?n {activeCurrentPhase.ReviewEndDate}");
+                throw new BadRequestException($"Giai do?n review cho b√†i b√°o n√†y di?n ra t? {activeCurrentPhase.ReviewStartDate} d?n {activeCurrentPhase.ReviewEndDate}");
             }
             var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(request.FullPaperId);
             if (fullPaper == null)
             {
-                throw new BadRequestException($"Full paper v?i id {request.FullPaperId} khÙng tÏm th?y");
+                throw new BadRequestException($"Full paper v?i id {request.FullPaperId} kh√¥ng t√¨m th?y");
             }
             if (fullPaper.ReviewStatusId != pendingReviewStatus.ReviewStatusId)
             {
-                throw new BadRequestException($"Full paper v?i id ph?i l‡ tr?ng th·i (Pending) d? du?c c?p nh?t");
+                throw new BadRequestException($"Full paper v?i id ph?i l√† tr?ng th√°i (Pending) d? du?c c?p nh?t");
             }
             if (paper.PaperPhaseId != currentFullPaperPhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper ph?i dang trong full paper phase d? cÛ th? c?p nh?t tr?ng th·i");
+                throw new BadRequestException($"Paper ph?i dang trong full paper phase d? c√≥ th? c?p nh?t tr?ng th√°i");
             }
             var paperReviewerList = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
             if (paperReviewerList == null || paperReviewerList.Count <= 0)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y c·c danh s·ch g·n reviewer cho b‡i b·o n‡y");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y c√°c danh s√°ch g√°n reviewer cho b√†i b√°o n√†y");
             }
             var headPaperReviewer = paperReviewerList.FirstOrDefault(x => x.IsHeadReviewer == true && x.UserId == userId);
             if (headPaperReviewer == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y b?n l‡ head reviewer trong danh s·ch g·n reviewer.");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y b?n l√† head reviewer trong danh s√°ch g√°n reviewer.");
             }
             int result = 0;
             await _unitOfWork.BeginTransactionAsync();
@@ -508,8 +513,13 @@ namespace ConfRadar.Services.Services
                         fullPaper.ReviewStatusId = rejectedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
                         var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
-                        var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Full paper b?n d„ b? t? ch?i");
+                        var ticketList = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
+                        var validTicket = ticketList.FirstOrDefault(t => t.IsRefunded == false);
+                        if (validTicket == null)
+                        {
+                            throw new BadRequestException("Kh√¥ng t√¨m th·∫•y v√© ho·∫∑c v√© ƒë√£ b·ªã refund");
+                        }
+                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket.TicketId, "Full paper c·ªßa b·∫°n ƒë√£ b·ªã t·ª´ ch·ªëi");
                         break;
                     case ReviewStatusEnum.Revise:
 
@@ -522,7 +532,7 @@ namespace ConfRadar.Services.Services
 
                         break;
                     default:
-                        throw new BadRequestException("Tr?ng th·i khÙng kh? d?ng");
+                        throw new BadRequestException("Tr?ng th√°i kh√¥ng kh? d?ng");
                 }
                 result += await _unitOfWork.FullPaperRepository.UpdateFullPaperAsync(fullPaper);
                 result += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
@@ -547,17 +557,17 @@ namespace ConfRadar.Services.Services
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (currentRevisePhase == null || pendingGlobalStatus == null)
             {
-                throw new NotFoundException($"KhÙng th? tÏm th?y tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng th? t√¨m th?y tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new BadRequestException($"Paper id {request.PaperId} khÙng tÏm th?y trong h? th?ng");
+                throw new BadRequestException($"Paper id {request.PaperId} kh√¥ng t√¨m th?y trong h? th?ng");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
@@ -566,28 +576,28 @@ namespace ConfRadar.Services.Services
             }
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper ph?i trong tr?ng th·i revise d? th?c hi?n g?i file");
+                throw new BadRequestException($"Paper ph?i trong tr?ng th√°i revise d? th?c hi?n g?i file");
             }
 
 
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
 
             string revisionDeadlineId = string.Empty;
             var researchConferencePhasesFound = paper.ResearchConferencePhase;
             if (researchConferencePhasesFound == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y c·c giai do?n trong h?i ngh? nghiÍn c?u");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y c√°c giai do?n trong h?i ngh? nghi√™n c?u");
             }
             var researchConferenceDeadLine = researchConferencePhasesFound.RevisionRoundDeadlines;
 
             var validRevisionDeadline = researchConferenceDeadLine.FirstOrDefault(rcd => rcd.StartSubmissionDate <= dateNow && dateNow <= rcd.EndSubmissionDate);
             if (validRevisionDeadline == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y c·c deadline h?p l?");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y c√°c deadline h?p l?");
             }
             revisionDeadlineId = validRevisionDeadline.RevisionRoundDeadlineId;
             await _unitOfWork.BeginTransactionAsync();
@@ -614,7 +624,7 @@ namespace ConfRadar.Services.Services
                     revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
                     if (revisionPaper == null)
                     {
-                        throw new BadRequestException($"Revision paper id {paper.RevisionPaperId} khÙng tÏm th?y trong h? th?ng");
+                        throw new BadRequestException($"Revision paper id {paper.RevisionPaperId} kh√¥ng t√¨m th?y trong h? th?ng");
                     }
                     //revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
                     if (!string.IsNullOrEmpty(revisionDeadlineId))
@@ -622,7 +632,7 @@ namespace ConfRadar.Services.Services
                         var revisionPaperSubmissionFound = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByRevisionPaperIdAndDeadlineId(paper.RevisionPaperId, revisionDeadlineId);
                         if (revisionPaperSubmissionFound != null)
                         {
-                            throw new BadRequestException($"B?n d„ n?p revision, deadline di?n ra t? {revisionPaperSubmissionFound.RevisionDeadlineRound?.StartSubmissionDate} d?n {revisionPaperSubmissionFound.RevisionDeadlineRound?.EndSubmissionDate} n‡y ");
+                            throw new BadRequestException($"B?n d√£ n?p revision, deadline di?n ra t? {revisionPaperSubmissionFound.RevisionDeadlineRound?.StartSubmissionDate} d?n {revisionPaperSubmissionFound.RevisionDeadlineRound?.EndSubmissionDate} n√†y ");
                         }
                     }
                     revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
@@ -630,7 +640,7 @@ namespace ConfRadar.Services.Services
                 var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
                 if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
                 {
-                    throw new BadRequestException($"KhÙng th? n?p thÍm paper submission vÏ d„ qu· {totalRevisionRoundAllowed} l?n, vui lÚng ch? ph·n quy?t t? head reviewer!");
+                    throw new BadRequestException($"Kh√¥ng th? n?p th√™m paper submission v√¨ d√£ qu√° {totalRevisionRoundAllowed} l?n, vui l√≤ng ch? ph√°n quy?t t? head reviewer!");
                 }
 
                 string? revisionFileUrl = null;
@@ -638,7 +648,7 @@ namespace ConfRadar.Services.Services
                 {
                     if (request.RevisionPaperFile.ContentType == null)
                     {
-                        throw new BadRequestException("Content type khÙng h?p l?");
+                        throw new BadRequestException("Content type kh√¥ng h?p l?");
                     }
                     using var stream = request.RevisionPaperFile.OpenReadStream();
                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.RevisionPaperFile.FileName);
@@ -675,13 +685,13 @@ namespace ConfRadar.Services.Services
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y paper  id {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y paper  id {request.PaperId} trong h? th?ng");
 
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
@@ -691,25 +701,25 @@ namespace ConfRadar.Services.Services
             var revisionPaperSubmission = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(request.RevisionPaperSubmissionId);
             if (revisionPaperSubmission == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper submission id {request.RevisionPaperSubmissionId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper submission id {request.RevisionPaperSubmissionId} trong h? th?ng");
             }
             var revisionPaperSubmissionDeadLine = revisionPaperSubmission.RevisionDeadlineRound;
             if (revisionPaperSubmissionDeadLine == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper deadline trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper deadline trong h? th?ng");
             }
             if (dateNow < revisionPaperSubmissionDeadLine.StartSubmissionDate || dateNow > revisionPaperSubmissionDeadLine.EndSubmissionDate)
             {
-                throw new BadRequestException($"Deadline cho l?n tuong t·c qua l?i n?m trong kho?ng {revisionPaperSubmissionDeadLine.StartSubmissionDate} d?n {revisionPaperSubmissionDeadLine.EndSubmissionDate} ");
+                throw new BadRequestException($"Deadline cho l?n tuong t√°c qua l?i n?m trong kho?ng {revisionPaperSubmissionDeadLine.StartSubmissionDate} d?n {revisionPaperSubmissionDeadLine.EndSubmissionDate} ");
             }
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
             if (paperReviewer == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y user v?i id {userId} trong h? th?ng assign cho b‡i b·o {request.PaperId}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y user v?i id {userId} trong h? th?ng assign cho b√†i b√°o {request.PaperId}");
             }
             if (paperReviewer.IsHeadReviewer == false)
             {
-                throw new NotFoundException($"Ch?c nang n‡y ch? d‡nh cho head reviewer.");
+                throw new NotFoundException($"Ch?c nang n√†y ch? d√†nh cho head reviewer.");
 
             }
             var feedBackList = new List<RevisionSubmissionFeedback>();
@@ -734,18 +744,18 @@ namespace ConfRadar.Services.Services
         {
             if (request.Responses == null || !request.Responses.Any())
             {
-                throw new BadRequestException("Responses khÙng du?c d? tr?ng.");
+                throw new BadRequestException("Responses kh√¥ng du?c d? tr?ng.");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y paper  id {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y paper  id {request.PaperId} trong h? th?ng");
 
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
@@ -755,23 +765,23 @@ namespace ConfRadar.Services.Services
             var revisionPaperSubmission = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(request.RevisionPaperSubmissionId);
             if (revisionPaperSubmission == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper submission id {request.RevisionPaperSubmissionId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper submission id {request.RevisionPaperSubmissionId} trong h? th?ng");
             }
             var revisionPaperSubmissionDeadLine = revisionPaperSubmission.RevisionDeadlineRound;
             if (revisionPaperSubmissionDeadLine == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper deadline trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper deadline trong h? th?ng");
             }
             if (dateNow < revisionPaperSubmissionDeadLine.StartSubmissionDate || dateNow > revisionPaperSubmissionDeadLine.EndSubmissionDate)
             {
-                throw new BadRequestException($"Deadline cho l?n tuong t·c qua l?i n?m trong kho?ng {revisionPaperSubmissionDeadLine.StartSubmissionDate} d?n {revisionPaperSubmissionDeadLine.EndSubmissionDate} ");
+                throw new BadRequestException($"Deadline cho l?n tuong t√°c qua l?i n?m trong kho?ng {revisionPaperSubmissionDeadLine.StartSubmissionDate} d?n {revisionPaperSubmissionDeadLine.EndSubmissionDate} ");
             }
 
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
 
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
             var feedBackList = new List<RevisionSubmissionFeedback>();
             foreach (var response in request.Responses)
@@ -779,7 +789,7 @@ namespace ConfRadar.Services.Services
                 var revisionSubmissionFeedback = await _unitOfWork.RevisionSubmissionFeedbackRepository.GetFeedbackByIdAsync(response.RevisionSubmissionFeedbackId);
                 if (revisionSubmissionFeedback == null)
                 {
-                    throw new NotFoundException($"KhÙng tÏm th?y paper  id {response.RevisionSubmissionFeedbackId} trong h? th?ng");
+                    throw new NotFoundException($"Kh√¥ng t√¨m th?y paper  id {response.RevisionSubmissionFeedbackId} trong h? th?ng");
                 }
                 revisionSubmissionFeedback.Response = response.Response;
                 feedBackList.Add(revisionSubmissionFeedback);
@@ -791,7 +801,7 @@ namespace ConfRadar.Services.Services
         {
             if (request.GlobalStatus == GlobalStatusEnum.Pending)
             {
-                throw new BadRequestException($"KhÙng th? chuy?n tr?ng th·i pending");
+                throw new BadRequestException($"Kh√¥ng th? chuy?n tr?ng th√°i pending");
             }
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
@@ -801,18 +811,18 @@ namespace ConfRadar.Services.Services
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
             if (acceptedGlobalStatus == null || currentRevisePhase == null || pendingGlobalStatus == null || rejectGlobalStautus == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y tr?ng th√°i tuong ?ng trong h? th?ng");
             }
 
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y paper  id {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y paper  id {request.PaperId} trong h? th?ng");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
@@ -823,7 +833,7 @@ namespace ConfRadar.Services.Services
 
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {
-                throw new BadRequestException($"KhÙng th? g?i review vÏ paper dang khÙng trong tr?ng th·i revise");
+                throw new BadRequestException($"Kh√¥ng th? g?i review v√¨ paper dang kh√¥ng trong tr?ng th√°i revise");
             }
             bool isReviewerValid = false;
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
@@ -842,20 +852,20 @@ namespace ConfRadar.Services.Services
             }
             if (isReviewerValid == false)
             {
-                throw new BadRequestException($"B?n hi?n t?i khÙng tÏm th?y trong danh s·ch g·n reviewer ho?c cÛ b?t c? h?p d?ng n‡o v?i h?i ngh? v?i m„ {paper.ConferenceId}");
+                throw new BadRequestException($"B?n hi?n t?i kh√¥ng t√¨m th?y trong danh s√°ch g√°n reviewer ho?c c√≥ b?t c? h?p d?ng n√†o v?i h?i ngh? v?i m√£ {paper.ConferenceId}");
             }
             var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
             if (revisionPaper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper {request.RevisionPaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper {request.RevisionPaperId} trong h? th?ng");
             }
             if (paper.RevisionPaperId != request.RevisionPaperId)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper {request.RevisionPaperId} tuong ?ng v?i paper trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper {request.RevisionPaperId} tuong ?ng v?i paper trong h? th?ng");
             }
             if (revisionPaper.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
-                throw new BadRequestException($"Revision n‡y dang khÙng trong tr?ng th·i Pending nÍn khÙng th? g?i revision review");
+                throw new BadRequestException($"Revision n√†y dang kh√¥ng trong tr?ng th√°i Pending n√™n kh√¥ng th? g?i revision review");
             }
             string revisionReviewUrl = string.Empty;
             if (request.FeedbackMaterialFile != null)
@@ -900,21 +910,21 @@ namespace ConfRadar.Services.Services
             var cameraReadyPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
             if (request.GlobalStatus == GlobalStatusEnum.Pending)
             {
-                throw new BadRequestException("KhÙng th? chuy?n tr?ng th·i pending cho giai do?n revise");
+                throw new BadRequestException("Kh√¥ng th? chuy?n tr?ng th√°i pending cho giai do?n revise");
             }
             if (currentRevisePhase == null || pendingGlobalStatus == null || acceptedGlobalStatus == null || cameraReadyPaperPhase == null || rejectGlobalStautus == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y c·c tr?ng th·i trong h? th?ng");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y c√°c tr?ng th√°i trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  paper {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  paper {request.PaperId} trong h? th?ng");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
@@ -923,26 +933,26 @@ namespace ConfRadar.Services.Services
             }
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper dang khÙng ? trong tr?ng th·i revise");
+                throw new BadRequestException($"Paper dang kh√¥ng ? trong tr?ng th√°i revise");
             }
-            //d˘ng h‡m get
+            //d√πng h√†m get
             var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
             if (revisionPaper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  revision paper {request.RevisionPaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  revision paper {request.RevisionPaperId} trong h? th?ng");
             }
             if (paper.RevisionPaperId != request.RevisionPaperId)
             {
-                throw new NotFoundException($"Paper {request.PaperId} khÙng thu?c revision paper {request.RevisionPaperId}");
+                throw new NotFoundException($"Paper {request.PaperId} kh√¥ng thu?c revision paper {request.RevisionPaperId}");
             }
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
             if (paperReviewer == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n h?n d? quy?t d?nh b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n h?n d? quy?t d?nh b√†i b√°o n√†y");
             }
             if (paperReviewer.IsHeadReviewer == false)
             {
-                throw new BadRequestException($"B?n khÙng ph?i l‡ head reviewer d? quy?t d?nh status c?a b‡i b·o n‡y");
+                throw new BadRequestException($"B?n kh√¥ng ph?i l√† head reviewer d? quy?t d?nh status c?a b√†i b√°o n√†y");
             }
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -961,14 +971,19 @@ namespace ConfRadar.Services.Services
                         revisionPaper.GlobalStatusId = rejectGlobalStautus.GlobalStatusId;
                         revisionPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
                         var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
-                        var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Revise paper c?a b?n d„ b? t? ch?i");
+                        var ticketList = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
+                        var validTicket = ticketList.FirstOrDefault(t => t.IsRefunded == false);
+                        if (validTicket == null)
+                        {
+                            throw new BadRequestException("Kh√¥ng t√¨m th·∫•y v√© ho·∫∑c v√© ƒë√£ b·ªã refund");
+                        }
+                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket.TicketId, "Revise paper c·ªßa b·∫°n ƒë√£ b·ªã t·ª´ ch·ªëi");
                         break;
 
                     default:
-                        throw new BadRequestException("Tr?ng th·i khÙng kh? d?ng");
+                        throw new BadRequestException("Tr?ng th√°i kh√¥ng kh? d?ng");
                 }
-                //call h‡m update
+                //call h√†m update
                 result += await _unitOfWork.RevisionPaperRepository.UpdateRevisionPaperAsync(revisionPaper);
                 result += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
 
@@ -987,21 +1002,21 @@ namespace ConfRadar.Services.Services
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  paper {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  paper {request.PaperId} trong h? th?ng");
             }
 
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
             if (paperReviewer == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n h?n d? truy c?p b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n h?n d? truy c?p b√†i b√°o n√†y");
             }
             if (paper.RevisionPaperId != request.RevisionPaperId)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper id {request.RevisionPaperId} trong paper {request.PaperId}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper id {request.RevisionPaperId} trong paper {request.PaperId}");
             }
             if (paperReviewer.IsHeadReviewer == false)
             {
-                throw new NotFoundException($"B?n khÙng ph?i l‡ head reviewer d? xem danh s·ch n‡y");
+                throw new NotFoundException($"B?n kh√¥ng ph?i l√† head reviewer d? xem danh s√°ch n√†y");
             }
             var listRevisionPaperReview = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperIdAsync(request.RevisionPaperId);
             var listRevisionPaperReviewResponse = listRevisionPaperReview.Select(x => new RevisionPaperReviewResponse
@@ -1027,12 +1042,12 @@ namespace ConfRadar.Services.Services
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new BadRequestException($"B‡i b·o v?i id {request.PaperId} khÙng t?n t?i.");
+                throw new BadRequestException($"B√†i b√°o v?i id {request.PaperId} kh√¥ng t?n t?i.");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.CameraReadyStartDate || dateNow > activeCurrentPhase.CameraReadyEndDate)
@@ -1043,7 +1058,7 @@ namespace ConfRadar.Services.Services
             // Check if paper already has a camera ready
             if (!string.IsNullOrEmpty(paper.CameraReadyId))
             {
-                throw new BadRequestException($"b‡i b·o v?i m„ {request.PaperId} d„ cÛ camera ready n?p s?n r?i.");
+                throw new BadRequestException($"b√†i b√°o v?i m√£ {request.PaperId} d√£ c√≥ camera ready n?p s?n r?i.");
             }
 
             // Validate that the user is the presenter of the paper
@@ -1059,7 +1074,7 @@ namespace ConfRadar.Services.Services
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
 
 
@@ -1184,12 +1199,12 @@ namespace ConfRadar.Services.Services
             var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paper.PaperId);
             if (paperAuthors == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y b?t c? paper author n‡o");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y b?t c? paper author n√†o");
             }
             var paperOwnerShip = paperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (paperOwnerShip == null)
             {
-                throw new BadRequestException("B?n khÙng s? h?u b‡i b·o n‡y");
+                throw new BadRequestException("B?n kh√¥ng s? h?u b√†i b√°o n√†y");
 
             }
 
@@ -1224,11 +1239,11 @@ namespace ConfRadar.Services.Services
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
             if (user == null)
             {
-                throw new BadRequestException($"user v?i ID {userId} khÙng t?n t?i.");
+                throw new BadRequestException($"user v?i ID {userId} kh√¥ng t?n t?i.");
             }
             if (request.reviewStatus == ReviewStatusEnum.Pending)
             {
-                throw new BadRequestException("KhÙng th? th‡nh pending cho. Ch? cÛ th? accept ho?c reject");
+                throw new BadRequestException("Kh√¥ng th? th√†nh pending cho. Ch? c√≥ th? accept ho?c reject");
             }
 
             //// Check if user is a reviewer (either Local Reviewer or External Reviewer)
@@ -1252,14 +1267,14 @@ namespace ConfRadar.Services.Services
             var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(request.FullPaperId);
             if (fullPaper == null)
             {
-                throw new BadRequestException($"Full paper v?i id {request.FullPaperId} khÙng t?n t?i.");
+                throw new BadRequestException($"Full paper v?i id {request.FullPaperId} kh√¥ng t?n t?i.");
             }
 
             // Validate that the user is assigned as a reviewer to this paper
             var paper = await _unitOfWork.PaperRepository.GetPaperByFullPaperIdAsync(request.FullPaperId);
             if (paper == null)
             {
-                throw new BadRequestException($"B‡i b·o v?i full paper ID {request.FullPaperId} khÙng t?n t?i.");
+                throw new BadRequestException($"B√†i b√°o v?i full paper ID {request.FullPaperId} kh√¥ng t?n t?i.");
             }
 
             bool isReviewerValid = false;
@@ -1279,7 +1294,7 @@ namespace ConfRadar.Services.Services
             }
             if (isReviewerValid == false)
             {
-                throw new BadRequestException($"B?n hi?n t?i khÙng tÏm th?y trong danh s·ch g·n reviewer ho?c cÛ b?t c? h?p d?ng n‡o v?i h?i ngh? v?i m„ {paper.ConferenceId}");
+                throw new BadRequestException($"B?n hi?n t?i kh√¥ng t√¨m th?y trong danh s√°ch g√°n reviewer ho?c c√≥ b?t c? h?p d?ng n√†o v?i h?i ngh? v?i m√£ {paper.ConferenceId}");
             }
 
 
@@ -1297,12 +1312,12 @@ namespace ConfRadar.Services.Services
             var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
             if (pendingReviewStatus == null)
             {
-                throw new BadRequestException("Tr?n th·i pending khÙng t?n t?i trong h? th?ng");
+                throw new BadRequestException("Tr?n th√°i pending kh√¥ng t?n t?i trong h? th?ng");
             }
 
             if (fullPaper.ReviewStatusId != pendingReviewStatus.ReviewStatusId)
             {
-                throw new BadRequestException("Full paper ph?i trong tr?ng th·i pending d? g?i fullpaper review.");
+                throw new BadRequestException("Full paper ph?i trong tr?ng th√°i pending d? g?i fullpaper review.");
             }
 
             // Upload feedback material file if provided
@@ -1448,37 +1463,37 @@ namespace ConfRadar.Services.Services
             var cameraReady = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(request.CameraReadyId);
             if (cameraReady == null)
             {
-                throw new BadRequestException($"Camera ready v?i ID {request.CameraReadyId} khÙng t?n t?i.");
+                throw new BadRequestException($"Camera ready v?i ID {request.CameraReadyId} kh√¥ng t?n t?i.");
             }
 
             // Validate that the camera ready is in "Pending" status
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (pendingGlobalStatus == null)
             {
-                throw new BadRequestException("Giai do?n pending khÙng t?n t?i trong h? th?ng");
+                throw new BadRequestException("Giai do?n pending kh√¥ng t?n t?i trong h? th?ng");
             }
 
             if (cameraReady.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
-                throw new BadRequestException("Camera ready ph?i trong tr?ng th·i pending d? c?p nh?t status");
+                throw new BadRequestException("Camera ready ph?i trong tr?ng th√°i pending d? c?p nh?t status");
             }
 
             // Validate that the user is a head reviewer for the paper associated with this camera ready
             var paper = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(request.CameraReadyId);
             if (paper == null)
             {
-                throw new BadRequestException($"b‡i b·o v?i camera id {request.CameraReadyId} khÙng t?n t?i ho?c khÙng liÍn k?t v?i nhau.");
+                throw new BadRequestException($"b√†i b√°o v?i camera id {request.CameraReadyId} kh√¥ng t?n t?i ho?c kh√¥ng li√™n k?t v?i nhau.");
             }
             var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
 
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paper.PaperId);
             if (paperReviewer == null)
             {
-                throw new BadRequestException("B?n khÙng cÛ quy?n trong b‡i b·o n‡y");
+                throw new BadRequestException("B?n kh√¥ng c√≥ quy?n trong b√†i b√°o n√†y");
             }
             if (paperReviewer.IsHeadReviewer != true)
             {
-                throw new BadRequestException("Ch? head reviewer m?i cÛ th? quy?t d?nh b‡i b·o");
+                throw new BadRequestException("Ch? head reviewer m?i c√≥ th? quy?t d?nh b√†i b√°o");
             }
             // Update the camera ready status based on the request
             GlobalStatus? newGlobalStatus = null;
@@ -1490,8 +1505,13 @@ namespace ConfRadar.Services.Services
                 case GlobalStatusEnum.Rejected:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
                     var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
-                    var ticket = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, basePaper.ConferenceId!);
-                    await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, ticket.TicketId, "Camera ready paper c?a b?n d„ b? t? ch?i");
+                    var ticketList = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(rootAuthor!.UserId, paper.ConferenceId!);
+                    var validTicket = ticketList.FirstOrDefault(t => t.IsRefunded == false);
+                    if (validTicket == null)
+                    {
+                        throw new BadRequestException("Kh√¥ng t√¨m th·∫•y v√© ho·∫∑c v√© ƒë√£ b·ªã refund");
+                    }
+                    await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket.TicketId, "Camera ready paper c·ªßa b·∫°n ƒë√£ b·ªã t·ª´ ch·ªëi");
                     break;
                 case GlobalStatusEnum.Pending:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
@@ -1547,11 +1567,11 @@ namespace ConfRadar.Services.Services
 
             if (paper == null)
             {
-                throw new KeyNotFoundException($"KhÙng tÏm th?y paper v?i id {paperId}");
+                throw new KeyNotFoundException($"Kh√¥ng t√¨m th?y paper v?i id {paperId}");
             }
 
             var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByPaperId(paper.PaperId);
-            if (researchConferencePhase == null) throw new BadRequestException("Paper n‡y chua thu?c v? researchPhase n‡o");
+            if (researchConferencePhase == null) throw new BadRequestException("Paper n√†y chua thu?c v? researchPhase n√†o");
             var roundDeadline = await _unitOfWork.ResearchConferencePhaseRepository.GetRevisionRoundDeadlinesByPhaseIdAsync(researchConferencePhase.ResearchConferencePhaseId);
 
             //get all authors
@@ -1734,7 +1754,7 @@ namespace ConfRadar.Services.Services
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (pendingGlobalStatus == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y tr?ng th·i trong h? th?ng");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y tr?ng th√°i trong h? th?ng");
             }
             var listAbstract = await _unitOfWork.AbstractRepository.GetAllPendingAbstractsAsync(pendingGlobalStatus.GlobalStatusId);
             if (!string.IsNullOrEmpty(confId)) listAbstract = listAbstract.Where(abs => abs.ConferenceId == confId).ToList();
@@ -1988,12 +2008,12 @@ namespace ConfRadar.Services.Services
 
         }
 
-        public async Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
+        public async Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
         {
             var paperReviewerCheck = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paperId);
             if (paperReviewerCheck == null)
             {
-                throw new BadRequestException("B?n khÙng cÛ quy?n h?n d? xem paper n‡y");
+                throw new BadRequestException("B?n kh√¥ng c√≥ quy?n h?n d? xem paper n√†y");
 
             }
             var result = await _unitOfWork.PaperRepository.GetPaperDetailForReviewer(paperId, userId);
@@ -2010,12 +2030,12 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null)
             {
-                throw new BadRequestException($"H?i ngh? v?i id {conferenceId} khÙng t?n t?i trong h? th?ng");
+                throw new BadRequestException($"H?i ngh? v?i id {conferenceId} kh√¥ng t?n t?i trong h? th?ng");
             }
             var waitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferenceId);
             if (waitListFound == null)
             {
-                throw new BadRequestException($"KhÙng t?n h‡ng d?i d? xÛa");
+                throw new BadRequestException($"Kh√¥ng t?n h√†ng d?i d? x√≥a");
             }
             var result = await _unitOfWork.PaperWaitListRepository.DeletePaperWaitListAsync(waitListFound);
 
@@ -2031,28 +2051,28 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null)
             {
-                throw new BadRequestException($"H?i ngh? v?i id {conferenceId} khÙng t?n t?i trong h? th?ng");
+                throw new BadRequestException($"H?i ngh? v?i id {conferenceId} kh√¥ng t?n t?i trong h? th?ng");
             }
             var conferencePhases = conference.ResearchConferencePhases;
             var firstPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true && cp.IsWaitlist == false);
             var waitListPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true && cp.IsWaitlist == true);
             if (firstPhase != null && waitListPhase != null)
             {
-                throw new BadRequestException("Hi?n t?i h?i ngh? dang ? trong 2 giai do?n b? tr˘ng nhau. Xin vui lÚng liÍn h? ban t? ch?c");
+                throw new BadRequestException("Hi?n t?i h?i ngh? dang ? trong 2 giai do?n b? tr√πng nhau. Xin vui l√≤ng li√™n h? ban t? ch?c");
             }
             if (firstPhase == null)
             {
-                throw new BadRequestException("B?n ch? cÛ th? vÙ h‡ng d?i trong khi ? giai do?n d?u");
+                throw new BadRequestException("B?n ch? c√≥ th? v√¥ h√†ng d?i trong khi ? giai do?n d?u");
             }
             var waitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferenceId);
             if (waitListFound != null)
             {
-                throw new BadRequestException($"B?n d„ ? trong h‡ng d?i r?i");
+                throw new BadRequestException($"B?n d√£ ? trong h√†ng d?i r?i");
             }
             var paperWaitListNotifiedStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Notified.GetDescription());
             if (paperWaitListNotifiedStatus == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y tr?ng th·i h‡ng d?i trong h? th?ng");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y tr?ng th√°i h√†ng d?i trong h? th?ng");
             }
             var waitListObj = new PaperWaitList()
             {
@@ -2079,41 +2099,41 @@ namespace ConfRadar.Services.Services
 
             if (paperPhase == null || pendingGlobalStatus == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y b‡i b·o v?i m„ {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y b√†i b√°o v?i m√£ {request.PaperId} trong h? th?ng");
             }
             if (paper.AbstractId == null)
             {
-                throw new NotFoundException($"B‡i b·o {paper.PaperId} chua cÛ abstract d? ch?nh s?a");
+                throw new NotFoundException($"B√†i b√°o {paper.PaperId} chua c√≥ abstract d? ch?nh s?a");
             }
             var abstractPaper = await _unitOfWork.AbstractRepository.GetAbstractByIdAsync(paper.AbstractId);
             if (abstractPaper!.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
-                throw new BadRequestException("Abstract hi?n khÙng ? tr?ng th·i 'Pending', nÍn khÙng th? ch?nh s?a.");
+                throw new BadRequestException("Abstract hi?n kh√¥ng ? tr?ng th√°i 'Pending', n√™n kh√¥ng th? ch?nh s?a.");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y c·c giai do?n cho h?i ngh? nghiÍn c?u {paper.Conference!.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y c√°c giai do?n cho h?i ngh? nghi√™n c?u {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
             {
-                throw new BadRequestException($"Giai do?n s?a abstract di?n ra t? {activeCurrentPhase.RegistrationStartDate} d?n {activeCurrentPhase.RegistrationEndDate} nÍn b?n khÙng th? ch?nh s?a");
+                throw new BadRequestException($"Giai do?n s?a abstract di?n ra t? {activeCurrentPhase.RegistrationStartDate} d?n {activeCurrentPhase.RegistrationEndDate} n√™n b?n kh√¥ng th? ch?nh s?a");
             }
 
             if (paper.PaperPhaseId != paperPhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper hi?n t?i khÙng dang trong qu· trÏnh s?a abstract");
+                throw new BadRequestException($"Paper hi?n t?i kh√¥ng dang trong qu√° tr√¨nh s?a abstract");
             }
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
             var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
             List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
@@ -2123,22 +2143,22 @@ namespace ConfRadar.Services.Services
                 {
                     if (coauthorId == userId)
                     {
-                        throw new BadRequestException("B?n khÙng th? thÍm chÌnh mÏnh l‡m co-author.");
+                        throw new BadRequestException("B?n kh√¥ng th? th√™m ch√≠nh m√¨nh l√†m co-author.");
                     }
-                    //check coauthor cÛ l‡ reviewer cho b‡i b·o n‡y
+                    //check coauthor c√≥ l√† reviewer cho b√†i b√°o n√†y
                     bool isCoauthorReviewerInPaperReviewer = submitterReviewContracts.Any(pr => pr.UserId == coauthorId);
                     if (isCoauthorReviewerInPaperReviewer == true)
                     {
-                        throw new BadRequestException($"Ngu?i d˘ng {coauthorId} dang l‡ reviewer c?a b‡i b·o n‡y, khÙng th? thÍm l‡m co-author.");
+                        throw new BadRequestException($"Ngu?i d√πng {coauthorId} dang l√† reviewer c?a b√†i b√°o n√†y, kh√¥ng th? th√™m l√†m co-author.");
                     }
 
-                    //check coauthor cÛ l‡ external reviewer cÛ contract vs h?i ngh? 
+                    //check coauthor c√≥ l√† external reviewer c√≥ contract vs h?i ngh? 
                     var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(coauthorId, paper.Conference!.ConferenceId);
                     if (reviewerContractFound != null)
                     {
                         if (reviewerContractFound.IsActive == true)
                         {
-                            throw new BadRequestException($"Co author v?i id {coauthorId} hi?n dang cÛ h?p d?ng reviewer");
+                            throw new BadRequestException($"Co author v?i id {coauthorId} hi?n dang c√≥ h?p d?ng reviewer");
                         }
                     }
                     var paperAuthorObj = new PaperAuthor()
@@ -2206,41 +2226,41 @@ namespace ConfRadar.Services.Services
 
             if (fullPaperPhase == null || pendingFullPaperReviewStatus == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y b‡i b·o v?i m„ {request.PaperId} trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y b√†i b√°o v?i m√£ {request.PaperId} trong h? th?ng");
             }
             if (paper.FullPaperId == null)
             {
-                throw new NotFoundException($"B‡i b·o {paper.PaperId} chua cÛ fullpaper d? ch?nh s?a");
+                throw new NotFoundException($"B√†i b√°o {paper.PaperId} chua c√≥ fullpaper d? ch?nh s?a");
             }
             var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId);
             if (fullPaper!.ReviewStatusId != pendingFullPaperReviewStatus.ReviewStatusId)
             {
-                throw new BadRequestException($"Full paper hi?n khÙng ? tr?ng th·i 'Pending', nÍn khÙng th? ch?nh s?a. Tr?ng th·i hi?n t?i l‡ {fullPaper.ReviewStatus?.Name}");
+                throw new BadRequestException($"Full paper hi?n kh√¥ng ? tr?ng th√°i 'Pending', n√™n kh√¥ng th? ch?nh s?a. Tr?ng th√°i hi?n t?i l√† {fullPaper.ReviewStatus?.Name}");
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y c·c giai do?n cho h?i ngh? nghiÍn c?u {paper.Conference!.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y c√°c giai do?n cho h?i ngh? nghi√™n c?u {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.FullPaperStartDate || dateNow > activeCurrentPhase.FullPaperEndDate)
             {
-                throw new BadRequestException($"Giai do?n s?a full paper di?n ra t? {activeCurrentPhase.FullPaperStartDate} d?n {activeCurrentPhase.FullPaperEndDate} nÍn b?n khÙng th? ch?nh s?a");
+                throw new BadRequestException($"Giai do?n s?a full paper di?n ra t? {activeCurrentPhase.FullPaperStartDate} d?n {activeCurrentPhase.FullPaperEndDate} n√™n b?n kh√¥ng th? ch?nh s?a");
             }
 
             if (paper.PaperPhaseId != fullPaperPhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper hi?n t?i khÙng dang trong qu· trÏnh s?a full paper");
+                throw new BadRequestException($"Paper hi?n t?i kh√¥ng dang trong qu√° tr√¨nh s?a full paper");
             }
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
             string fullPaperFileUrl = string.Empty;
             if (request.FullPaperFile != null)
@@ -2268,22 +2288,22 @@ namespace ConfRadar.Services.Services
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (currentRevisePhase == null || pendingGlobalStatus == null)
             {
-                throw new NotFoundException($"KhÙng th? tÏm th?y tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng th? t√¨m th?y tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
-                throw new BadRequestException($"Paper id {request.PaperId} khÙng tÏm th?y trong h? th?ng");
+                throw new BadRequestException($"Paper id {request.PaperId} kh√¥ng t√¨m th?y trong h? th?ng");
             }
             if (paper.RevisionPaperId == null)
             {
-                throw new NotFoundException($"M„ b‡i b·o {request.PaperId} khÙng tÏm th?y revision id trong h? th?ng");
+                throw new NotFoundException($"M√£ b√†i b√°o {request.PaperId} kh√¥ng t√¨m th?y revision id trong h? th?ng");
 
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y  giai do?n n‡o dang di?n ra cho h?i ngh? nghiÍn c?u {paper.Conference!.ConferenceName}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y  giai do?n n√†o dang di?n ra cho h?i ngh? nghi√™n c?u {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
@@ -2292,45 +2312,45 @@ namespace ConfRadar.Services.Services
             }
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper ph?i trong tr?ng th·i revise d? th?c hi?n update");
+                throw new BadRequestException($"Paper ph?i trong tr?ng th√°i revise d? th?c hi?n update");
             }
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (rootAuthorCheck == null)
             {
-                throw new NotFoundException($"B?n khÙng cÛ quy?n s? h?u b‡i b·o n‡y");
+                throw new NotFoundException($"B?n kh√¥ng c√≥ quy?n s? h?u b√†i b√°o n√†y");
             }
             var revisionPaperFound = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
             if (revisionPaperFound == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper v?i id {paper.RevisionPaperId}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper v?i id {paper.RevisionPaperId}");
             }
             if (revisionPaperFound.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
-                throw new BadRequestException($"Revision paper ph?i trong tr?ng th·i pending d? th?c hi?n update");
+                throw new BadRequestException($"Revision paper ph?i trong tr?ng th√°i pending d? th?c hi?n update");
             }
             var revisionPaperSubmissionsList = revisionPaperFound.RevisionPaperSubmissions;
             if (revisionPaperSubmissionsList == null || !revisionPaperSubmissionsList.Any())
             {
-                throw new NotFoundException("KhÙng tÏm th?y danh s·ch revision paper submission");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y danh s√°ch revision paper submission");
             }
             var currentRevisionPaperSubmission = revisionPaperSubmissionsList.FirstOrDefault(rps => rps.RevisionPaperSubmissionId == request.RevisionPaperSubmissionId);
             if (currentRevisionPaperSubmission == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y revision paper submission v?i id {request.RevisionPaperSubmissionId}");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y revision paper submission v?i id {request.RevisionPaperSubmissionId}");
             }
             var currentRevisionPaperSubmissionDeadline = currentRevisionPaperSubmission.RevisionDeadlineRound;
             if (currentRevisionPaperSubmissionDeadline == null)
             {
-                throw new NotFoundException("KhÙng tÏm th?y thÙng tin deadline c?a revision submission n‡y");
+                throw new NotFoundException("Kh√¥ng t√¨m th?y th√¥ng tin deadline c?a revision submission n√†y");
             }
             if (dateNow < currentRevisionPaperSubmissionDeadline!.StartSubmissionDate || dateNow > currentRevisionPaperSubmissionDeadline!.EndSubmissionDate)
             {
-                throw new BadRequestException($"B?n khÙng th? ch?nh s?a vÏ deadline revision submission n‡y t? {currentRevisionPaperSubmissionDeadline.StartSubmissionDate} d?n {currentRevisionPaperSubmissionDeadline.EndSubmissionDate}");
+                throw new BadRequestException($"B?n kh√¥ng th? ch?nh s?a v√¨ deadline revision submission n√†y t? {currentRevisionPaperSubmissionDeadline.StartSubmissionDate} d?n {currentRevisionPaperSubmissionDeadline.EndSubmissionDate}");
             }
             var revisionSubmissionFeedbackList = currentRevisionPaperSubmission.RevisionSubmissionFeedbacks;
             if (revisionSubmissionFeedbackList.Any())
             {
-                throw new BadRequestException($"B?n khÙng th? ch?nh s?a vÏ  revision submission n‡y vÏ hi?n t?i d„ cÛ head reviewer dua ra d·nh gi·. ");
+                throw new BadRequestException($"B?n kh√¥ng th? ch?nh s?a v√¨  revision submission n√†y v√¨ hi?n t?i d√£ c√≥ head reviewer dua ra d√°nh gi√°. ");
             }
             var result = 0;
             await _unitOfWork.BeginTransactionAsync();
@@ -2344,7 +2364,7 @@ namespace ConfRadar.Services.Services
                 {
                     if (request.RevisionPaperFile.ContentType == null)
                     {
-                        throw new BadRequestException("Content type khÙng h?p l?");
+                        throw new BadRequestException("Content type kh√¥ng h?p l?");
                     }
                     using var stream = request.RevisionPaperFile.OpenReadStream();
                     var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.RevisionPaperFile.FileName);

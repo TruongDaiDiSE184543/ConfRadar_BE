@@ -1,4 +1,4 @@
-using ConfRadar.Repositories;
+Ôªøusing ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Payment;
@@ -89,17 +89,17 @@ namespace ConfRadar.Services.Services
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
             if (paymentMethod == null)
             {
-                throw new BadRequestException($"KhÙng tÏm th?y phuong th?c thanh to·n n‡o v?i m„ {request.PaymentMethodId}");
+                throw new BadRequestException($"Kh√¥ng t√¨m th?y phuong th?c thanh to√°n n√†o v?i m√£ {request.PaymentMethodId}");
             }
 
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
             if (conferencePrice == null)
             {
-                throw new BadRequestException($"Gi· conference v?i id {request.ConferencePriceId} khÙng tÏm th?y");
+                throw new BadRequestException($"Gi√° conference v?i id {request.ConferencePriceId} kh√¥ng t√¨m th?y");
             }
             if (conferencePrice.Conference?.AvailableSlot <= 0)
             {
-                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} d„ b·n h?t vÈ!");
+                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} d√£ b√°n h?t v√©!");
             }
             //check ko cho mua 1 conf
             var paymentConferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
@@ -114,13 +114,13 @@ namespace ConfRadar.Services.Services
                 var paymentMethodInPaymentLock = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(paymentLockDataHolder.PaymentMethodId);
                 if (paymentLockDataHolder.PaymentMethodId != request.PaymentMethodId)
                 {
-                    throw new BadRequestException($"B?n hi?n dang cÛ 1 thanh to·n, v‡ chua du?c th?c hi?n v?i c?ng thanh to·n {paymentMethodInPaymentLock!.MethodName}. Xin vui lÚng thanh to·n b?ng c?ng {paymentMethodInPaymentLock!.MethodName}. Ho?c h?y thanh to·n, ho?c d?i h?t h?n 90 ph˙t");
+                    throw new BadRequestException($"B?n hi?n dang c√≥ 1 thanh to√°n, v√† chua du?c th?c hi?n v?i c?ng thanh to√°n {paymentMethodInPaymentLock!.MethodName}. Xin vui l√≤ng thanh to√°n b?ng c?ng {paymentMethodInPaymentLock!.MethodName}. Ho?c h?y thanh to√°n, ho?c d?i h?t h?n 90 ph√∫t");
                 }
                 return new GeneralPaymentResultResponse()
                 {
                     PaymentCreateSuccess = false,
                     CheckOutUrl = paymentLockDataHolder.OldCheckOutUrl,
-                    PaymentMessage = $"Ch˙ng tÙi ph·t hi?n b?n dang cÛ 1 giao d?ch chua du?c th?c hi?n v?i c?ng:{paymentMethodInPaymentLock!.MethodName}. Xin vui lÚng th?c hi?n giao d?ch n‡y "
+                    PaymentMessage = $"Ch√∫ng t√¥i ph√°t hi?n b?n dang c√≥ 1 giao d?ch chua du?c th?c hi?n v?i c?ng:{paymentMethodInPaymentLock!.MethodName}. Xin vui l√≤ng th?c hi?n giao d?ch n√†y "
                 };
 
             }
@@ -134,34 +134,37 @@ namespace ConfRadar.Services.Services
 
 
 
-            var ticketFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId!);
-            if (ticketFound != null)
+            var listTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId!);
+            var boughtTicketFound = listTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (boughtTicketFound != null)
             {
-                throw new BadRequestException("B?n d„ mua vÈ cho s? ki?n n‡y r?i!");
+                throw new BadRequestException("B·∫°n ƒë√£ mua v√© cho s·ª± ki·ªán n√†y r·ªìi!");
             }
+
+
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (conferencePrice.Conference?.TicketSaleStart > dateNow)
             {
-                throw new BadRequestException($"Chua d?n th?i h?n mua vÈ. Th?i h?n mua vÈ n?m trong kho?ng t? {conferencePrice.Conference.TicketSaleStart} d?n {conferencePrice.Conference.TicketSaleEnd}");
+                throw new BadRequestException($"Chua d?n th?i h?n mua v√©. Th?i h?n mua v√© n?m trong kho?ng t? {conferencePrice.Conference.TicketSaleStart} d?n {conferencePrice.Conference.TicketSaleEnd}");
             }
             if (conferencePrice.Conference?.TicketSaleEnd < dateNow)
             {
-                throw new BadRequestException("–„ h?t th?i h?n mua vÈ.");
+                throw new BadRequestException("√ê√£ h?t th?i h?n mua v√©.");
             }
             if (conferencePrice.IsAuthor == true)
             {
-                throw new BadRequestException("VÈ n‡y ch? d‡nh cho ngu?i tham d?.");
+                throw new BadRequestException("V√© n√†y ch? d√†nh cho ngu?i tham d?.");
             }
 
             var validPhases = conferencePrice.PricePhases.Where(p => p.StartDate <= dateNow && p.EndDate >= dateNow).OrderBy(p => p.StartDate).ToList();
             if (!validPhases.Any())
             {
-                throw new BadRequestException("Hi?n t?i khÙng cÛ phase h?p l? d? thanh to·n");
+                throw new BadRequestException("Hi?n t?i kh√¥ng c√≥ phase h?p l? d? thanh to√°n");
             }
             var currentPhase = validPhases.FirstOrDefault(p => p.AvailableSlot > 0);
             if (currentPhase == null)
             {
-                throw new BadRequestException("Giai do?n hi?n t?i hi?n t?i d„ h?t slot");
+                throw new BadRequestException("Giai do?n hi?n t?i hi?n t?i d√£ h?t slot");
             }
             //check nhi?u ngu?i mua trong 1 phase
             var paymentPhaseLockPattern = ExtensionHelper.GetPaymentPhaseLockKeyPattern(currentPhase.PricePhaseId!);
@@ -173,7 +176,7 @@ namespace ConfRadar.Services.Services
                 {
                     PaymentCreateSuccess = false,
                     CheckOutUrl = null,
-                    PaymentMessage = $"Hi?n t?i dang cÛ {paymentPhaseLockCount} kh·ch h‡ng dang th?c hi?n giao d?ch trong giai do?n hi?n t?i mua vÈ t? {currentPhase.StartDate} d?n {currentPhase.EndDate} tuong ?ng v?i {currentPhase.AvailableSlot} s? vÈ "
+                    PaymentMessage = $"Hi?n t?i dang c√≥ {paymentPhaseLockCount} kh√°ch h√†ng dang th?c hi?n giao d?ch trong giai do?n hi?n t?i mua v√© t? {currentPhase.StartDate} d?n {currentPhase.EndDate} tuong ?ng v?i {currentPhase.AvailableSlot} s? v√© "
                 };
 
             }
@@ -185,7 +188,7 @@ namespace ConfRadar.Services.Services
             var finalAmount = (long)discountedPrice;
             if (finalAmount <= 10000)
             {
-                throw new BadRequestException($"Gi· cho vÈ hi?n t?i l‡ {finalAmount} khÙng kh? d?ng cho c?ng thanh to·n trong h? th?ng xin h„y liÍn h? ban t? ch?c s? ki?n");
+                throw new BadRequestException($"Gi√° cho v√© hi?n t?i l√† {finalAmount} kh√¥ng kh? d?ng cho c?ng thanh to√°n trong h? th?ng xin h√£y li√™n h? ban t? ch?c s? ki?n");
             }
 
             var sessionIds = conferencePrice.Conference!.ConferenceSessions.Select(s => s.ConferenceSessionId).ToList();
@@ -221,13 +224,13 @@ namespace ConfRadar.Services.Services
             {
                 new PaymentLinkItem()
                 {
-                    Name = $"Thanh to·n vÈ cho h?i ngh?: {conferenceName}",
+                    Name = $"Thanh to√°n v√© cho h?i ngh?: {conferenceName}",
                     Price = finalAmount,
                     Quantity = 1,
                 }
             };
 
-            //thÍm mutiple phuong th?c thanh to·n:
+            //th√™m mutiple phuong th?c thanh to√°n:
             string checkOutUrl = string.Empty;
             switch (paymentMethod.MethodName)
             {
@@ -243,10 +246,10 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
-                    throw new BadRequestException("Phuong th?c thanh to·n ZaloPay dang trong tr?ng th·i b?o trÏ v‡ b? l?");
+                    throw new BadRequestException("Phuong th?c thanh to√°n ZaloPay dang trong tr?ng th√°i b?o tr√¨ v√† b? l?");
 
                 default:
-                    throw new BadRequestException("Phuong th?c thanh to·n khÙng h?p l?");
+                    throw new BadRequestException("Phuong th?c thanh to√°n kh√¥ng h?p l?");
             }
             var lockeyData = new PaymentLockKeyDTO()
             {
@@ -260,7 +263,7 @@ namespace ConfRadar.Services.Services
             return new GeneralPaymentResultResponse()
             {
                 PaymentCreateSuccess = true,
-                PaymentMessage = "T?o liÍn k?t thanh to·n th‡nh cÙng. Vui lÚng ho‡n t?t giao d?ch t?i c?ng thanh to·n.",
+                PaymentMessage = "T?o li√™n k?t thanh to√°n th√†nh c√¥ng. Vui l√≤ng ho√†n t?t giao d?ch t?i c?ng thanh to√°n.",
                 CheckOutUrl = checkOutUrl,
             };
 
@@ -275,28 +278,28 @@ namespace ConfRadar.Services.Services
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
             if (paymentMethod == null)
             {
-                throw new BadRequestException($"KhÙng tÏm th?y phuong th?c thanh to·n n‡o v?i m„ {request.PaymentMethodId}");
+                throw new BadRequestException($"Kh√¥ng t√¨m th?y phuong th?c thanh to√°n n√†o v?i m√£ {request.PaymentMethodId}");
             }
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
             if (conferencePrice == null)
             {
-                throw new BadRequestException($"Gi· h?i ngh? v?i id {request.ConferencePriceId} khÙng tÏm th?y");
+                throw new BadRequestException($"Gi√° h?i ngh? v?i id {request.ConferencePriceId} kh√¥ng t√¨m th?y");
             }
             if (conferencePrice.Conference?.AvailableSlot <= 0)
             {
-                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} d„ b·n h?t vÈ!");
+                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} d√£ b√°n h?t v√©!");
             }
             if (conferencePrice.Conference!.IsResearchConference == false)
             {
-                throw new BadRequestException($"B?n ch? cÛ th? n?p abstract cho research conference");
+                throw new BadRequestException($"B?n ch? c√≥ th? n?p abstract cho research conference");
             }
             if (conferencePrice.IsAuthor == false)
             {
-                throw new BadRequestException($"Gi· vÈ hi?n t?i khÙng d‡nh cho t·c gi?, xin h„y ch?n m?c gi· kh·c");
+                throw new BadRequestException($"Gi√° v√© hi?n t?i kh√¥ng d√†nh cho t√°c gi?, xin h√£y ch?n m?c gi√° kh√°c");
             }
             if (conferencePrice.Conference.IsInternalHosted == false)
             {
-                throw new BadRequestException($"B?n ch? cÛ th? n?p abstract cho research conference t? ch?c b?i confradar");
+                throw new BadRequestException($"B?n ch? c√≥ th? n?p abstract cho research conference t? ch?c b?i confradar");
             }
             var paymentConferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
             bool paymentConferenceLockFound = await _redisService.KeyExistsAsync(paymentConferenceLockKey);
@@ -310,14 +313,14 @@ namespace ConfRadar.Services.Services
                 var paymentMethodInPaymentLock = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(paymentLockDataHolder.PaymentMethodId);
                 if (paymentLockDataHolder.PaymentMethodId != request.PaymentMethodId)
                 {
-                    throw new BadRequestException($"B?n hi?n dang cÛ 1 thanh to·n, v‡ chua du?c th?c hi?n v?i c?ng thanh to·n {paymentMethodInPaymentLock!.MethodName}. Xin vui lÚng thanh to·n b?ng c?ng {paymentMethodInPaymentLock!.MethodName}. Ho?c h?y thanh to·n, ho?c d?i h?t h?n 90 ph˙t");
+                    throw new BadRequestException($"B?n hi?n dang c√≥ 1 thanh to√°n, v√† chua du?c th?c hi?n v?i c?ng thanh to√°n {paymentMethodInPaymentLock!.MethodName}. Xin vui l√≤ng thanh to√°n b?ng c?ng {paymentMethodInPaymentLock!.MethodName}. Ho?c h?y thanh to√°n, ho?c d?i h?t h?n 90 ph√∫t");
 
                 }
                 return new GeneralPaymentResultResponse()
                 {
                     PaymentCreateSuccess = false,
                     CheckOutUrl = paymentLockDataHolder.OldCheckOutUrl,
-                    PaymentMessage = $"Ch˙ng tÙi ph·t hi?n b?n dang cÛ 1 giao d?ch chua du?c th?c hi?n v?i c?ng:{paymentMethodInPaymentLock!.MethodName}. Xin vui lÚng th?c hi?n giao d?ch n‡y "
+                    PaymentMessage = $"Ch√∫ng t√¥i ph√°t hi?n b?n dang c√≥ 1 giao d?ch chua du?c th?c hi?n v?i c?ng:{paymentMethodInPaymentLock!.MethodName}. Xin vui l√≤ng th?c hi?n giao d?ch n√†y "
                 };
 
             }
@@ -325,56 +328,65 @@ namespace ConfRadar.Services.Services
             var researchConferencePhases = conferencePrice.Conference?.ResearchConferencePhases;
             if (researchConferencePhases == null || !researchConferencePhases.Any())
             {
-                throw new BadRequestException($"KhÙng tÏm th?y c·c giai do?n trong h?i ngh? nghiÍn c?u n‡y");
+                throw new BadRequestException($"Kh√¥ng t√¨m th?y c√°c giai do?n trong h?i ngh? nghi√™n c?u n√†y");
             }
             var activeResearchConferencePhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
             if (activeResearchConferencePhase == null)
             {
-                throw new BadRequestException($"Giai do?n h?i ngh? nghiÍn c?u hi?n t?i d„ b? dÛng. Xin vui lÚng liÍn h? ban t? ch?c s? ki?n");
+                throw new BadRequestException($"Giai do?n h?i ngh? nghi√™n c?u hi?n t?i d√£ b? d√≥ng. Xin vui l√≤ng li√™n h? ban t? ch?c s? ki?n");
             }
             if (activeResearchConferencePhase.RegistrationStartDate > dateNow)
             {
-                throw new BadRequestException($"Chua d?n th?i h?n mua vÈ. Th?i h?n mua vÈ n?m trong kho?ng t? {activeResearchConferencePhase.RegistrationStartDate} d?n {activeResearchConferencePhase.RegistrationEndDate}");
+                throw new BadRequestException($"Chua d?n th?i h?n mua v√©. Th?i h?n mua v√© n?m trong kho?ng t? {activeResearchConferencePhase.RegistrationStartDate} d?n {activeResearchConferencePhase.RegistrationEndDate}");
             }
             if (activeResearchConferencePhase.RegistrationEndDate < dateNow)
             {
-                throw new BadRequestException("–„ h?t th?i h?n mua vÈ.");
+                throw new BadRequestException("√ê√£ h?t th?i h?n mua v√©.");
             }
 
-
-
-            var ticketFound = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
-            if (ticketFound != null)
+            var listAttendeeTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
+            var validAttendeeTicketFound = listAttendeeTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (validAttendeeTicketFound != null)
             {
-                throw new BadRequestException($"B?n ch? cÛ th? mua vÈ 1 l?n cho s? ki?n n‡y");
+                throw new BadRequestException("Ch√∫ng t√¥i ph√°t hi·ªán b·∫°n ƒëang c√≥ 1 v√© l√† ng∆∞·ªùi tham d·ª± h·ªôi ngh·ªã");
+
             }
+            var listAuthorTicketsFound = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
+            var validAuthorTicktFound = listAuthorTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (validAuthorTicktFound != null)
+            {
+                throw new BadRequestException("B·∫°n ch·ªâ c√≥ th·ªÉ mua v√© 1 l·∫ßn cho research paper");
+            }
+
+
+
             var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(userId, conferencePrice.ConferenceId);
             if (reviewerContractFound != null)
             {
                 if (reviewerContractFound.IsActive == true)
                 {
-                    throw new BadRequestException($"B?n dang cÛ h?p d?ng v?i s? ki?n n‡y nÍn khÙng th? th?c hi?n thanh to·n");
+                    throw new BadRequestException($"B?n dang c√≥ h?p d?ng v?i s? ki?n n√†y n√™n kh√¥ng th? th?c hi?n thanh to√°n");
                 }
             }
             var internalReviewRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
             if (internalReviewRole == null)
             {
-                throw new NotFoundException($"KhÙng tÏm th?y role trong h? th?ng");
+                throw new NotFoundException($"Kh√¥ng t√¨m th?y role trong h? th?ng");
             }
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, internalReviewRole.RoleId);
             if (userRole != null)
             {
-                throw new BadRequestException($"B?n khÙng th? mua vÈ n‡y vÏ b?n l‡ reviewer trong h? th?ng");
+                throw new BadRequestException($"B?n kh√¥ng th? mua v√© n√†y v√¨ b?n l√† reviewer trong h? th?ng");
             }
             decimal applyPercent = 0;
 
             //if (conferencePrice.Conference?.TicketSaleStart > dateNow)
             //{
-            //    throw new BadRequestException($"Chua d?n th?i h?n mua vÈ. Th?i h?n mua vÈ n?m trong kho?ng t? {conferencePrice.Conference.TicketSaleStart} d?n {conferencePrice.Conference.TicketSaleEnd}");
+            //    throw new BadRequestException($"Chua d?n th?i h?n mua v√©. Th?i h?n mua v√© n?m trong kho?ng t? {conferencePrice.Conference.TicketSaleStart} d?n {conferencePrice.Conference.TicketSaleEnd}");
             //}
             //if (conferencePrice.Conference?.TicketSaleEnd < dateNow)
             //{
-            //    throw new BadRequestException("–„ h?t th?i h?n mua vÈ.");
+            //    throw new BadRequestException("√ê√£ h?t th?i h?n mua v√©.");
             //}
 
             var validPhases = conferencePrice.PricePhases
@@ -384,12 +396,12 @@ namespace ConfRadar.Services.Services
 
             if (!validPhases.Any())
             {
-                throw new BadRequestException("Hi?n t?i khÙng cÛ phase h?p l? d? n?p abstract");
+                throw new BadRequestException("Hi?n t?i kh√¥ng c√≥ phase h?p l? d? n?p abstract");
             }
             var currentPhase = validPhases.FirstOrDefault(p => p.AvailableSlot > 0);
             if (currentPhase == null)
             {
-                throw new BadRequestException("Giai do?n hi?n t?i d„ h?t slot");
+                throw new BadRequestException("Giai do?n hi?n t?i d√£ h?t slot");
             }
             //check nhi?u ngu?i mua trong 1 phase
             var paymentPhaseLockPattern = ExtensionHelper.GetPaymentPhaseLockKeyPattern(currentPhase.PricePhaseId!);
@@ -401,7 +413,7 @@ namespace ConfRadar.Services.Services
                 {
                     PaymentCreateSuccess = false,
                     CheckOutUrl = null,
-                    PaymentMessage = $"Hi?n t?i dang cÛ {paymentPhaseLockCount} kh·ch h‡ng dang th?c hi?n giao d?ch trong giai do?n hi?n t?i mua vÈ t? {currentPhase.StartDate} d?n {currentPhase.EndDate} tuong ?ng v?i {currentPhase.AvailableSlot} s? vÈ "
+                    PaymentMessage = $"Hi?n t?i dang c√≥ {paymentPhaseLockCount} kh√°ch h√†ng dang th?c hi?n giao d?ch trong giai do?n hi?n t?i mua v√© t? {currentPhase.StartDate} d?n {currentPhase.EndDate} tuong ?ng v?i {currentPhase.AvailableSlot} s? v√© "
                 };
 
             }
@@ -413,12 +425,12 @@ namespace ConfRadar.Services.Services
             long finalPrice = 0;
             if (applyPercent < 0)
             {
-                throw new BadRequestException($"% gi?m gi· cho vÈ hi?n t?i l‡ {applyPercent} khÙng kh? d?ng xin h„y liÍn h? ban t? ch?c s? ki?n");
+                throw new BadRequestException($"% gi?m gi√° cho v√© hi?n t?i l√† {applyPercent} kh√¥ng kh? d?ng xin h√£y li√™n h? ban t? ch?c s? ki?n");
             }
             finalPrice = (long)(conferencePrice.TicketPrice * ((decimal)applyPercent / (decimal)100.0));
             if (finalPrice <= 10000)
             {
-                throw new BadRequestException($"Gi· cho vÈ hi?n t?i l‡ {finalPrice} khÙng kh? d?ng cho c?ng thanh to·n trong h? th?ng xin h„y liÍn h? ban t? ch?c s? ki?n");
+                throw new BadRequestException($"Gi√° cho v√© hi?n t?i l√† {finalPrice} kh√¥ng kh? d?ng cho c?ng thanh to√°n trong h? th?ng xin h√£y li√™n h? ban t? ch?c s? ki?n");
             }
             var paperWaitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferencePrice.ConferenceId);
 
@@ -458,13 +470,13 @@ namespace ConfRadar.Services.Services
             {
                 new PaymentLinkItem()
                 {
-                    Name = $"Thanh to·n vÈ cho h?i ngh?: {conferenceName}",
+                    Name = $"Thanh to√°n v√© cho h?i ngh?: {conferenceName}",
                     Price = finalPrice,
                     Quantity = 1,
                 }
             };
 
-            //thÍm mutiple phuong th?c thanh to·n:
+            //th√™m mutiple phuong th?c thanh to√°n:
             string checkOutUrl = string.Empty;
             switch (paymentMethod.MethodName)
             {
@@ -480,10 +492,10 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
-                    throw new BadRequestException("Phuong th?c thanh to·n ZaloPay dang trong tr?ng th·i b?o trÏ v‡ b? l?");
+                    throw new BadRequestException("Phuong th?c thanh to√°n ZaloPay dang trong tr?ng th√°i b?o tr√¨ v√† b? l?");
 
                 default:
-                    throw new BadRequestException("Phuong th?c thanh to·n khÙng h?p l?");
+                    throw new BadRequestException("Phuong th?c thanh to√°n kh√¥ng h?p l?");
             }
 
             var lockeyData = new PaymentLockKeyDTO()
@@ -498,7 +510,7 @@ namespace ConfRadar.Services.Services
             return new GeneralPaymentResultResponse()
             {
                 PaymentCreateSuccess = true,
-                PaymentMessage = "T?o liÍn k?t thanh to·n th‡nh cÙng. Vui lÚng ho‡n t?t giao d?ch t?i c?ng thanh to·n.",
+                PaymentMessage = "T?o li√™n k?t thanh to√°n th√†nh c√¥ng. Vui l√≤ng ho√†n t?t giao d?ch t?i c?ng thanh to√°n.",
                 CheckOutUrl = checkOutUrl,
             };
 
@@ -512,28 +524,28 @@ namespace ConfRadar.Services.Services
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
             if (paymentMethod == null)
             {
-                throw new BadRequestException($"KhÙng tÏm th?y phuong th?c thanh to·n n‡o v?i m„ {request.PaymentMethodId}");
+                throw new BadRequestException($"Kh√¥ng t√¨m th?y phuong th?c thanh to√°n n√†o v?i m√£ {request.PaymentMethodId}");
             }
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
             if (conferencePrice == null)
             {
-                throw new BadRequestException($"Gi· h?i ngh? v?i id {request.ConferencePriceId} khÙng tÏm th?y");
+                throw new BadRequestException($"Gi√° h?i ngh? v?i id {request.ConferencePriceId} kh√¥ng t√¨m th?y");
             }
             if (conferencePrice.Conference?.AvailableSlot <= 0)
             {
-                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} d„ b·n h?t vÈ!");
+                throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} d√£ b√°n h?t v√©!");
             }
             if (conferencePrice.Conference!.IsResearchConference == false)
             {
-                throw new BadRequestException($"B?n ch? cÛ th? mua vÈ cho h?i ngh? nghiÍn c?u");
+                throw new BadRequestException($"B?n ch? c√≥ th? mua v√© cho h?i ngh? nghi√™n c?u");
             }
             if (conferencePrice.IsAuthor == true)
             {
-                throw new BadRequestException($"Gi· vÈ hi?n t?i ch? d‡nh cho ngu?i d? thÌnh trong h?i ngh? nghiÍn c?u");
+                throw new BadRequestException($"Gi√° v√© hi?n t?i ch? d√†nh cho ngu?i d? th√≠nh trong h?i ngh? nghi√™n c?u");
             }
             if (conferencePrice.Conference.IsInternalHosted == false)
             {
-                throw new BadRequestException($"B?n ch? cÛ th? tham gia h?i ngh? t? ch?c b?i confradar");
+                throw new BadRequestException($"B?n ch? c√≥ th? tham gia h?i ngh? t? ch?c b?i confradar");
             }
             var paymentConferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
             bool paymentConferenceLockFound = await _redisService.KeyExistsAsync(paymentConferenceLockKey);
@@ -547,14 +559,14 @@ namespace ConfRadar.Services.Services
                 var paymentMethodInPaymentLock = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(paymentLockDataHolder.PaymentMethodId);
                 if (paymentLockDataHolder.PaymentMethodId != request.PaymentMethodId)
                 {
-                    throw new BadRequestException($"B?n hi?n dang cÛ 1 thanh to·n, v‡ chua du?c th?c hi?n v?i c?ng thanh to·n {paymentMethodInPaymentLock!.MethodName}. Xin vui lÚng thanh to·n b?ng c?ng {paymentMethodInPaymentLock!.MethodName}. Ho?c h?y thanh to·n, ho?c d?i h?t h?n 90 ph˙t");
+                    throw new BadRequestException($"B?n hi?n dang c√≥ 1 thanh to√°n, v√† chua du?c th?c hi?n v?i c?ng thanh to√°n {paymentMethodInPaymentLock!.MethodName}. Xin vui l√≤ng thanh to√°n b?ng c?ng {paymentMethodInPaymentLock!.MethodName}. Ho?c h?y thanh to√°n, ho?c d?i h?t h?n 90 ph√∫t");
 
                 }
                 return new GeneralPaymentResultResponse()
                 {
                     PaymentCreateSuccess = false,
                     CheckOutUrl = paymentLockDataHolder.OldCheckOutUrl,
-                    PaymentMessage = $"Ch˙ng tÙi ph·t hi?n b?n dang cÛ 1 giao d?ch chua du?c th?c hi?n v?i c?ng:{paymentMethodInPaymentLock!.MethodName}. Xin vui lÚng th?c hi?n giao d?ch n‡y "
+                    PaymentMessage = $"Ch√∫ng t√¥i ph√°t hi?n b?n dang c√≥ 1 giao d?ch chua du?c th?c hi?n v?i c?ng:{paymentMethodInPaymentLock!.MethodName}. Xin vui l√≤ng th?c hi?n giao d?ch n√†y "
                 };
 
             }
@@ -562,7 +574,7 @@ namespace ConfRadar.Services.Services
             var researchConferencePhases = conferencePrice.Conference?.ResearchConferencePhases;
             if (researchConferencePhases == null || !researchConferencePhases.Any())
             {
-                throw new BadRequestException($"KhÙng tÏm th?y c·c giai do?n trong h?i ngh? nghiÍn c?u n‡y");
+                throw new BadRequestException($"Kh√¥ng t√¨m th?y c√°c giai do?n trong h?i ngh? nghi√™n c?u n√†y");
             }
 
 
@@ -570,20 +582,31 @@ namespace ConfRadar.Services.Services
 
 
 
-            var ticketFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
-            if (ticketFound != null)
+            var listAttendeeTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
+            var validAttendeeTicketFound = listAttendeeTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (validAttendeeTicketFound != null)
             {
-                throw new BadRequestException($"B?n ch? cÛ th? mua vÈ 1 l?n cho s? ki?n n‡y");
+                throw new BadRequestException("B·∫°n ch·ªâ c√≥ th·ªÉ mua v√© 1 l·∫ßn cho s·ª± ki·ªán research.");
+
             }
+            var listAuthorTicketsFound = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
+            var validAuthorTicktFound = listAuthorTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (validAuthorTicktFound != null)
+            {
+                throw new BadRequestException("Ch√∫ng t√¥i ph√°t hi·ªán b·∫°n ƒë√£ c√≥ 1 v√© l√† author cho s·ª± ki·ªán research.");
+            }
+
+
+
             decimal applyPercent = 0;
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (conferencePrice.Conference?.TicketSaleStart > dateNow)
             {
-                throw new BadRequestException($"Chua d?n th?i h?n mua vÈ. Th?i h?n mua vÈ n?m trong kho?ng t? {conferencePrice.Conference.TicketSaleStart} d?n {conferencePrice.Conference.TicketSaleEnd}");
+                throw new BadRequestException($"Chua d?n th?i h?n mua v√©. Th?i h?n mua v√© n?m trong kho?ng t? {conferencePrice.Conference.TicketSaleStart} d?n {conferencePrice.Conference.TicketSaleEnd}");
             }
             if (conferencePrice.Conference?.TicketSaleEnd < dateNow)
             {
-                throw new BadRequestException("–„ h?t th?i h?n mua vÈ.");
+                throw new BadRequestException("√ê√£ h?t th?i h?n mua v√©.");
             }
 
             var validPhases = conferencePrice.PricePhases
@@ -593,12 +616,12 @@ namespace ConfRadar.Services.Services
 
             if (!validPhases.Any())
             {
-                throw new BadRequestException("Hi?n t?i khÙng cÛ phase h?p l? d? n?p abstract");
+                throw new BadRequestException("Hi?n t?i kh√¥ng c√≥ phase h?p l? d? n?p abstract");
             }
             var currentPhase = validPhases.FirstOrDefault(p => p.AvailableSlot > 0);
             if (currentPhase == null)
             {
-                throw new BadRequestException("Giai do?n hi?n t?i d„ h?t slot");
+                throw new BadRequestException("Giai do?n hi?n t?i d√£ h?t slot");
             }
             //check nhi?u ngu?i mua trong 1 phase
             var paymentPhaseLockPattern = ExtensionHelper.GetPaymentPhaseLockKeyPattern(currentPhase.PricePhaseId!);
@@ -610,7 +633,7 @@ namespace ConfRadar.Services.Services
                 {
                     PaymentCreateSuccess = false,
                     CheckOutUrl = null,
-                    PaymentMessage = $"Hi?n t?i dang cÛ {paymentPhaseLockCount} kh·ch h‡ng dang th?c hi?n giao d?ch trong giai do?n hi?n t?i mua vÈ t? {currentPhase.StartDate} d?n {currentPhase.EndDate} tuong ?ng v?i {currentPhase.AvailableSlot} s? vÈ "
+                    PaymentMessage = $"Hi?n t?i dang c√≥ {paymentPhaseLockCount} kh√°ch h√†ng dang th?c hi?n giao d?ch trong giai do?n hi?n t?i mua v√© t? {currentPhase.StartDate} d?n {currentPhase.EndDate} tuong ?ng v?i {currentPhase.AvailableSlot} s? v√© "
                 };
 
             }
@@ -622,12 +645,12 @@ namespace ConfRadar.Services.Services
             long finalPrice = 0;
             if (applyPercent < 0)
             {
-                throw new BadRequestException($"% gi?m gi· cho vÈ hi?n t?i l‡ {applyPercent} khÙng kh? d?ng xin h„y liÍn h? ban t? ch?c s? ki?n");
+                throw new BadRequestException($"% gi?m gi√° cho v√© hi?n t?i l√† {applyPercent} kh√¥ng kh? d?ng xin h√£y li√™n h? ban t? ch?c s? ki?n");
             }
             finalPrice = (long)(conferencePrice.TicketPrice * ((decimal)applyPercent / (decimal)100.0));
             if (finalPrice <= 10000)
             {
-                throw new BadRequestException($"Gi· cho vÈ hi?n t?i l‡ {finalPrice} khÙng kh? d?ng cho c?ng thanh to·n trong h? th?ng xin h„y liÍn h? ban t? ch?c s? ki?n");
+                throw new BadRequestException($"Gi√° cho v√© hi?n t?i l√† {finalPrice} kh√¥ng kh? d?ng cho c?ng thanh to√°n trong h? th?ng xin h√£y li√™n h? ban t? ch?c s? ki?n");
             }
             var paperWaitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferencePrice.ConferenceId);
 
@@ -657,20 +680,20 @@ namespace ConfRadar.Services.Services
             //logic da c?ng
             var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             double expireMinute = 90;
-            string paymentDescription = "Thanh to·n research";
+            string paymentDescription = "Thanh to√°n research";
             string conferenceName = conferencePrice?.Conference?.ConferenceName ?? "";
 
             var listPaymentLinkItem = new List<PaymentLinkItem>()
             {
                 new PaymentLinkItem()
                 {
-                    Name = $"Thanh to·n vÈ cho h?i ngh?: {conferenceName}",
+                    Name = $"Thanh to√°n v√© cho h?i ngh?: {conferenceName}",
                     Price = finalPrice,
                     Quantity = 1,
                 }
             };
 
-            //thÍm mutiple phuong th?c thanh to·n:
+            //th√™m mutiple phuong th?c thanh to√°n:
             string checkOutUrl = string.Empty;
             switch (paymentMethod.MethodName)
             {
@@ -686,10 +709,10 @@ namespace ConfRadar.Services.Services
                     checkOutUrl = vnPayResult;
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
-                    throw new BadRequestException("Phuong th?c thanh to·n ZaloPay dang trong tr?ng th·i b?o trÏ v‡ b? l?");
+                    throw new BadRequestException("Phuong th?c thanh to√°n ZaloPay dang trong tr?ng th√°i b?o tr√¨ v√† b? l?");
 
                 default:
-                    throw new BadRequestException("Phuong th?c thanh to·n khÙng h?p l?");
+                    throw new BadRequestException("Phuong th?c thanh to√°n kh√¥ng h?p l?");
             }
 
             var lockeyData = new PaymentLockKeyDTO()
@@ -704,7 +727,7 @@ namespace ConfRadar.Services.Services
             return new GeneralPaymentResultResponse()
             {
                 PaymentCreateSuccess = true,
-                PaymentMessage = "T?o liÍn k?t thanh to·n th‡nh cÙng. Vui lÚng ho‡n t?t giao d?ch t?i c?ng thanh to·n.",
+                PaymentMessage = "T?o li√™n k?t thanh to√°n th√†nh c√¥ng. Vui l√≤ng ho√†n t?t giao d?ch t?i c?ng thanh to√°n.",
                 CheckOutUrl = checkOutUrl,
             };
         }
@@ -782,11 +805,11 @@ namespace ConfRadar.Services.Services
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
             if (pricePhase == null)
             {
-                throw new BadRequestException("KhÙng tÏm th?y phase tuong ?ng.");
+                throw new BadRequestException("Kh√¥ng t√¨m th?y phase tuong ?ng.");
             }
             if (pricePhase.AvailableSlot <= 0)
             {
-                throw new BadRequestException("Giai do?n hi?n t?i d„ h?t slot.");
+                throw new BadRequestException("Giai do?n hi?n t?i d√£ h?t slot.");
             }
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -815,7 +838,7 @@ namespace ConfRadar.Services.Services
             //var transacKey = await _redisService.KeyExistsAsync(orderId);
             //if (!transacKey)
             //{
-            //    throw new NotFoundException("D? li?u khÙng tÏm th?y");
+            //    throw new NotFoundException("D? li?u kh√¥ng t√¨m th?y");
             //}
             var dateNow = await _timeProviderService.GetVietnamDate();
             var timeNow = await _timeProviderService.GetVietnamTime();
@@ -830,7 +853,7 @@ namespace ConfRadar.Services.Services
             var currentPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
             if (checkInStatus == null || globalStatus == null || currentPaperPhase == null)
             {
-                throw new NotFoundException($"L?i khÙng tÏm th?y c·c tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"L?i kh√¥ng t√¨m th?y c√°c tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var ticketObj = new Ticket()
             {
@@ -895,7 +918,7 @@ namespace ConfRadar.Services.Services
             };
             var presenterPaperAuthor = new PaperAuthor()
             {
-                IsPresenter = false,
+                IsPresenter = true,
                 UserId = transacDataHolder.UserId,
                 PaperId = paperObj.PaperId,
                 IsRootAuthor = true,
@@ -904,7 +927,7 @@ namespace ConfRadar.Services.Services
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
             if (pricePhase == null)
             {
-                throw new BadRequestException("Giai do?n vÈ khÙng tÏm th?y");
+                throw new BadRequestException("Giai do?n v√© kh√¥ng t√¨m th?y");
             }
             if (pricePhase.AvailableSlot <= 0)
             {
@@ -958,7 +981,7 @@ namespace ConfRadar.Services.Services
             var currentPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
             if (checkInStatus == null || globalStatus == null || currentPaperPhase == null)
             {
-                throw new NotFoundException($"L?i khÙng tÏm th?y c·c tr?ng th·i tuong ?ng trong h? th?ng");
+                throw new NotFoundException($"L?i kh√¥ng t√¨m th?y c√°c tr?ng th√°i tuong ?ng trong h? th?ng");
             }
             var ticketObj = new Ticket()
             {
@@ -1013,7 +1036,7 @@ namespace ConfRadar.Services.Services
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
             if (pricePhase == null)
             {
-                throw new BadRequestException("Giai do?n vÈ khÙng tÏm th?y");
+                throw new BadRequestException("Giai do?n v√© kh√¥ng t√¨m th?y");
             }
             if (pricePhase.AvailableSlot <= 0)
             {
@@ -1057,7 +1080,7 @@ namespace ConfRadar.Services.Services
             bool payOsCheck = await _payOsService.VerifyPayOs(data);
             if (!payOsCheck)
             {
-                throw new BadRequestException("D? li?u payos khÙng kh? d?ng");
+                throw new BadRequestException("D? li?u payos kh√¥ng kh? d?ng");
             }
             await ProcessInsertPaymentData(data.Data.OrderCode.ToString(), (decimal)data.Data.Amount, data.Data.OrderCode.ToString());
 
@@ -1068,7 +1091,7 @@ namespace ConfRadar.Services.Services
             bool momoCheck = _momoService.VerifyMomoPaymentData(data);
             if (!momoCheck)
             {
-                throw new BadRequestException("D? li?u momo khÙng kh? d?ng");
+                throw new BadRequestException("D? li?u momo kh√¥ng kh? d?ng");
             }
             await ProcessInsertPaymentData(data.orderId!, (decimal)data.amount!.Value, data.transId.ToString()!);
         }
@@ -1077,7 +1100,7 @@ namespace ConfRadar.Services.Services
             bool vnPayCheck = _vnPayService.VerifyVnPayPayment(data);
             if (!vnPayCheck)
             {
-                throw new BadRequestException("D? li?u vnpay khÙng kh? d?ng");
+                throw new BadRequestException("D? li?u vnpay kh√¥ng kh? d?ng");
             }
             await ProcessInsertPaymentData(data.Vnp_TxnRef!, (decimal)data.Vnp_Amount!.Value / 100, data.Vnp_TransactionNo!.ToString()!);
         }
@@ -1086,7 +1109,7 @@ namespace ConfRadar.Services.Services
             var transacKey = await _redisService.KeyExistsAsync(orderId);
             if (!transacKey)
             {
-                throw new BadRequestException("D? li?u khÙng tÏm th?y");
+                throw new BadRequestException("D? li?u kh√¥ng t√¨m th?y");
             }
             var transac = await _redisService.GetStringAsync(orderId);
             var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
@@ -1095,7 +1118,7 @@ namespace ConfRadar.Services.Services
             });
             if (transacDataHolder == null)
             {
-                throw new BadRequestException("KhÙng th? d?c d? li?u giao d?ch");
+                throw new BadRequestException("Kh√¥ng th? d?c d? li?u giao d?ch");
             }
             if (transacDataHolder!.IsResearchConference == true && transacDataHolder.IsResearchConferenceAuthor == true)
             {
@@ -1111,7 +1134,7 @@ namespace ConfRadar.Services.Services
             }
             else
             {
-                throw new BadRequestException("D? li?u thanh to·n khÙng kh? d?ng");
+                throw new BadRequestException("D? li?u thanh to√°n kh√¥ng kh? d?ng");
             }
         }
         #endregion

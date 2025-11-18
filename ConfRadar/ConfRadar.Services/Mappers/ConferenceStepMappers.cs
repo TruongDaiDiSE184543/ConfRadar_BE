@@ -544,7 +544,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Material Download Mappers
-        public static MaterialDownload ToModel(this CreateMaterialDownloadRequest request, string conferenceId,string fileName)
+        public static MaterialDownload ToModel(this CreateMaterialDownloadRequest request, string conferenceId, string fileName)
         {
             return new MaterialDownload
             {

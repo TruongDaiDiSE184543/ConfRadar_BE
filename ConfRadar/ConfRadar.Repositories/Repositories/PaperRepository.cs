@@ -21,7 +21,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId);
         Task<List<UnAssignAbstractResponse>> GetUnAssignAbstract();
 
-        Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
+        Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
         Task<Paper> GetAllIncludeById(string paper);
         Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
 
@@ -128,7 +128,7 @@ namespace ConfRadar.Repositories.Repositories
             return result;
         }
 
-        public async Task<PaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
+        public async Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
         {
 
             var paper = await _context.Papers.AsNoTracking()
@@ -158,9 +158,21 @@ namespace ConfRadar.Repositories.Repositories
             {
                 return null;
             }
+            var totalPaperDetailResponse = new ToTalPaperDetailForReviewerResponse()
+            {
+                PaperId = paper.PaperId,
+                ConferenceId = paper.ConferenceId,
+                ConferenceName = paper.Conference != null ? paper.Conference.ConferenceName : null,
+                ConferenceBannerImageUrl = paper.Conference != null ? paper.Conference.BannerImageUrl : null,
+                PaperPhaseId = paper.PaperPhaseId,
+                PaperPhaseName = paper.PaperPhase != null ? paper.PaperPhase.PhaseName : null,
+                ResearchConferencePhaseId = paper.ResearchConferencePhaseId,
+                CreatedAt = paper.CreatedAt,
+                PaperTitle = paper.Title,
+                PaperDescription = paper.Description,
+            };
 
-
-            var paperDetailResponse = new PaperDetailForReviewerResponse();
+            var paperDetailResponse = totalPaperDetailResponse.PaperDetail;
             if (paper.PaperPhase != null)
             {
                 paperDetailResponse.CurrentPaperPhase = new PaperPhaseForReviewerResponse
@@ -353,7 +365,7 @@ namespace ConfRadar.Repositories.Repositories
                     CameraReadyEndDate = currentActivePhase?.CameraReadyEndDate
                 };
             }
-            return paperDetailResponse;
+            return totalPaperDetailResponse;
         }
 
         public async Task<Paper> GetAllIncludeById(string paper)
@@ -371,7 +383,7 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync(p => p.PaperId == paper);
         }
 
-        public async Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus,string confId)
+        public async Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId)
         {
             return await _context.Papers
                 .Include(p => p.CameraReady)

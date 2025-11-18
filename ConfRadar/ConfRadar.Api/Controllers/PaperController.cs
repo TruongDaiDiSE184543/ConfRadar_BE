@@ -312,7 +312,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.GetPaperDetailForReviewer(paperId, userId);
-            return Ok(ApiResponse<PaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper"));
+            return Ok(ApiResponse<ToTalPaperDetailForReviewerResponse>.SuccessResponse(result, "Danh sách các paper"));
         }
         [Authorize]
         [HttpGet("list-customer-waitlist")]

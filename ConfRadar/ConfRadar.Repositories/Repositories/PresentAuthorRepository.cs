@@ -2,7 +2,6 @@ using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
