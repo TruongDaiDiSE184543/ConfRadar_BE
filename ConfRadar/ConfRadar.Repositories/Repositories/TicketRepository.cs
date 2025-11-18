@@ -123,7 +123,7 @@ namespace ConfRadar.Repositories.Repositories
                     ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.ConferenceId : null,
                     IsAuthor = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.IsAuthor : null,
 
-                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true && t.IsRefunded==false) ?
+                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && t.PricePhase != null
@@ -132,7 +132,7 @@ namespace ConfRadar.Repositories.Repositories
                     .Select(p => p.PaperId)
                     .FirstOrDefault() : null,
 
-                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true && t.IsRefunded == false) ?
+                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && p.ResearchConferencePhase != null && t.PricePhase != null
@@ -140,7 +140,7 @@ namespace ConfRadar.Repositories.Repositories
                     .Select(p => p.ResearchConferencePhase!.RegistrationStartDate)
                     .FirstOrDefault() : null,
 
-                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true && t.IsRefunded == false) ?
+                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && p.ResearchConferencePhase != null && t.PricePhase != null
