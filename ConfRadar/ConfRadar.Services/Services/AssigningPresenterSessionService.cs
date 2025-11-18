@@ -272,13 +272,14 @@ namespace ConfRadar.Services.Services
             var paperConferenceId = paper.ConferenceId;
             if (paperConferenceId != null)
             {
-                var userTicket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(request.NewUserId, paperConferenceId);
+                var userTicket = await _unitOfWork.TicketRepository.GetNotRefundAuthorTicketByUserIdAndConferenceId(request.NewUserId, paperConferenceId);
 
 
                 if (userTicket == null || userTicket.PricePhase?.ConferencePrice?.IsAuthor != true)
                 {
-                    throw new BadRequestException($"Người dùng với ID {request.NewUserId} phải có vé loại 'author' cho hội nghị này để được chỉ định làm người trình bày.");
+                    throw new BadRequestException($"Người dùng với ID {request.NewUserId} phải có vé loại 'author' chưa refund cho hội nghị này để được chỉ định làm người trình bày.");
                 }
+
             }
 
             // Determine who is making the request - for this implementation, we'll use the current presenter if they exist
@@ -589,9 +590,11 @@ namespace ConfRadar.Services.Services
             //get pending request
             var PendingRequests = await _unitOfWork.SessionChangeRequestRepository.GetAllSessionChangeRequestsByStatusIdAndConfIdAsync(pendingStatus.GlobalStatusId, confId);
 
+
             foreach (var pendingRequest in PendingRequests)
             {
                 var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(pendingRequest.PaperId);
+                var user = await _unitOfWork.UserRepository.GetUserByUserId(pendingRequest.CustomerId);
                 SessionChangeRequestResponse sessionChangeRequestResponse = new SessionChangeRequestResponse
                 {
                     GlobalStatusId = pendingRequest.GlobalStatusId,
@@ -602,7 +605,7 @@ namespace ConfRadar.Services.Services
                     RequestAt = pendingRequest.RequestAt,
                     ReviewedAt = pendingRequest.ReviewedAt,
                     RequestedById = pendingRequest.CustomerId,
-                    RequestedByName = pendingRequest.Customer.FullName,
+                    RequestedByName = user.FullName,
                     SessionChangeRequestId = pendingRequest.SessionChangeRequestId,
                     CurrentSessionId = presentAuthor.ConferenceSessionId
                 };
