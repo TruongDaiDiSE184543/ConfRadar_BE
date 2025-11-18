@@ -134,7 +134,7 @@ namespace ConfRadar.Repositories.Repositories
                                      ConferenceCategoryName = t.PricePhase.ConferencePrice.Conference.ConferenceCategory != null ? t.PricePhase.ConferencePrice.Conference.ConferenceCategory.ConferenceCategoryName : null,
                                      ConferenceStatusId = t.PricePhase.ConferencePrice.Conference.ConferenceStatusId,
                                      ConferenceStatusName = t.PricePhase.ConferencePrice.Conference.ConferenceStatus != null ? t.PricePhase.ConferencePrice.Conference.ConferenceStatus.ConferenceStatusName : null,
-                                     Sessions =  t.PricePhase.ConferencePrice.Conference.ConferenceSessions.Select(cs => new SessionDetailForScheduleResponse()
+                                     Sessions = t.PricePhase.ConferencePrice.Conference.ConferenceSessions.Select(cs => new SessionDetailForScheduleResponse()
                                      {
                                          ConferenceSessionId = cs.ConferenceSessionId,
                                          Title = cs.Title,
@@ -152,7 +152,7 @@ namespace ConfRadar.Repositories.Repositories
                                          DestinationStreet = cs.Room != null && cs.Room.Destination != null ? cs.Room.Destination.Street : null,
                                          CityId = cs.Room != null && cs.Room.Destination != null ? cs.Room.Destination.CityId : null,
                                          CityName = cs.Room != null && cs.Room.Destination != null && cs.Room.Destination.City != null ? cs.Room.Destination.City.CityName : null,
-                                         PresenterAuthor =  cs.PresentAuthors.Select(pa=> new PresenterAuthorDetailForScheduleResponse()
+                                         PresenterAuthor = cs.PresentAuthors.Select(pa => new PresenterAuthorDetailForScheduleResponse()
                                          {
                                              ConferenceSessionId = cs.ConferenceSessionId,
                                              PaperId = pa.PaperId,
@@ -160,12 +160,12 @@ namespace ConfRadar.Repositories.Repositories
 
                                              ConferenceId = t.PricePhase.ConferencePrice.ConferenceId,
                                              PaperPhaseId = pa.Paper.PaperPhaseId,
-                                             PaperPhaseName = pa.Paper.PaperPhase !=null ? pa.Paper.PaperPhase.PhaseName : null,
+                                             PaperPhaseName = pa.Paper.PaperPhase != null ? pa.Paper.PaperPhase.PhaseName : null,
                                              CreatedAt = pa.Paper.CreatedAt,
                                              PaperTitle = pa.Paper.Title,
                                              PaperDescription = pa.Paper.Description,
                                              ResearchConferencePhaseId = pa.Paper.ResearchConferencePhaseId,
-                                             PaperAuthor =  pa.Paper.PaperAuthors.Select(pau => new PaperAuthorDetailForScheduleResponse()
+                                             PaperAuthor = pa.Paper.PaperAuthors.Select(pau => new PaperAuthorDetailForScheduleResponse()
                                              {
                                                  UserId = pau.UserId,
                                                  FullName = pau.User.FullName,
@@ -174,7 +174,7 @@ namespace ConfRadar.Repositories.Repositories
                                                  IsPresenter = pau.IsPresenter,
                                                  IsRootAuthor = pau.IsRootAuthor,
                                              }).ToList(),
-                                         }).ToList() ,
+                                         }).ToList(),
                                      }).ToList(),
                                  })
                                  .AsSplitQuery()

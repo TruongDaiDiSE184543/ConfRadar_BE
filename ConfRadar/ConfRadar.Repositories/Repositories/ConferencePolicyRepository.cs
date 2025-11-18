@@ -49,7 +49,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<Conference> GetConferenceByPolicyId(string policyId)
         {
-            var policy =  await _context.Policies.FirstOrDefaultAsync(p => p.PolicyId == policyId);
+            var policy = await _context.Policies.FirstOrDefaultAsync(p => p.PolicyId == policyId);
             return await _context.Conferences.FirstOrDefaultAsync(c => c.ConferenceId == policy.ConferenceId);
         }
 

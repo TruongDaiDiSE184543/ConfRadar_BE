@@ -55,11 +55,11 @@ namespace ConfRadar.Services.Services
             int size = pageSize ?? 10;
             return await _unitOfWork.TicketRepository.GetTicketsByUserId(userId, keyword, page, size, sessionStartTime, sessionEndTime);
         }
-        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId,string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
+        public async Task<PagedResultResponseDto<CustomerPaidTicketResponse>> GetTicketsByUserIdAndConferenceId(string conferenceId, string userId, string? keyword, int? pageNumber = 1, int? pageSize = 10, DateTime? sessionStartTime = null, DateTime? sessionEndTime = null)
         {
             int page = pageNumber ?? 1;
             int size = pageSize ?? 10;
-            return await _unitOfWork.TicketRepository.GetTicketsByUserIdAndConferenceId(conferenceId,userId, keyword, page, size, sessionStartTime, sessionEndTime);
+            return await _unitOfWork.TicketRepository.GetTicketsByUserIdAndConferenceId(conferenceId, userId, keyword, page, size, sessionStartTime, sessionEndTime);
         }
 
         public async Task<int> CreateRefundTicketRequest(RefundTicketRequest request, string userId)
