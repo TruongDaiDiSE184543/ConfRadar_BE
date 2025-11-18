@@ -73,6 +73,9 @@ namespace ConfRadar.Services.Services
         Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId);
         Task<bool> RequestOrganizerApproval(string confId, string userId);
         Task<bool> ActivateWaitlist(string confId, string userId);
+        Task ValidateForReadyStateAsync(Conference conf);
+        Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId);
+
     }
 
     public class ConferenceService : IConferenceService
@@ -806,7 +809,17 @@ namespace ConfRadar.Services.Services
                 }
 
                 //from onhold to ready
-                //if ()
+                if (newStatus.ConferenceStatusName == "Ready")
+                {
+                    if (currentStatus.ConferenceStatusName == "OnHold")
+                    {
+                         await OnholdToReadyValidAsync(conference, newStatus.ConferenceStatusId, currentStatus.ConferenceStatusId);
+                    }
+                    else await ValidateForReadyStateAsync(conference);
+                }
+                    
+
+                
 
                 // Update the conference status
                 conference.ConferenceStatusId = newStatus.ConferenceStatusId;
@@ -2407,8 +2420,6 @@ namespace ConfRadar.Services.Services
 
             // --- BƯỚC A: KIỂM TRA SỰ ĐẦY ĐỦ THÔNG TIN ---
             // Đây là phần validation riêng của trạng thái Ready
-            
-            
 
             var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
             if (price == null)
@@ -2417,24 +2428,84 @@ namespace ConfRadar.Services.Services
             if (!sessions.Any())
                 invalidMessages.Add("Hội nghị phải có ít nhất một phiên.");
 
-
-
+            // Kiểm tra nếu là hội nghị kỹ thuật, phiên phải có ít nhất một diễn giả
             if (conf.IsResearchConference == false)
             {
                 var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conf.ConferenceId);
-                if (technicalDetail == null){
-                    invalidMessages.Add("Hội nghị tech phải có technicalDetail.");
+                if (technicalDetail == null)
+                {
+                    invalidMessages.Add("Hội nghị kỹ thuật phải có thông tin chi tiết kỹ thuật.");
+                }
+
+                // Kiểm tra các phiên trong hội nghị kỹ thuật có ít nhất một diễn giả
+                //foreach (var session in sessions)
+                //{
+                //    var speakers = await _unitOfWork.SpeakerRepository.GetSpeakersBySessionIdAsync(session.ConferenceSessionId);
+                //    if (!speakers.Any())
+                //    {
+                //        invalidMessages.Add($"Phiên '{session.Title}' trong hội nghị kỹ thuật phải có ít nhất một diễn giả.");
+                //    }
+                //}
+            }
+            // Kiểm tra nếu là hội nghị nghiên cứu
+            else
+            {
+                // Kiểm tra các phiên trong hội nghị nghiên cứu có ít nhất một tác giả trình bày
+                //foreach (var session in sessions)
+                //{
+                //    var presentAuthors = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorsBySessionIdAsync(session.ConferenceSessionId);
+                //    if (!presentAuthors.Any())
+                //    {
+                //        invalidMessages.Add($"Phiên '{session.Title}' trong hội nghị nghiên cứu phải có ít nhất một tác giả trình bày.");
+                //    }
+                //}
+
+                // Kiểm tra hội nghị nghiên cứu có các thông tin bắt buộc
+                var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conf.ConferenceId);
+                if (researchDetail == null)
+                {
+                    invalidMessages.Add("Hội nghị nghiên cứu phải có thông tin chi tiết nghiên cứu.");
+                }
+
+                // Kiểm tra các thành phần của hội nghị nghiên cứu - mỗi loại phải có ít nhất một
+                var researchPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conf.ConferenceId);
+                if (!researchPhases.Any())
+                {
+                    invalidMessages.Add("Hội nghị nghiên cứu phải có ít nhất một giai đoạn nghiên cứu.");
+                }
+
+                var materialDownloads = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conf.ConferenceId);
+                if (!materialDownloads.Any())
+                {
+                    invalidMessages.Add("Hội nghị nghiên cứu phải có ít nhất một tài liệu tải về.");
+                }
+
+                var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conf.ConferenceId);
+                if (!rankingFileUrls.Any())
+                {
+                    invalidMessages.Add("Hội nghị nghiên cứu phải có ít nhất một URL tệp xếp hạng.");
+                }
+
+                var rankingReferenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conf.ConferenceId);
+                if (!rankingReferenceUrls.Any())
+                {
+                    invalidMessages.Add("Hội nghị nghiên cứu phải có ít nhất một URL tham khảo xếp hạng.");
                 }
             }
 
-            
+            // Kiểm tra tất cả hội nghị phải có ít nhất một chính sách
+            var policies = await _unitOfWork.ConferencePolicyRepository.GetPoliciesByConferenceIdAsync(conf.ConferenceId);
+            if (!policies.Any())
+            {
+                invalidMessages.Add("Hội nghị phải có ít nhất một chính sách.");
+            }
 
             // --- BƯỚC B: KIỂM TRA NGÀY THÁNG LỖI THỜI ---
-            var today = DateOnly.FromDateTime(DateTime.Now);
-            var todayAsDateTime = DateTime.Now;
+            var today = await _timeProviderService.GetVietnamDate();
+            //var todayAsDateTime = DateTime.Now;
 
             // --- ĐỊNH NGHĨA "RULE" ---
-            Func<DateOnly?, bool> dateOnlyRule = (dateToCheck) =>
+            Func<DateOnly?, bool> dateOnlyRule = (DateOnly? dateToCheck) =>
                 dateToCheck.HasValue && dateToCheck.Value < today;
 
             //Func<DateTime?, bool> dateTimeRule = (dateTimeToCheck) =>

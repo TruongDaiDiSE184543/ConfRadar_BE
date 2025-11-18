@@ -1,0 +1,252 @@
+using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Common;
+using ConfRadar.Services.DTOs.Statistics;
+using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Mappers;
+using Microsoft.Extensions.Options;
+
+namespace ConfRadar.Services.Services
+{
+    public class StatisticsService : IStatisticsService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IExcelExportService _excelExportService;
+        private readonly IObjectStorageFileService _objectStorageFileService;
+        private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
+
+        public StatisticsService(IUnitOfWork unitOfWork,
+            IExcelExportService excelExportService,
+            IObjectStorageFileService objectStorageFileService,
+            IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings)
+        {
+            _unitOfWork = unitOfWork;
+            _excelExportService = excelExportService;
+            _objectStorageFileService = objectStorageFileService;
+            _objectStorageSettings = objectStorageSettings.Value;
+        }
+
+        public async Task<ConferenceStatisticsResponse> GetConferenceStatisticsAsync(string conferenceId)
+        {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null)
+            {
+                throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            }
+
+            // Get all tickets for the conference that have been paid
+            var paidTickets = await _unitOfWork.TicketRepository.GetPaidTicketsByConferenceIdAsync(conferenceId);
+            
+            // Get conference prices and phases with details
+            var conferencePrices = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conferenceId);
+            
+            // Calculate statistics for each ticket type and phase
+            var ticketPhaseStats = new List<TicketPhaseStatisticsResponse>();
+            int totalTicketsSold = 0;
+            decimal totalRevenue = 0;
+
+            foreach (var price in conferencePrices)
+            {
+                foreach (var phase in price.PricePhases)
+                {
+                    // Filter tickets for this specific price and phase
+                    var ticketsForPhase = paidTickets
+                        .Where(t => t.PricePhaseId == phase.PricePhaseId)
+                        .ToList();
+
+                    var totalSold = ticketsForPhase.Count;
+                    var totalAmount = ticketsForPhase.Sum(t => ((t.PricePhase.ConferencePrice?.TicketPrice ?? 0)) * (t.PricePhase.ApplyPercent / 100m));
+
+                    var ticketPhaseStat = new TicketPhaseStatisticsResponse
+                    {
+                        ConferencePriceId = price.ConferencePriceId,
+                        TicketName = price.TicketName,
+                        OriginalPrice = price.TicketPrice.Value,
+                        PhaseName = phase.PhaseName,
+                        ApplyPhasePercent = phase.ApplyPercent.Value,
+                        TotalSold = totalSold,
+                        TotalAmount = totalAmount.Value
+                    };
+
+                    // If conference is not internal hosted, calculate commission
+                    if (!conference.IsInternalHosted.Value)
+                    {
+                        var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
+                        if (technicalDetail != null && technicalDetail.Commission.HasValue)
+                        {
+                            var commissionPercentage = technicalDetail.Commission.Value;
+                            var commissionAmount = totalAmount * (commissionPercentage / 100m);
+                            var amountToConfRadar = commissionAmount;
+                            var amountToCollaborator = totalAmount - commissionAmount;
+
+                            ticketPhaseStat.CommissionPercentage = commissionPercentage;
+
+                            ticketPhaseStat.AmountToConfRadar = amountToConfRadar;
+                            ticketPhaseStat.AmountToCollaborator = amountToCollaborator;
+                        }
+                    }
+
+                    ticketPhaseStats.Add(ticketPhaseStat);
+                    totalTicketsSold += totalSold;
+                    totalRevenue += totalAmount.Value;
+                }
+            }
+
+            // Create response
+            var response = conference.ToConferenceStatisticsResponse(ticketPhaseStats, totalTicketsSold, totalRevenue);
+            return response;
+        }
+
+
+
+        public async Task<ExportStatisticsResponse> ExportConferenceStatisticsAsync(string conferenceId, string exportFormat)
+        {
+            // Get the conference statistics data
+            var statistics = await GetConferenceStatisticsAsync(conferenceId);
+
+            // Validate export format
+            var validFormats = new[] { "pdf", "excel", "csv" };
+            if (!validFormats.Contains(exportFormat.ToLower()))
+            {
+                throw new BadRequestException($"Invalid export format. Valid formats are: {string.Join(", ", validFormats)}");
+            }
+
+            // Generate the file based on the format
+            string fileName, fileUrl;
+            var fileNameWithoutExt = $"conference_statistics_{conferenceId}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+
+            switch (exportFormat.ToLower())
+            {
+                case "pdf":
+                    fileName = fileNameWithoutExt + ".pdf";
+                    // Export to PDF logic would go here
+                    // For now, simulate generating a PDF by saving some basic data
+                    // In a real implementation, you would use a PDF generation library
+                    fileUrl = await GeneratePdfReport(statistics, fileName);
+                    break;
+                case "excel":
+                    fileName = fileNameWithoutExt + ".xlsx";
+                    // Export to Excel logic would go here
+                    fileUrl = await GenerateExcelReport(statistics, fileName);
+                    break;
+                case "csv":
+                    fileName = fileNameWithoutExt + ".csv";
+                    // Export to CSV logic would go here
+                    fileUrl = await GenerateCsvReport(statistics, fileName);
+                    break;
+                default:
+                    throw new BadRequestException($"Unsupported export format: {exportFormat}");
+            }
+
+            return new ExportStatisticsResponse
+            {
+                FileName = fileName,
+                FileUrl = fileUrl,
+                ExportFormat = exportFormat.ToLower(),
+                ExportedAt = DateTime.UtcNow
+            };
+        }
+
+        // Helper methods to generate different report formats
+        private async Task<string> GeneratePdfReport(ConferenceStatisticsResponse statistics, string fileName)
+        {
+            // In a real implementation, you would use a PDF generation library like iTextSharp or DinkToPdf
+            // For now, just return a mock file URL for demonstration
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("Mock PDF content"));
+            var fileUrl = await _objectStorageFileService.UploadFileAsync(
+                ObjectStorageBucketEnum.report.ToString(),
+                fileName,
+                stream,
+                "application/pdf");
+
+            return _objectStorageSettings.EndPoint + fileUrl;
+        }
+
+        private async Task<string> GenerateExcelReport(ConferenceStatisticsResponse statistics, string fileName)
+        {
+            // Create a flat list of ticket phase statistics for Excel export
+            var exportData = new List<object>();
+            foreach (var stat in statistics.TicketPhaseStatistics)
+            {
+                exportData.Add(new
+                {
+                    TicketName = stat.TicketName,
+                    PhaseName = stat.PhaseName,
+                    TotalSold = stat.TotalSold,
+                    TotalAmount = stat.TotalAmount,
+                    CommissionPercentage = stat.CommissionPercentage ?? 0,
+                    AmountToCollaborator = stat.AmountToCollaborator ?? 0,
+                    AmountToConfRadar = stat.AmountToConfRadar ?? 0,
+                });
+            }
+
+            // Use the ExcelExportService to generate the Excel file
+            var excelBytes = await _excelExportService.ExportToExcelAsync(exportData, "Ticket Statistics");
+
+            // Convert to stream and upload the Excel file to object storage
+            using var stream = new MemoryStream(excelBytes);
+            var fileUrl = await _objectStorageFileService.UploadFileAsync(
+                ObjectStorageBucketEnum.report.ToString(),
+                fileName,
+                stream,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            return _objectStorageSettings.EndPoint + fileUrl;
+        }
+
+        private async Task<string> GenerateCsvReport(ConferenceStatisticsResponse statistics, string fileName)
+        {
+            // Create a flat list of ticket phase statistics for CSV export
+            var exportData = new List<object>();
+            foreach (var stat in statistics.TicketPhaseStatistics)
+            {
+                exportData.Add(new
+                {
+                    TicketName = stat.TicketName,
+                    PhaseName = stat.PhaseName,
+                    TotalSold = stat.TotalSold,
+                    TotalAmount = stat.TotalAmount,
+                    CommissionPercentage = stat.CommissionPercentage ?? 0,
+                    AmountToCollaborator = stat.AmountToCollaborator ?? 0,
+                    AmountToConfRadar = stat.AmountToConfRadar ?? 0,
+                   
+                });
+            }
+
+            // Note: we're not using the excel export here for CSV, just creating CSV directly
+            // Use the ExcelExportService for actual Excel export functionality
+
+            // For CSV, we'll create the content directly
+            var csvContent = new System.Text.StringBuilder();
+            csvContent.AppendLine("TicketName,PhaseName,TotalSold,TotalAmount,CommissionPercentage,AmountToCollaborator,AmountToConfRadar,CommissionAmount");
+
+            foreach (var stat in statistics.TicketPhaseStatistics)
+            {
+                csvContent.AppendLine($"{EscapeCsvField(stat.TicketName)},{EscapeCsvField(stat.PhaseName)},{stat.TotalSold},{stat.TotalAmount},{stat.CommissionPercentage ?? 0},{stat.AmountToCollaborator ?? 0},{stat.AmountToConfRadar ?? 0}");
+            }
+
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent.ToString()));
+            var fileUrl = await _objectStorageFileService.UploadFileAsync(
+                ObjectStorageBucketEnum.report.ToString(),
+                fileName,
+                stream,
+                "text/csv");
+
+            return _objectStorageSettings.EndPoint + fileUrl;
+        }
+
+        private string EscapeCsvField(string field)
+        {
+            if (string.IsNullOrEmpty(field))
+                return string.Empty;
+
+            // Escape commas, quotes, and newlines in CSV fields
+            field = field.Replace("\"", "\"\"");
+            if (field.Contains(',') || field.Contains('"') || field.Contains('\n') || field.Contains('\r'))
+            {
+                field = $"\"{field}\"";
+            }
+            return field;
+        }
+    }
+}
