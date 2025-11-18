@@ -22,6 +22,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferenceSession>> GetSessionsByRoomIdAtTimeAsync(string roomId, DateOnly date, DateTime checkTime);
         Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date);
         Task<List<ConferenceSession>> GetSessionsByRoomIdsAndDateAsync(List<string> roomIds, DateOnly date);
+        bool AnyTechSessionWithSpeaker(string techConfId);
     }
 
     public class ConferenceSessionRepository : GenericRepository<ConferenceSession>, IConferenceSessionRepository
@@ -180,6 +181,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             await _context.ConferenceSessions.AddRangeAsync(sessions);
             return await _context.SaveChangesAsync();
+        }
+
+        public bool AnyTechSessionWithSpeaker(string techConfId)
+        {
+            return _context.ConferenceSessions.Include(cs => cs.Speakers).Any(cs => cs.ConferenceId == techConfId && cs.Speakers.Any());
         }
     }
 }

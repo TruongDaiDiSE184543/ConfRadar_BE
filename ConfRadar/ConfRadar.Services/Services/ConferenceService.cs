@@ -120,7 +120,93 @@ namespace ConfRadar.Services.Services
         //}
 
         #region Helper methods to validateDate
+        private async void OnholdToReadyValid(Conference conf, ConferenceStatus ready,ConferenceStatus onHold)
+        {
+            //get date when conf switch from ready to onhold
 
+            var OnholdTimeLine = await _unitOfWork.ConferenceTimelineRepository.GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(conf.ConferenceId, ready.ConferenceStatusId, onHold.ConferenceStatusId);
+            if (OnholdTimeLine == null)
+                throw new Exception("Không tìm thấy timeline khi conf chuyển từ ready sang onhold");
+
+            //
+            var today = await _timeProviderService.GetVietnamDate();
+            var onHoldStartDate = OnholdTimeLine.ChangeDate;
+
+
+            
+        }
+
+        private async Task<List<string>> ValidateConferenceTimelineAsync(Conference conf,Func<DateOnly?, bool> dateOnlyValidationRule)
+        {
+            var invalidMessages = new List<string>();
+
+            // Hàm helper nội bộ để giảm lặp code
+            void AddIfInvalid(DateOnly? date, string name) { if (dateOnlyValidationRule(date)) invalidMessages.Add(name); }
+           
+
+            // 1. Kiểm tra Conference
+            AddIfInvalid(conf.StartDate, $"Ngày bắt đầu hội nghị ({conf.StartDate.Value:dd/MM/yyyy})");
+            AddIfInvalid(conf.EndDate, $"Ngày kết thúc hội nghị ({conf.EndDate.Value:dd/MM/yyyy})");
+            AddIfInvalid(conf.TicketSaleEnd, $"Ngày kết thúc bán vé ({conf.TicketSaleEnd.Value:dd/MM/yyyy})");
+
+            // 2. Kiểm tra PricePhase và RefundPolicy
+            var allPrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conf.ConferenceId);
+            foreach (var price in allPrices)
+            {
+                var phases = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(price.ConferencePriceId);
+                foreach (var phase in phases)
+                {
+                    AddIfInvalid(phase.EndDate, $"Giai đoạn bán vé '{phase.PhaseName}' ({phase.EndDate.Value:dd/MM/yyyy})");
+
+                    var refundPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByPricePhaseId(phase.PricePhaseId);
+                    foreach (var policy in refundPolicies)
+                    {
+                        AddIfInvalid(policy.RefundDeadline, $"Hạn chót hoàn tiền của phase '{phase.PhaseName}' ({policy.RefundDeadline.Value:dd/MM/yyyy})");
+                    }
+                }
+            }
+
+            // 3. Kiểm tra ConferenceSession
+            var allSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+            foreach (var session in allSessions)
+            {
+                AddIfInvalid(session.SessionDate, $"Phiên '{session.Title}' (dự kiến vào {session.StartTime.Value:dd/MM/yyyy HH:mm})");
+            }
+
+            // 4. Kiểm tra Research Conference (nếu có)
+            if (conf.IsResearchConference == true)
+            {
+                var allPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conf.ConferenceId);
+                foreach(var phase in allPhase)
+
+                if (phase != null)
+                {
+                    string isWaitList = phase.IsWaitlist.Value ? "Trong phase waitlist": "Trong phase chính";
+                    AddIfInvalid(phase.RegistrationEndDate, $"{isWaitList} Hạn chót RegistrationEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
+                    AddIfInvalid(phase.FullPaperEndDate, $"{isWaitList} Hạn chót FullPaperEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
+                    AddIfInvalid(phase.ReviewEndDate, $"{isWaitList} Hạn chót ReviewEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
+                    AddIfInvalid(phase.ReviseEndDate, $"{isWaitList} Hạn chót ReviseEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
+                    AddIfInvalid(phase.CameraReadyEndDate, $"{isWaitList} Hạn chót CameraReadyEndDate ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
+                    AddIfInvalid(phase.CameraReadyEndDate, $"{isWaitList} Hạn chót Camera Ready ({phase.CameraReadyEndDate.Value:dd/MM/yyyy})");
+                }
+            }
+
+            return invalidMessages;
+        }
+
+        private  bool IsDateInvalidatedByOnHold(DateOnly onHoldStartDate, DateOnly today, DateOnly? dateToCheck)
+        {
+            // Nếu không có ngày để kiểm tra, nó không thể bị lỗi thời.
+            if (!dateToCheck.HasValue)
+            {
+                return false;
+            }
+
+            // Điều kiện "lỗi thời":
+            // 1. Mốc thời gian đó (dateToCheck) đáng lẽ phải xảy ra SAU KHI hoặc VÀO NGÀY bị OnHold.
+            // 2. VÀ mốc thời gian đó bây giờ đã nằm TRONG QUÁ KHỨ.
+            return dateToCheck.Value >= onHoldStartDate && dateToCheck.Value < today;
+        }
 
         #endregion
 
@@ -690,6 +776,8 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Không tìm thấy trạnng thái hiện tại của hội nghị");
             }
+            var onholdStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.OnHold.GetDescription());
+            var cancelledStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Cancelled.GetDescription());
 
             // Get the new status by name
             var newStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(newStatusName);
@@ -706,6 +794,9 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException($"Chuyển trạng thái từ '{currentStatus.ConferenceStatusName}' sang '{newStatusName}' không hợp lệ");
                 }
+
+                //from onhold to ready
+                //if ()
 
                 // Update the conference status
                 conference.ConferenceStatusId = newStatus.ConferenceStatusId;
@@ -2264,6 +2355,91 @@ namespace ConfRadar.Services.Services
                 throw;
             }
             #endregion
+        }
+
+        public async Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId)
+        {
+            var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
+            var onHoldTimelineEntry = await _unitOfWork.ConferenceTimelineRepository.GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(conf.ConferenceId, readyId,onHoldId);
+            if (onHoldTimelineEntry == null)
+                throw new InvalidOperationException("Không tìm thấy lịch sử chuyển sang trạng thái 'OnHold'.");
+
+            var onHoldStartDate = onHoldTimelineEntry.ChangeDate;
+            var today = await _timeProviderService.GetVietnamDate();
+            var todayAsDateTime = await _timeProviderService.GetVietnamTime();
+
+            // --- ĐỊNH NGHĨA "RULE" ---
+            Func<DateOnly?, bool> dateOnlyRule = (DateOnly? dateToCheck) =>
+                dateToCheck.HasValue && dateToCheck.Value >= onHoldStartDate && dateToCheck.Value < today;
+
+            //Func<DateTime?, bool> dateTimeRule = (DateTime? dateTimeToCheck) =>
+            //{
+            //    if (!dateTimeToCheck.HasValue) return false;
+            //    var dateOnly = DateOnly.FromDateTime(dateTimeToCheck.Value);
+            //    return dateOnly >= onHoldStartDate && dateOnly < today;
+            //};
+
+            // --- GỌI "ENGINE" VỚI RULE TRÊN ---
+            var invalidMessages = await ValidateConferenceTimelineAsync(conf, dateOnlyRule);
+
+            if (invalidMessages.Any())
+            {
+                string errorMessage = "Không thể chuyển về trạng thái 'Ready'. Các mốc thời gian sau đã bị lỗi thời và cần được cập nhật:\n- "
+                                    + string.Join("\n- ", invalidMessages.Distinct());
+                throw new BadRequestException(errorMessage);
+            }
+        }
+
+
+        public async Task ValidateForReadyStateAsync(Conference conf)
+        {
+            var invalidMessages = new List<string>();
+
+            // --- BƯỚC A: KIỂM TRA SỰ ĐẦY ĐỦ THÔNG TIN ---
+            // Đây là phần validation riêng của trạng thái Ready
+            
+            
+
+            var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
+            if (price == null)
+                invalidMessages.Add("Hội nghị phải có ít nhất một loại vé, trong đó có ít nhất một phase.");
+            var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+            if (!sessions.Any())
+                invalidMessages.Add("Hội nghị phải có ít nhất một phiên.");
+
+
+
+            if (conf.IsResearchConference == false)
+            {
+                var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conf.ConferenceId);
+                if (technicalDetail == null){
+                    invalidMessages.Add("Hội nghị tech phải có technicalDetail.");
+                }
+            }
+
+            
+
+            // --- BƯỚC B: KIỂM TRA NGÀY THÁNG LỖI THỜI ---
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var todayAsDateTime = DateTime.Now;
+
+            // --- ĐỊNH NGHĨA "RULE" ---
+            Func<DateOnly?, bool> dateOnlyRule = (dateToCheck) =>
+                dateToCheck.HasValue && dateToCheck.Value < today;
+
+            //Func<DateTime?, bool> dateTimeRule = (dateTimeToCheck) =>
+            //    dateTimeToCheck.HasValue && dateTimeToCheck.Value < todayAsDateTime;
+
+            // --- GỌI "ENGINE" VỚI RULE TRÊN ---
+            var timelineErrors = await ValidateConferenceTimelineAsync(conf, dateOnlyRule);
+            invalidMessages.AddRange(timelineErrors); // Thêm các lỗi timeline vào danh sách chung
+
+            if (invalidMessages.Any())
+            {
+                string errorMessage = "Không thể chuyển sang trạng thái 'Ready'. Vui lòng khắc phục các vấn đề sau:\n- "
+                                    + string.Join("\n- ", invalidMessages.Distinct());
+                throw new BadRequestException(errorMessage);
+            }
         }
     }
 }

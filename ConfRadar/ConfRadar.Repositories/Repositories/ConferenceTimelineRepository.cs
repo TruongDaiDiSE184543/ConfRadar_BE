@@ -13,6 +13,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateConferenceTimelineAsync(ConferenceTimeline conferenceTimeline);
         Task<List<ConferenceTimeline>> GetAllConferenceTimelinesAsync();
         Task<List<ConferenceTimeline>> GetConferenceTimelineByConfIdAndStatusIdAsync(string confId, string previousId, string afterwardId);
+        Task<ConferenceTimeline> GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(string confId, string readyId, string onHoldId);
         Task<List<ConferenceTimeline>> GetConferenceTimelineByConfIdAsync(string confId);
     }
 
@@ -57,6 +58,13 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> UpdateConferenceTimelineAsync(ConferenceTimeline conferenceTimeline)
         {
             return await base.UpdateAsync(conferenceTimeline);
+        }
+
+        public async Task<ConferenceTimeline> GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(string confId, string readyId, string onHoldId)
+        {
+            return await _context.ConferenceTimelines.Where(c => c.ConferenceId == confId &&
+            c.PreviousStatusId == readyId &&
+            c.AfterwardStatusId == onHoldId).OrderByDescending(c =>c.ChangeDate).FirstAsync();
         }
     }
 
