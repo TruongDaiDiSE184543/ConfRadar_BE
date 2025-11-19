@@ -617,7 +617,7 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPut("add-pricephase-for-waitlist")]
         [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> AddWaitListPhase([FromQuery] string conferencePriceId, [FromBody] AddPricePhasesRequest request)
+        public async Task<IActionResult> AddWaitListPhase([FromQuery] string conferencePriceId, [FromBody] PhaseForWaitList request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceStepService.AddPricePhaseForWaitList(conferencePriceId, request, userId);
