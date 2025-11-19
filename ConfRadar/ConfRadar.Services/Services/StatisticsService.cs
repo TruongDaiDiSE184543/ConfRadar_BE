@@ -8,6 +8,12 @@ using Microsoft.Extensions.Options;
 
 namespace ConfRadar.Services.Services
 {
+    public interface IStatisticsService
+    {
+        Task<ConferenceStatisticsResponse> GetConferenceStatisticsAsync(string conferenceId);
+        Task<ExportStatisticsResponse> ExportConferenceStatisticsAsync(string conferenceId, string exportFormat);
+        Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId);
+    }
     public class StatisticsService : IStatisticsService
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -247,6 +253,42 @@ namespace ConfRadar.Services.Services
                 field = $"\"{field}\"";
             }
             return field;
+        }
+
+        public async Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId)
+        {
+            // Get all tickets associated with the conference, including related entities
+            var tickets = await _unitOfWork.TicketRepository.GetTicketsWithDetailsByConferenceIdAsync(conferenceId);
+
+            var ticketHolders = new List<TicketHolderDetailResponse>();
+
+            foreach (var ticket in tickets)
+            {
+                // Get the associated user who purchased the ticket
+                var user = await _unitOfWork.UserRepository.GetUserByUserId(ticket.UserId);
+
+                // Get the conference price details for the ticket
+                var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(ticket.PricePhase.ConferencePrice.ConferencePriceId);
+
+                // Get the price phase for the ticket
+                var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(ticket.PricePhaseId);
+               
+
+                var ticketHolder = new TicketHolderDetailResponse
+                {
+                    TicketId = ticket.TicketId,
+                    CustomerName = user?.FullName ?? "Unknown Customer", // Use user's full name
+                    TicketTypeName = conferencePrice?.TicketName ?? "Unknown Ticket Type", // Use conference price name as ticket type
+                    PhaseName = pricePhase?.PhaseName ?? "N/A", // Get the phase name
+                    ActualPrice = (conferencePrice?.TicketPrice* pricePhase.ApplyPercent/100 )?? 0, // Price based on the phase
+                    PurchaseDate = ticket.RegisteredDate.Value, // Register date from ticket
+                    Status = ticket.IsRefunded == true ? "Đã hoàn tiền" : "Đã thanh toán" // Status based on IsRefunded flag
+                };
+
+                ticketHolders.Add(ticketHolder);
+            }
+
+            return ticketHolders;
         }
     }
 }

@@ -69,11 +69,10 @@ namespace ConfRadar.Services.DTOs.Statistics
     {
         public string TicketId { get; set; }
         public string CustomerName { get; set; }
-        public string CustomerEmail { get; set; }
         public string TicketTypeName { get; set; }
         public string PhaseName { get; set; }
         public decimal ActualPrice { get; set; }
-        public DateTime PurchaseDate { get; set; }
+        public DateOnly PurchaseDate { get; set; }
         public string Status { get; set; } // "Đã thanh toán", "Đã hoàn tiền"
     }
 
