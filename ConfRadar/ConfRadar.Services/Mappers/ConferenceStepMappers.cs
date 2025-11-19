@@ -80,6 +80,23 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
+        public static PricePhaseResponse ToResponse(this PricePhase model, List<RefundPolicyResponse> refundpolicies)
+        {
+            return new PricePhaseResponse
+            {
+                PricePhaseId = model.PricePhaseId,
+                PhaseName = model.PhaseName,
+                StartDate = model.StartDate,
+                EndDate = model.EndDate,
+                ApplyPercent = model.ApplyPercent,
+                TotalSlot = model.TotalSlot,
+                AvailableSlot = model.AvailableSlot,
+                ConferencePriceId = model.ConferencePriceId,
+                ResearchConferencePhaseId = model.ResearchConferencePhaseId,
+                RefundPolicy = refundpolicies
+            };
+        }
+
         // Conference Session Mappers
         public static ConferenceSession ToModel(this CreateConferenceSessionRequest request, string conferenceId)
         {

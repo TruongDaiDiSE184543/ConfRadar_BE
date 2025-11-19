@@ -106,6 +106,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public List<CreatePricePhaseRequest> Phases { get; set; }
     }
 
+    public class PhaseForWaitList
+    {
+        public List<CreatePricePhaseRequest> Phases { get; set; }
+    }
+
     public class AddConferencePricesRequest
     {
         public List<CreateConferencePriceRequest> TypeOfTicket { get; set; }
