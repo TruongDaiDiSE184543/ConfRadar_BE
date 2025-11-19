@@ -2338,7 +2338,7 @@ namespace ConfRadar.Services.Services
             var authorConferencePrices = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(confId);
             var remainingAuthorSlots = authorConferencePrices.Sum(cp => cp.AvailableSlot ?? 0);
             if (remainingAuthorSlots <= 0)
-                throw new BadRequestException("Không th? kích ho?t waitlist vì t?t c? các su?t dành cho tác gi? (vé 'isAuthor') dã du?c bán h?t.");
+                throw new BadRequestException("Không theer kích ho?t waitlist vì t?t c? các su?t dành cho tác gi? (vé 'isAuthor') dã du?c bán h?t.");
 
             // 2.2. Ki?m tra di?u ki?n th?i gian
             var today = await _timeProviderService.GetVietnamDate();

@@ -279,7 +279,7 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer, Collaborator")]
 
         [HttpPost("{conferenceId}/refund-policies")]
-        public async Task<IActionResult> AddRefundPolicies([FromQuery] string conferenceId, [FromQuery] string PricePhaseId, [FromBody] AddRefundPoliciesRequest request)
+        public async Task<IActionResult> AddRefundPolicies([FromRoute] string conferenceId, [FromQuery] string PricePhaseId, [FromBody] AddRefundPoliciesRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var refundPolicies = await _serviceManager.ConferenceStepService.AddRefundPoliciesAsync(conferenceId, PricePhaseId, request, userId);

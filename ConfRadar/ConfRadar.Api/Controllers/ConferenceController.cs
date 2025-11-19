@@ -294,8 +294,8 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.ActivateWaitlist(confId, userId);
-            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
-            return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
+            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "kich hoat waitlit thanh cocng"));
+            return Ok(ApiResponse<bool>.FailResponse("kich hoat waitlit thanh cocng thất bại"));
         }
     }
 }
