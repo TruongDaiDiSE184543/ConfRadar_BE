@@ -16,6 +16,7 @@ namespace ConfRadar.Services.Services
         Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId);
         Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
         Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId);
+        Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId);
     }
     public class StatisticsService : IStatisticsService
     {
@@ -315,7 +316,7 @@ namespace ConfRadar.Services.Services
             return await _excelExportService.ExportToExcelAsync(exportData, "Danh Sách Người Mua Vé");
         }
 
-        
+        // DÁN TOÀN BỘ PHIÊN BẢN NÀY ĐỂ THAY THẾ PHIÊN BẢN CŨ
 
         public async Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId)
         {
@@ -414,6 +415,66 @@ namespace ConfRadar.Services.Services
 
                 return await package.GetAsByteArrayAsync();
             }
+        }
+
+        public async Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId)
+        {
+            // Get all papers for the conference
+            var papers = await _unitOfWork.PaperRepository.GetPapersByConferenceIdAsync(conferenceId);
+
+            var paperDetails = new List<DTOs.Statistics.PaperDetailResponse>();
+
+            foreach (var paper in papers)
+            {
+                // Get paper reviewers assigned to this paper
+                var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(paper.PaperId);
+                var rootAuthor = await _unitOfWork.PaperAuthorRepository.GetRootAuthor(paper.PaperId);
+
+                var rootUser = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
+                var assignedReviewers = new List<string>();
+                if (paperReviewers != null && paperReviewers.Any())
+                {
+                    foreach (var paperReviewer in paperReviewers)
+                    {
+                        // Get reviewer user details
+                        var reviewer = await _unitOfWork.UserRepository.GetUserByUserId(paperReviewer.UserId);
+                        if (reviewer != null)
+                        {
+                            assignedReviewers.Add(reviewer.FullName + " (" + reviewer.UserId + ")");
+                        }
+                    }
+                }
+
+                // Get the paper phase information
+                string paperPhaseName = "N/A";
+                if (paper.PaperPhaseId != null)
+                {
+                    var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByIdAsync(paper.PaperPhaseId);
+                    if (paperPhase != null)
+                    {
+                        paperPhaseName = paperPhase.PhaseName;
+                    }
+                }
+
+                var paperDetail = new DTOs.Statistics.PaperDetailResponse
+                {
+                    PaperId = paper.PaperId,
+                    Title = paper.Title,
+                    SubmittingAuthorId = rootUser.UserId,
+                    PaperPhase = paperPhaseName,
+                    AssignedReviewers = assignedReviewers
+                };
+
+                paperDetails.Add(paperDetail);
+            }
+
+            var response = new DTOs.Statistics.PaperStatisticsResponse
+            {
+                TotalSubmissions = papers.Count,
+                PaperDetails = paperDetails
+            };
+
+            return response;
         }
     }
 }

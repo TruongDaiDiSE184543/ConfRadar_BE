@@ -26,7 +26,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<ConferenceStatisticsResponse>.SuccessResponse(result, "Lấy thành công vé đã bán"));
         }
 
-        [HttpGet("tick-holders")]
+        [HttpGet("ticket-holders")]
         public async Task<IActionResult> getTicketHolders([FromQuery] string confId)
         {
             var result = await _serviceManager.StatisticsService.GetTicketHoldersByConferenceIdAsync(confId);
@@ -38,6 +38,13 @@ namespace ConfRadar.Api.Controllers
             var fileBytes = await _serviceManager.StatisticsService.ExportDetailedConferenceStatisticsAsync(confId);
             var fileName = $"conference_statistics_{confId}{ DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
             return File(fileBytes,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",fileName);
+        }
+
+        [HttpGet("submitted-papers")]
+        public async Task<IActionResult> getSubmittedPapers([FromQuery] string confId)
+        {
+            var result = await _serviceManager.StatisticsService.GetPaperStatisticsByConferenceIdAsync(confId);
+            return Ok(ApiResponse<PaperStatisticsResponse>.SuccessResponse(result, "Lấy thành công thông tin vé đã bán và người mua"));
         }
     }
 }

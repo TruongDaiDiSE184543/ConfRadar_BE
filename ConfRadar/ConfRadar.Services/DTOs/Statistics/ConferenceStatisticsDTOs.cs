@@ -85,7 +85,7 @@ namespace ConfRadar.Services.DTOs.Statistics
     {
         public string PaperId { get; set; }
         public string Title { get; set; }
-        public string SubmittingAuthor { get; set; }
+        public string SubmittingAuthorId { get; set; }
         public string PaperPhase { get; set; }
         public List<string> AssignedReviewers { get; set; } = new();
     }

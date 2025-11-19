@@ -23,6 +23,7 @@ namespace ConfRadar.Repositories.Repositories
 
         Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
         Task<Paper> GetAllIncludeById(string paper);
+        Task<List<Paper>> GetPapersByConferenceIdAsync(string confId);
         Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
 
     }
@@ -391,7 +392,10 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
-
+        public async Task<List<Paper>> GetPapersByConferenceIdAsync(string confId)
+        {
+            return await _context.Papers.Where(p => p.ConferenceId == confId).ToListAsync();
+        }
     }
 
 }
