@@ -33,6 +33,7 @@ namespace ConfRadar.Services
         public IWalletService WalletService { get; }
         public IQRCoderService QRCoderService { get; }
         public IOrcidService OrcidService { get; }
+        public IStatisticsService StatisticsService { get; }
         //public ICityService CityService { get; }
 
     }
@@ -69,6 +70,8 @@ namespace ConfRadar.Services
         private readonly IWalletService _walletService;
         private readonly IQRCoderService _qrRCoderService;
         private readonly IOrcidService _orcidService;
+        private readonly IStatisticsService _statisticsService;
+        private readonly IExcelExportService _excelExportService;
 
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
@@ -100,7 +103,9 @@ namespace ConfRadar.Services
             IAssigningPresenterSessionService assigningPresenterSessionService,
             IWalletService walletService,
             IQRCoderService qRCoderService,
-            IOrcidService orcidService
+            IOrcidService orcidService,
+            IStatisticsService statisticsService,
+            IExcelExportService excelExportService
 
            )
         {
@@ -133,6 +138,8 @@ namespace ConfRadar.Services
             _walletService = walletService;
             _qrRCoderService = qRCoderService;
             _orcidService = orcidService;
+            _statisticsService = statisticsService;
+            _excelExportService = excelExportService;
         }
 
         public IAuthService AuthService => _authService;
@@ -174,6 +181,8 @@ namespace ConfRadar.Services
         public IQRCoderService QRCoderService => _qrRCoderService;
 
         public IOrcidService OrcidService => _orcidService;
+
+        public IStatisticsService StatisticsService => _statisticsService;
     }
 
 }

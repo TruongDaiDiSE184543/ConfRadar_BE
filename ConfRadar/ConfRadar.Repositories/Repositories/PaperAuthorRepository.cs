@@ -19,6 +19,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthor);
         Task<List<Paper>> GetPapersByUserIdAsync(string userId);
         Task<List<Paper>> GetPapersByUserIdAndConfIdAsync(string userId, string confId);
+        Task<PaperAuthor> GetRootAuthor(string paperId);
+        Task<PaperAuthor> GetPresenter(string paperId);
 
     }
     public class PaperAuthorRepository : GenericRepository<PaperAuthor>, IPaperAuthorRepository
@@ -84,6 +86,16 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Paper>> GetPapersByUserIdAndConfIdAsync(string userId, string confId)
         {
             return await _context.Papers.Include(p => p.PaperAuthors).Where(p => p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == userId)).ToListAsync();
+        }
+
+        public async Task<PaperAuthor> GetRootAuthor(string paperId)
+        {
+            return await _context.PaperAuthors.FirstOrDefaultAsync(pa => pa.PaperId == paperId && pa.IsRootAuthor == true);
+        }
+
+        public async Task<PaperAuthor> GetPresenter(string paperId)
+        {
+            return await _context.PaperAuthors.FirstOrDefaultAsync(pa => pa.PaperId == paperId && pa.IsPresenter == true);
         }
     }
 }

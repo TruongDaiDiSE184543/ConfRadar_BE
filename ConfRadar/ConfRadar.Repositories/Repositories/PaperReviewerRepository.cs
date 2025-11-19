@@ -17,6 +17,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperReviewer>> GetHeadReviewersByPaperIdAsync(string paperId);
         Task<List<PaperReviewer>> GetPaperReviewersByUserIdAndConferenceIdAsync(string userId, string conferenceId);
         Task<List<Paper>> getAllAssignedPapers(string userId);
+        Task<List<PaperReviewer>> GetPaperReviewersByConferenceIdAsync(string conferenceId);
     }
     public class PaperReviewerRepository : GenericRepository<PaperReviewer>, IPaperReviewerRepository
     {
@@ -93,6 +94,15 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(pr => pr.Paper)
                     .ThenInclude(p => p.PaperPhase)
                 .Where(pr => pr.UserId == userId && pr.Paper.ConferenceId == conferenceId)
+                .ToListAsync();
+        }
+
+        public async Task<List<PaperReviewer>> GetPaperReviewersByConferenceIdAsync(string conferenceId)
+        {
+            return await _context.Set<PaperReviewer>()
+                .Include(pr => pr.Paper)
+                    .ThenInclude(p => p.PaperPhase)
+                .Where(pr => pr.Paper.ConferenceId == conferenceId)
                 .ToListAsync();
         }
     }
