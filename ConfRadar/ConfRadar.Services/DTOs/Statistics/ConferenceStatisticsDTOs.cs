@@ -96,14 +96,17 @@ namespace ConfRadar.Services.DTOs.Statistics
         public string ReviewerId { get; set; }
         public string ReviewerName { get; set; }
         public int AssignedPaperCount { get; set; }
+        public List<string> paperIds { get; set; }
     }
+
+
 
     // Danh sách Session và Presenter
     public class SessionWithPresentersResponse
     {
         public string SessionId { get; set; }
         public string Title { get; set; }
-        public DateTime StartTime { get; set; }
+        public DateOnly OnDate { get; set; }
         public List<PresenterDetailResponse> Presenters { get; set; } = new();
     }
 

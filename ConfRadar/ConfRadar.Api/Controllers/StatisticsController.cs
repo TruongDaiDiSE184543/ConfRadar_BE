@@ -46,5 +46,19 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.StatisticsService.GetPaperStatisticsByConferenceIdAsync(confId);
             return Ok(ApiResponse<PaperStatisticsResponse>.SuccessResponse(result, "Lấy thành công thông tin vé đã bán và người mua"));
         }
+
+        [HttpGet("assign-reviewers")]
+        public async Task<IActionResult> getAssignedReviewers([FromQuery] string confId)
+        {
+            var result = await _serviceManager.StatisticsService.GetReviewersByConferenceIdAsync(confId);
+            return Ok(ApiResponse<List<ConfRadar.Services.DTOs.Statistics.ReviewerAssignmentResponse>>.SuccessResponse(result, "Lấy thành danh sách reviewer"));
+        }
+
+        [HttpGet("present-session")]
+        public async Task<IActionResult> getPresentSession([FromQuery] string confId)
+        {
+            var result = await _serviceManager.StatisticsService.GetSessionsWithPresentersByConferenceIdAsync(confId);
+            return Ok(ApiResponse<List<ConfRadar.Services.DTOs.Statistics.SessionWithPresentersResponse>>.SuccessResponse(result, "Lấy thành công danh sách session và presenter"));
+        }
     }
 }

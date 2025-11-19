@@ -17,6 +17,8 @@ namespace ConfRadar.Services.Services
         Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
         Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId);
         Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId);
+        Task<List<DTOs.Statistics.ReviewerAssignmentResponse>> GetReviewersByConferenceIdAsync(string conferenceId);
+        Task<List<DTOs.Statistics.SessionWithPresentersResponse>> GetSessionsWithPresentersByConferenceIdAsync(string conferenceId);
     }
     public class StatisticsService : IStatisticsService
     {
@@ -475,6 +477,80 @@ namespace ConfRadar.Services.Services
             };
 
             return response;
+        }
+
+        public async Task<List<DTOs.Statistics.ReviewerAssignmentResponse>> GetReviewersByConferenceIdAsync(string conferenceId)
+        {
+            // Get all paper reviewers for the conference
+            var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(conferenceId);
+
+            var reviewerAssignments = new List<DTOs.Statistics.ReviewerAssignmentResponse>();
+            
+            // Group paper reviewers by UserId (which represents the reviewer)
+            var reviewerGrouping = paperReviewers.GroupBy(pr => pr.UserId);
+
+            foreach (var group in reviewerGrouping)
+            {
+                var reviewerId = group.Key;
+                var user = await _unitOfWork.UserRepository.GetUserByUserId(reviewerId);
+                if (user != null)
+                {
+                    var paperIds = group.Select(pr => pr.PaperId).ToList();
+
+                    var reviewerAssignment = new DTOs.Statistics.ReviewerAssignmentResponse
+                    {
+                        ReviewerId = user.UserId,
+                        ReviewerName = user.FullName,
+                        AssignedPaperCount = group.Count(),
+                        paperIds = paperIds
+                    };
+
+                    reviewerAssignments.Add(reviewerAssignment);
+                }
+            }
+
+            return reviewerAssignments;
+        }
+
+        public async Task<List<DTOs.Statistics.SessionWithPresentersResponse>> GetSessionsWithPresentersByConferenceIdAsync(string conferenceId)
+        {
+            // Get all conference sessions for the conference
+            var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+
+            var sessionWithPresentersList = new List<DTOs.Statistics.SessionWithPresentersResponse>();
+
+            foreach (var session in sessions)
+            {
+                // Get presenters for this session - for research conferences, these are from PresentAuthor table
+                var presentAuthors = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorsBySessionIdAsync(session.ConferenceSessionId);
+
+                var presenters = new List<DTOs.Statistics.PresenterDetailResponse>();
+                foreach (var presentAuthor in presentAuthors)
+                {
+                    // Get paper details for the presenter
+                    var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(presentAuthor.PaperId);
+                    var presenter = await _unitOfWork.PaperAuthorRepository.GetPresenter(paper.PaperId);
+                    var presenterUser = await _unitOfWork.UserRepository.GetUserByUserId(presenter.UserId);
+                    if (paper != null)
+                    {
+                        presenters.Add(new DTOs.Statistics.PresenterDetailResponse
+                        {
+                            PresenterName = presenterUser.FullName, // Use submitting author as presenter
+                            PaperTitle = paper.Title
+                        });
+                    }
+                }
+
+                sessionWithPresentersList.Add(new DTOs.Statistics.SessionWithPresentersResponse
+                {
+                    SessionId = session.ConferenceSessionId,
+                    Title = session.Title,
+                    OnDate = session.SessionDate ?? DateOnly.MinValue,
+                    Presenters = presenters
+                });
+            }
+
+            return sessionWithPresentersList;
         }
     }
 }

@@ -20,6 +20,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Paper>> GetPapersByUserIdAsync(string userId);
         Task<List<Paper>> GetPapersByUserIdAndConfIdAsync(string userId, string confId);
         Task<PaperAuthor> GetRootAuthor(string paperId);
+        Task<PaperAuthor> GetPresenter(string paperId);
 
     }
     public class PaperAuthorRepository : GenericRepository<PaperAuthor>, IPaperAuthorRepository
@@ -90,6 +91,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<PaperAuthor> GetRootAuthor(string paperId)
         {
             return await _context.PaperAuthors.FirstOrDefaultAsync(pa => pa.PaperId == paperId && pa.IsRootAuthor == true);
+        }
+
+        public async Task<PaperAuthor> GetPresenter(string paperId)
+        {
+            return await _context.PaperAuthors.FirstOrDefaultAsync(pa => pa.PaperId == paperId && pa.IsPresenter == true);
         }
     }
 }
