@@ -20,7 +20,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<ConferencePrice?> GetConferencePriceWithIncludesAsync(string priceId);
         Task<List<ConferencePrice>> GetNumberOfIsAuthorByConferenceId(string confId);
         Task<ConferencePrice> AnyConferencePriceWithAtLeastOnePricePhase(string confId);
-        Task<ConferencePrice> GetPricesWithDetailsByConferenceIdAsync (string confId);
+        Task<List<ConferencePrice>> GetPricesWithDetailsByConferenceIdAsync (string confId);
 
     }
 

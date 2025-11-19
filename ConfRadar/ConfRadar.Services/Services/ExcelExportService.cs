@@ -23,6 +23,7 @@ namespace ConfRadar.Services.Services
     {
         public async Task<byte[]> ExportToExcelAsync<T>(IEnumerable<T> data, string sheetName)
         {
+            ExcelPackage.License.SetNonCommercialPersonal("<My Name>");
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add(sheetName);

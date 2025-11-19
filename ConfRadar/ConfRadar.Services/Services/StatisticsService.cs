@@ -5,6 +5,7 @@ using ConfRadar.Services.DTOs.Statistics;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
+using OfficeOpenXml;
 
 namespace ConfRadar.Services.Services
 {
@@ -13,6 +14,8 @@ namespace ConfRadar.Services.Services
         Task<ConferenceStatisticsResponse> GetConferenceStatisticsAsync(string conferenceId);
         Task<ExportStatisticsResponse> ExportConferenceStatisticsAsync(string conferenceId, string exportFormat);
         Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId);
+        Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
+        Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId);
     }
     public class StatisticsService : IStatisticsService
     {
@@ -289,6 +292,128 @@ namespace ConfRadar.Services.Services
             }
 
             return ticketHolders;
+        }
+
+        public async Task<byte[]> ExportTicketHoldersListAsync(string conferenceId)
+        {
+            // Get the list of ticket holders for the conference
+            var ticketHolders = await GetTicketHoldersByConferenceIdAsync(conferenceId);
+
+            // Prepare the data for export - flatten it appropriately
+            var exportData = ticketHolders.Select(holder => new
+            {
+                TicketId = holder.TicketId,
+                CustomerName = holder.CustomerName,
+                TicketTypeName = holder.TicketTypeName,
+                PhaseName = holder.PhaseName,
+                ActualPrice = holder.ActualPrice,
+                PurchaseDate = holder.PurchaseDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                Status = holder.Status // Already in Vietnamese text format
+            }).ToList();
+
+            // Call the Excel export service
+            return await _excelExportService.ExportToExcelAsync(exportData, "Danh Sách Người Mua Vé");
+        }
+
+        
+
+        public async Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId)
+        {
+            // Bước 1: Lấy dữ liệu thống kê đầy đủ
+            var statistics = await GetConferenceStatisticsAsync(conferenceId);
+
+            ExcelPackage.License.SetNonCommercialPersonal("<My Name>");
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Thống Kê Doanh Thu");
+
+                // === PHẦN 1: TRÌNH BÀY THÔNG TIN TỔNG QUAN ===
+
+                // Dùng Merge và Style để làm tiêu đề báo cáo
+                worksheet.Cells["A1:H1"].Merge = true;
+                worksheet.Cells["A1"].Value = $"BÁO CÁO DOANH THU - {statistics.ConferenceName}";
+                worksheet.Cells["A1"].Style.Font.Bold = true;
+                worksheet.Cells["A1"].Style.Font.Size = 16;
+                worksheet.Cells["A1"].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                worksheet.Cells["A3"].Value = "Tổng số vé đã bán:";
+                worksheet.Cells["B3"].Value = statistics.TotalTicketsSold;
+                worksheet.Cells["B3"].Style.Font.Bold = true;
+
+                worksheet.Cells["A4"].Value = "Tổng doanh thu:";
+                worksheet.Cells["B4"].Value = statistics.TotalRevenue;
+                worksheet.Cells["B4"].Style.Numberformat.Format = "#,##0"; // Định dạng số cho dễ đọc
+                worksheet.Cells["B4"].Style.Font.Bold = true;
+
+                // Tính toán và hiển thị tổng hoa hồng nếu có
+                if (!statistics.IsInternalHosted)
+                {
+                    var totalCommission = statistics.TicketPhaseStatistics.Sum(s => s.AmountToCollaborator ?? 0);
+                    var totalToConfRadar = statistics.TicketPhaseStatistics.Sum(s => s.AmountToConfRadar ?? 0);
+
+                    worksheet.Cells["A5"].Value = "Tổng tiền cho Cộng tác viên:";
+                    worksheet.Cells["B5"].Value = totalCommission;
+                    worksheet.Cells["B5"].Style.Numberformat.Format = "#,##0";
+
+                    worksheet.Cells["A6"].Value = "Tổng tiền cho ConfRadar:";
+                    worksheet.Cells["B6"].Value = totalToConfRadar;
+                    worksheet.Cells["B6"].Style.Numberformat.Format = "#,##0";
+                }
+
+                // === PHẦN 2: BẢNG CHI TIẾT DOANH THU THEO PHASE ===
+
+                int startRowForTable = 8;
+
+                // Tạo header cho bảng chi tiết
+                worksheet.Cells[startRowForTable, 1].Value = "ID Loại Vé";
+                worksheet.Cells[startRowForTable, 2].Value = "Tên Vé";
+                worksheet.Cells[startRowForTable, 3].Value = "Tên Giai Đoạn";
+                worksheet.Cells[startRowForTable, 4].Value = "Số Lượng Bán";
+                worksheet.Cells[startRowForTable, 5].Value = "Tổng Doanh Thu";
+
+                int currentColumn = 6;
+                // Chỉ thêm các cột hoa hồng nếu cần
+                if (!statistics.IsInternalHosted)
+                {
+                    worksheet.Cells[startRowForTable, currentColumn++].Value = "% Hoa Hồng";
+                    worksheet.Cells[startRowForTable, currentColumn++].Value = "Tiền cho CTV";
+                    worksheet.Cells[startRowForTable, currentColumn++].Value = "Tiền cho ConfRadar";
+                }
+
+                // Làm đậm header
+                worksheet.Cells[startRowForTable, 1, startRowForTable, currentColumn - 1].Style.Font.Bold = true;
+
+                // Đổ dữ liệu chi tiết vào bảng
+                int currentRow = startRowForTable + 1;
+                foreach (var stat in statistics.TicketPhaseStatistics)
+                {
+                    worksheet.Cells[currentRow, 1].Value = stat.ConferencePriceId;
+                    worksheet.Cells[currentRow, 2].Value = stat.TicketName;
+                    worksheet.Cells[currentRow, 3].Value = stat.PhaseName;
+                    worksheet.Cells[currentRow, 4].Value = stat.TotalSold;
+                    worksheet.Cells[currentRow, 5].Value = stat.TotalAmount;
+
+                    if (!statistics.IsInternalHosted)
+                    {
+                        worksheet.Cells[currentRow, 6].Value = stat.CommissionPercentage;
+                        worksheet.Cells[currentRow, 7].Value = stat.AmountToCollaborator;
+                        worksheet.Cells[currentRow, 8].Value = stat.AmountToConfRadar;
+                    }
+                    currentRow++;
+                }
+
+                // Định dạng số cho các cột tiền tệ trong bảng
+                worksheet.Cells[startRowForTable + 1, 5, currentRow - 1, 5].Style.Numberformat.Format = "#,##0";
+                if (!statistics.IsInternalHosted)
+                {
+                    worksheet.Cells[startRowForTable + 1, 7, currentRow - 1, 8].Style.Numberformat.Format = "#,##0";
+                }
+
+                // Tự động điều chỉnh độ rộng cột
+                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+
+                return await package.GetAsByteArrayAsync();
+            }
         }
     }
 }

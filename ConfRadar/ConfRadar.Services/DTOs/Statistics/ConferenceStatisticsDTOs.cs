@@ -16,8 +16,6 @@ namespace ConfRadar.Services.DTOs.Statistics
         public decimal? CommissionPercentage { get; set; } // Only for non-internal hosted conferences
         public decimal? AmountToCollaborator { get; set; } // For non-internal hosted conferences
         public decimal? AmountToConfRadar { get; set; } // For non-internal hosted conferences
-        public decimal? TotalToConfradar { get; set; } // For non-internal hosted conferences
-        public decimal? TotalToCollaborator { get; set; } // For non-internal hosted conferences
     }
 
     public class ConferenceStatisticsResponse
