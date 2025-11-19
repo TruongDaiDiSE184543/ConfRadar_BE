@@ -362,7 +362,8 @@ namespace ConfRadar.Services.Services
             var Preparing = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
-            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId)
+            var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.OnHold.GetDescription());
+            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId)
             {
                 throw new BadRequestException($"Thao tác không du?c phép. H?i ngh? dang ? tr?ng thái '{currentStatus.ConferenceStatusName}' và không th? ch?nh s?a.");
             }
@@ -1658,6 +1659,7 @@ namespace ConfRadar.Services.Services
             if (request.RefundPolicies == null || !request.RefundPolicies.Any())
                 throw new BadRequestException("Yêu c?u ph?i ch?a ít nh?t m?t chính sách hoàn ti?n.");
 
+            DateOnly today = await _timeProviderService.GetVietnamDate();
             var existingPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByPricePhaseId(pricePhaseId);
             var existingDeadlines = new HashSet<DateOnly>(existingPolicies.Select(p => p.RefundDeadline.Value));
 
@@ -1667,7 +1669,7 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException("Chính sách hoàn tiền phải có d? ph?n tram và h?n chót.");
                 if (policy.PercentRefund < 0 || policy.PercentRefund > 100)
                     throw new BadRequestException("Ph?n tram hoàn ti?n ph?i n?m trong kho?ng t? 0 d?n 100.");
-                if (policy.RefundDeadline.Value <= await _timeProviderService.GetVietnamDate())
+                if (policy.RefundDeadline.Value <= today)
                     throw new BadRequestException("H?n chót hoàn ti?n ph?i là m?t ngày trong tuong lai.");
                 if (pricePhase.ConferencePrice.IsAuthor == false)
                 {
@@ -1691,7 +1693,7 @@ namespace ConfRadar.Services.Services
                     }
 
                     if (policy.RefundDeadline.Value > researchPhase.RegistrationEndDate)
-                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {policy.RefundDeadline.Value:dd/MM/yyyy} phải trước registration emd {researchPhase.ReviewEndDate.Value:dd/MM/yyyy}");
+                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {policy.RefundDeadline.Value:dd/MM/yyyy} phải trước registration emd {researchPhase.RegistrationEndDate.Value:dd/MM/yyyy}");
                 }
 
 
@@ -3013,7 +3015,7 @@ namespace ConfRadar.Services.Services
             if (notWaitlistPhase == null || waitlistPhase == null)
                 throw new BadRequestException("H?i ngh? chua du?c c?u hình d?y d? phase chính và phase waitlist.");
 
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            DateOnly today = await _timeProviderService.GetVietnamDate();
             if (today <= notWaitlistPhase.CameraReadyEndDate)
                 throw new BadRequestException($"Chua d?n th?i di?m h?p l?. C?n ph?i sau khi phase chính k?t thúc (sau ngày {notWaitlistPhase.CameraReadyEndDate:dd/MM/yyyy}).");
 
