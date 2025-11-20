@@ -649,18 +649,18 @@ namespace ConfRadar.Services.Services
                         .ToList();
 
                     List<TimeSpanResponse> availableTimeSpans = new();
-                    var dayStart = new TimeOnly(0, 0, 0);
+                    var dayStart = new TimeOnly(6, 0, 0);
                     var dayEnd = new TimeOnly(23, 59, 59);
 
                     // Check for available time before the first session
-                    //if (occupiedTimeSlots.Any() && dayStart < occupiedTimeSlots.First().startTime)
-                    //{
-                    //    availableTimeSpans.Add(new TimeSpanResponse
-                    //    {
-                    //        StartTime = dayStart,
-                    //        EndTime = occupiedTimeSlots.First().startTime
-                    //    });
-                    //}
+                    if (occupiedTimeSlots.Any() && dayStart < occupiedTimeSlots.First().startTime)
+                    {
+                        availableTimeSpans.Add(new TimeSpanResponse
+                        {
+                            StartTime = dayStart,
+                            EndTime = occupiedTimeSlots.First().startTime
+                        });
+                    }
 
                     // Check for available time between sessions
                     for (int i = 0; i < occupiedTimeSlots.Count - 1; i++)

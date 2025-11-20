@@ -37,13 +37,13 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<Destination?> GetDestinationByIdAsync(string destinationId)
         {
-            return await _context.Destinations
+            return await _context.Destinations.Include(d => d.City)
                 .FirstOrDefaultAsync(c => c.DestinationId == destinationId);
         }
 
         public async Task<List<Destination>> GetAllDestinationsAsync()
         {
-            return await _context.Destinations.ToListAsync();
+            return await _context.Destinations.Include(d => d.City).ToListAsync();
         }
 
         public async Task<List<Destination>> GetDestinationsWithRoomsAsync()

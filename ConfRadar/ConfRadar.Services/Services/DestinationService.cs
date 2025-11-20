@@ -93,7 +93,8 @@ namespace ConfRadar.Services.Services
             {
                 DestinationId = destination.DestinationId,
                 Name = destination.Name,
-                //City = destination.City,
+                CityId = destination.CityId,
+                CityName = destination.City.CityName,
                 District = destination.District,
                 Street = destination.Street
             };
@@ -108,7 +109,8 @@ namespace ConfRadar.Services.Services
             {
                 DestinationId = destination.DestinationId,
                 Name = destination.Name,
-                //City = destination.City,
+                CityId = destination.CityId,
+                CityName = destination.City.CityName,
                 District = destination.District,
                 Street = destination.Street
             }).ToList();
@@ -137,7 +139,8 @@ namespace ConfRadar.Services.Services
             {
                 DestinationId = destination.DestinationId,
                 Name = destination.Name,
-                //City = destination.City,
+                CityId = destination.CityId,
+                CityName = destination.City.CityName,
                 District = destination.District,
                 Street = destination.Street,
                 Rooms = roomResponses
