@@ -68,7 +68,10 @@ namespace ConfRadar.Api.Controllers
             {
                 message = "Đã refund";
             }
-            message = "Không tìm thấy user nào để được refund";
+            else
+            {
+                message = "Không tìm thấy user nào để được refund";
+            }
             return Ok(ApiResponse<object>.SuccessResponse(null, message));
         }
 
@@ -84,7 +87,10 @@ namespace ConfRadar.Api.Controllers
             {
                 message = "Đã refund";
             }
-            message = "Không tìm thấy user nào để được refund";
+            else
+            {
+                message = "Không tìm thấy user nào để được refund";
+            }
             return Ok(ApiResponse<object>.SuccessResponse(null, message));
         }
 
