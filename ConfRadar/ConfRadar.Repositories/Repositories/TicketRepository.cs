@@ -596,8 +596,8 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Tickets
                 .Include(t => t.Transactions)
-                
-                
+
+
                 .Include(t => t.User)
                     .ThenInclude(t => t.Wallet)
 
@@ -605,10 +605,12 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(t => t.PricePhase)
                    .ThenInclude(pp => pp.ConferencePrice)
                    .ThenInclude(cp => cp.Conference)
-                   //.ThenInclude(c => c.TechnicalConferenceDetail)
+               //.ThenInclude(c => c.TechnicalConferenceDetail)
                .Where(t =>
                t.PricePhase != null
                && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
+               && t.PricePhase.ConferencePrice.Conference !=null
+               && t.PricePhase.ConferencePrice.Conference.TechnicalConferenceDetail !=null
                && t.IsRefunded == false
                && ticketIds.Contains(t.TicketId))
                .AsSplitQuery()
@@ -627,10 +629,10 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(t => t.PricePhase)
                    .ThenInclude(pp => pp.ConferencePrice)
                    .ThenInclude(cp => cp.Conference)
-                   //.ThenInclude(c => c.ResearchConferenceDetail)
+                //.ThenInclude(c => c.ResearchConferenceDetail)
 
-                .Include(t=>t.Paper)
-                    .ThenInclude(p=>p.PaperPhase)
+                .Include(t => t.Paper)
+                    .ThenInclude(p => p.PaperPhase)
 
                  .Include(t => t.Paper)
                     .ThenInclude(p => p.Abstract)
@@ -641,11 +643,13 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(t => t.Paper)
                     .ThenInclude(p => p.RevisionPaper)
 
-                .Include(t=>t.Paper)
+                .Include(t => t.Paper)
                     .ThenInclude(p => p.CameraReady)
                .Where(t =>
                t.PricePhase != null
-               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true
+               && t.PricePhase.ConferencePrice != null
+               && t.PricePhase.ConferencePrice.Conference != null
+               && t.PricePhase.ConferencePrice.Conference.ResearchConferenceDetail !=null
                && t.IsRefunded == false
                && ticketIds.Contains(t.TicketId))
                .AsSplitQuery()

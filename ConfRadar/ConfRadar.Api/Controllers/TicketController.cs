@@ -3,7 +3,6 @@ using ConfRadar.Services;
 using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.RefundRequest;
 using ConfRadar.Shared.DTO.Ticket;
-using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -65,7 +64,7 @@ namespace ConfRadar.Api.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.TicketService.CancelTechTickets(request);
             var message = string.Empty;
-            if (result >0) 
+            if (result > 0)
             {
                 message = "Đã refund";
             }

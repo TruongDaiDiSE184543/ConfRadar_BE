@@ -347,7 +347,7 @@ namespace ConfRadar.Services.Services
                 //userwallet (update chung ticket)
 
                 var userWallet = ticket.User!.Wallet;
-                if (userWallet==null)
+                if (userWallet == null)
                 {
                     throw new NotFoundException($"Không tìm thấy ví cho {ticket.User.FullName}");
                 }
@@ -493,31 +493,30 @@ namespace ConfRadar.Services.Services
 
                 //reject các paper phase
                 var paper = ticket.Paper;
-                if (paper == null)
+                if (ticket.Paper != null)
                 {
-                    throw new NotFoundException("Không tìm thấy paper tương ứng với ticket");
+                    if (paper.Abstract != null)
+                    {
+                        paper.Abstract.GlobalStatus = rejectGlobalStatus;
+                    }
+
+                    if (paper.FullPaper != null)
+                    {
+                        paper.FullPaper.ReviewStatus = rejectReviewStatus;
+                    }
+
+                    if (paper.RevisionPaper != null)
+                    {
+                        paper.RevisionPaper.GlobalStatus = rejectGlobalStatus;
+                    }
+
+                    if (paper.CameraReady != null)
+                    {
+                        paper.CameraReady.GlobalStatus = rejectGlobalStatus;
+                    }
+
                 }
 
-
-                if (paper.Abstract != null)
-                {
-                    paper.Abstract.GlobalStatus = rejectGlobalStatus;
-                }
-
-                if (paper.FullPaper != null)
-                {
-                    paper.FullPaper.ReviewStatus = rejectReviewStatus;
-                }
-
-                if (paper.RevisionPaper != null)
-                {
-                    paper.RevisionPaper.GlobalStatus = rejectGlobalStatus;
-                }
-
-                if (paper.CameraReady != null)
-                {
-                    paper.CameraReady.GlobalStatus = rejectGlobalStatus;
-                }
 
 
             }
