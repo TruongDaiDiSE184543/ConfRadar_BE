@@ -9,5 +9,8 @@ namespace ConfRadar.Services.DTOs.User
         public string Email { get; set; }
         [Required(ErrorMessage = "Password is required")]
         public string Password { get; set; }
+
+        public string? FirebaseWebFcmToken { get; set; }
+        public string? FirebaseMobileFcmToken { get; set; }
     }
 }

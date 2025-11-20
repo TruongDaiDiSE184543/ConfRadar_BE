@@ -4,6 +4,7 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.User;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
@@ -30,7 +31,7 @@ namespace ConfRadar.Services.Services
         Task<UserDetailResponse> ViewUserDetail(string userId);
         Task<List<ListUserDetailForAdminAndOrganizerResponse>> ListUserForAdminAndOrganizer();
         Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request);
-
+        Task<List<GetUsersForCollaboratorCreateResponse>> GetUsersForCollaboratorCreate();
         Task<List<AvailableCustomerResponse>> GetAvailableCustomer();
         Task<List<ReviewerDetailResponse>> ListAllReviewer();
         Task<int> SuspendExternalReviewerAccount(string userId);
@@ -113,6 +114,7 @@ namespace ConfRadar.Services.Services
                 UserId = userCreated.UserId,
                 RoleId = role!.RoleId,
                 AssignedAt = await _timeProviderService.GetVietnamTime(),
+                IsActive = true
             };
             var userWallet = new Wallet()
             {
@@ -177,6 +179,14 @@ namespace ConfRadar.Services.Services
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             var timeNow = await _timeProviderService.GetVietnamTime();
             user.LastLogin = timeNow;
+            if (request.FirebaseMobileFcmToken != null)
+            {
+                user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
+            }
+            if (request.FirebaseWebFcmToken != null)
+            {
+                user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
+            }
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
                 CreatedAt = timeNow,
@@ -274,6 +284,7 @@ namespace ConfRadar.Services.Services
                     UserId = userId,
                     RoleId = role!.RoleId,
                     AssignedAt = timeNow,
+                    IsActive = true,
                 };
                 var userRoleList = new List<UserRole>();
                 userRoleList.Add(userRole);
@@ -309,6 +320,14 @@ namespace ConfRadar.Services.Services
                 if (user.IsActive == false)
                 {
                     throw new ConfRadarAuthenticationException("User is disabled");
+                }
+                if (request.FirebaseMobileFcmToken != null)
+                {
+                    user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
+                }
+                if (request.FirebaseWebFcmToken != null)
+                {
+                    user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
                 }
                 user.LastLogin = timeNow;
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
@@ -370,6 +389,7 @@ namespace ConfRadar.Services.Services
         }
         public async Task<int> SuspendAccount(string userId)
         {
+
             var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
             var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
             if (adminRole == null || organizerRole == null)
@@ -385,21 +405,28 @@ namespace ConfRadar.Services.Services
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
             if (user == null)
             {
-                throw new BadRequestException("User not found");
+                throw new BadRequestException("Người dùng không tìm thấy");
             }
             if (user.UserRoles?.Any(ur => listSystemRoleIds.Contains(ur.Role.RoleId)) == true)
             {
                 throw new BadRequestException($"Không thể suspend organizer hoặc admin");
             }
+            int result = 0;
             user.IsActive = false;
-            return await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            result += await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            if (result > 0) 
+            {
+                await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName, "Account bạn đã bị ngừng", "EmailSuspendAccount.html");
+            }
+
+            return result;
         }
         public async Task<int> ActivateAccount(string userId)
         {
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
             if (user == null)
             {
-                throw new BadRequestException("User not found");
+                throw new BadRequestException("Người dùng không tìm thấy");
             }
             user.IsActive = true;
             return await _unitOfWork.UserRepository.UpdateUserAsync(user);
@@ -506,14 +533,13 @@ namespace ConfRadar.Services.Services
             var userByEmail = await _unitOfWork.UserRepository.GetUserByEmail(request.Email);
             if (userByEmail != null)
             {
-                throw new ConfRadarAuthenticationException("User with this email already exists");
+                throw new ConfRadarAuthenticationException("Người dùng với email này đã tồn tại");
             }
             var userByName = await _unitOfWork.UserRepository.GetUserByName(request.FullName);
             if (userByName != null)
             {
-                throw new ConfRadarAuthenticationException("User with this full name already exists");
+                throw new ConfRadarAuthenticationException("Người dùng với tên đã tồn tại");
             }
-
 
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
@@ -553,6 +579,7 @@ namespace ConfRadar.Services.Services
                 AssignedAt = await _timeProviderService.GetVietnamTime(),
                 RoleId = collabRole.RoleId,
                 UserId = userCreated.UserId,
+                IsActive = true
             };
             userCreated.UserRoles.Add(userRoleObj);
             await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
@@ -585,6 +612,11 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> SuspendExternalReviewerAccount(string userId)
         {
+            var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ExternalReviewer.GetDescription());
+            if (externalReviewerRole == null )
+            {
+                throw new Exception("Không tìm thấy role hệ thống");
+            }
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
             if (user == null)
             {
@@ -595,15 +627,25 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
             }
-            if (user.IsActive == false)
-            {
-                throw new BadRequestException($"Reviewer tên {user.FullName} đã bị disable rồi");
+            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
+            if (userRole == null) 
+            { 
+                throw new NotFoundException($"Không tìm thấy role cho reviewer");
             }
-            user.IsActive = false;
-            return await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            if (userRole.IsActive==false)
+            {
+                throw new BadRequestException($"Người dùng {user.FullName} đã bị disable role reviewer");
+            }
+            userRole.IsActive = false;
+            return await _unitOfWork.UserRoleRepository.UpdateUserRole(userRole);
         }
         public async Task<int> ActivateExternalReviewerAccount(string userId)
         {
+            var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ExternalReviewer.GetDescription());
+            if (externalReviewerRole == null)
+            {
+                throw new Exception("Không tìm thấy role hệ thống");
+            }
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
             if (user == null)
             {
@@ -612,14 +654,47 @@ namespace ConfRadar.Services.Services
             var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
             if (!reviewContracts.Any())
             {
-                throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
+                throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên {user.FullName}");
             }
-            if (user.IsActive == true)
+            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
+            if (userRole == null)
             {
-                throw new BadRequestException($"Reviewer tên {user.FullName} đã active rồi");
+                throw new NotFoundException($"Không tìm thấy role cho reviewer");
             }
-            user.IsActive = true;
-            return await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            if (userRole.IsActive == true)
+            {
+                throw new BadRequestException($"Người dùng {user.FullName} đã được cấp lại role reviewer");
+            }
+            userRole.IsActive = true;
+            return await _unitOfWork.UserRoleRepository.UpdateUserRole(userRole);
+        }
+
+
+        public async Task<List<GetUsersForCollaboratorCreateResponse>> GetUsersForCollaboratorCreate()
+        {
+            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
+            var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
+            var localReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
+            var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
+            if (adminRole == null || organizerRole == null || localReviewerRole == null || collabRole == null)
+            {
+                throw new Exception("Không tìm thấy một hoặc nhiều role hệ thống");
+            }
+
+            var userList = await _unitOfWork.UserRepository.GetListUser();
+
+            var filteredUsers = userList
+                .Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId || ur.RoleId == collabRole.RoleId))
+                .ToList();
+            var result = filteredUsers.Select(u => new GetUsersForCollaboratorCreateResponse()
+            {
+                UserId = u.UserId,
+                Email = u.Email,
+                FullName = u.FullName,
+                AvatarUrl = u.AvatarUrl,
+                BioDescription = u.BioDescription,
+            }).ToList();
+            return result;
         }
     }
 }

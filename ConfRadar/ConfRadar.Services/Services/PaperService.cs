@@ -11,6 +11,7 @@ using ConfRadar.Services.Mappers;
 using ConfRadar.Shared.DTO.Abstract;
 using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.WaitList;
+using Google.Apis.Util;
 using Microsoft.Extensions.Options;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -97,7 +98,8 @@ namespace ConfRadar.Services.Services
         private readonly IObjectStorageFileService _objectStorageFileService;
         private readonly ITicketService _ticketService;
         private readonly ITimeProviderService _timeProviderService;
-        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService, ITimeProviderService timeProviderService)
+        private readonly INotificationService _notificationService;
+        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService, ITimeProviderService timeProviderService,INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _momoService = momoService;
@@ -106,10 +108,12 @@ namespace ConfRadar.Services.Services
             _objectStorageFileService = objectStorageFileService;
             _ticketService = ticketService;
             _timeProviderService = timeProviderService;
+            _notificationService = notificationService;
         }
 
         public async Task<int> SubmitAbstract(CreateAbstractRequest request, string userId)
         {
+            var timeNow = await _timeProviderService.GetVietnamTime();
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
 
@@ -193,15 +197,17 @@ namespace ConfRadar.Services.Services
                 AbstractId = Guid.NewGuid().ToString(),
                 AbstractUrl = abstractFileUrl,
                 GlobalStatusId = pendingGlobalStatus.GlobalStatusId,
-                CreatedAt = await _timeProviderService.GetVietnamTime(),
+                CreatedAt = timeNow,
                 Description = request.Description,
                 Title = request.Title,
                 ReviewAt = null,
             };
             paper.AbstractId = abstractObj.AbstractId;
 
-
+            List<Notification> notificationList = new List<Notification>();
             List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
+            string notiTitle = $"CoAuthor cho bài báo {request.Title}";
+            string notiMessage = $"Bạn đã được thêm làm coauthor cho bài báo {request.Title} của hội nghị {paper.Conference!.ConferenceName}";
             if (request.CoAuthorId != null && request.CoAuthorId.Count > 0)
             {
                 foreach (var coAuthor in request.CoAuthorId)
@@ -215,6 +221,30 @@ namespace ConfRadar.Services.Services
 
                     };
                     paperAuthorList.Add(paperAuthorObj);
+
+                    var notification = new Notification()
+                    {
+                        NotificationId = Guid.NewGuid().ToString(),
+                        UserId = coAuthor,
+                        Title = notiTitle,
+                        Message = notiMessage,
+                        Type = null,
+                        CreatedAt = timeNow,
+                        ReadStatus = false,
+                    };
+                    notificationList.Add(notification);
+                    var coauthorDetail = await _unitOfWork.UserRepository.GetUserByUserId(coAuthor);
+                    if (coauthorDetail != null) 
+                    {
+                        if (coauthorDetail.FirebaseMobileFcmToken != null)
+                        {
+                            await _notificationService.SendMobilePushAsync(coauthorDetail.FirebaseMobileFcmToken,notiTitle,notiMessage);
+                        }
+                        if (coauthorDetail.FirebaseWebFcmToken != null)
+                        {
+                            await _notificationService.SendWebPushAsync(coauthorDetail.FirebaseWebFcmToken,notiTitle,notiMessage);
+                        }
+                    }
                 }
             }
 
@@ -226,6 +256,7 @@ namespace ConfRadar.Services.Services
                 int finalResult = 0;
                 finalResult += await _unitOfWork.AbstractRepository.CreateAbstractAsync(abstractObj);
                 finalResult += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+                finalResult += await _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
                 if (paperAuthorList.Count > 0)
                 {
                     finalResult += await _unitOfWork.PaperAuthorRepository.CreateMutiplePaperAuthorAsync(paperAuthorList);
@@ -241,6 +272,7 @@ namespace ConfRadar.Services.Services
         }
         public async Task<int> DecideAbstractPaperStatus(UpdateAbstractPaperStatusRequest request, string userId)
         {
+            var timeNow = await _timeProviderService.GetVietnamTime();
             if (request.GlobalStatus.Equals(GlobalStatusEnum.Pending))
             {
                 throw new BadRequestException($"Không thể chuyển pending cho abstract");
@@ -284,6 +316,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"abstract không trong quá trình pending");
             }
+            var rootAuthor = basePaper.PaperAuthors.FirstOrDefault(pa=>pa.IsRootAuthor==true);
+            string notiTitle = "Kết quả bài báo";
+            string notiMessage = string.Empty;
             int result = 0;
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -292,13 +327,16 @@ namespace ConfRadar.Services.Services
                 {
                     case GlobalStatusEnum.Accepted:
                         abstractPaper.GlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
-                        abstractPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
+                        abstractPaper.ReviewAt = timeNow;
                         basePaper.PaperPhaseId = fullPaperPhase.PaperPhaseId;
+
+                        notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận ở phase {basePaper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
+
                         break;
                     case GlobalStatusEnum.Rejected:
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
-                        abstractPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
-                        var rootAuthor = basePaper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                        abstractPaper.ReviewAt = timeNow;
+                        
                         var validTicket = basePaper.TicketId;
                         if (validTicket == null)
                         {
@@ -306,13 +344,37 @@ namespace ConfRadar.Services.Services
                         }
                         await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Abstract của bạn đã bị từ chối");
 
+                        notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối ở phase {basePaper.PaperPhase.PhaseName}  vào lúc {timeNow.ToString()}";
 
                         break;
                     default:
                         throw new BadRequestException("Trạng thái không khả dụng");
                 }
+
+                var notification = new Notification()
+                {
+                    NotificationId = Guid.NewGuid().ToString(),
+                    UserId = rootAuthor!.UserId,
+                    Title = notiTitle,
+                    Message = notiMessage,
+                    Type = null,
+                    CreatedAt = timeNow,
+                    ReadStatus = false,
+                };
+                var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
+                if (userDetail!.FirebaseMobileFcmToken != null)
+                {
+                    await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
+                }
+                if (userDetail.FirebaseWebFcmToken != null)
+                {
+                    await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
+                }
+
+
                 result += await _unitOfWork.AbstractRepository.UpdateAbstractAsync(abstractPaper);
                 result += await _unitOfWork.PaperRepository.UpdatePaperAsync(basePaper);
+                result += await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
                 await _unitOfWork.CommitAsync();
             }
             catch (Exception ex)
@@ -450,6 +512,8 @@ namespace ConfRadar.Services.Services
             var revisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobal = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+            var dateNow = await _timeProviderService.GetVietnamDate();
+            var timeNow = await _timeProviderService.GetVietnamTime();
 
             if (pendingReviewStatus == null || rejectedReviewStatus == null || acceptedReviewStatus == null || reviseStatus == null || currentFullPaperPhase == null || cameraReadyPhase == null || revisePhase == null || pendingGlobal == null)
             {
@@ -465,7 +529,6 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy giai đoạn nào cho hội nghị {paper.Conference.ConferenceName}");
             }
-            var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.ReviewStartDate || dateNow > activeCurrentPhase.ReviewEndDate)
             {
                 throw new BadRequestException($"Giai đoạn review cho bài báo diễn ra từ {activeCurrentPhase.ReviewStartDate} đến {activeCurrentPhase.ReviewEndDate}");
@@ -494,6 +557,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Bạn không phải là head reviewer.");
             }
             int result = 0;
+            string notiTitle = "Kết quả bài báo";
+            string notiMessage = string.Empty;
+            var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true); 
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -502,36 +568,60 @@ namespace ConfRadar.Services.Services
                     case ReviewStatusEnum.Accepted:
 
                         fullPaper.ReviewStatusId = acceptedReviewStatus.ReviewStatusId;
-                        fullPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
+                        fullPaper.ReviewAt = timeNow;
                         paper.PaperPhaseId = cameraReadyPhase.PaperPhaseId;
+                        notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase {paper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
+
 
                         break;
                     case ReviewStatusEnum.Rejected:
 
 
                         fullPaper.ReviewStatusId = rejectedReviewStatus.ReviewStatusId;
-                        fullPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
-                        var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                        fullPaper.ReviewAt = timeNow;
+                        
                         var validTicket = paper.TicketId;
                         if (validTicket == null)
                         {
                             throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
                         }
                         await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Full paper của bạn đã bị từ chối");
+                        notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase {paper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
+
                         break;
                     case ReviewStatusEnum.Revise:
 
 
 
                         fullPaper.ReviewStatusId = reviseStatus.ReviewStatusId;
-                        fullPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
+                        fullPaper.ReviewAt = timeNow;
                         paper.PaperPhaseId = revisePhase.PaperPhaseId;
-
+                        notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chuyển sang phase {paper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
 
                         break;
                     default:
                         throw new BadRequestException("Trạng thái không khả dụng");
                 }
+                var notification = new Notification()
+                {
+                    NotificationId = Guid.NewGuid().ToString(),
+                    UserId = rootAuthor!.UserId,
+                    Title = notiTitle,
+                    Message = notiMessage,
+                    Type = null,
+                    CreatedAt = timeNow,
+                    ReadStatus = false,
+                };
+                var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
+                if (userDetail!.FirebaseMobileFcmToken != null)
+                {
+                    await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
+                }
+                if (userDetail.FirebaseWebFcmToken != null)
+                {
+                    await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
+                }
+                result += await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
                 result += await _unitOfWork.FullPaperRepository.UpdateFullPaperAsync(fullPaper);
                 result += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
                 await _unitOfWork.CommitAsync();
@@ -952,6 +1042,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn không phải head reviewer");
             }
+            var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            string notiTitle = "Kết quả bài báo";
+            string notiMessage = string.Empty;
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -961,28 +1055,57 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Accepted:
                         //update instance get:
                         revisionPaper.GlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
-                        revisionPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
+                        revisionPaper.ReviewAt = timeNow;
                         paper.PaperPhaseId = cameraReadyPaperPhase.PaperPhaseId;
+
+                        notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase {paper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
+
+
+
                         break;
 
                     case GlobalStatusEnum.Rejected:
                         revisionPaper.GlobalStatusId = rejectGlobalStautus.GlobalStatusId;
-                        revisionPaper.ReviewAt = await _timeProviderService.GetVietnamTime();
-                        var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                        revisionPaper.ReviewAt = timeNow;
                         var validTicket = paper.TicketId;
                         if (validTicket == null)
                         {
                             throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
                         }
                         await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Revise paper của bạn đã bị từ chối");
+
+                        notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase {paper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
+
                         break;
 
                     default:
                         throw new BadRequestException("Trạng thái không khả dụng");
                 }
+
+                var notification = new Notification()
+                {
+                    NotificationId = Guid.NewGuid().ToString(),
+                    UserId = rootAuthor!.UserId,
+                    Title = notiTitle,
+                    Message = notiMessage,
+                    Type = null,
+                    CreatedAt = timeNow,
+                    ReadStatus = false,
+                };
+                var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
+                if (userDetail!.FirebaseMobileFcmToken != null)
+                {
+                    await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
+                }
+                if (userDetail.FirebaseWebFcmToken != null)
+                {
+                    await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
+                }
+
                 //call hàm update
                 result += await _unitOfWork.RevisionPaperRepository.UpdateRevisionPaperAsync(revisionPaper);
                 result += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+                result += await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
 
                 await _unitOfWork.CommitAsync();
                 return result;
@@ -1477,37 +1600,70 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("Chỉ head reviewer mới có thể quyết định bài báo");
             }
             // Update the camera ready status based on the request
+            string notiTitle = "Kết quả bài báo";
+            string notiMessage = string.Empty;
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
             GlobalStatus? newGlobalStatus = null;
             switch (request.GlobalStatus)
             {
                 case GlobalStatusEnum.Accepted:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+
+                    notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận trong phase {basePaper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
+
+
                     break;
                 case GlobalStatusEnum.Rejected:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-                    var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                    
                     var validTicket = basePaper.TicketId;
                     if (validTicket == null)
                     {
                         throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
                     }
                     await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Camera ready paper của bạn đã bị từ chối");
+
+                    notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối trong phase {basePaper.PaperPhase.PhaseName} vào lúc {timeNow.ToString()}";
+
+
                     break;
                 case GlobalStatusEnum.Pending:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
                     break;
                 default:
-                    throw new BadRequestException("Invalid global status for camera ready.");
+                    throw new BadRequestException("Status không khả dụng");
             }
 
             if (newGlobalStatus == null)
             {
                 throw new BadRequestException($"{request.GlobalStatus.GetDescription()} không tồn tại.");
             }
-
+            int result = 0;
             cameraReady.GlobalStatusId = newGlobalStatus.GlobalStatusId;
-            cameraReady.ReviewAt = await _timeProviderService.GetVietnamTime();
-            return await _unitOfWork.CameraReadyRepository.UpdateCameraReadyAsync(cameraReady);
+            cameraReady.ReviewAt = timeNow;
+            var notification = new Notification()
+            {
+                NotificationId = Guid.NewGuid().ToString(),
+                UserId = rootAuthor!.UserId,
+                Title = notiTitle,
+                Message = notiMessage,
+                Type = null,
+                CreatedAt = timeNow,
+                ReadStatus = false,
+            };
+            var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
+            if (userDetail!.FirebaseMobileFcmToken != null)
+            {
+                await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
+            }
+            if (userDetail.FirebaseWebFcmToken != null)
+            {
+                await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
+            }
+            result += await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
+            result += await _unitOfWork.CameraReadyRepository.UpdateCameraReadyAsync(cameraReady);
+            return result;
         }
 
 
@@ -2116,7 +2272,11 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Bạn không sỡ hữu bài báo này");
             }
             var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
+            string notiTitle = $"CoAuthor cho bài báo {request.Title}";
+            string notiMessage = $"Bạn đã được thêm làm coauthor cho bài báo {request.Title} của hội nghị {paper.Conference!.ConferenceName}";
+            var timeNow = await _timeProviderService.GetVietnamTime();
             List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
+            List<Notification> notificationList = new List<Notification>();
             if (request.CoAuthorId != null && request.CoAuthorId.Count > 0 && submitterReviewContracts.Count() > 0)
             {
                 foreach (var coauthorId in request.CoAuthorId)
@@ -2150,6 +2310,19 @@ namespace ConfRadar.Services.Services
                     };
                     paperAuthorList.Add(paperAuthorObj);
 
+                    var notification = new Notification()
+                    {
+                        NotificationId = Guid.NewGuid().ToString(),
+                        UserId = coauthorId,
+                        Title = notiTitle,
+                        Message = notiMessage,
+                        Type = null,
+                        CreatedAt = timeNow,
+                        ReadStatus = false,
+                    };
+                    notificationList.Add(notification);
+
+
                 }
             }
 
@@ -2168,9 +2341,10 @@ namespace ConfRadar.Services.Services
                 abstractPaper.AbstractUrl = abstractFileUrl;
             }
             var oldPaperCoAuthors = paper.PaperAuthors.Where(pa => pa.IsRootAuthor == false).ToList();
+
             abstractPaper.Title = string.IsNullOrWhiteSpace(request.Title) ? abstractPaper.Title : request.Title;
             abstractPaper.Description = string.IsNullOrWhiteSpace(request.Description) ? abstractPaper.Description : request.Description;
-
+            
 
 
 
@@ -2184,10 +2358,15 @@ namespace ConfRadar.Services.Services
                 if (oldPaperCoAuthors.Count() > 0 && request.CoAuthorId != null && request.CoAuthorId.Count() > 0)
                 {
                     finalResult += await _unitOfWork.PaperAuthorRepository.DeleteMutiplePaperAuthorAsync(oldPaperCoAuthors);
+
+
+
+
                 }
                 if (paperAuthorList.Count > 0)
                 {
                     finalResult += await _unitOfWork.PaperAuthorRepository.CreateMutiplePaperAuthorAsync(paperAuthorList);
+                    finalResult += await _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
                 }
                 await _unitOfWork.CommitAsync();
                 return finalResult;

@@ -48,11 +48,11 @@ namespace ConfRadar.Services.Services
 
             using var qrGenerator = new QRCodeGenerator();
             #region ecc level
-            // có 4 m?c ECC (mã s?a l?i => giúp qr d?c du?c ngay c? khi b? che m?, u?t hay h?ng
+            // có 4 mặc ECC (giúp qr quét được ngay cả khi bị che khuất hay mất 1 góc
             // L: low : simple , scan nhanh
-            //M: medium : cân b?ng
-            //Q : Quartile : t?t , che 1/4 v?n d?c du?c
-            //H: high : m?nh, che 1/3 v?n cân du?c nhung c?n qr l?n hon
+            //M: medium : cân bằng
+            //Q : Quartile : tốt , che 1/4 vẫn scan được
+            //H: high : mạnh, che 1/3 vẫn quét được nhưng qr phải lớn hơn
             #endregion
             using var qrData = qrGenerator.CreateQrCode(hashedContent, QRCodeGenerator.ECCLevel.M);
 
@@ -60,7 +60,7 @@ namespace ConfRadar.Services.Services
             byte[] qrBytes = qrCode.GetGraphic(20);
 
             using var ms = new MemoryStream(qrBytes);
-            //reset con tr? stream v? 0 d? save
+            //reset con trỏ stream về 0 để save
             ms.Position = 0;
 
 
@@ -141,7 +141,7 @@ namespace ConfRadar.Services.Services
             }
             if (data.ConferenceSessionId != qrDataPayload.conferenceSessionId)
             {
-                throw new BadRequestException($"Bạn dã check in nhầm session r?i. Session hiện tại là " +
+                throw new BadRequestException($"Bạn dã check in nhầm session rồi. Session hiện tại là " +
                     $"{conferenceSessionDetail.Title} diễn ra từ {conferenceSessionDetail.StartTime?.ToString("dd/MM/yyyy HH:mm:ss tt")} đến {conferenceSessionDetail.EndTime?.ToString("dd/MM/yyyy HH:mm:ss tt")}");
             }
 

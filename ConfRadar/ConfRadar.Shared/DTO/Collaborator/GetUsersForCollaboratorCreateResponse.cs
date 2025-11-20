@@ -1,6 +1,12 @@
-﻿namespace ConfRadar.Shared.DTO.ReviewContract
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConfRadar.Shared.DTO.Collaborator
 {
-    public class GetUsersForReviewerContractResponse
+    public class GetUsersForCollaboratorCreateResponse
     {
         public string? UserId { get; set; }
         public string? Email { get; set; }
