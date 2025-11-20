@@ -9,6 +9,7 @@ namespace ConfRadar.Repositories.Repositories
     {
         Task<int> CreateTransactionAsync(Transaction transaction);
         Task<List<Transaction>> GetOwnTransactionByUserId(string userId);
+        Task<int> CreateTransactionListAsync(List<Transaction> transactions);
     }
     public class TransactionRepository : GenericRepository<Transaction>, ITransactionRepository
     {
@@ -19,6 +20,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> CreateTransactionAsync(Transaction transaction)
         {
             return await CreateAsync(transaction);
+        }
+        public async Task<int> CreateTransactionListAsync(List<Transaction> transactions)
+        {
+            await _context.Transactions.AddRangeAsync(transactions);
+            return await _context.SaveChangesAsync();
         }
         public async Task<List<Transaction>> GetOwnTransactionByUserId(string userId)
         {

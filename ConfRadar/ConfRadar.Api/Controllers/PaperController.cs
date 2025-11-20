@@ -340,5 +340,6 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<AddWaitListResponse>.SuccessResponse(result, "Đã thêm vào  hàng đợi"));
         }
 
+
     }
 }

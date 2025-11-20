@@ -78,7 +78,7 @@ namespace ConfRadar.Repositories
         IRefundRequestRepository RefundRequestRepository { get; }
         IWalletRepository WalletRepository { get; }
         IWalletTransactionRepository WalletTransactionRepository { get; }
-
+        IAuditLogRepository AuditLogRepository { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
@@ -164,6 +164,7 @@ namespace ConfRadar.Repositories
         private IRefundRequestRepository _RefundRequestRepository;
         private IWalletRepository _WalletRepository;
         private IWalletTransactionRepository _WalletTransactionRepository;
+        private IAuditLogRepository _AuditLogRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -289,6 +290,8 @@ namespace ConfRadar.Repositories
         public IWalletRepository WalletRepository => _WalletRepository ??= new WalletRepository(_context);
 
         public IWalletTransactionRepository WalletTransactionRepository => _WalletTransactionRepository ??= new WalletTransactionRepository(_context);
+
+        public IAuditLogRepository AuditLogRepository => _AuditLogRepository ??= new AuditLogRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

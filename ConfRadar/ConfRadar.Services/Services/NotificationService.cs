@@ -1,6 +1,12 @@
-using ConfRadar.Repositories;
+ï»¿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
+using FirebaseAdmin;
+using Microsoft.Extensions.Options;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
 {
@@ -8,15 +14,21 @@ namespace ConfRadar.Services.Services
     {
         Task NotifyWaitList();
         Task ResetWaitList();
+        Task<bool> SendMobilePushAsync(string deviceToken, string title, string body);
+        Task<bool> SendWebPushAsync(string fcmToken, string title, string body);
     }
     public class NotificationService : INotificationService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITimeProviderService _timeProviderService;
-        public NotificationService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService)
+        private readonly HttpClient _httpClient;
+        private readonly IOptions<FirebaseSettings> _firebaseSettings;
+        public NotificationService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService, HttpClient httpClient, IOptions<FirebaseSettings> firebaseSettings)
         {
             _unitOfWork = unitOfWork;
             _timeProviderService = timeProviderService;
+            _httpClient = httpClient;
+            _firebaseSettings = firebaseSettings;
         }
 
         public async Task NotifyWaitList()
@@ -41,16 +53,16 @@ namespace ConfRadar.Services.Services
                         CreatedAt = await _timeProviderService.GetVietnamTime(),
                         ReadStatus = false,
                         Type = "Paper wait list",
-                        Title = "Danh sách hàng d?i cho h?i ngh?",
+                        Title = "Danh sÃ¡ch hÃ ng d?i cho h?i ngh?",
 
                     };
-                    string message = $"H?i ngh? {notfiedUser.ConferenceName} hi?n dã m? l?i slot dang ký.";
+                    string message = $"H?i ngh? {notfiedUser.ConferenceName} hi?n dÃ£ m? l?i slot dang kÃ½.";
                     if (notfiedUser.ConferencePriceDetailList.Count > 0)
                     {
-                        message += " Các vé hi?n có: ";
+                        message += " CÃ¡c vÃ© hi?n cÃ³: ";
                         foreach (var conferencePrice in notfiedUser.ConferencePriceDetailList)
                         {
-                            message += $" Vé {conferencePrice.TicketName} — còn {conferencePrice.AvailableSlot}/{conferencePrice.TotalSlot} vé (giá {conferencePrice.TicketPrice}). ";
+                            message += $" VÃ© {conferencePrice.TicketName} â€” cÃ²n {conferencePrice.AvailableSlot}/{conferencePrice.TotalSlot} vÃ© (giÃ¡ {conferencePrice.TicketPrice}). ";
                         }
                     }
                     userNotification.Message = message;
@@ -77,5 +89,84 @@ namespace ConfRadar.Services.Services
             }
             await _unitOfWork.PaperWaitListRepository.ResetUserWaitList(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, await _timeProviderService.GetVietnamTime());
         }
+
+
+
+
+
+
+
+
+
+        private async Task<string> GetFirebaseAccessToken()
+        {
+            var credential = FirebaseApp.DefaultInstance.Options.Credential;
+            if (credential == null)
+            {
+                throw new Exception("Credential firebase chÆ°a Ä‘Æ°á»£c khá»Ÿi táº¡o.");
+            }
+            ;
+            var scope = credential.CreateScoped("https://www.googleapis.com/auth/firebase.messaging");
+            return await scope.UnderlyingCredential.GetAccessTokenForRequestAsync();
+        }
+        public async Task<bool> SendMobilePushAsync(string deviceToken, string title, string body)
+        {
+
+            var accessToken = await GetFirebaseAccessToken();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var message = new
+            {
+                message = new
+                {
+                    token = deviceToken,
+                    notification = new { title, body },
+                    android = new { priority = "high" }
+                }
+            };
+            var json = JsonSerializer.Serialize(message);
+            var url = $"https://fcm.googleapis.com/v1/projects/{_firebaseSettings.Value.ProjectId}/messages:send";
+            var response = await _httpClient.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(error);
+            }
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> SendWebPushAsync(string fcmToken, string title, string body)
+        {
+            var message = new
+            {
+                message = new
+                {
+                    token = fcmToken,
+                    notification = new
+                    {
+                        title = title,
+                        body = body
+                    },
+
+                }
+            };
+            var json = JsonSerializer.Serialize(message);
+            var accessToken = await GetFirebaseAccessToken();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var url = $"https://fcm.googleapis.com/v1/projects/{_firebaseSettings.Value.ProjectId}/messages:send";
+            var response = await _httpClient.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(error);
+            }
+            return response.IsSuccessStatusCode;
+        }
+
+
+
+
+
+
     }
 }

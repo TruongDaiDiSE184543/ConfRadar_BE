@@ -24,6 +24,8 @@ public partial class Paper
 
     public string? Description { get; set; }
 
+    public string? TicketId { get; set; }
+
     public virtual Abstract? Abstract { get; set; }
 
     public virtual CameraReady? CameraReady { get; set; }
@@ -47,4 +49,6 @@ public partial class Paper
     public virtual RevisionPaper? RevisionPaper { get; set; }
 
     public virtual ICollection<SessionChangeRequest> SessionChangeRequests { get; set; } = new List<SessionChangeRequest>();
+
+    public virtual Ticket? Ticket { get; set; }
 }

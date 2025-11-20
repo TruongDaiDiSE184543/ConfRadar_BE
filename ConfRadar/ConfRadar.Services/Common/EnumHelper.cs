@@ -223,10 +223,10 @@ namespace ConfRadar.Services.Common
         //[Description("Withdraw")]
         //Withdraw,          
 
-        [Description("Refund")]
+        [Description("Hoàn tiền")]
         Refund,
 
-        [Description("Purchase")]
+        [Description("Mua hàng")]
         Purchase,
 
         //[Description("Adjustment")]

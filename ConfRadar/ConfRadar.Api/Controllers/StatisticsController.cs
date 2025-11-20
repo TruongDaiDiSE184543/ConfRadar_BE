@@ -1,10 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Statistics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Models;
-using System.Collections.Generic;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -20,7 +17,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("sold-ticket")]
-        public async Task<IActionResult> getSoldTicket([FromQuery]string confId)
+        public async Task<IActionResult> getSoldTicket([FromQuery] string confId)
         {
             var result = await _serviceManager.StatisticsService.GetConferenceStatisticsAsync(confId);
             return Ok(ApiResponse<ConferenceStatisticsResponse>.SuccessResponse(result, "Lấy thành công vé đã bán"));
@@ -36,8 +33,8 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> exportRevenue([FromQuery] string confId)
         {
             var fileBytes = await _serviceManager.StatisticsService.ExportDetailedConferenceStatisticsAsync(confId);
-            var fileName = $"conference_statistics_{confId}{ DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
-            return File(fileBytes,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",fileName);
+            var fileName = $"conference_statistics_{confId}{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
         [HttpGet("submitted-papers")]

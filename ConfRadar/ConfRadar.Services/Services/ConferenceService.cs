@@ -123,7 +123,7 @@ namespace ConfRadar.Services.Services
         //}
 
         #region Helper methods to validateDate
-        private async void OnholdToReadyValid(Conference conf, ConferenceStatus ready,ConferenceStatus onHold)
+        private async void OnholdToReadyValid(Conference conf, ConferenceStatus ready, ConferenceStatus onHold)
         {
             //get date when conf switch from ready to onhold
 
@@ -136,7 +136,7 @@ namespace ConfRadar.Services.Services
             var onHoldStartDate = OnholdTimeLine.ChangeDate;
 
 
-            
+
         }
 
         // DÁN TOÀN BỘ PHIÊN BẢN NÀY ĐỂ THAY THẾ PHIÊN BẢN CŨ
@@ -207,7 +207,7 @@ namespace ConfRadar.Services.Services
             return invalidMessages;
         }
 
-        private  bool IsDateInvalidatedByOnHold(DateOnly onHoldStartDate, DateOnly today, DateOnly? dateToCheck)
+        private bool IsDateInvalidatedByOnHold(DateOnly onHoldStartDate, DateOnly today, DateOnly? dateToCheck)
         {
             // Nếu không có ngày để kiểm tra, nó không thể bị lỗi thời.
             if (!dateToCheck.HasValue)
@@ -813,13 +813,13 @@ namespace ConfRadar.Services.Services
                 {
                     if (currentStatus.ConferenceStatusName == "OnHold")
                     {
-                         await OnholdToReadyValidAsync(conference, newStatus.ConferenceStatusId, currentStatus.ConferenceStatusId);
+                        await OnholdToReadyValidAsync(conference, newStatus.ConferenceStatusId, currentStatus.ConferenceStatusId);
                     }
                     else await ValidateForReadyStateAsync(conference);
                 }
-                    
 
-                
+
+
 
                 // Update the conference status
                 conference.ConferenceStatusId = newStatus.ConferenceStatusId;
@@ -2383,7 +2383,7 @@ namespace ConfRadar.Services.Services
         public async Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId)
         {
             var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
-            var onHoldTimelineEntry = await _unitOfWork.ConferenceTimelineRepository.GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(conf.ConferenceId, readyId,onHoldId);
+            var onHoldTimelineEntry = await _unitOfWork.ConferenceTimelineRepository.GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(conf.ConferenceId, readyId, onHoldId);
             if (onHoldTimelineEntry == null)
                 throw new InvalidOperationException("Không tìm thấy lịch sử chuyển sang trạng thái 'OnHold'.");
 

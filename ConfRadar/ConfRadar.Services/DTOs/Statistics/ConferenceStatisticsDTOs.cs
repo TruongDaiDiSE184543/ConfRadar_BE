@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ConfRadar.Services.DTOs.Statistics
+﻿namespace ConfRadar.Services.DTOs.Statistics
 {
     public class TicketPhaseStatisticsResponse
     {
@@ -41,7 +38,7 @@ namespace ConfRadar.Services.DTOs.Statistics
         public string ExportFormat { get; set; }
         public DateTime ExportedAt { get; set; }
     }
-    
+
     // Thống kê Doanh thu vé
     public class TicketSalesSummaryResponse
     {
