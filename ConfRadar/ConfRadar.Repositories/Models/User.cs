@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class User
 {
@@ -37,6 +40,10 @@ public partial class User
     public string? BioDescription { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public string? FirebaseWebFcmToken { get; set; }
+
+    public string? FirebaseMobileFcmToken { get; set; }
 
     public virtual ICollection<AcademicProfile> AcademicProfiles { get; set; } = new List<AcademicProfile>();
 

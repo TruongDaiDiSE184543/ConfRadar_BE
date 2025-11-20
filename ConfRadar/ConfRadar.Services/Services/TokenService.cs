@@ -35,14 +35,14 @@ namespace ConfRadar.Services.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
             var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userId);
-
+            var activeUserRole = userRoles.Where(ur => ur.IsActive ==true).ToList();
             var claims = new List<Claim>()
             {
                 new Claim(JwtRegisteredClaimNames.Email,email),
                 new Claim(JwtRegisteredClaimNames.Sub,userId),
 
             };
-            foreach (var role in userRoles)
+            foreach (var role in activeUserRole)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role.Role.RoleName));
             }

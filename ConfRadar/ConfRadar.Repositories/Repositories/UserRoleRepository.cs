@@ -12,6 +12,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<IEnumerable<UserRole>> GetMutipleUserRolesByUserId(string userId);
         Task<int> CreateUserRoleAsync(UserRole userRole);
         Task<UserRole?> GetUserRoleByUserAndRole(string userId, string roleId);
+        Task<int> UpdateUserRole(UserRole userRole);
     }
     public class UserRoleRepository : GenericRepository<UserRole>, IUserRoleRepository
     {
@@ -32,6 +33,10 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.UserRoles
                 .Include(x => x.Role)
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.RoleId == roleId);
+        }
+        public async Task<int> UpdateUserRole(UserRole userRole)
+        {
+            return await UpdateAsync(userRole);
         }
     }
 }

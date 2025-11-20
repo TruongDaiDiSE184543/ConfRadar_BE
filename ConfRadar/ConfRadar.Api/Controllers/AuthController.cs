@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
+using ConfRadar.Shared.DTO.Collaborator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -79,7 +80,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> SuspendAccount(string userId)
         {
             var result = await _serviceManager.AuthService.SuspendAccount(userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Suspended user!"));
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã đình chỉ account này!"));
         }
         [Authorize]
         [HttpPut("activate-account")]
@@ -118,6 +119,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.AuthService.CreateCollaboratorAccount(request);
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo account cho collaborator"));
         }
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpGet("users-for-collaborator-create")]
+        public async Task<IActionResult> GetUsersForCollaboratorCreate()
+        {
+            var result = await _serviceManager.AuthService.GetUsersForCollaboratorCreate();
+            return Ok(ApiResponse<List<GetUsersForCollaboratorCreateResponse>>.SuccessResponse(result, $"Danh sách người dùng cho việc tạo collaborator account"));
+        }
+
         [HttpGet("list-all-reviewers")]
         public async Task<IActionResult> ListAllReviewer()
         {

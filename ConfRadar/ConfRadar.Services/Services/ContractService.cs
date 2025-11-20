@@ -115,6 +115,7 @@ namespace ConfRadar.Services.Services
                     AssignedAt = await _timeProviderService.GetVietnamTime(),
                     RoleId = externalReviewerRole.RoleId,
                     UserId = reviewer.UserId,
+                    IsActive = true
                 };
                 await _unitOfWork.UserRoleRepository.CreateUserRoleAsync(userRoleObj);
             }
