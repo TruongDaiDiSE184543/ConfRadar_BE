@@ -22,8 +22,9 @@ namespace ConfRadar.Services.Services
         Task<GeneralPaymentResultResponse> CreatePaymentForTechConference(CreateTechPaymentRequest request, string userId);
         Task<GeneralPaymentResultResponse> CreatePaymentForAbstract(CreatePaperPaymentRequest request, string userId);
         Task<GeneralPaymentResultResponse> CreatePaymentForResearchAsAttendee(CreateResearchAttendeePaymentRequest request, string userId);
-        Task ProcessCallBackForTechConference(string orderId, decimal amountFromIpn, string transactionCodeFromIpn);
-        Task ProcessCallBackForResearchConferenceAbstractSubmission(string orderId, decimal amountFromIpn, string transactionCodeFromIpn);
+
+        //Task ProcessCallBackForTechConference(string orderId, decimal amountFromIpn, string transactionCodeFromIpn);
+        //Task ProcessCallBackForResearchConferenceAbstractSubmission(string orderId, decimal amountFromIpn, string transactionCodeFromIpn);
 
 
 
@@ -220,21 +221,25 @@ namespace ConfRadar.Services.Services
             string paymentDescription = "Thanh toan tech";
             string conferenceName = conferencePrice?.Conference?.ConferenceName ?? "";
 
-            var listPaymentLinkItem = new List<PaymentLinkItem>()
-            {
-                new PaymentLinkItem()
-                {
-                    Name = $"Thanh toán vé cho h?i ngh?: {conferenceName}",
-                    Price = finalAmount,
-                    Quantity = 1,
-                }
-            };
-
-            //thêm mutiple phuong th?c thanh toán:
+            //thêm mutiple phuong thức thanh toán:
             string checkOutUrl = string.Empty;
+            var lockeyData = new PaymentLockKeyDTO()
+            {
+                OldCheckOutUrl = checkOutUrl,
+                PaymentMethodId = request.PaymentMethodId
+            };
             switch (paymentMethod.MethodName)
             {
                 case var s when s == PaymentMethodEnum.PayOs.GetDescription():
+                    var listPaymentLinkItem = new List<PaymentLinkItem>()
+                    {
+                        new PaymentLinkItem()
+                        {
+                        Name = $"Thanh toán vé cho hội ngh?: {conferenceName}",
+                        Price = finalAmount,
+                        Quantity = 1,
+                        }
+                    };
                     checkOutUrl = await _payOsService.CreatePayOsPayment(orderCode, finalAmount, paymentDescription, expireMinute, listPaymentLinkItem);
                     break;
                 case var s when s == PaymentMethodEnum.MoMo.GetDescription():
@@ -247,15 +252,33 @@ namespace ConfRadar.Services.Services
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phuong th?c thanh toán ZaloPay dang trong tr?ng thái b?o trì và b? l?");
+                case var s when s == PaymentMethodEnum.Wallet.GetDescription():
+                    var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
+                    if (userWallet == null) throw new NotFoundException("Không tìm thấy ví của bạn trong hệ thống");
+                    if (userWallet.Balance < finalAmount) throw new BadRequestException($"Số dư trong ví của bạn {userWallet.Balance} không đủ để mua vé với giá {finalAmount}");
 
+
+
+                    var lockeyDataWalletJson = JsonSerializer.Serialize(lockeyData);
+                    await _redisService.SetStringAsync(conferenceLockKey, lockeyDataWalletJson, TimeSpan.FromMinutes(expireMinute));
+                    await _redisService.SetStringAsync(phaseLockKey, "", TimeSpan.FromMinutes(expireMinute));
+                    await _redisService.SetStringAsync(orderCode.ToString(), transacJson, TimeSpan.FromMinutes(expireMinute));
+                    await ProcessInsertPaymentData(orderCode.ToString(), finalAmount, Guid.NewGuid().ToString(), useWallet: true);
+
+                    break;
                 default:
-                    throw new BadRequestException("Phuong th?c thanh toán không h?p l?");
+                    throw new BadRequestException("Phuong thức thanh toán không hợp lệ");
             }
-            var lockeyData = new PaymentLockKeyDTO()
+            if (paymentMethod.MethodName == PaymentMethodEnum.Wallet.GetDescription())
             {
-                OldCheckOutUrl = checkOutUrl,
-                PaymentMethodId = request.PaymentMethodId
-            };
+                return new GeneralPaymentResultResponse()
+                {
+                    PaymentCreateSuccess = true,
+                    PaymentMessage = "Đã thanh toán thành công bằng ví",
+                    CheckOutUrl = null,
+                };
+            }
+            lockeyData.OldCheckOutUrl = checkOutUrl;
             var lockeyDataJson = JsonSerializer.Serialize(lockeyData);
             await _redisService.SetStringAsync(conferenceLockKey, lockeyDataJson, TimeSpan.FromMinutes(expireMinute));
             await _redisService.SetStringAsync(phaseLockKey, "", TimeSpan.FromMinutes(expireMinute));
@@ -460,27 +483,33 @@ namespace ConfRadar.Services.Services
             };
             var transacJson = JsonSerializer.Serialize(transactionData);
 
-            //logic da c?ng
+            //logic đa cổng
             var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             double expireMinute = 90;
             string paymentDescription = "Thanhtoanresearch";
             string conferenceName = conferencePrice?.Conference?.ConferenceName ?? "";
 
-            var listPaymentLinkItem = new List<PaymentLinkItem>()
-            {
-                new PaymentLinkItem()
-                {
-                    Name = $"Thanh toán vé cho h?i ngh?: {conferenceName}",
-                    Price = finalPrice,
-                    Quantity = 1,
-                }
-            };
 
-            //thêm mutiple phuong th?c thanh toán:
+
+            //thêm mutiple phuong thức thanh toán:
             string checkOutUrl = string.Empty;
+            var lockeyData = new PaymentLockKeyDTO()
+            {
+                OldCheckOutUrl = checkOutUrl,
+                PaymentMethodId = request.PaymentMethodId
+            };
             switch (paymentMethod.MethodName)
             {
                 case var s when s == PaymentMethodEnum.PayOs.GetDescription():
+                    var listPaymentLinkItem = new List<PaymentLinkItem>()
+                    {
+                        new PaymentLinkItem()
+                        {
+                            Name = $"Thanh toán vé cho h?i ngh?: {conferenceName}",
+                            Price = finalPrice,
+                            Quantity = 1,
+                        }
+                    };
                     checkOutUrl = await _payOsService.CreatePayOsPayment(orderCode, finalPrice, paymentDescription, expireMinute, listPaymentLinkItem);
                     break;
                 case var s when s == PaymentMethodEnum.MoMo.GetDescription():
@@ -493,16 +522,33 @@ namespace ConfRadar.Services.Services
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phuong th?c thanh toán ZaloPay dang trong tr?ng thái b?o trì và b? l?");
+                case var s when s == PaymentMethodEnum.Wallet.GetDescription():
+                    var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
+                    if (userWallet == null) throw new NotFoundException("Không tìm thấy ví của bạn trong hệ thống");
+                    if (userWallet.Balance < finalPrice) throw new BadRequestException($"Số dư trong ví của bạn {userWallet.Balance} không đủ để mua vé với giá {finalPrice}");
 
+
+
+                    var lockeyDataWalletJson = JsonSerializer.Serialize(lockeyData);
+                    await _redisService.SetStringAsync(lockKeyConference, lockeyDataWalletJson, TimeSpan.FromMinutes(expireMinute));
+                    await _redisService.SetStringAsync(lockKeyPhase, "", TimeSpan.FromMinutes(expireMinute));
+                    await _redisService.SetStringAsync(orderCode.ToString(), transacJson, TimeSpan.FromMinutes(expireMinute));
+                    await ProcessInsertPaymentData(orderCode.ToString(), finalPrice, Guid.NewGuid().ToString(), useWallet: true);
+
+                    break;
                 default:
-                    throw new BadRequestException("Phuong th?c thanh toán không h?p l?");
+                    throw new BadRequestException("Phuong thức thanh toán không hợp lệ");
             }
-
-            var lockeyData = new PaymentLockKeyDTO()
+            if (paymentMethod.MethodName == PaymentMethodEnum.Wallet.GetDescription())
             {
-                OldCheckOutUrl = checkOutUrl,
-                PaymentMethodId = request.PaymentMethodId
-            };
+                return new GeneralPaymentResultResponse()
+                {
+                    PaymentCreateSuccess = true,
+                    PaymentMessage = "Đã thanh toán thành công bằng ví",
+                    CheckOutUrl = null,
+                };
+            }
+            lockeyData.OldCheckOutUrl = checkOutUrl;
             var lockeyDataJson = JsonSerializer.Serialize(lockeyData);
             await _redisService.SetStringAsync(lockKeyConference, lockeyDataJson, TimeSpan.FromMinutes(expireMinute));
             await _redisService.SetStringAsync(lockKeyPhase, "", TimeSpan.FromMinutes(expireMinute));
@@ -683,21 +729,27 @@ namespace ConfRadar.Services.Services
             string paymentDescription = "Thanh toán research";
             string conferenceName = conferencePrice?.Conference?.ConferenceName ?? "";
 
-            var listPaymentLinkItem = new List<PaymentLinkItem>()
-            {
-                new PaymentLinkItem()
-                {
-                    Name = $"Thanh toán vé cho h?i ngh?: {conferenceName}",
-                    Price = finalPrice,
-                    Quantity = 1,
-                }
-            };
 
-            //thêm mutiple phuong th?c thanh toán:
+
+            //thêm mutiple phuong thức thanh toán:
             string checkOutUrl = string.Empty;
+            var lockeyData = new PaymentLockKeyDTO()
+            {
+                OldCheckOutUrl = checkOutUrl,
+                PaymentMethodId = request.PaymentMethodId
+            };
             switch (paymentMethod.MethodName)
             {
                 case var s when s == PaymentMethodEnum.PayOs.GetDescription():
+                    var listPaymentLinkItem = new List<PaymentLinkItem>()
+                    {
+                        new PaymentLinkItem()
+                        {
+                            Name = $"Thanh toán vé cho h?i ngh?: {conferenceName}",
+                            Price = finalPrice,
+                            Quantity = 1,
+                        }
+                    };
                     checkOutUrl = await _payOsService.CreatePayOsPayment(orderCode, finalPrice, paymentDescription, expireMinute, listPaymentLinkItem);
                     break;
                 case var s when s == PaymentMethodEnum.MoMo.GetDescription():
@@ -710,16 +762,33 @@ namespace ConfRadar.Services.Services
                     break;
                 case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
                     throw new BadRequestException("Phuong th?c thanh toán ZaloPay dang trong tr?ng thái b?o trì và b? l?");
+                case var s when s == PaymentMethodEnum.Wallet.GetDescription():
+                    var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
+                    if (userWallet == null) throw new NotFoundException("Không tìm thấy ví của bạn trong hệ thống");
+                    if (userWallet.Balance < finalPrice) throw new BadRequestException($"Số dư trong ví của bạn {userWallet.Balance} không đủ để mua vé với giá {finalPrice}");
 
+
+
+                    var lockeyDataWalletJson = JsonSerializer.Serialize(lockeyData);
+                    await _redisService.SetStringAsync(lockKeyConference, lockeyDataWalletJson, TimeSpan.FromMinutes(expireMinute));
+                    await _redisService.SetStringAsync(lockKeyPhase, "", TimeSpan.FromMinutes(expireMinute));
+                    await _redisService.SetStringAsync(orderCode.ToString(), transacJson, TimeSpan.FromMinutes(expireMinute));
+                    await ProcessInsertPaymentData(orderCode.ToString(), finalPrice, Guid.NewGuid().ToString(), useWallet: true);
+
+                    break;
                 default:
-                    throw new BadRequestException("Phuong th?c thanh toán không h?p l?");
+                    throw new BadRequestException("Phuong thức thanh toán không hợp lệ");
             }
-
-            var lockeyData = new PaymentLockKeyDTO()
+            if (paymentMethod.MethodName == PaymentMethodEnum.Wallet.GetDescription())
             {
-                OldCheckOutUrl = checkOutUrl,
-                PaymentMethodId = request.PaymentMethodId
-            };
+                return new GeneralPaymentResultResponse()
+                {
+                    PaymentCreateSuccess = true,
+                    PaymentMessage = "Đã thanh toán thành công bằng ví",
+                    CheckOutUrl = null,
+                };
+            }
+            lockeyData.OldCheckOutUrl = checkOutUrl;
             var lockeyDataJson = JsonSerializer.Serialize(lockeyData);
             await _redisService.SetStringAsync(lockKeyConference, lockeyDataJson, TimeSpan.FromMinutes(expireMinute));
             await _redisService.SetStringAsync(lockKeyPhase, "", TimeSpan.FromMinutes(expireMinute));
@@ -736,7 +805,7 @@ namespace ConfRadar.Services.Services
 
         #region process insert data
 
-        public async Task ProcessCallBackForTechConference(string orderId, decimal amountFromIpn, string transactionCodeFromIpn)
+        public async Task ProcessCallBackForTechConference(string orderId, decimal amountFromIpn, string transactionCodeFromIpn, bool useWallet)
         {
             //var transacKey = await _redisService.KeyExistsAsync(orderId);
             //if (!transacKey)
@@ -817,6 +886,30 @@ namespace ConfRadar.Services.Services
                 pricePhase!.AvailableSlot = pricePhase.AvailableSlot - 1;
                 pricePhase!.ConferencePrice!.AvailableSlot = pricePhase!.ConferencePrice!.AvailableSlot - 1;
                 pricePhase!.ConferencePrice!.Conference!.AvailableSlot = pricePhase!.ConferencePrice!.Conference!.AvailableSlot - 1;
+
+                if (useWallet == true)
+                {
+                    var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(transacDataHolder.UserId);
+                    if (userWallet == null)
+                    {
+                        throw new NotFoundException($"Không tìm thấy ví cho user {transacDataHolder.UserId}");
+                    }
+                    userWallet.Balance = userWallet.Balance - amountFromIpn;
+                    var walletTransactionObj = new WalletTransaction()
+                    {
+                        WalletTransactionId = Guid.NewGuid().ToString(),
+                        WalletId = userWallet.WalletId,
+                        Amount = -amountFromIpn,
+                        TransactionType = WalletTransactionTypeEnum.Purchase.GetDescription(),
+                        Description = $"Bạn đã mua đơn hàng #{transacDataHolder.TicketId} thành công vào lúc {timeNow}. Hãy check thông tin vé đã mua",
+                        CreatedAt = timeNow,
+                    };
+                    await _unitOfWork.WalletRepository.UpdateWalletAsync(userWallet);
+                    await _unitOfWork.WalletTransactionRepository.CreateWalletTransactionAsync(walletTransactionObj);
+                }
+
+
+
                 await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
                 await _unitOfWork.CommitAsync();
@@ -832,7 +925,7 @@ namespace ConfRadar.Services.Services
 
 
         }
-        public async Task ProcessCallBackForResearchConferenceAbstractSubmission(string orderId, decimal amountFromIpn, string transactionCodeFromIpn)
+        public async Task ProcessCallBackForResearchConferenceAbstractSubmission(string orderId, decimal amountFromIpn, string transactionCodeFromIpn, bool useWallet)
         {
 
             //var transacKey = await _redisService.KeyExistsAsync(orderId);
@@ -914,6 +1007,7 @@ namespace ConfRadar.Services.Services
                 PaperPhaseId = currentPaperPhase.PaperPhaseId,
                 Title = transacDataHolder.Title,
                 Description = transacDataHolder.Description,
+                TicketId = transacDataHolder.TicketId,
                 PaperAuthors = new List<PaperAuthor>()
             };
             var presenterPaperAuthor = new PaperAuthor()
@@ -941,8 +1035,28 @@ namespace ConfRadar.Services.Services
                 pricePhase!.AvailableSlot = pricePhase.AvailableSlot - 1;
                 pricePhase!.ConferencePrice!.AvailableSlot = pricePhase!.ConferencePrice!.AvailableSlot - 1;
                 pricePhase!.ConferencePrice!.Conference!.AvailableSlot = pricePhase!.ConferencePrice!.Conference!.AvailableSlot - 1;
-                await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
+                if (useWallet == true)
+                {
+                    var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(transacDataHolder.UserId);
+                    if (userWallet == null)
+                    {
+                        throw new NotFoundException($"Không tìm thấy ví cho user {transacDataHolder.UserId}");
+                    }
+                    userWallet.Balance = userWallet.Balance - amountFromIpn;
+                    var walletTransactionObj = new WalletTransaction()
+                    {
+                        WalletTransactionId = Guid.NewGuid().ToString(),
+                        WalletId = userWallet.WalletId,
+                        Amount = -amountFromIpn,
+                        TransactionType = WalletTransactionTypeEnum.Purchase.GetDescription(),
+                        Description = $"Bạn đã mua đơn hàng #{transacDataHolder.TicketId} thành công vào lúc {timeNow}. Hãy check thông tin vé đã mua",
+                        CreatedAt = timeNow,
+                    };
+                    await _unitOfWork.WalletRepository.UpdateWalletAsync(userWallet);
+                    await _unitOfWork.WalletTransactionRepository.CreateWalletTransactionAsync(walletTransactionObj);
+                }
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
+                await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
                 await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
                 await _unitOfWork.CommitAsync();
                 await _redisService.DeleteKeyAsync(orderId);
@@ -964,7 +1078,7 @@ namespace ConfRadar.Services.Services
 
         #endregion
 
-        public async Task ProcessCallBackForResearchConferenceAttendee(string orderId, decimal amountFromIpn, string transactionCodeFromIpn)
+        public async Task ProcessCallBackForResearchConferenceAttendee(string orderId, decimal amountFromIpn, string transactionCodeFromIpn, bool useWallet)
         {
 
 
@@ -1051,6 +1165,29 @@ namespace ConfRadar.Services.Services
                 pricePhase!.ConferencePrice!.AvailableSlot = pricePhase!.ConferencePrice!.AvailableSlot - 1;
                 pricePhase!.ConferencePrice!.Conference!.AvailableSlot = pricePhase!.ConferencePrice!.Conference!.AvailableSlot - 1;
 
+                if (useWallet == true)
+                {
+                    var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(transacDataHolder.UserId);
+                    if (userWallet == null)
+                    {
+                        throw new NotFoundException($"Không tìm thấy ví cho user {transacDataHolder.UserId}");
+                    }
+                    userWallet.Balance = userWallet.Balance - amountFromIpn;
+                    var walletTransactionObj = new WalletTransaction()
+                    {
+                        WalletTransactionId = Guid.NewGuid().ToString(),
+                        WalletId = userWallet.WalletId,
+                        Amount = -amountFromIpn,
+                        TransactionType = WalletTransactionTypeEnum.Purchase.GetDescription(),
+                        Description = $"Bạn đã mua đơn hàng #{transacDataHolder.TicketId} thành công vào lúc {timeNow}. Hãy check thông tin vé đã mua",
+                        CreatedAt = timeNow,
+                    };
+                    await _unitOfWork.WalletRepository.UpdateWalletAsync(userWallet);
+                    await _unitOfWork.WalletTransactionRepository.CreateWalletTransactionAsync(walletTransactionObj);
+                }
+
+
+
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
                 await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
                 await _unitOfWork.CommitAsync();
@@ -1080,9 +1217,9 @@ namespace ConfRadar.Services.Services
             bool payOsCheck = await _payOsService.VerifyPayOs(data);
             if (!payOsCheck)
             {
-                throw new BadRequestException("D? li?u payos không kh? d?ng");
+                throw new BadRequestException("Dữ liệu payos không khả dụng");
             }
-            await ProcessInsertPaymentData(data.Data.OrderCode.ToString(), (decimal)data.Data.Amount, data.Data.OrderCode.ToString());
+            await ProcessInsertPaymentData(data.Data.OrderCode.ToString(), (decimal)data.Data.Amount, data.Data.OrderCode.ToString(), useWallet: false);
 
         }
 
@@ -1091,25 +1228,25 @@ namespace ConfRadar.Services.Services
             bool momoCheck = _momoService.VerifyMomoPaymentData(data);
             if (!momoCheck)
             {
-                throw new BadRequestException("D? li?u momo không kh? d?ng");
+                throw new BadRequestException("Dữ liệu momo không khả dụng");
             }
-            await ProcessInsertPaymentData(data.orderId!, (decimal)data.amount!.Value, data.transId.ToString()!);
+            await ProcessInsertPaymentData(data.orderId!, (decimal)data.amount!.Value, data.transId.ToString()!, useWallet: false);
         }
         public async Task VerifyVnPayDataForConference(VnPayResponse data)
         {
             bool vnPayCheck = _vnPayService.VerifyVnPayPayment(data);
             if (!vnPayCheck)
             {
-                throw new BadRequestException("D? li?u vnpay không kh? d?ng");
+                throw new BadRequestException("D? li?u vnpay không khả dụng");
             }
-            await ProcessInsertPaymentData(data.Vnp_TxnRef!, (decimal)data.Vnp_Amount!.Value / 100, data.Vnp_TransactionNo!.ToString()!);
+            await ProcessInsertPaymentData(data.Vnp_TxnRef!, (decimal)data.Vnp_Amount!.Value / 100, data.Vnp_TransactionNo!.ToString()!, useWallet: false);
         }
-        private async Task ProcessInsertPaymentData(string orderId, decimal amount, string transId)
+        private async Task ProcessInsertPaymentData(string orderId, decimal amount, string transId, bool useWallet)
         {
             var transacKey = await _redisService.KeyExistsAsync(orderId);
             if (!transacKey)
             {
-                throw new BadRequestException("D? li?u không tìm th?y");
+                throw new BadRequestException("Dữ liệu không tìm thấy");
             }
             var transac = await _redisService.GetStringAsync(orderId);
             var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
@@ -1118,25 +1255,28 @@ namespace ConfRadar.Services.Services
             });
             if (transacDataHolder == null)
             {
-                throw new BadRequestException("Không th? d?c d? li?u giao d?ch");
+                throw new BadRequestException("Không thấy dữ liệu giao dịch");
             }
             if (transacDataHolder!.IsResearchConference == true && transacDataHolder.IsResearchConferenceAuthor == true)
             {
-                await ProcessCallBackForResearchConferenceAbstractSubmission(orderId, amount, transId);
+                await ProcessCallBackForResearchConferenceAbstractSubmission(orderId, amount, transId, useWallet);
             }
             else if (transacDataHolder.IsResearchConference == false)
             {
-                await ProcessCallBackForTechConference(orderId, amount, transId);
+                await ProcessCallBackForTechConference(orderId, amount, transId, useWallet);
             }
             else if (transacDataHolder!.IsResearchConference == true && transacDataHolder.IsResearchConferenceAuthor == false)
             {
-                await ProcessCallBackForResearchConferenceAttendee(orderId, amount, transId);
+                await ProcessCallBackForResearchConferenceAttendee(orderId, amount, transId, useWallet);
             }
             else
             {
-                throw new BadRequestException("D? li?u thanh toán không kh? d?ng");
+                throw new BadRequestException("Dữ liệu thanh toán không khả dụng");
             }
         }
+
+
+
         #endregion
 
 

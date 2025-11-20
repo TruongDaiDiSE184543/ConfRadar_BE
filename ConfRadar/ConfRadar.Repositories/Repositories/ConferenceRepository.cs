@@ -106,6 +106,7 @@ namespace ConfRadar.Repositories.Repositories
             var conferenceList = await _context.Tickets
                                  .AsNoTracking()
                                  .Where(t => t.UserId == userId
+                                 && t.IsRefunded == false
                                  && t.PricePhase != null
                                  && t.PricePhase.ConferencePrice != null
                                  && t.PricePhase.ConferencePrice.Conference != null
@@ -165,12 +166,13 @@ namespace ConfRadar.Repositories.Repositories
                                              PaperTitle = pa.Paper.Title,
                                              PaperDescription = pa.Paper.Description,
                                              ResearchConferencePhaseId = pa.Paper.ResearchConferencePhaseId,
+
                                              PaperAuthor = pa.Paper.PaperAuthors
-                                             .Where(pau=>
-                                             _context.Tickets.Any(t=>t.UserId==pau.UserId 
-                                             && t.IsRefunded==false 
-                                             && t.PricePhase !=null && t.PricePhase.ConferencePrice!=null
-                                             && t.PricePhase.ConferencePrice.ConferenceId == pa.Paper.ConferenceId) )
+                                             .Where(pau =>
+                                             _context.Tickets.Any(t => t.UserId == pau.UserId
+                                             && t.IsRefunded == false
+                                             && t.PricePhase != null && t.PricePhase.ConferencePrice != null
+                                             && t.PricePhase.ConferencePrice.ConferenceId == pa.Paper.ConferenceId))
                                              .Select(pau => new PaperAuthorDetailForScheduleResponse()
                                              {
                                                  UserId = pau.UserId,

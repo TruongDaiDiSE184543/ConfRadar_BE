@@ -48,6 +48,8 @@ namespace ConfRadar.Services
             services.AddScoped<IConferenceTimelineService, ConferenceTimelineService>();
             services.AddScoped<IFavouriteConferenceService, FavouriteConferenceService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddHttpClient<NotificationService>();
+
             services.AddScoped<IZaloPayService, ZaloPayService>();
             services.AddScoped<IPayOsService, PayOsService>();
             services.AddScoped<IContractService, ContractService>();

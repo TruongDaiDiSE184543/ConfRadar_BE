@@ -34,42 +34,37 @@ namespace ConfRadar.Services.Services
         }
         public async Task<DateTime> GetVietnamTime()
         {
-            var cfg = await GetFireBaseKeyAsync("fakeTime");
-            DateTime finalTime;
-            if (cfg.UseFakeTime)
-            {
-                finalTime = DateTime.Parse(cfg.CustomTimeUtc!, null, System.Globalization.DateTimeStyles.RoundtripKind);
-            }
-            else
-            {
-                finalTime = DateTime.UtcNow;
-            }
-            var vnTime = TimeZoneInfo.ConvertTimeFromUtc(finalTime, TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"));
-            return vnTime;
+            var finalTime = await GetVietnamDateTimeAsync();
+            return finalTime;
         }
         public async Task<DateOnly> GetVietnamDate()
+        {
+            var finalTime = await GetVietnamDateTimeAsync();
+            return DateOnly.FromDateTime(finalTime);
+        }
+
+        private async Task<DateTime> GetVietnamDateTimeAsync()
         {
             var cfg = await GetFireBaseKeyAsync("fakeTime");
             DateTime finalTime;
             if (cfg.UseFakeTime)
             {
-                finalTime = DateTime.Parse(cfg.CustomTimeUtc!, null, System.Globalization.DateTimeStyles.RoundtripKind);
+                var parsed = DateTime.Parse(cfg.CustomVnTime!);
+                finalTime = DateTime.SpecifyKind(parsed, DateTimeKind.Unspecified);
             }
             else
             {
-                finalTime = DateTime.UtcNow;
+                var utcNow = DateTime.UtcNow;
+                finalTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"));
             }
-            var vnTime = TimeZoneInfo.ConvertTimeFromUtc(finalTime, TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"));
-            return DateOnly.FromDateTime(vnTime);
+            return finalTime;
         }
-
-
 
 
         public class TimeConfig
         {
             public bool UseFakeTime { get; set; }
-            public string? CustomTimeUtc { get; set; }
+            public string? CustomVnTime { get; set; }
         }
 
 

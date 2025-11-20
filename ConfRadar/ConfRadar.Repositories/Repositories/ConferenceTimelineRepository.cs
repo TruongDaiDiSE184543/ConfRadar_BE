@@ -64,7 +64,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.ConferenceTimelines.Where(c => c.ConferenceId == confId &&
             c.PreviousStatusId == readyId &&
-            c.AfterwardStatusId == onHoldId).OrderByDescending(c =>c.ChangeDate).FirstAsync();
+            c.AfterwardStatusId == onHoldId).OrderByDescending(c => c.ChangeDate).FirstAsync();
         }
     }
 

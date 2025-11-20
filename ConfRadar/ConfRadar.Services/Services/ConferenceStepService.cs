@@ -814,7 +814,7 @@ namespace ConfRadar.Services.Services
                     if (toBeConferencePrice.TotalSlot != totalSlotFromPhases)
                         throw new BadRequestException($"V?i vé '{toBeConferencePrice.TicketName}', t?ng s? vé trong các giai do?n ({totalSlotFromPhases}) không kh?p v?i t?ng s? vé c?a lo?i vé dó ({toBeConferencePrice.TotalSlot}).");
 
-                    
+
 
                     // *** VALIDATION M?I: Các phase trong cùng 1 ticket không du?c ch?ng chéo ***
                     var sortedPhases = toBeConferencePrice.Phases.OrderBy(p => p.StartDate).ToList();

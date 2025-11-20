@@ -1,5 +1,4 @@
 using ConfRadar.Repositories;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Statistics;
 using ConfRadar.Services.Exceptions;
@@ -48,10 +47,10 @@ namespace ConfRadar.Services.Services
 
             // Get all tickets for the conference that have been paid
             var paidTickets = await _unitOfWork.TicketRepository.GetPaidTicketsByConferenceIdAsync(conferenceId);
-            
+
             // Get conference prices and phases with details
             var conferencePrices = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conferenceId);
-            
+
             // Calculate statistics for each ticket type and phase
             var ticketPhaseStats = new List<TicketPhaseStatisticsResponse>();
             int totalTicketsSold = 0;
@@ -221,7 +220,7 @@ namespace ConfRadar.Services.Services
                     CommissionPercentage = stat.CommissionPercentage ?? 0,
                     AmountToCollaborator = stat.AmountToCollaborator ?? 0,
                     AmountToConfRadar = stat.AmountToConfRadar ?? 0,
-                   
+
                 });
             }
 
@@ -278,7 +277,7 @@ namespace ConfRadar.Services.Services
 
                 // Get the price phase for the ticket
                 var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(ticket.PricePhaseId);
-               
+
 
                 var ticketHolder = new TicketHolderDetailResponse
                 {
@@ -286,7 +285,7 @@ namespace ConfRadar.Services.Services
                     CustomerName = user?.FullName ?? "Unknown Customer", // Use user's full name
                     TicketTypeName = conferencePrice?.TicketName ?? "Unknown Ticket Type", // Use conference price name as ticket type
                     PhaseName = pricePhase?.PhaseName ?? "N/A", // Get the phase name
-                    ActualPrice = (conferencePrice?.TicketPrice* pricePhase.ApplyPercent/100 )?? 0, // Price based on the phase
+                    ActualPrice = (conferencePrice?.TicketPrice * pricePhase.ApplyPercent / 100) ?? 0, // Price based on the phase
                     PurchaseDate = ticket.RegisteredDate.Value, // Register date from ticket
                     Status = ticket.IsRefunded == true ? "Đã hoàn tiền" : "Đã thanh toán" // Status based on IsRefunded flag
                 };
@@ -485,7 +484,7 @@ namespace ConfRadar.Services.Services
             var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(conferenceId);
 
             var reviewerAssignments = new List<DTOs.Statistics.ReviewerAssignmentResponse>();
-            
+
             // Group paper reviewers by UserId (which represents the reviewer)
             var reviewerGrouping = paperReviewers.GroupBy(pr => pr.UserId);
 

@@ -3,6 +3,7 @@ using ConfRadar.Services;
 using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.RefundRequest;
 using ConfRadar.Shared.DTO.Ticket;
+using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -56,5 +57,39 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.TicketService.GetAllRefundRequests();
             return Ok(ApiResponse<List<RefundRequestResponse>>.SuccessResponse(result, "Danh sách refund requests"));
         }
+
+        [Authorize(Roles = "Conference Organizer,Collaborator")]
+        [HttpPost("cancel-technical")]
+        public async Task<IActionResult> CancelTechnicalTickets([FromBody] CancelTechnicalTickets request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.TicketService.CancelTechTickets(request);
+            var message = string.Empty;
+            if (result >0) 
+            {
+                message = "Đã refund";
+            }
+            message = "Không tìm thấy user nào để được refund";
+            return Ok(ApiResponse<object>.SuccessResponse(null, message));
+        }
+
+
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPost("cancel-research")]
+        public async Task<IActionResult> RefundToUsers([FromBody] CancelResearchTickets request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.TicketService.CancelResearchTickets(request);
+            var message = string.Empty;
+            if (result > 0)
+            {
+                message = "Đã refund";
+            }
+            message = "Không tìm thấy user nào để được refund";
+            return Ok(ApiResponse<object>.SuccessResponse(null, message));
+        }
+
+
+
     }
 }

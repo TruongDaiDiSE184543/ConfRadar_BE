@@ -526,6 +526,8 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.ToTable("Paper");
 
+            entity.HasIndex(e => e.TicketId, "Paper_TicketId_key").IsUnique();
+
             entity.Property(e => e.PaperId).HasMaxLength(50);
             entity.Property(e => e.AbstractId).HasMaxLength(50);
             entity.Property(e => e.CameraReadyId).HasMaxLength(50);
@@ -535,6 +537,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.PaperPhaseId).HasMaxLength(50);
             entity.Property(e => e.ResearchConferencePhaseId).HasMaxLength(50);
             entity.Property(e => e.RevisionPaperId).HasMaxLength(50);
+            entity.Property(e => e.TicketId).HasMaxLength(50);
 
             entity.HasOne(d => d.Abstract).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.AbstractId)
@@ -563,6 +566,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.RevisionPaper).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.RevisionPaperId)
                 .HasConstraintName("FK_Paper_RevisionPaperId");
+
+            entity.HasOne(d => d.Ticket).WithOne(p => p.Paper)
+                .HasForeignKey<Paper>(d => d.TicketId)
+                .HasConstraintName("FK_Paper_TicketId");
         });
 
         modelBuilder.Entity<PaperAuthor>(entity =>

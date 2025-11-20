@@ -1,4 +1,4 @@
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.QrCode;
@@ -48,11 +48,11 @@ namespace ConfRadar.Services.Services
 
             using var qrGenerator = new QRCodeGenerator();
             #region ecc level
-            // c� 4 m?c ECC (m� s?a l?i => gi�p qr d?c du?c ngay c? khi b? che m?, u?t hay h?ng
+            // có 4 m?c ECC (mã s?a l?i => giúp qr d?c du?c ngay c? khi b? che m?, u?t hay h?ng
             // L: low : simple , scan nhanh
-            //M: medium : c�n b?ng
+            //M: medium : cân b?ng
             //Q : Quartile : t?t , che 1/4 v?n d?c du?c
-            //H: high : m?nh, che 1/3 v?n c�n du?c nhung c?n qr l?n hon
+            //H: high : m?nh, che 1/3 v?n cân du?c nhung c?n qr l?n hon
             #endregion
             using var qrData = qrGenerator.CreateQrCode(hashedContent, QRCodeGenerator.ECCLevel.M);
 
@@ -76,17 +76,17 @@ namespace ConfRadar.Services.Services
                 var jsonData = JsonSerializer.Deserialize<T>(decryptContet);
                 if (jsonData == null)
                 {
-                    throw new BadRequestException("Th�ng tin kh�ng t�m th?y");
+                    throw new BadRequestException("Thông tin không tìm thấy");
                 }
                 return jsonData;
             }
             catch (JsonException)
             {
-                throw new BadRequestException("D? li?u QR kh�ng h?p l? ho?c d� b? thay d?i");
+                throw new BadRequestException("Dữ liệu QR không hợp lệ hoặc bị thay đổi");
             }
             catch (Exception ex)
             {
-                throw new BadRequestException("D? li?u kh�ng kh? d?ng ho?c kh�ng thu?c v? confradar");
+                throw new BadRequestException("Dữ liệu không thuộc về confradar");
             }
         }
         public QrDataPayload CreateQrDataPayload(QrDataPayload data)
@@ -126,39 +126,39 @@ namespace ConfRadar.Services.Services
             var qrPayLoadChecker = CheckValidQrPayload(qrDataPayload);
             if (!qrPayLoadChecker)
             {
-                throw new BadRequestException("D? li?u trong payment kh�ng kh? d?ng ");
+                throw new BadRequestException("Dữ liệu trong payment không khả dụng ");
             }
             var checkedInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.CheckedIn.GetDescription());
             var expiredCheckInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Expired.GetDescription());
             if (checkedInStatus == null || expiredCheckInStatus == null)
             {
-                throw new NotFoundException("Kh�ng t�m th?y c�c tr?ng th�i checkin tuong ?ng");
+                throw new NotFoundException("Không tìm thấy các trạng thái checkin tương ứng");
             }
             var conferenceSessionDetail = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(data.ConferenceSessionId);
             if (conferenceSessionDetail == null)
             {
-                throw new NotFoundException($"Kh�ng t�m th?y session v?i id {data.ConferenceSessionId}");
+                throw new NotFoundException($"Không tìm thấy session với id {data.ConferenceSessionId}");
             }
             if (data.ConferenceSessionId != qrDataPayload.conferenceSessionId)
             {
-                throw new BadRequestException($"B?n d� check in nh?m session r?i. Session hi?n t?i l� " +
-                    $"{conferenceSessionDetail.Title} di?n ra t? {conferenceSessionDetail.StartTime?.ToString("dd/MM/yyyy HH:mm:ss tt")} d?n {conferenceSessionDetail.EndTime?.ToString("dd/MM/yyyy HH:mm:ss tt")}");
+                throw new BadRequestException($"Bạn dã check in nhầm session r?i. Session hiện tại là " +
+                    $"{conferenceSessionDetail.Title} diễn ra từ {conferenceSessionDetail.StartTime?.ToString("dd/MM/yyyy HH:mm:ss tt")} đến {conferenceSessionDetail.EndTime?.ToString("dd/MM/yyyy HH:mm:ss tt")}");
             }
 
             var userCheckIn = await _unitOfWork.UserCheckInRepository.GetUserCheckInByIdAsync(qrDataPayload.userCheckinId);
             if (userCheckIn == null)
             {
-                throw new NotFoundException("Kh�ng t�m th?y user check in trong h? th?ng");
+                throw new NotFoundException("Không tìm thấy user check in trong hệ thống");
             }
             if (userCheckIn.UserId != qrDataPayload.userId || userCheckIn.TicketId != qrDataPayload.ticketId || userCheckIn.ConferenceSessionId != qrDataPayload.conferenceSessionId)
             {
-                throw new BadRequestException("Th�ng tin trong qr kh�ng tr�ng h?p v?i tr�n h? th?ng");
+                throw new BadRequestException("Thông tin trong qr không trùng khớp");
             }
             var userConferenceSession = userCheckIn.ConferenceSession!;
             var timeNow = await _timeProviderService.GetVietnamTime();
             if (userCheckIn.CheckinStatus == expiredCheckInStatus)
             {
-                throw new BadRequestException("V� check in hi?n d� h?t h?n.");
+                throw new BadRequestException("Vé check in hiện đã hết hạn.");
             }
             if (userCheckIn.CheckinStatus == checkedInStatus && userCheckIn.CheckInTime != null)
             {
@@ -171,22 +171,22 @@ namespace ConfRadar.Services.Services
                 {
                     formattedTime = "";
                 }
-                throw new BadRequestException($"Ngu?i d�ng v?i t�n {userCheckIn.User!.FullName} d� c� checked in v�o l�c {formattedTime}");
+                throw new BadRequestException($"Nguời dùng với tên {userCheckIn.User!.FullName} đã checkin vào lúc {formattedTime}");
             }
             if (timeNow < userConferenceSession.StartTime)
             {
-                throw new BadRequestException($"V� n�y chua th? check in du?c v� th?i gian di?n ra check in t? {userConferenceSession.StartTime}");
+                throw new BadRequestException($"Vé này chưa thể check in được vì thời gian diễn ra check in từ {userConferenceSession.StartTime}");
             }
             if (timeNow > userConferenceSession.EndTime)
             {
-                throw new BadRequestException($"V� n�y d� h?t h?n check in v� session {userConferenceSession.Title} d� h?t h?n v�o l�c {userConferenceSession.EndTime}");
+                throw new BadRequestException($"Vé này dã hết hạn check in vì session {userConferenceSession.Title} dã hết hạn vào lúc {userConferenceSession.EndTime}");
             }
             userCheckIn.CheckinStatus = checkedInStatus;
             userCheckIn.CheckInTime = await _timeProviderService.GetVietnamTime();
             var result = await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(userCheckIn);
             if (result > 0)
             {
-                return $"Ngu?i d�ng v?i t�n {userCheckIn.User!.FullName} d� check in cho h?i ngh? {userConferenceSession.Title} v�o l�c {userCheckIn.CheckInTime?.ToString("dd/MM/yyyy HH:mm:ss tt")}";
+                return $"Nguời dùng với tên {userCheckIn.User!.FullName} đã check in cho hội nghị {userConferenceSession.Title} vào lúc {userCheckIn.CheckInTime?.ToString("dd/MM/yyyy HH:mm:ss tt")}";
             }
             return string.Empty;
 

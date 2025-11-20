@@ -18,7 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId);
 
         Task<Ticket?> GetNotRefundAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
-       
+
 
         Task<List<Ticket>> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<List<Ticket>> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId);
@@ -26,8 +26,12 @@ namespace ConfRadar.Repositories.Repositories
         Task<Ticket> GetTicketById(string ticketId);
         Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId);
         Task<int> UpdateTicketAsync(Ticket ticket);
-        Task<List<Ticket>> GetPaidTicketsByConferenceIdAsync(string conferenceId);
+        Task<int> UpdateTicketListAsync(List<Ticket> tickets);
+
         Task<List<Ticket>> GetTicketsWithDetailsByConferenceIdAsync(string conferenceId);
+        Task<List<Ticket>> GetPaidTicketsByConferenceIdAsync(string conferenceId);
+        Task<List<Ticket>> GetNotRefundTechnicalTicketListByTicketIdsForCancel(List<string> ticketIds);
+        Task<List<Ticket>> GetNotRefundResearchTicketListByTicketIdsForCancel(List<string> ticketIds);
 
     }
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
@@ -130,7 +134,7 @@ namespace ConfRadar.Repositories.Repositories
                     ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.ConferenceId : null,
                     IsAuthor = t.PricePhase != null && t.PricePhase.ConferencePrice != null ? t.PricePhase.ConferencePrice.IsAuthor : null,
 
-                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
+                    PaperId = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && t.PricePhase != null
@@ -139,7 +143,7 @@ namespace ConfRadar.Repositories.Repositories
                     .Select(p => p.PaperId)
                     .FirstOrDefault() : null,
 
-                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
+                    RegistrationStartDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && p.ResearchConferencePhase != null && t.PricePhase != null
@@ -147,7 +151,7 @@ namespace ConfRadar.Repositories.Repositories
                     .Select(p => p.ResearchConferencePhase!.RegistrationStartDate)
                     .FirstOrDefault() : null,
 
-                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true ) ?
+                    RegistrationEndDate = (t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true) ?
                     _context.Papers
                     .Where(p => p.PaperAuthors.Any(pa => pa.UserId == userId)
                     && p.ResearchConferencePhase != null && t.PricePhase != null
@@ -502,13 +506,14 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId)
         {
             return await _context.Tickets
+                .Include(t => t.Transactions)
+
                 .Include(t => t.PricePhase)
                     .ThenInclude(pp => pp.RefundPolicies)
                 .Include(t => t.PricePhase)
                     .ThenInclude(pp => pp.ConferencePrice)
                         .ThenInclude(cp => cp.Conference)
                             .ThenInclude(c => c.ResearchConferenceDetail)
-                .Include(t => t.Transactions)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(t => t.TicketId == ticketId && t.UserId == userId);
         }
@@ -516,6 +521,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> UpdateTicketAsync(Ticket ticket)
         {
             return await UpdateAsync(ticket);
+        }
+        public async Task<int> UpdateTicketListAsync(List<Ticket> tickets)
+        {
+            _context.UpdateRange(tickets);
+            return await _context.SaveChangesAsync();
         }
 
         public async Task<List<Ticket>> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId)
@@ -555,13 +565,13 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Ticket>> GetPaidTicketsByConferenceIdAsync(string conferenceId)
         {
             return await _context.Tickets
-       .AsNoTracking() // Thêm AsNoTracking vì đây là query chỉ đọc, giúp tăng hiệu năng
-       .Include(t => t.PricePhase) // Tải kèm bảng PricePhase
-           .ThenInclude(pp => pp.ConferencePrice) // Từ PricePhase, tải tiếp bảng ConferencePrice
+
+       .Include(t => t.PricePhase)
+           .ThenInclude(pp => pp.ConferencePrice)
        .Where(t =>
            t.IsRefunded == false &&
-           t.PricePhase != null && // Thêm kiểm tra null để an toàn
-           t.PricePhase.ConferencePrice != null && // Thêm kiểm tra null để an toàn
+           t.PricePhase != null &&
+           t.PricePhase.ConferencePrice != null &&
            t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
        .ToListAsync();
         }
@@ -578,5 +588,71 @@ namespace ConfRadar.Repositories.Repositories
                            t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
                 .ToListAsync();
         }
+
+
+
+
+        public async Task<List<Ticket>> GetNotRefundTechnicalTicketListByTicketIdsForCancel(List<string> ticketIds)
+        {
+            return await _context.Tickets
+                .Include(t => t.Transactions)
+                
+                
+                .Include(t => t.User)
+                    .ThenInclude(t => t.Wallet)
+
+
+                .Include(t => t.PricePhase)
+                   .ThenInclude(pp => pp.ConferencePrice)
+                   .ThenInclude(cp => cp.Conference)
+                   //.ThenInclude(c => c.TechnicalConferenceDetail)
+               .Where(t =>
+               t.PricePhase != null
+               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
+               && t.IsRefunded == false
+               && ticketIds.Contains(t.TicketId))
+               .AsSplitQuery()
+               .ToListAsync();
+        }
+        public async Task<List<Ticket>> GetNotRefundResearchTicketListByTicketIdsForCancel(List<string> ticketIds)
+        {
+            return await _context.Tickets
+                .Include(t => t.Transactions)
+
+
+                .Include(t => t.User)
+                    .ThenInclude(t => t.Wallet)
+
+
+                .Include(t => t.PricePhase)
+                   .ThenInclude(pp => pp.ConferencePrice)
+                   .ThenInclude(cp => cp.Conference)
+                   //.ThenInclude(c => c.ResearchConferenceDetail)
+
+                .Include(t=>t.Paper)
+                    .ThenInclude(p=>p.PaperPhase)
+
+                 .Include(t => t.Paper)
+                    .ThenInclude(p => p.Abstract)
+
+                .Include(t => t.Paper)
+                    .ThenInclude(p => p.FullPaper)
+
+                .Include(t => t.Paper)
+                    .ThenInclude(p => p.RevisionPaper)
+
+                .Include(t=>t.Paper)
+                    .ThenInclude(p => p.CameraReady)
+               .Where(t =>
+               t.PricePhase != null
+               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == true
+               && t.IsRefunded == false
+               && ticketIds.Contains(t.TicketId))
+               .AsSplitQuery()
+               .ToListAsync();
+        }
+
+
+
     }
 }
