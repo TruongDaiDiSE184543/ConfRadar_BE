@@ -88,10 +88,15 @@ namespace ConfRadar.Services.Services
         private readonly ITokenService _tokenService;
         private readonly ISystemConfigurationService _systemConfigurationService;
         private readonly ITimeProviderService _timeProviderService;
+        private readonly INotificationService _notificationService;
 
         private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
 
-        public ConferenceService(IUnitOfWork unitOfWork, IConferenceStatusService conferenceStatusService, IConferenceTimelineService conferenceTimelineService, IObjectStorageFileService objectStorageFileService, ITokenService tokenService, ISystemConfigurationService systemConfigurationService, IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings, ITimeProviderService timeProviderService)
+        public ConferenceService(IUnitOfWork unitOfWork, IConferenceStatusService conferenceStatusService, IConferenceTimelineService conferenceTimelineService,
+            IObjectStorageFileService objectStorageFileService, ITokenService tokenService, 
+            ISystemConfigurationService systemConfigurationService,
+            IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings, ITimeProviderService timeProviderService,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _conferenceStatusService = conferenceStatusService;
@@ -101,6 +106,7 @@ namespace ConfRadar.Services.Services
             _systemConfigurationService = systemConfigurationService;
             _timeProviderService = timeProviderService;
             _objectStorageSettings = objectStorageSettings.Value;
+            _notificationService = notificationService;
         }
 
 
@@ -772,10 +778,62 @@ namespace ConfRadar.Services.Services
 
         public async Task<bool> ApproveConferenceAsync(string conferenceId, ApproveConferenceRequest request)
         {
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new BadRequestException($"Không tìm thấy conf id {conferenceId} này");
+            var creator = conference.CreatedByNavigation;
+            if (creator == null) throw new BadRequestException($"Không tìm thấy user tạo conference {conference.CreatedBy}");
+
+
             // Change conference status from Pending to Rejected
-            if (request.IsApprove == false) return await UpdateConferenceStatusAsync(conferenceId, "Rejected", request.Reason);
+            if (request.IsApprove == false)
+            {
+                bool rejectedResult = await UpdateConferenceStatusAsync(conferenceId, "Rejected", request.Reason);
+                if (rejectedResult)
+                {
+                    await SendConferenceApprovalNotification(creator,conference,false);
+                }
+                return rejectedResult;
+            }
             // Change conference status from Pending to Preparing
-            return await UpdateConferenceStatusAsync(conferenceId, "Preparing", request.Reason);
+            bool approveResult = await UpdateConferenceStatusAsync(conferenceId, "Preparing", request.Reason);
+            if (approveResult) 
+            {
+                await SendConferenceApprovalNotification(creator,conference,true);
+            }
+            return approveResult;
+        }
+
+        private async Task SendConferenceApprovalNotification(User creator, Conference conference, bool isApproved)
+        {
+            var timeNow = await _timeProviderService.GetVietnamTime();
+
+            string title = "Kết quả duyệt hội nghị";
+            string message = isApproved? $"Hội nghị {conference.ConferenceName} đã được xét duyệt.": $"Hội nghị {conference.ConferenceName} đã bị từ chối.";
+
+            
+            var notification = new Notification
+            {
+                NotificationId = Guid.NewGuid().ToString(),
+                UserId = creator.UserId,
+                Title = title,
+                Message = message,
+                CreatedAt = timeNow,
+                ReadStatus = false
+            };
+
+            int notiResult = await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
+            if (notiResult > 0)
+            {
+                if (!string.IsNullOrWhiteSpace(creator.FirebaseMobileFcmToken))
+                {
+                    await _notificationService.SendMobilePushAsync(creator.FirebaseMobileFcmToken, title, message);
+                }
+
+                if (!string.IsNullOrWhiteSpace(creator.FirebaseWebFcmToken))
+                {
+                    await _notificationService.SendWebPushAsync(creator.FirebaseWebFcmToken, title, message);
+                }
+            }
         }
 
         public async Task<bool> ChangeConferenceStatus(string userId, string conferenceId, string newStatus, string? reason = null)

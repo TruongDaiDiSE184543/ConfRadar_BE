@@ -12,6 +12,7 @@ using ConfRadar.Shared.DTO.Abstract;
 using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.Extensions.Options;
+using Quartz.Util;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -361,11 +362,11 @@ namespace ConfRadar.Services.Services
                     ReadStatus = false,
                 };
                 var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
-                if (userDetail!.FirebaseMobileFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(userDetail!.FirebaseMobileFcmToken))
                 {
                     await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
                 }
-                if (userDetail.FirebaseWebFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(userDetail.FirebaseWebFcmToken))
                 {
                     await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
                 }
@@ -612,11 +613,11 @@ namespace ConfRadar.Services.Services
                     ReadStatus = false,
                 };
                 var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
-                if (userDetail!.FirebaseMobileFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(userDetail!.FirebaseMobileFcmToken))
                 {
                     await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
                 }
-                if (userDetail.FirebaseWebFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(userDetail.FirebaseWebFcmToken))
                 {
                     await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
                 }
@@ -1092,11 +1093,11 @@ namespace ConfRadar.Services.Services
                     ReadStatus = false,
                 };
                 var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
-                if (userDetail!.FirebaseMobileFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(userDetail!.FirebaseMobileFcmToken))
                 {
                     await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
                 }
-                if (userDetail.FirebaseWebFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(userDetail.FirebaseWebFcmToken))
                 {
                     await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
                 }
@@ -1652,11 +1653,11 @@ namespace ConfRadar.Services.Services
                 ReadStatus = false,
             };
             var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
-            if (userDetail!.FirebaseMobileFcmToken != null)
+            if (!string.IsNullOrWhiteSpace(userDetail!.FirebaseMobileFcmToken))
             {
                 await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
             }
-            if (userDetail.FirebaseWebFcmToken != null)
+            if (!string.IsNullOrWhiteSpace(userDetail.FirebaseWebFcmToken))
             {
                 await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
             }
