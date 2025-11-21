@@ -55,7 +55,7 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ContractService.GetListOwnContract(userId);
             return Ok(ApiResponse<List<OwnContractDetailResponse>>.SuccessResponse(result, "Danh sách review contract"));
         }
-        [Authorize("Conference Organizer")]
+        [Authorize(Roles ="Conference Organizer")]
         [HttpGet("list-review-contract-by-reviewer")]
         public async Task<IActionResult> GetListReviewContractByReviewerId([FromQuery] string reviewerId)
         {
