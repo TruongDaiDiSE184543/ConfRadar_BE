@@ -160,7 +160,11 @@ namespace ConfRadar.Services.Services
                 ConferenceId = session.ConferenceId, // Added this line back
                 ConferenceName = conferences.ContainsKey(session.ConferenceId!)
             ? conferences[session.ConferenceId!].ConferenceName
-            : "Unknown Conference"
+            : "Unknown Conference",
+                CityId = session.Room.Destination.CityId,
+                Cityname =session.Room.Destination.City.CityName,
+                DestinationId = session.Room.Destination.DestinationId,
+                DestinationName = session.Room.Destination.Name
             }).ToList();
 
 
@@ -263,7 +267,11 @@ namespace ConfRadar.Services.Services
                 ConferenceId = session.ConferenceId!,
                 ConferenceName = conferences.ContainsKey(session.ConferenceId!)
                     ? conferences[session.ConferenceId!].ConferenceName
-                    : "Unknown Conference"
+                    : "Unknown Conference",
+                CityId = session.Room.Destination.CityId,
+                Cityname = session.Room.Destination.City.CityName,
+                DestinationId = session.Room.Destination.DestinationId,
+                DestinationName = session.Room.Destination.Name
             }).ToList();
 
             return occupationSlots;
@@ -298,7 +306,7 @@ namespace ConfRadar.Services.Services
                 .ToList();
 
             // Define the full day range (00:00 to 23:59) in local time
-            var dayStart = date.ToDateTime(new TimeOnly(0, 0, 0));
+            var dayStart = date.ToDateTime(new TimeOnly(6, 0, 0));
             var dayEnd = date.ToDateTime(new TimeOnly(23, 59, 59));
 
             var unoccupiedSpans = new List<TimeSpanResponse>();
@@ -420,7 +428,10 @@ namespace ConfRadar.Services.Services
                 RoomId = room.RoomId,
                 Number = room.Number,
                 DisplayName = room.DisplayName,
-                DestinationId = room.DestinationId,
+                CityId =room.Destination.CityId,
+                Cityname = room.Destination.City.CityName,
+                DestinationId = room.Destination.DestinationId,
+                DestinationName = room.Destination.Name,
                 Sessions = new List<DTOs.Room.RoomOccupationSlotResponse>() // Initialize empty list, will populate later
             }).ToList();
 
@@ -457,7 +468,11 @@ namespace ConfRadar.Services.Services
                             ConferenceId = session.ConferenceId!,
                             ConferenceName = conferences.ContainsKey(session.ConferenceId!)
                                 ? conferences[session.ConferenceId!].ConferenceName
-                                : "Unknown Conference"
+                                : "Unknown Conference",
+                            CityId = session.Room.Destination.CityId,
+                            Cityname = session.Room.Destination.City.CityName,
+                            DestinationId = session.Room.Destination.DestinationId,
+                            DestinationName = session.Room.Destination.Name,
                         }).ToList();
 
                     }
@@ -512,7 +527,7 @@ namespace ConfRadar.Services.Services
                         {
                             new TimeSpanResponse
                             {
-                                StartTime = new TimeOnly(0, 0, 0),
+                                StartTime = new TimeOnly(6, 0, 0),
                                 EndTime = new TimeOnly(23, 59, 59)
                             }
                         },
@@ -533,7 +548,7 @@ namespace ConfRadar.Services.Services
                     .ToList();
 
                 List<TimeSpanResponse> availableTimeSpans = new();
-                var dayStart = new TimeOnly(0, 0, 0);
+                var dayStart = new TimeOnly(6, 0, 0);
                 var dayEnd = new TimeOnly(23, 59, 59);
 
                 // Check for available time before the first session
@@ -624,11 +639,15 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
+                            CityId = room.Destination.CityId,
+                            Cityname = room.Destination.City.CityName,
+                            DestinationId = room.Destination.DestinationId,
+                            DestinationName = room.Destination.Name,
                             AvailableTimeSpans = new List<TimeSpanResponse>
                             {
                                 new TimeSpanResponse
                                 {
-                                    StartTime = new TimeOnly(0, 0, 0),
+                                    StartTime = new TimeOnly(6, 0, 0),
                                     EndTime = new TimeOnly(23, 59, 59)
                                 }
                             },
@@ -649,18 +668,18 @@ namespace ConfRadar.Services.Services
                         .ToList();
 
                     List<TimeSpanResponse> availableTimeSpans = new();
-                    var dayStart = new TimeOnly(0, 0, 0);
+                    var dayStart = new TimeOnly(6, 0, 0);
                     var dayEnd = new TimeOnly(23, 59, 59);
 
                     // Check for available time before the first session
-                    //if (occupiedTimeSlots.Any() && dayStart < occupiedTimeSlots.First().startTime)
-                    //{
-                    //    availableTimeSpans.Add(new TimeSpanResponse
-                    //    {
-                    //        StartTime = dayStart,
-                    //        EndTime = occupiedTimeSlots.First().startTime
-                    //    });
-                    //}
+                    if (occupiedTimeSlots.Any() && dayStart < occupiedTimeSlots.First().startTime)
+                    {
+                        availableTimeSpans.Add(new TimeSpanResponse
+                        {
+                            StartTime = dayStart,
+                            EndTime = occupiedTimeSlots.First().startTime
+                        });
+                    }
 
                     // Check for available time between sessions
                     for (int i = 0; i < occupiedTimeSlots.Count - 1; i++)
@@ -697,6 +716,10 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
+                            CityId = room.Destination.CityId,
+                            Cityname = room.Destination.City.CityName,
+                            DestinationId = room.Destination.DestinationId,
+                            DestinationName = room.Destination.Name,
                             AvailableTimeSpans = availableTimeSpans,
                             IsAvailableWholeday = false
                         });

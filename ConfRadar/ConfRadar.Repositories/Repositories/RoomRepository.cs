@@ -50,7 +50,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public IQueryable<Room> GetAllRoomsWithoutTracking()
         {
-            return _context.Rooms.AsNoTracking();
+            return _context.Rooms.Include(r => r.Destination).ThenInclude(d => d.City).AsNoTracking();
         }
 
         public async Task<List<Room>> GetRoomsByDestinationIdAsync(string destinationId)
