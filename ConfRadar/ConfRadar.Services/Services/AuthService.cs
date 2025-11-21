@@ -162,10 +162,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Email is not confirmed");
             }
-            if (user.IsActive == false)
-            {
-                throw new ConfRadarAuthenticationException("User is disabled");
-            }
+            //if (user.IsActive == false)
+            //{
+            //    throw new ConfRadarAuthenticationException("User is disabled");
+            //}
             if (!string.Equals(user.LoginProvider, LoginProviderEnum.Local.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
@@ -317,10 +317,10 @@ namespace ConfRadar.Services.Services
                 {
                     throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
                 }
-                if (user.IsActive == false)
-                {
-                    throw new ConfRadarAuthenticationException("User is disabled");
-                }
+                //if (user.IsActive == false)
+                //{
+                //    throw new ConfRadarAuthenticationException("User is disabled");
+                //}
                 if (request.FirebaseMobileFcmToken != null)
                 {
                     user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
@@ -414,7 +414,7 @@ namespace ConfRadar.Services.Services
             int result = 0;
             user.IsActive = false;
             result += await _unitOfWork.UserRepository.UpdateUserAsync(user);
-            if (result > 0) 
+            if (result > 0)
             {
                 await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName, "Account bạn đã bị ngừng", "EmailSuspendAccount.html");
             }
@@ -582,8 +582,13 @@ namespace ConfRadar.Services.Services
                 IsActive = true
             };
             userCreated.UserRoles.Add(userRoleObj);
-            await _emailService.SendCreateCollaboratorAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePasswordCollaborator.html");
-            return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
+            int result = 0;
+            result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
+            if (result > 0)
+            {
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePassword.html");
+            }
+            return result;
         }
 
         public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
@@ -613,7 +618,7 @@ namespace ConfRadar.Services.Services
         public async Task<int> SuspendExternalReviewerAccount(string userId)
         {
             var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ExternalReviewer.GetDescription());
-            if (externalReviewerRole == null )
+            if (externalReviewerRole == null)
             {
                 throw new Exception("Không tìm thấy role hệ thống");
             }
@@ -628,11 +633,11 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
             }
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
-            if (userRole == null) 
-            { 
+            if (userRole == null)
+            {
                 throw new NotFoundException($"Không tìm thấy role cho reviewer");
             }
-            if (userRole.IsActive==false)
+            if (userRole.IsActive == false)
             {
                 throw new BadRequestException($"Người dùng {user.FullName} đã bị disable role reviewer");
             }

@@ -55,7 +55,9 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ReviewerContract>> GetReviewerContractsByUserIdAsync(string userId)
         {
             return await _context.ReviewerContracts
-                .Where(c => c.UserId == userId)
+                .Include(rc => rc.User)
+                .Include(rc => rc.Conference)
+                .Where(rc => rc.UserId == userId)
                 .ToListAsync();
         }
 
@@ -150,7 +152,8 @@ namespace ConfRadar.Repositories.Repositories
             var user = await _context.Users
                 .AsNoTracking()
                 .Where(u =>
-            !_context.Papers.Any(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == u.UserId))
+            !_context.Papers.Any(p => p.ConferenceId == conferenceId
+            && p.PaperAuthors.Any(pa => pa.UserId == u.UserId))
             && !_context.ReviewerContracts.Any(rc => rc.ConferenceId == conferenceId && rc.UserId == u.UserId)
             && u.IsActive == true && u.IsEmailConfirmed == true && u.UserRoles.All(ur => !systemRoles.Contains(ur.RoleId)))
                 .Select(u => new GetUsersForReviewerContractResponse()

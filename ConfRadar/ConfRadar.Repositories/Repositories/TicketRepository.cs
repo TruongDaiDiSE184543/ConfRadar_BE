@@ -18,7 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId);
 
         Task<Ticket?> GetNotRefundAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
-
+        Task<List<Ticket>?> GetNotRefundedTicketsByConferenceIdAsync(string conferenceId);
 
         Task<List<Ticket>> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<List<Ticket>> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId);
@@ -28,6 +28,13 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdateTicketAsync(Ticket ticket);
         Task<List<Ticket>> GetPaidTicketsByConferenceIdAsync(string conferenceId);
         Task<List<Ticket>> GetTicketsWithDetailsByConferenceIdAsync(string conferenceId);
+
+
+
+
+        Task<List<Ticket>> GetNotRefundTechnicalTicketListByTicketIdsForCancel(List<string> ticketIds);
+        Task<List<Ticket>> GetNotRefundResearchTicketListByTicketIdsForCancel(List<string> ticketIds);
+        Task<int> UpdateTicketListAsync(List<Ticket> tickets);
 
     }
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
@@ -583,6 +590,78 @@ namespace ConfRadar.Repositories.Repositories
                            t.PricePhase.ConferencePrice != null &&
                            t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
                 .ToListAsync();
+        }
+
+
+
+
+        public async Task<List<Ticket>> GetNotRefundTechnicalTicketListByTicketIdsForCancel(List<string> ticketIds)
+        {
+            return await _context.Tickets
+                .Include(t => t.Transactions)
+
+
+                .Include(t => t.User)
+                    .ThenInclude(t => t.Wallet)
+
+
+                .Include(t => t.PricePhase)
+                   .ThenInclude(pp => pp.ConferencePrice)
+                   .ThenInclude(cp => cp.Conference)
+                    .ThenInclude(c => c.TechnicalConferenceDetail)
+               .Where(t =>
+               t.PricePhase != null
+               && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
+               && t.PricePhase.ConferencePrice.Conference != null
+               && t.PricePhase.ConferencePrice.Conference.TechnicalConferenceDetail != null
+               && t.IsRefunded == false
+               && ticketIds.Contains(t.TicketId))
+               .AsSplitQuery()
+               .ToListAsync();
+        }
+        public async Task<List<Ticket>> GetNotRefundResearchTicketListByTicketIdsForCancel(List<string> ticketIds)
+        {
+            return await _context.Tickets
+                .Include(t => t.Transactions)
+
+
+                .Include(t => t.User)
+                    .ThenInclude(t => t.Wallet)
+
+
+                .Include(t => t.PricePhase)
+                   .ThenInclude(pp => pp.ConferencePrice)
+                   .ThenInclude(cp => cp.Conference)
+                    .ThenInclude(c => c.ResearchConferenceDetail)
+
+                .Include(t => t.Paper)
+                    .ThenInclude(p => p.PaperPhase)
+
+                 .Include(t => t.Paper)
+                    .ThenInclude(p => p.Abstract)
+
+                .Include(t => t.Paper)
+                    .ThenInclude(p => p.FullPaper)
+
+                .Include(t => t.Paper)
+                    .ThenInclude(p => p.RevisionPaper)
+
+                .Include(t => t.Paper)
+                    .ThenInclude(p => p.CameraReady)
+               .Where(t =>
+               t.PricePhase != null
+               && t.PricePhase.ConferencePrice != null
+               && t.PricePhase.ConferencePrice.Conference != null
+               && t.PricePhase.ConferencePrice.Conference.ResearchConferenceDetail != null
+               && t.IsRefunded == false
+               && ticketIds.Contains(t.TicketId))
+               .AsSplitQuery()
+               .ToListAsync();
+        }
+
+        public Task<List<Ticket>?> GetNotRefundedTicketsByConferenceIdAsync(string conferenceId)
+        {
+            throw new NotImplementedException();
         }
     }
 }
