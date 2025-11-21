@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -20,7 +21,8 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> ConferenceStatus()
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStatusService.GetAllConferenceStatusesAsync(userId);
+            var userRoles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+            var result = await _serviceManager.ConferenceStatusService.GetAllConferenceStatusesByRoleAsync(userRoles);
             return Ok(ApiResponse<List<ConferenceStatus>>.SuccessResponse(result, "danh sach conference status"));
         }
 
