@@ -687,16 +687,16 @@ namespace ConfRadar.Repositories.Repositories
 
         }
 
-        public async Task<List<Ticket>> GetRefundedNonAuthorTicketsByConferenceIdAsync(string conferenceId)
-        {
-            return await _context.Tickets.AsNoTracking()
-              .Include(t => t.PricePhase)
-                  .ThenInclude(pp => pp.ConferencePrice)
-              .Where(t => t.PricePhase != null && t.PricePhase.ConferencePrice != null &&
-              t.PricePhase.ConferencePrice.IsAuthor == false &&
-              t.IsRefunded == true &&
-              t.PricePhase.ConferencePrice.ConferenceId == conferenceId).ToListAsync();
-        }
+        //public async Task<List<Ticket>> GetRefundedNonAuthorTicketsByConferenceIdAsync(string conferenceId)
+        //{
+        //    return await _context.Tickets.AsNoTracking()
+        //      .Include(t => t.PricePhase)
+        //          .ThenInclude(pp => pp.ConferencePrice)
+        //      .Where(t => t.PricePhase != null && t.PricePhase.ConferencePrice != null &&
+        //      t.PricePhase.ConferencePrice.IsAuthor == false &&
+        //      t.IsRefunded == true &&
+        //      t.PricePhase.ConferencePrice.ConferenceId == conferenceId).ToListAsync();
+        //}
 
     }
 }
