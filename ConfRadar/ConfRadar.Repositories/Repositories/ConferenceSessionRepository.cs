@@ -84,7 +84,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ConferenceSession>> GetSessionsByRoomIdAndDateRangeAsync(string roomId, DateOnly startDate, DateOnly endDate)
         {
 
-            return await _context.ConferenceSessions
+            return await _context.ConferenceSessions.Include(s => s.Room).ThenInclude(r => r.Destination).ThenInclude(d => d.City)
                 .Where(cs => cs.RoomId == roomId &&
                              cs.SessionDate >= startDate &&
                              cs.SessionDate <= endDate)
@@ -160,7 +160,7 @@ namespace ConfRadar.Repositories.Repositories
 
             // The query is now simple and easy to read. It finds all sessions
             // where the stored local start time falls within the local day.
-            return await _context.ConferenceSessions
+            return await _context.ConferenceSessions.Include(s => s.Room).ThenInclude(r => r.Destination).ThenInclude(d => d.City)
                 .Where(cs => cs.RoomId == roomId &&
                              cs.SessionDate.HasValue &&
                              cs.SessionDate == date)

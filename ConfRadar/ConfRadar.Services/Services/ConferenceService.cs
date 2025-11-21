@@ -217,7 +217,7 @@ namespace ConfRadar.Services.Services
             if (refundedTicket.Any()){
                 foreach(var ticket in refundedTicket)
                 {
-                    string typeOfTicket = ticket.PricePhase.ConferencePrice.IsAuthor.Value ? "thường" : "tác giả";
+                    string typeOfTicket = ticket.PricePhase.ConferencePrice.IsAuthor.Value ? "tác giả" : "thường";
                     invalidMessages.Add($"Còn vé {ticket.TicketId} thuộc loại {typeOfTicket} của khách với ID {ticket.UserId} chưa được refund");
                 }
             }
@@ -231,7 +231,7 @@ namespace ConfRadar.Services.Services
 
                 foreach(var paper in notRejectedPapers)
                 {
-                    var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByIdAsync(paper.PaperPhaseId);
+                    var paperPhase = paper.PaperPhase.PhaseName;
                     invalidMessages.Add($"Còn paper với ID {paper.PaperId} ở phase {paperPhase.PhaseName} chưa trong trạng thái rejected");
                 }
             }
