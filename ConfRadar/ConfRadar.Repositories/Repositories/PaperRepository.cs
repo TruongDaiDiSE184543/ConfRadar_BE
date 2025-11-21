@@ -402,6 +402,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus,ReviewStatus rejectedFullPaperStatus, string confId)
         {
             return await _context.Papers.
+                Include(p =>p.PaperPhase).
                 Include(p => p.Abstract).Include(p => p.FullPaper).
                 Include(p => p.RevisionPaper).Include(p => p.CameraReady)
                 .Where(p =>

@@ -306,7 +306,7 @@ namespace ConfRadar.Services.Services
                 .ToList();
 
             // Define the full day range (00:00 to 23:59) in local time
-            var dayStart = date.ToDateTime(new TimeOnly(0, 0, 0));
+            var dayStart = date.ToDateTime(new TimeOnly(6, 0, 0));
             var dayEnd = date.ToDateTime(new TimeOnly(23, 59, 59));
 
             var unoccupiedSpans = new List<TimeSpanResponse>();
@@ -468,7 +468,11 @@ namespace ConfRadar.Services.Services
                             ConferenceId = session.ConferenceId!,
                             ConferenceName = conferences.ContainsKey(session.ConferenceId!)
                                 ? conferences[session.ConferenceId!].ConferenceName
-                                : "Unknown Conference"
+                                : "Unknown Conference",
+                            CityId = session.Room.Destination.CityId,
+                            Cityname = session.Room.Destination.City.CityName,
+                            DestinationId = session.Room.Destination.DestinationId,
+                            DestinationName = session.Room.Destination.Name,
                         }).ToList();
 
                     }
@@ -635,6 +639,10 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
+                            CityId = room.Destination.CityId,
+                            Cityname = room.Destination.City.CityName,
+                            DestinationId = room.Destination.DestinationId,
+                            DestinationName = room.Destination.Name,
                             AvailableTimeSpans = new List<TimeSpanResponse>
                             {
                                 new TimeSpanResponse
@@ -708,6 +716,10 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
+                            CityId = room.Destination.CityId,
+                            Cityname = room.Destination.City.CityName,
+                            DestinationId = room.Destination.DestinationId,
+                            DestinationName = room.Destination.Name,
                             AvailableTimeSpans = availableTimeSpans,
                             IsAvailableWholeday = false
                         });

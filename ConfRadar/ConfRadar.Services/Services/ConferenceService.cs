@@ -126,15 +126,7 @@ namespace ConfRadar.Services.Services
         #region Helper methods to validateDate
      
 
-            //
-            var today = await _timeProviderService.GetVietnamDate();
-            var onHoldStartDate = OnholdTimeLine.ChangeDate;
 
-
-
-        }
-
-        // DÁN TOÀN BỘ PHIÊN BẢN NÀY ĐỂ THAY THẾ PHIÊN BẢN CŨ
 
         private async Task<List<string>> ValidateConferenceTimelineAsync(Conference conf, Func<DateOnly?, bool> dateOnlyValidationRule)
         {
@@ -239,8 +231,7 @@ namespace ConfRadar.Services.Services
 
                 foreach(var paper in notRejectedPapers)
                 {
-                    var paperPhase = paper.PaperPhase.PhaseName;
-                    invalidMessages.Add($"Còn paper với ID {paper.PaperId} ở phase {paperPhase.PhaseName} chưa trong trạng thái rejected");
+                    invalidMessages.Add($"Còn paper với ID {paper.PaperId} ở phase {paper.PaperPhase.PhaseName} chưa trong trạng thái rejected");
                 }
             }
 
