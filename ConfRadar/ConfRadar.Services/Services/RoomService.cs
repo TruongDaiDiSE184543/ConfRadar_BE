@@ -639,10 +639,10 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
-                            CityId = room.Destination.CityId,
-                            Cityname = room.Destination.City.CityName,
-                            DestinationId = room.Destination.DestinationId,
-                            DestinationName = room.Destination.Name,
+                            CityId = room?.Destination?.CityId,
+                            Cityname = room?.Destination.City?.CityName,
+                            DestinationId = room?.Destination?.DestinationId,
+                            DestinationName = room?.Destination?.Name,
                             AvailableTimeSpans = new List<TimeSpanResponse>
                             {
                                 new TimeSpanResponse
@@ -716,10 +716,10 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
-                            CityId = room.Destination.CityId,
-                            Cityname = room.Destination.City.CityName,
-                            DestinationId = room.Destination.DestinationId,
-                            DestinationName = room.Destination.Name,
+                            CityId = room?.Destination?.CityId,
+                            Cityname = room?.Destination?.City?.CityName,
+                            DestinationId = room?.Destination?.DestinationId,
+                            DestinationName = room?.Destination?.Name,
                             AvailableTimeSpans = availableTimeSpans,
                             IsAvailableWholeday = false
                         });

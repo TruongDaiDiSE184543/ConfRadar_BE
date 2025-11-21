@@ -39,13 +39,13 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<Room?> GetRoomByIdAsync(string roomId)
         {
-            return await _context.Rooms
+            return await _context.Rooms.Include(r => r.Destination).ThenInclude(d => d.City)
                 .FirstOrDefaultAsync(c => c.RoomId == roomId);
         }
 
         public async Task<List<Room>> GetAllRoomsAsync()
         {
-            return await _context.Rooms.ToListAsync();
+            return await _context.Rooms.Include(r => r.Destination).ThenInclude(d => d.City).ToListAsync();
         }
 
         public IQueryable<Room> GetAllRoomsWithoutTracking()
