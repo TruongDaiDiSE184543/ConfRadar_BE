@@ -163,7 +163,8 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.ConferenceSessions.Include(s => s.Room).ThenInclude(r => r.Destination).ThenInclude(d => d.City)
                 .Where(cs => cs.RoomId == roomId &&
                              cs.SessionDate.HasValue &&
-                             cs.SessionDate == date)
+                             cs.SessionDate == date
+                             )
                 .ToListAsync();
         }
 
