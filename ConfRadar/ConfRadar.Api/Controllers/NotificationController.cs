@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
+using ConfRadar.Shared.DTO.Notification;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -21,7 +22,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.NotificationService.GetOwnNotification(userId);
-            return Ok(ApiResponse<object>.SuccessResponse(result, "Danh sách thông báo của bạn"));
+            return Ok(ApiResponse<List<UserNotificationDetailResponse>>.SuccessResponse(result, "Danh sách thông báo của bạn"));
         }
     }
 }
