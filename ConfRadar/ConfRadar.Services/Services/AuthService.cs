@@ -175,8 +175,8 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Invalid password");
             }
-
-            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
+            bool isUserActive = (bool)user.IsActive;
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email, isUserActive);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             var timeNow = await _timeProviderService.GetVietnamTime();
             user.LastLogin = timeNow;
@@ -311,6 +311,7 @@ namespace ConfRadar.Services.Services
                     }
                 };
                 await _unitOfWork.UserRepository.CreateUserAsync(user);
+                user = await _unitOfWork.UserRepository.GetUserByEmail(email);
             }
             else
             {
@@ -322,18 +323,19 @@ namespace ConfRadar.Services.Services
                 //{
                 //    throw new ConfRadarAuthenticationException("User is disabled");
                 //}
-                if (request.FirebaseMobileFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(request.FirebaseMobileFcmToken))
                 {
                     user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
                 }
-                if (request.FirebaseWebFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken))
                 {
                     user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
                 }
                 user.LastLogin = timeNow;
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
             }
-            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
+            bool isUserActive = (bool)user.IsActive;
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email,isUserActive);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
@@ -370,7 +372,8 @@ namespace ConfRadar.Services.Services
             }
             tokenFound.IsRevoked = true;
             await _unitOfWork.UserRefreshTokenRepository.UpdateUserRefreshToken(tokenFound);
-            var accessToken = await _tokenService.GenerateAccessToken(tokenFound.UserId, tokenFound.User.Email!);
+            bool isUserActive = (bool)tokenFound.User.IsActive;
+            var accessToken = await _tokenService.GenerateAccessToken(tokenFound.UserId, tokenFound.User.Email!, isUserActive);
             var newRefreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {

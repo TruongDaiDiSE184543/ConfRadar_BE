@@ -1,7 +1,9 @@
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
 using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using FirebaseAdmin.Messaging;
+using System.Reactive;
 
 namespace ConfRadar.Services.Services
 {
@@ -13,10 +15,14 @@ namespace ConfRadar.Services.Services
     public class PaperAssignmentService : IPaperAssignmentService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITimeProviderService _timeProviderService;
+        private readonly INotificationService _notificationService;
 
-        public PaperAssignmentService(IUnitOfWork unitOfWork)
+        public PaperAssignmentService(IUnitOfWork unitOfWork,ITimeProviderService timeProviderService,INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
+            _timeProviderService = timeProviderService;
+            _notificationService = notificationService;
         }
 
         public async Task<string> AssignAuthorToPaper(AssignAuthorToPaperRequest request)
@@ -137,11 +143,48 @@ namespace ConfRadar.Services.Services
             }
 
             // Create the paper reviewer assignment
+            int result = 0;
             var paperReviewer = request.ToModel();
-            await _unitOfWork.PaperReviewerRepository.CreatePaperReviewerAsync(paperReviewer);
+            result += await _unitOfWork.PaperReviewerRepository.CreatePaperReviewerAsync(paperReviewer);
+
+
+            string title = "Nhiệm vụ làm reviewer";
+            string message = request.IsHeadReviewer ? $"Bạn có nhiệm vụ là head reviewer cho bài báo {paper.Title}" : $"Bạn có nhiệm vụ là reviewer thường cho bài báo {paper.Title}";
+            if (result > 0)
+            {
+                var timeNow = await _timeProviderService.GetVietnamTime();
+                
+                var notification = new ConfRadar.Repositories.Models.Notification()
+                {
+                    NotificationId = Guid.NewGuid().ToString(),
+                    UserId = user.UserId,
+                    Title = title,
+                    Message = message,
+                    Type = null,
+                    CreatedAt = timeNow,
+                    ReadStatus = false,
+                };
+                await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
+                
+
+            }
+
+
+
 
             await _unitOfWork.SaveChangesAsync();
+            if (result > 0)
+            {
+                if (!string.IsNullOrWhiteSpace(user.FirebaseMobileFcmToken))
+                {
+                    await _notificationService.SendMobilePushAsync(user.FirebaseMobileFcmToken, title, message);
+                }
 
+                if (!string.IsNullOrWhiteSpace(user.FirebaseWebFcmToken))
+                {
+                    await _notificationService.SendWebPushAsync(user.FirebaseWebFcmToken, title, message);
+                }
+            }
             var reviewerType = hasLocalReviewerRole ? "Local Reviewer" : "External Reviewer";
             var headReviewerStatus = request.IsHeadReviewer ? " as a head reviewer" : "";
 
