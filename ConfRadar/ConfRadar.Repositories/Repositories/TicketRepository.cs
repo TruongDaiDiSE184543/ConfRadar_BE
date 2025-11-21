@@ -188,6 +188,7 @@ namespace ConfRadar.Repositories.Repositories
             UserCheckIns = t.UserCheckIns.Select(uci => new CustomerCheckInDetailResponse
             {
                 UserCheckinId = uci.UserCheckinId,
+                QrUrl = uci.QrUrl,
                 IsPresenter = uci.IsPresenter,
                 CheckinStatusId = uci.CheckinStatusId,
                 CheckinStatusName = uci.CheckinStatus != null ? uci.CheckinStatus.CheckinStatusName : null,
@@ -373,6 +374,7 @@ namespace ConfRadar.Repositories.Repositories
             UserCheckIns = t.UserCheckIns.Select(uci => new CustomerCheckInDetailResponse
             {
                 UserCheckinId = uci.UserCheckinId,
+                QrUrl = uci.QrUrl,
                 IsPresenter = uci.IsPresenter,
                 CheckinStatusId = uci.CheckinStatusId,
                 CheckinStatusName = uci.CheckinStatus != null ? uci.CheckinStatus.CheckinStatusName : null,

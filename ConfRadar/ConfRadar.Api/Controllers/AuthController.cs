@@ -2,6 +2,7 @@
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
 using ConfRadar.Shared.DTO.Collaborator;
+using ConfRadar.Shared.DTO.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -147,6 +148,12 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.AuthService.ActivateExternalReviewerAccount(userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã activate người reviewer outsource với id {userId}"));
         }
-
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPost("create-local-reviewer-account")]
+        public async Task<IActionResult> CreateLocalReviewerAccount([FromBody] CreateLocalReviewerAccountRequest request)
+        {
+            var result = await _serviceManager.AuthService.CreateLocalReviewerAccount(request);
+            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo account cho local reviewer"));
+        }
     }
 }
