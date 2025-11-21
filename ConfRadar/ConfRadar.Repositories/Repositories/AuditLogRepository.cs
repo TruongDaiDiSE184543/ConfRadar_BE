@@ -1,0 +1,46 @@
+﻿using ConfRadar.Repositories.Base;
+using ConfRadar.Repositories.Data;
+using ConfRadar.Repositories.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace ConfRadar.Repositories.Repositories
+{
+    public interface IAuditLogRepository
+    {
+        Task<int> CreateAuditLogAsync(AuditLog auditLog);
+        Task<AuditLog?> GetAuditLogByIdAsync(string auditLogId);
+        Task<List<AuditLog>> GetAllAuditLogsAsync();
+        Task<List<AuditLog>> GetAuditLogsByUserIdAsync(string userId);
+    }
+    public class AuditLogRepository : GenericRepository<AuditLog>, IAuditLogRepository
+    {
+        public AuditLogRepository(ConfRadarDbContext context) : base(context)
+        {
+        }
+
+        public async Task<int> CreateAuditLogAsync(AuditLog auditLog)
+        {
+            return await CreateAsync(auditLog);
+        }
+
+        public async Task<AuditLog?> GetAuditLogByIdAsync(string auditLogId)
+        {
+            return await _context.AuditLogs
+                .FirstOrDefaultAsync(a => a.AuditLogId == auditLogId);
+        }
+
+        public async Task<List<AuditLog>> GetAllAuditLogsAsync()
+        {
+            return await _context.AuditLogs
+                .ToListAsync();
+        }
+
+        public async Task<List<AuditLog>> GetAuditLogsByUserIdAsync(string userId)
+        {
+            return await _context.AuditLogs
+                .Where(a => a.UserId == userId)
+                .ToListAsync();
+        }
+    }
+
+}

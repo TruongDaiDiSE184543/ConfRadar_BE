@@ -31,6 +31,7 @@
         public class FirebaseSettings
         {
             public string ServiceAccountPath { get; set; }
+            public string ProjectId { get; set; }
         }
         public class MomoSettings
         {

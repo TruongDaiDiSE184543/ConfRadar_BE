@@ -12,6 +12,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<WalletTransaction?> GetWalletTransactionByIdAsync(string walletTransactionId);
         Task<List<WalletTransaction>> GetWalletTransactionsByWalletIdAsync(string walletId);
         Task<List<WalletTransaction>> GetAllWalletTransactionsAsync();
+        Task<int> CreateWalletTransactionListAsync(List<WalletTransaction> walletTransactions);
     }
     public class WalletTransactionRepository : GenericRepository<WalletTransaction>, IWalletTransactionRepository
     {
@@ -22,6 +23,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> CreateWalletTransactionAsync(WalletTransaction walletTransaction)
         {
             return await CreateAsync(walletTransaction);
+        }
+        public async Task<int> CreateWalletTransactionListAsync(List<WalletTransaction> walletTransactions)
+        {
+            await _context.WalletTransactions.AddRangeAsync(walletTransactions);
+            return await _context.SaveChangesAsync();
         }
 
         public async Task<int> UpdateWalletTransactionAsync(WalletTransaction walletTransaction)

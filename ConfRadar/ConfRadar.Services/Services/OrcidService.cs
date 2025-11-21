@@ -1,6 +1,5 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Services.DTOs.Orcid;
-using static System.Net.WebRequestMethods;
 using System.Net.Http.Json;
 
 namespace ConfRadar.Services.Services

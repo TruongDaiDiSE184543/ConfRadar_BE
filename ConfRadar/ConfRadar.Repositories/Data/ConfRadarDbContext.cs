@@ -1,5 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -142,9 +145,18 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
+    public static string GetConnectionString(string connectionStringName)
+    {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        string connectionString = config.GetConnectionString(connectionStringName);
+        return connectionString;
+    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -526,6 +538,8 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.ToTable("Paper");
 
+            entity.HasIndex(e => e.TicketId, "Paper_TicketId_key").IsUnique();
+
             entity.Property(e => e.PaperId).HasMaxLength(50);
             entity.Property(e => e.AbstractId).HasMaxLength(50);
             entity.Property(e => e.CameraReadyId).HasMaxLength(50);
@@ -535,6 +549,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.PaperPhaseId).HasMaxLength(50);
             entity.Property(e => e.ResearchConferencePhaseId).HasMaxLength(50);
             entity.Property(e => e.RevisionPaperId).HasMaxLength(50);
+            entity.Property(e => e.TicketId).HasMaxLength(50);
 
             entity.HasOne(d => d.Abstract).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.AbstractId)
@@ -563,6 +578,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.RevisionPaper).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.RevisionPaperId)
                 .HasConstraintName("FK_Paper_RevisionPaperId");
+
+            entity.HasOne(d => d.Ticket).WithOne(p => p.Paper)
+                .HasForeignKey<Paper>(d => d.TicketId)
+                .HasConstraintName("FK_Paper_TicketId");
         });
 
         modelBuilder.Entity<PaperAuthor>(entity =>

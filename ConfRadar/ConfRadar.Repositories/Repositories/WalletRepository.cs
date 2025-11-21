@@ -34,6 +34,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Wallet?> GetWalletByUserIdAsync(string userId)
         {
             return await _context.Wallets
+                .Include(w => w.User)
                 .FirstOrDefaultAsync(w => w.UserId == userId);
         }
 

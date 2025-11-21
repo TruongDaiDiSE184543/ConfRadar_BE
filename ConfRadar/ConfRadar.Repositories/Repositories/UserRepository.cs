@@ -95,7 +95,8 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Users
                 .Include(x => x.UserRoles)
-                .ThenInclude(x => x.Role).FirstOrDefaultAsync(x => x.UserId == userId);
+                .ThenInclude(x => x.Role)
+                .FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
         public async Task<int> UpdateUserAsync(User user)

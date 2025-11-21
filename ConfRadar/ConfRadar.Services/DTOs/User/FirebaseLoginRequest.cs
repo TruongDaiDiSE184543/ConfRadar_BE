@@ -7,5 +7,7 @@ namespace ConfRadar.Services.DTOs.User
     {
         [Required(ErrorMessage = "Token is required!")]
         public string Token { get; set; }
+        public string? FirebaseWebFcmToken { get; set; }
+        public string? FirebaseMobileFcmToken { get; set; }
     }
 }
