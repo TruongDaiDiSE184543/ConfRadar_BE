@@ -35,6 +35,7 @@ namespace ConfRadar.Services
         public IOrcidService OrcidService { get; }
         public IStatisticsService StatisticsService { get; }
         //public ICityService CityService { get; }
+        public INotificationService NotificationService { get; }
 
     }
 
@@ -72,7 +73,7 @@ namespace ConfRadar.Services
         private readonly IOrcidService _orcidService;
         private readonly IStatisticsService _statisticsService;
         private readonly IExcelExportService _excelExportService;
-
+        private readonly INotificationService _notificationService;
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
             ITicketService ticketService,
@@ -105,7 +106,8 @@ namespace ConfRadar.Services
             IQRCoderService qRCoderService,
             IOrcidService orcidService,
             IStatisticsService statisticsService,
-            IExcelExportService excelExportService
+            IExcelExportService excelExportService,
+            INotificationService notificationService
 
            )
         {
@@ -140,6 +142,7 @@ namespace ConfRadar.Services
             _orcidService = orcidService;
             _statisticsService = statisticsService;
             _excelExportService = excelExportService;
+            _notificationService = notificationService; 
         }
 
         public IAuthService AuthService => _authService;
@@ -183,6 +186,8 @@ namespace ConfRadar.Services
         public IOrcidService OrcidService => _orcidService;
 
         public IStatisticsService StatisticsService => _statisticsService;
+
+        public INotificationService NotificationService => _notificationService;
     }
 
 }

@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
+using ConfRadar.Shared.DTO.Notification;
 using FirebaseAdmin;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
@@ -16,6 +17,7 @@ namespace ConfRadar.Services.Services
         Task ResetWaitList();
         Task<bool> SendMobilePushAsync(string deviceToken, string title, string body);
         Task<bool> SendWebPushAsync(string fcmToken, string title, string body);
+        Task<List<UserNotificationDetailResponse>> GetOwnNotification(string userId);
     }
     public class NotificationService : INotificationService
     {
@@ -164,7 +166,20 @@ namespace ConfRadar.Services.Services
         }
 
 
-
+        public async Task<List<UserNotificationDetailResponse>> GetOwnNotification(string userId)
+        {
+            var notification = await _unitOfWork.NotificationRepository.GetNotificationsByUserIdAsync(userId);
+            var userNotification = notification.Select(n => new UserNotificationDetailResponse()
+            {
+                NotificationId = n.NotificationId,
+                Title = n.Title,
+                Message = n.Message,
+                Type = n.Type,
+                CreatedAt = n.CreatedAt,
+                ReadStatus = n.ReadStatus,  
+            }).ToList();
+            return userNotification;    
+        }
 
 
 
