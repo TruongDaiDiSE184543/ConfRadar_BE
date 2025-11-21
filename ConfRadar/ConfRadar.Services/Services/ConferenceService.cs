@@ -76,6 +76,7 @@ namespace ConfRadar.Services.Services
         Task ValidateForReadyStateAsync(Conference conf);
         Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId);
 
+
     }
 
     public class ConferenceService : IConferenceService
@@ -123,23 +124,9 @@ namespace ConfRadar.Services.Services
         //}
 
         #region Helper methods to validateDate
-        private async void OnholdToReadyValid(Conference conf, ConferenceStatus ready,ConferenceStatus onHold)
-        {
-            //get date when conf switch from ready to onhold
+     
 
-            var OnholdTimeLine = await _unitOfWork.ConferenceTimelineRepository.GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(conf.ConferenceId, ready.ConferenceStatusId, onHold.ConferenceStatusId);
-            if (OnholdTimeLine == null)
-                throw new Exception("Không tìm thấy timeline khi conf chuyển từ ready sang onhold");
-
-            //
-            var today = await _timeProviderService.GetVietnamDate();
-            var onHoldStartDate = OnholdTimeLine.ChangeDate;
-
-
-            
-        }
-
-        // DÁN TOÀN BỘ PHIÊN BẢN NÀY ĐỂ THAY THẾ PHIÊN BẢN CŨ
+      
 
         private async Task<List<string>> ValidateConferenceTimelineAsync(Conference conf, Func<DateOnly?, bool> dateOnlyValidationRule)
         {
@@ -220,6 +207,43 @@ namespace ConfRadar.Services.Services
             // 2. VÀ mốc thời gian đó bây giờ đã nằm TRONG QUÁ KHỨ.
             return dateToCheck.Value >= onHoldStartDate && dateToCheck.Value < today;
         }
+
+
+        private async Task ValidateForCancelledStateAsync(Conference conference)
+        {
+            //get not refunded ticket
+            var refundedTicket = await _unitOfWork.TicketRepository.GetNotRefundedTicketsByConferenceIdAsync(conference.ConferenceId);
+            var invalidMessages = new List<string>();
+            if (refundedTicket.Any()){
+                foreach(var ticket in refundedTicket)
+                {
+                    string typeOfTicket = ticket.PricePhase.ConferencePrice.IsAuthor.Value ? "thường" : "tác giả";
+                    invalidMessages.Add($"Còn vé {ticket.TicketId} thuộc loại {typeOfTicket} của khách với ID {ticket.UserId} chưa được refund");
+                }
+            }
+
+            if(conference.IsResearchConference == true)
+            {
+                //get not rejected paper
+                var reviewStatusNotRejected = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Rejected.GetDescription());
+                var globalStatusRejected = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+                var notRejectedPapers = await _unitOfWork.PaperRepository.GetAllNotRejectEdPaper(globalStatusRejected, reviewStatusNotRejected, conference.ConferenceId);
+
+                foreach(var paper in notRejectedPapers)
+                {
+                    var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByIdAsync(paper.PaperPhaseId);
+                    invalidMessages.Add($"Còn paper với ID {paper.PaperId} ở phase {paperPhase.PhaseName} chưa trong trạng thái rejected");
+                }
+            }
+
+
+            if (invalidMessages.Any())
+            {
+                string response = "Không thể chuyển sang trạng thái cancelled vì : " + string.Join("\n- ", invalidMessages.Distinct());
+                throw new Exception(response);
+            }
+        }
+
 
         #endregion
 
@@ -817,8 +841,12 @@ namespace ConfRadar.Services.Services
                     }
                     else await ValidateForReadyStateAsync(conference);
                 }
-                    
 
+                if (newStatus.ConferenceStatusName == "Cancelled")
+                    await ValidateForCancelledStateAsync(conference);
+
+                if (newStatus.ConferenceStatusName == "Cancelled")
+                    await ValidateForCancelledStateAsync(conference);
                 
 
                 // Update the conference status
@@ -850,6 +878,8 @@ namespace ConfRadar.Services.Services
             }
 
         }
+
+        
 
         public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId, string? userId)
         {
@@ -2408,7 +2438,7 @@ namespace ConfRadar.Services.Services
             if (invalidMessages.Any())
             {
                 string errorMessage = "Không thể chuyển về trạng thái 'Ready'. Các mốc thời gian sau đã bị lỗi thời và cần được cập nhật:\n- "
-                                    + string.Join("\n- ", invalidMessages.Distinct());
+                                    + string.Join("|", invalidMessages.Distinct());
                 throw new BadRequestException(errorMessage);
             }
         }
@@ -2518,7 +2548,7 @@ namespace ConfRadar.Services.Services
             if (invalidMessages.Any())
             {
                 string errorMessage = "Không thể chuyển sang trạng thái 'Ready'. Vui lòng khắc phục các vấn đề sau:\n- "
-                                    + string.Join("\n- ", invalidMessages.Distinct());
+                                    + string.Join("|", invalidMessages.Distinct());
                 throw new BadRequestException(errorMessage);
             }
         }
