@@ -41,7 +41,8 @@ namespace ConfRadar.Services.DTOs.Destination
     {
         public string DestinationId { get; set; }
         public string? Name { get; set; }
-        public string? City { get; set; }
+        public string? CityId { get; set; }
+        public string? CityName { get; set; }
         public string? District { get; set; }
         public string? Street { get; set; }
     }
@@ -50,7 +51,8 @@ namespace ConfRadar.Services.DTOs.Destination
     {
         public string DestinationId { get; set; }
         public string? Name { get; set; }
-        public string? City { get; set; }
+        public string? CityId { get; set; }
+        public string? CityName { get; set; }
         public string? District { get; set; }
         public string? Street { get; set; }
         public List<RoomResponse> Rooms { get; set; } = new List<RoomResponse>();

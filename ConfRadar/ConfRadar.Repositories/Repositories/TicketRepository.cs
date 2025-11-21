@@ -18,7 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Ticket?> GetTicketByUserIdAndConferenceId(string userId, string conferenceId);
 
         Task<Ticket?> GetNotRefundAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
-
+        Task<List<Ticket>?> GetNotRefundedTicketsByConferenceIdAsync(string conferenceId);
 
         Task<List<Ticket>> GetAuthorTicketByUserIdAndConferenceId(string userId, string conferenceId);
         Task<List<Ticket>> GetAttendeeTicketByUserIdAndConferenceId(string userId, string conferenceId);
@@ -26,12 +26,15 @@ namespace ConfRadar.Repositories.Repositories
         Task<Ticket> GetTicketById(string ticketId);
         Task<Ticket?> GetTicketByTicketIdAndUserId(string ticketId, string userId);
         Task<int> UpdateTicketAsync(Ticket ticket);
-        Task<int> UpdateTicketListAsync(List<Ticket> tickets);
-
-        Task<List<Ticket>> GetTicketsWithDetailsByConferenceIdAsync(string conferenceId);
         Task<List<Ticket>> GetPaidTicketsByConferenceIdAsync(string conferenceId);
+        Task<List<Ticket>> GetTicketsWithDetailsByConferenceIdAsync(string conferenceId);
+
+
+
+
         Task<List<Ticket>> GetNotRefundTechnicalTicketListByTicketIdsForCancel(List<string> ticketIds);
         Task<List<Ticket>> GetNotRefundResearchTicketListByTicketIdsForCancel(List<string> ticketIds);
+        Task<int> UpdateTicketListAsync(List<Ticket> tickets);
 
     }
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
@@ -565,13 +568,13 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Ticket>> GetPaidTicketsByConferenceIdAsync(string conferenceId)
         {
             return await _context.Tickets
-
-       .Include(t => t.PricePhase)
-           .ThenInclude(pp => pp.ConferencePrice)
+       .AsNoTracking() // Thêm AsNoTracking vì đây là query chỉ đọc, giúp tăng hiệu năng
+       .Include(t => t.PricePhase) // Tải kèm bảng PricePhase
+           .ThenInclude(pp => pp.ConferencePrice) // Từ PricePhase, tải tiếp bảng ConferencePrice
        .Where(t =>
            t.IsRefunded == false &&
-           t.PricePhase != null &&
-           t.PricePhase.ConferencePrice != null &&
+           t.PricePhase != null && // Thêm kiểm tra null để an toàn
+           t.PricePhase.ConferencePrice != null && // Thêm kiểm tra null để an toàn
            t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
        .ToListAsync();
         }
@@ -605,7 +608,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(t => t.PricePhase)
                    .ThenInclude(pp => pp.ConferencePrice)
                    .ThenInclude(cp => cp.Conference)
-               //.ThenInclude(c => c.TechnicalConferenceDetail)
+                    .ThenInclude(c => c.TechnicalConferenceDetail)
                .Where(t =>
                t.PricePhase != null
                && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
@@ -629,7 +632,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(t => t.PricePhase)
                    .ThenInclude(pp => pp.ConferencePrice)
                    .ThenInclude(cp => cp.Conference)
-                //.ThenInclude(c => c.ResearchConferenceDetail)
+                    .ThenInclude(c => c.ResearchConferenceDetail)
 
                 .Include(t => t.Paper)
                     .ThenInclude(p => p.PaperPhase)
@@ -656,7 +659,9 @@ namespace ConfRadar.Repositories.Repositories
                .ToListAsync();
         }
 
-
-
+        public Task<List<Ticket>?> GetNotRefundedTicketsByConferenceIdAsync(string conferenceId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

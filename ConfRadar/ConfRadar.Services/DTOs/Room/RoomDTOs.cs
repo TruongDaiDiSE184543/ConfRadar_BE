@@ -40,6 +40,11 @@ namespace ConfRadar.Services.DTOs.Room
         public DateTime EndTime { get; set; }
         public string ConferenceId { get; set; }
         public string ConferenceName { get; set; }
+        public string CityId { get; set; }
+        public string Cityname { get; set; }
+        public string DestinationId { get; set; }
+        public string DestinationName { get; set; }
+
     }
 
     public class RoomWithSessionsResponse
@@ -47,7 +52,10 @@ namespace ConfRadar.Services.DTOs.Room
         public string RoomId { get; set; }
         public string? Number { get; set; }
         public string? DisplayName { get; set; }
-        public string? DestinationId { get; set; }
+        public string CityId { get; set; }
+        public string Cityname { get; set; }
+        public string DestinationId { get; set; }
+        public string DestinationName { get; set; }
         public List<RoomOccupationSlotResponse> Sessions { get; set; } = new List<RoomOccupationSlotResponse>();
     }
 
@@ -62,6 +70,10 @@ namespace ConfRadar.Services.DTOs.Room
         public DateOnly Date { get; set; }
         public List<TimeSpanResponse>? AvailbleTimeSpan { get; set; }
         public bool IsAvailableWholeday { get; set; }
+        public string CityId { get; set; }
+        public string Cityname { get; set; }
+        public string DestinationId { get; set; }
+        public string DestinationName { get; set; }
     }
 
     public class AvailableRoomResponse
@@ -72,5 +84,9 @@ namespace ConfRadar.Services.DTOs.Room
         public DateOnly Date { get; set; }
         public List<TimeSpanResponse>? AvailableTimeSpans { get; set; }
         public bool IsAvailableWholeday { get; set; }
+        public string CityId { get; set; }
+        public string Cityname { get; set; }
+        public string DestinationId { get; set; }
+        public string DestinationName { get; set; }
     }
 }
