@@ -149,6 +149,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($" Email {request.Email} đã tồn tại trong hệ thống");
             }
+            var userByName = await _unitOfWork.UserRepository.GetUserByName(request.FullName);
+            if (userByName != null)
+            {
+                throw new ConfRadarAuthenticationException("Người dùng với tên đã tồn tại");
+            }
             string contractFileUrl = null;
             if (request.ContractFile != null)
             {
