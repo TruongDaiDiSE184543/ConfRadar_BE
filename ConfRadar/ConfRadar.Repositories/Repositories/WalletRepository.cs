@@ -64,7 +64,7 @@ namespace ConfRadar.Repositories.Repositories
                 Balance = walletDetail.Balance,
                 CreatedAt = walletDetail.CreatedAt,
                 UpdatedAt = walletDetail.UpdatedAt,
-                WalletTransactions = walletDetail.WalletTransactions.Select(wt => new OwnWalletTransactionDetailResponse()
+                WalletTransactions = walletDetail.WalletTransactions.OrderByDescending(wl => wl.CreatedAt).Select(wt => new OwnWalletTransactionDetailResponse()
                 {
                     WalletTransactionId = wt.WalletTransactionId,
                     WalletId = wt.WalletId,

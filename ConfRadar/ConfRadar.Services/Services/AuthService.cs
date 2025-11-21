@@ -77,6 +77,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User with this full name already exists");
             }
+            var timeNow = await _timeProviderService.GetVietnamTime();
             string fileUrl = null;
             if (request.AvatarFile != null)
             {
@@ -103,18 +104,18 @@ namespace ConfRadar.Services.Services
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.ConfirmRegistrationEmail + $"?token={verificationToken}";
-            var userCreated = UserMapper.FromCreateUserRequestToUser(request, await _timeProviderService.GetVietnamTime());
+            var userCreated = UserMapper.FromCreateUserRequestToUser(request, timeNow);
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
             userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
-            userCreated.VerificationTokenExpiry = (await _timeProviderService.GetVietnamTime()).AddDays(1);
+            userCreated.VerificationTokenExpiry = timeNow.AddDays(1);
             userCreated.AvatarUrl = fileUrl;
             var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
             var userRole = new UserRole()
             {
                 UserId = userCreated.UserId,
                 RoleId = role!.RoleId,
-                AssignedAt = await _timeProviderService.GetVietnamTime(),
+                AssignedAt = timeNow,
                 IsActive = true
             };
             var userWallet = new Wallet()
@@ -122,7 +123,7 @@ namespace ConfRadar.Services.Services
                 WalletId = Guid.NewGuid().ToString(),
                 UserId = userCreated.UserId,
                 Balance = 0,
-                CreatedAt = await _timeProviderService.GetVietnamTime(),
+                CreatedAt = timeNow,
                 UpdatedAt = null
             };
             userCreated.UserRoles.Add(userRole);
