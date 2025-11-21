@@ -8,6 +8,7 @@ using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.User;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
+using Quartz.Util;
 using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -179,11 +180,11 @@ namespace ConfRadar.Services.Services
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             var timeNow = await _timeProviderService.GetVietnamTime();
             user.LastLogin = timeNow;
-            if (request.FirebaseMobileFcmToken != null)
+            if (!string.IsNullOrWhiteSpace(request.FirebaseMobileFcmToken))
             {
                 user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
             }
-            if (request.FirebaseWebFcmToken != null)
+            if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken) )
             {
                 user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
             }
