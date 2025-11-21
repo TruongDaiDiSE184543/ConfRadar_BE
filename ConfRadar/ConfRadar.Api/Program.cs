@@ -68,6 +68,7 @@ app.UseSwaggerUI();
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
+app.UseMiddleware<BlockDisabledUserMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -10,7 +10,7 @@ namespace ConfRadar.Services.Services
 
         Task SendEmailAsync(string toEmail, string subject, string body);
         Task SendAuthenticationTemplateEmailAsync(string toEmail, string userName, string link, string subject, string templateFileName);
-        Task SendCreateCollaboratorAccountEmail(string toEmail, string userName, string password, string link, string subject, string templateFileName);
+        Task SendCreateAccountEmail(string toEmail, string userName, string password, string link, string subject, string templateFileName);
         Task SendSuspendTemplateEmailAsync(string toEmail, string userName, string subject, string templateFileName);
     }
     public class SmtpEmailService : IEmailService
@@ -70,7 +70,7 @@ namespace ConfRadar.Services.Services
             await SendEmailAsync(toEmail, subject, body);
         }
 
-        public async Task SendCreateCollaboratorAccountEmail(string toEmail, string userName, string password, string link, string subject, string templateFileName)
+        public async Task SendCreateAccountEmail(string toEmail, string userName, string password, string link, string subject, string templateFileName)
         {
             var replacements = new Dictionary<string, string>
     {

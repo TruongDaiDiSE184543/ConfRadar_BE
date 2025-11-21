@@ -11,7 +11,6 @@ using ConfRadar.Services.Mappers;
 using ConfRadar.Shared.DTO.Abstract;
 using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.WaitList;
-using Google.Apis.Util;
 using Microsoft.Extensions.Options;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -99,7 +98,7 @@ namespace ConfRadar.Services.Services
         private readonly ITicketService _ticketService;
         private readonly ITimeProviderService _timeProviderService;
         private readonly INotificationService _notificationService;
-        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService, ITimeProviderService timeProviderService,INotificationService notificationService)
+        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService, ITimeProviderService timeProviderService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _momoService = momoService;
@@ -234,15 +233,15 @@ namespace ConfRadar.Services.Services
                     };
                     notificationList.Add(notification);
                     var coauthorDetail = await _unitOfWork.UserRepository.GetUserByUserId(coAuthor);
-                    if (coauthorDetail != null) 
+                    if (coauthorDetail != null)
                     {
                         if (coauthorDetail.FirebaseMobileFcmToken != null)
                         {
-                            await _notificationService.SendMobilePushAsync(coauthorDetail.FirebaseMobileFcmToken,notiTitle,notiMessage);
+                            await _notificationService.SendMobilePushAsync(coauthorDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
                         }
                         if (coauthorDetail.FirebaseWebFcmToken != null)
                         {
-                            await _notificationService.SendWebPushAsync(coauthorDetail.FirebaseWebFcmToken,notiTitle,notiMessage);
+                            await _notificationService.SendWebPushAsync(coauthorDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
                         }
                     }
                 }
@@ -316,7 +315,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"abstract không trong quá trình pending");
             }
-            var rootAuthor = basePaper.PaperAuthors.FirstOrDefault(pa=>pa.IsRootAuthor==true);
+            var rootAuthor = basePaper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
             string notiTitle = "Kết quả bài báo";
             string notiMessage = string.Empty;
             int result = 0;
@@ -336,7 +335,7 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Rejected:
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = timeNow;
-                        
+
                         var validTicket = basePaper.TicketId;
                         if (validTicket == null)
                         {
@@ -559,7 +558,7 @@ namespace ConfRadar.Services.Services
             int result = 0;
             string notiTitle = "Kết quả bài báo";
             string notiMessage = string.Empty;
-            var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true); 
+            var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -579,7 +578,7 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = rejectedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
-                        
+
                         var validTicket = paper.TicketId;
                         if (validTicket == null)
                         {
@@ -1616,7 +1615,7 @@ namespace ConfRadar.Services.Services
                     break;
                 case GlobalStatusEnum.Rejected:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-                    
+
                     var validTicket = basePaper.TicketId;
                     if (validTicket == null)
                     {
@@ -2344,7 +2343,7 @@ namespace ConfRadar.Services.Services
 
             abstractPaper.Title = string.IsNullOrWhiteSpace(request.Title) ? abstractPaper.Title : request.Title;
             abstractPaper.Description = string.IsNullOrWhiteSpace(request.Description) ? abstractPaper.Description : request.Description;
-            
+
 
 
 

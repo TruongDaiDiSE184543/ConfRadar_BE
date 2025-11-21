@@ -1212,7 +1212,7 @@ namespace ConfRadar.Services.Services
             return responses;
         }
 
-        
+
 
         public async Task<ConferenceSessionWithMediaResponse> UpdateConferenceSessionAsync(string sessionId, UpdateConferenceSessionRequest request, string userId)
         {
@@ -2932,8 +2932,8 @@ namespace ConfRadar.Services.Services
                 }
                 #endregion
 
-               
-                
+
+
             }
             #region === 2. TH?C THI ===
             var responses = new List<DTOs.ConferenceStep.PricePhaseResponse>();

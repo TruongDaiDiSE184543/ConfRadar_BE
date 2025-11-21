@@ -609,8 +609,8 @@ namespace ConfRadar.Repositories.Repositories
                .Where(t =>
                t.PricePhase != null
                && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.IsAuthor == false
-               && t.PricePhase.ConferencePrice.Conference !=null
-               && t.PricePhase.ConferencePrice.Conference.TechnicalConferenceDetail !=null
+               && t.PricePhase.ConferencePrice.Conference != null
+               && t.PricePhase.ConferencePrice.Conference.TechnicalConferenceDetail != null
                && t.IsRefunded == false
                && ticketIds.Contains(t.TicketId))
                .AsSplitQuery()
@@ -649,7 +649,7 @@ namespace ConfRadar.Repositories.Repositories
                t.PricePhase != null
                && t.PricePhase.ConferencePrice != null
                && t.PricePhase.ConferencePrice.Conference != null
-               && t.PricePhase.ConferencePrice.Conference.ResearchConferenceDetail !=null
+               && t.PricePhase.ConferencePrice.Conference.ResearchConferenceDetail != null
                && t.IsRefunded == false
                && ticketIds.Contains(t.TicketId))
                .AsSplitQuery()
