@@ -1,7 +1,11 @@
 ﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Orcid;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Xml.Linq;
 
 namespace ConfRadar.Services.Services
 {
@@ -9,6 +13,10 @@ namespace ConfRadar.Services.Services
     {
         string GenerateAuthorizationLink(string scope, string userId);
         Task<OrcidAuthorizationResponse> ExchangeCodeForTokenAsync(string authorizationCode, string userId);
+        Task<String> SyncWorksAsync(string userId);
+        Task<string> SyncBiographyAsync(string userId);
+        Task<string> SyncEducationAsync(string userId);
+
     }
 
     public class OrcidService : IOrcidService
@@ -17,13 +25,15 @@ namespace ConfRadar.Services.Services
         private readonly ITimeProviderService _timeProviderService;
         private readonly HttpClient _httpClient;
         private readonly string fullAccess = "read-limited%20/activities/update%20/person/update";
+        private readonly string baseVersion3 = "https://api.sandbox.orcid.org/v3.0/";
+        private readonly string localRedirect = "https://localhost:7001/signin-orcid";
         public OrcidService(IUnitOfWork unitOfWork, HttpClient httpClient, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
             _httpClient = httpClient;
 
             // Always use sandbox for ORCID API
-            _httpClient.BaseAddress = new Uri("https://sandbox.orcid.org/");
+            _httpClient.BaseAddress = new Uri("https://api.sandbox.orcid.org/");
 
             _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
             _timeProviderService = timeProviderService;
@@ -85,8 +95,13 @@ namespace ConfRadar.Services.Services
 
             var tokenResponse = await response.Content.ReadFromJsonAsync<OrcidAuthorizationResponse>();
 
+            if (!string.IsNullOrEmpty(tokenResponse.scope) && tokenResponse.scope.StartsWith("/"))
+            {
+                tokenResponse.scope = tokenResponse.scope.TrimStart('/');
+            }
+
             // Check if there's already an academic profile with this ORCID and scope for this user
-            DateTime createAt =  ExtensionHelper.GetVietnamTime();
+            DateTime createAt = ExtensionHelper.GetVietnamTime();
             var existingProfileByUserAndScope = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, tokenResponse.scope);
             var academicProfile = tokenResponse.toModel(userId, createAt);
 
@@ -113,6 +128,287 @@ namespace ConfRadar.Services.Services
             return tokenResponse;
         }
 
+        public async Task<string> SyncWorksAsync(string userId)
+        {
+            // Get user token from database
+            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
+            if (userToken == null)
+            {
+                throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");
+            }
 
+            // Check if token is expired (optional - you might want to refresh if expired)
+            //if (userToken.IsExpired())
+            //{
+            //    throw new Exception($"ORCID token for user {name} has expired. Please re-authorize.");
+            //}
+
+            // Make API call to get ORCID works
+            var requestUrl = $"{baseVersion3}{userToken.OrcidId}/works";
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken.AccessToken);
+
+            try
+            {
+                var response = await _httpClient.GetAsync(requestUrl);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Error getting data from ORCID: {error}");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                return content;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Network error when calling ORCID API: {ex.Message}");
+            }
+        }
+
+        public async Task<String> SyncAndProcessWorksAsync(string userId)
+        {
+            // === PHẦN 1: GỌI API ĐỂ LẤY DỮ LIỆU GỐC ===
+            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
+            if (userToken == null)
+            {
+                throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");
+            }
+
+            var requestUrl = $"https://api.sandbox.orcid.org/v3.0/{userToken.OrcidId}/works";
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken.AccessToken);
+
+            var response = await _httpClient.GetAsync(requestUrl);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Lỗi khi lấy dữ liệu works từ ORCID: {error}");
+            }
+
+            //var orcidJsonString = await response.Content.ReadAsStringAsync();
+
+            // === PHẦN 2: PARSE VÀ TRÍCH XUẤT THÔNG TIN CHÍNH ===
+            //var orcidWorksData = JsonSerializer.Deserialize<OrcidWorksResponse>(orcidJsonString);
+
+            var orcidWorksData = await response.Content.ReadFromJsonAsync<OrcidWorksResponse>();
+
+            var simpleWorksList = new List<WorkConfRadarResponse>();
+
+            if (orcidWorksData != null && orcidWorksData.Group != null)
+            {
+                foreach (var summary in orcidWorksData.Group.SelectMany(g => g.WorkSummary))
+                {
+                    // ===== SỬA ĐỔI LOGIC LẤY ĐỊNH DANH (IDENTIFIER) =====
+                    var identifier = summary.ExternalIds?.ExternalId
+                        .FirstOrDefault(id =>
+                            "doi".Equals(id.Type, StringComparison.OrdinalIgnoreCase) ||
+                            "urn".Equals(id.Type, StringComparison.OrdinalIgnoreCase) ||
+                            "ark".Equals(id.Type, StringComparison.OrdinalIgnoreCase) // Thêm cả "ark" cho chắc
+                        );
+
+                    var simpleWork = new WorkConfRadarResponse
+                    {
+                        OrcidPutCode = summary.PutCode,
+                        Title = summary.Title?.Title?.Value,
+                        WorkType = summary.Type,
+                        PublicationYear = summary.PublicationDate?.Year?.Value,
+                        Doi = identifier?.Value,
+                        Link = summary.Url?.Value
+                    };
+                    simpleWorksList.Add(simpleWork);
+                }
+            }
+
+            // === PHẦN 3: CHUYỂN DANH SÁCH ĐƠN GIẢN THÀNH JSON VÀ LƯU VÀO DB ===
+
+            // Chuyển danh sách DTO thành một chuỗi JSON sạch sẽ
+            string simpleJsonToStore = JsonSerializer.Serialize(simpleWorksList);
+            DateTime now = ExtensionHelper.GetVietnamTime();
+
+            // Lấy profile từ DB để cập nhật
+            var orcidDataCache = await _unitOfWork.OrcidDataCacheRepository.GetOrcidDataCacheByAcademicProfileIdAndDataTypeAsync(userToken.AcademicProfileId, OrcidDataTypeEnum.Works.ToString()); // Cần có phương thức này
+            if (orcidDataCache == null)
+            {
+                OrcidDataCache newCache = new OrcidDataCache()
+                {
+                    AcademicProfileId = userToken.AcademicProfileId,
+                    DataType = OrcidDataTypeEnum.Works.ToString(),
+                    JsonContent = simpleJsonToStore,
+                    OrcidDataCacheId = Guid.NewGuid().ToString(),
+                    LastSyncedAt = now,
+                };
+                await _unitOfWork.OrcidDataCacheRepository.CreateOrcidDataCacheAsync(newCache);
+
+
+            }
+            else
+            {
+                orcidDataCache.JsonContent = simpleJsonToStore;
+                orcidDataCache.LastSyncedAt = now;
+
+
+                // Cập nhật và lưu thay đổi
+                await _unitOfWork.OrcidDataCacheRepository.UpdateOrcidDataCacheAsync(orcidDataCache);
+            }
+
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<string> SyncBiographyAsync(string userId)
+        {
+            // === PHẦN 1: GỌI API ĐỂ LẤY DỮ LIỆU GỐC (Giữ nguyên) ===
+            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
+            if (userToken == null)
+            {
+                throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");
+            }
+
+            var requestUrl = $"https://api.sandbox.orcid.org/v3.0/{userToken.OrcidId}/biography";
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken.AccessToken);
+
+            var response = await _httpClient.GetAsync(requestUrl);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Lỗi khi lấy dữ liệu biography từ ORCID: {error}");
+            }
+
+            // === PHẦN 2: PARSE VÀ TRÍCH XUẤT THÔNG TIN CHÍNH ===
+            var orcidBioData = await response.Content.ReadFromJsonAsync<OrcidBiographyResponse>();
+
+            if (orcidBioData == null)
+            {
+                throw new Exception("Không thể parse dữ liệu biography từ ORCID.");
+            }
+
+            // Xử lý dữ liệu để tạo DTO đơn giản
+            var simpleBioDto = new BiographyConfRadarResponse
+            {
+                Content = orcidBioData.Content,
+                // Chuyển đổi Unix timestamp (milliseconds) sang DateTime
+                LastModified = DateTimeOffset.FromUnixTimeMilliseconds(orcidBioData.LastModifiedDate.Value).UtcDateTime
+            };
+
+            // === PHẦN 3: CHUYỂN DTO THÀNH JSON VÀ LƯU VÀO DB ===
+            string simpleJsonToStore = JsonSerializer.Serialize(simpleBioDto);
+            DateTime now = ExtensionHelper.GetVietnamTime();
+
+            var orcidDataCache = await _unitOfWork.OrcidDataCacheRepository.GetOrcidDataCacheByAcademicProfileIdAndDataTypeAsync(userToken.AcademicProfileId, OrcidDataTypeEnum.Biography.ToString());
+
+            if (orcidDataCache == null)
+            {
+                // Tạo mới nếu chưa có
+                OrcidDataCache newCache = new OrcidDataCache()
+                {
+                    AcademicProfileId = userToken.AcademicProfileId,
+                    DataType = OrcidDataTypeEnum.Biography.ToString(),
+                    JsonContent = simpleJsonToStore,
+                    OrcidDataCacheId = Guid.NewGuid().ToString(),
+                    LastSyncedAt = now
+                };
+                await _unitOfWork.OrcidDataCacheRepository.CreateOrcidDataCacheAsync(newCache);
+            }
+            else
+            {
+                // Cập nhật nếu đã có
+                orcidDataCache.JsonContent = simpleJsonToStore;
+                orcidDataCache.LastSyncedAt = now;
+                await _unitOfWork.OrcidDataCacheRepository.UpdateOrcidDataCacheAsync(orcidDataCache);
+            }
+
+            // Lưu thay đổi vào DB
+            // Trả về chuỗi JSON đã được xử lý cho frontend
+            return simpleJsonToStore;
+        }
+
+        public async Task<string> SyncEducationAsync(string userId)
+        {
+            // === PHẦN 1: GỌI API (Giữ nguyên) ===
+            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
+            if (userToken == null)
+            {
+                throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");
+            }
+
+            var requestUrl = $"https://api.sandbox.orcid.org/v3.0/{userToken.OrcidId}/educations";
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken.AccessToken);
+
+            var response = await _httpClient.GetAsync(requestUrl);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Lỗi khi lấy dữ liệu educations từ ORCID: {error}");
+            }
+
+            // === PHẦN 2: PARSE VÀ XỬ LÝ DỮ LIỆU ===
+            var orcidEduData = await response.Content.ReadFromJsonAsync<OrcidEducationsResponse>();
+            var simpleEduList = new List<EducationConfRadarResponse>();
+
+            if (orcidEduData != null && orcidEduData.AffiliationGroup != null)
+            {
+                // Dùng SelectMany để làm phẳng cấu trúc lồng nhau
+                foreach (var summaryContainer in orcidEduData.AffiliationGroup.SelectMany(g => g.Summaries))
+                {
+                    var edu = summaryContainer.EducationSummary;
+
+                    // Xử lý để tạo chuỗi thời gian (Period)
+                    string startYear = edu.StartDate?.Year?.Value;
+                    string endYear = edu.EndDate?.Year?.Value;
+                    string period = (startYear, endYear) switch
+                    {
+                        (not null, not null) => $"{startYear} - {endYear}",
+                        (not null, null) => $"{startYear} - Present",
+                        (null, not null) => $"Until {endYear}",
+                        _ => null
+                    };
+
+                    var simpleEdu = new EducationConfRadarResponse
+                    {
+                        OrcidPutCode = edu.PutCode,
+                        Degree = edu.RoleTitle,
+                        Institution = edu.Organization?.Name,
+                        Period = period,
+                        Location = $"{edu.Organization?.Address?.City}, {edu.Organization?.Address?.Country}"
+                    };
+                    simpleEduList.Add(simpleEdu);
+                }
+            }
+
+            // === PHẦN 3: LƯU VÀO DB ===
+            string simpleJsonToStore = JsonSerializer.Serialize(simpleEduList);
+            DateTime now = ExtensionHelper.GetVietnamTime();
+
+            var orcidDataCache = await _unitOfWork.OrcidDataCacheRepository.GetOrcidDataCacheByAcademicProfileIdAndDataTypeAsync(userToken.AcademicProfileId, OrcidDataTypeEnum.Education.ToString());
+
+            if (orcidDataCache == null)
+            {
+                OrcidDataCache newCache = new OrcidDataCache
+                {
+                    AcademicProfileId = userToken.AcademicProfileId,
+                    DataType = OrcidDataTypeEnum.Education.ToString(),
+                    JsonContent = simpleJsonToStore,
+                    OrcidDataCacheId = Guid.NewGuid().ToString(),
+                    LastSyncedAt = now
+                };
+                await _unitOfWork.OrcidDataCacheRepository.CreateOrcidDataCacheAsync(newCache);
+            }
+            else
+            {
+                orcidDataCache.JsonContent = simpleJsonToStore;
+                orcidDataCache.LastSyncedAt = now;
+                await _unitOfWork.OrcidDataCacheRepository.UpdateOrcidDataCacheAsync(orcidDataCache);
+            }
+
+            return simpleJsonToStore;
+        }
     }
 }

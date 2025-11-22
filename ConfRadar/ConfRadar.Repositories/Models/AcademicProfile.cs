@@ -21,5 +21,7 @@ public partial class AcademicProfile
 
     public DateTime? CreatedAt { get; set; }
 
+    public virtual ICollection<OrcidDataCache> OrcidDataCaches { get; set; } = new List<OrcidDataCache>();
+
     public virtual User? User { get; set; }
 }

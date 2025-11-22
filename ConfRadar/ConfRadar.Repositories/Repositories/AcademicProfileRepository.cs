@@ -57,8 +57,8 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<AcademicProfile?> GetAcademicProfileByUserIdAndScopeAsync(string userId, string scope)
         {
             return await _context.AcademicProfiles
-                .Include(ap => ap.User)
-                .FirstOrDefaultAsync(ap => ap.UserId == userId && ap.Scope == scope);
+                          .Include(ap => ap.User)
+                          .FirstOrDefaultAsync(ap => ap.UserId.Trim() == userId.Trim() && ap.Scope == scope);
         }
 
         public async Task<List<AcademicProfile>> GetAcademicProfilesByUserIdAsync(string userId)

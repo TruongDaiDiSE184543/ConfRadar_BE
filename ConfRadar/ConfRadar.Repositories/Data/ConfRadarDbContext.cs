@@ -62,6 +62,8 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<OrcidDataCache> OrcidDataCaches { get; set; }
+
     public virtual DbSet<Paper> Papers { get; set; }
 
     public virtual DbSet<PaperAuthor> PaperAuthors { get; set; }
@@ -526,6 +528,23 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_Notification_UserId");
+        });
+
+        modelBuilder.Entity<OrcidDataCache>(entity =>
+        {
+            entity.ToTable("OrcidDataCache");
+
+            entity.HasIndex(e => new { e.AcademicProfileId, e.DataType }, "IX_OrcidDataCache_ProfileId_DataType").IsUnique();
+
+            entity.Property(e => e.OrcidDataCacheId).HasMaxLength(50);
+            entity.Property(e => e.AcademicProfileId).HasMaxLength(50);
+            entity.Property(e => e.DataType).HasMaxLength(50);
+            entity.Property(e => e.JsonContent).HasColumnType("jsonb");
+            entity.Property(e => e.LastSyncedAt).HasColumnType("timestamp without time zone");
+
+            entity.HasOne(d => d.AcademicProfile).WithMany(p => p.OrcidDataCaches)
+                .HasForeignKey(d => d.AcademicProfileId)
+                .HasConstraintName("FK_OrcidDataCache_AcademicProfile");
         });
 
         modelBuilder.Entity<Paper>(entity =>

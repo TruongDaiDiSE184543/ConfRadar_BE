@@ -13,7 +13,7 @@ namespace ConfRadar.Services.DTOs.Orcid
         {
             return new AcademicProfile
             {
-                AcademicProfileId = new Guid().ToString(),
+                AcademicProfileId = Guid.NewGuid().ToString(),
                 AccessToken = response.access_token,
                 RefreshToken = response.refresh_token,
                 OrcidId = response.orcid,
