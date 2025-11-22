@@ -57,25 +57,32 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<OrcidAuthorizationResponse>.SuccessResponse(tokenResponse, ""));
         }
 
-        [HttpGet("Get-works")]
+        [HttpGet("Get-works-from-orcid")]
         public async Task<IActionResult> getWork([FromQuery] string userId)
         {
             var result = await _serviceManager.OrcidService.SyncWorksAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
         }
 
-        [HttpGet("Get-biography")]
+        [HttpGet("Get-biography-from-orcid")]
         public async Task<IActionResult> getBiography([FromQuery] string userId)
         {
             var result = await _serviceManager.OrcidService.SyncBiographyAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
         }
 
-        [HttpGet("Get-Educations")]
+        [HttpGet("Get-Educations-from-orcid")]
         public async Task<IActionResult> getEducations([FromQuery] string userId)
         {
             var result = await _serviceManager.OrcidService.SyncEducationAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
+        }
+
+        [HttpGet("Get-section-from-db")]
+        public async Task<IActionResult> getSectionByUserId([FromQuery] string userId, [FromQuery]string section)
+        {
+            var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId,section);
+            return Ok(ApiResponse<object>.SuccessResponse(result, ""));
         }
     }
 }

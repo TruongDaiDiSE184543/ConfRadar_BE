@@ -2,6 +2,8 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Orcid;
+using ConfRadar.Services.Exceptions;
+using OfficeOpenXml.Packaging.Ionic.Zip;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -16,6 +18,8 @@ namespace ConfRadar.Services.Services
         Task<String> SyncWorksAsync(string userId);
         Task<string> SyncBiographyAsync(string userId);
         Task<string> SyncEducationAsync(string userId);
+        Task<string> GetSectionByUserIdFromOrcid(string userId,string section);
+        Task<object> GetSectionByUserIdFromDb(string userId, string section);
 
     }
 
@@ -44,6 +48,34 @@ namespace ConfRadar.Services.Services
         private readonly List<string> validScopes = new List<string>()
         {
             "authenticate ","read-limited","activities/update","person/update","webhook","read-public",
+        };
+
+        private static readonly HashSet<string> _validReadSections = new HashSet<string>
+        {
+            // list
+            "educations",
+            "employments",
+            "fundings",
+            "peer-reviews",
+            "works",
+            "research-resources",
+            "distinctions",
+            "invited-positions",
+            "memberships",
+            "qualifications",
+            "services",
+        
+            // single
+            "biography",
+            "person",
+            "personal-details",
+            "activities",
+            "email",
+            "other-names",
+            "keywords",
+            "researcher-urls",
+            "external-identifiers",
+            "address"
         };
         private async Task RefreshTokenAsync(AcademicProfile profile)
         {
@@ -94,13 +126,35 @@ namespace ConfRadar.Services.Services
             // 2. Kiểm tra token có hết hạn không (trừ đi 5 phút để an toàn)
             if (userProfile.ExpiresAt == null || userProfile.ExpiresAt <= ExtensionHelper.GetVietnamTime().AddMinutes(5))
             {
+               
+                await RefreshTokenAsync(userProfile);
+            }
+
+       
+            return userProfile;
+        }
+
+     
+        private async Task<AcademicProfile> GetValidProfileAsync(string userId, string requiredScope)
+        {
+            // 1. Lấy profile từ DB
+            var userProfile = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, requiredScope);
+            if (userProfile == null)
+            {
+                throw new Exception($"Không tìm thấy profile có scope '{requiredScope}' cho user ID: {userId}. Người dùng cần cấp quyền này.");
+            }
+
+            // 2. Kiểm tra token có hết hạn không (trừ đi 5 phút để an toàn)
+            if (userProfile.ExpiresAt == null || userProfile.ExpiresAt <= ExtensionHelper.GetVietnamTime().AddMinutes(5))
+            {
                 // Token đã hết hạn hoặc sắp hết hạn -> Gọi refresh
                 await RefreshTokenAsync(userProfile);
             }
 
-            // 3. Trả về access token (bây giờ đã chắc chắn là hợp lệ)
+           
             return userProfile;
         }
+
         #endregion
 
 
@@ -164,8 +218,8 @@ namespace ConfRadar.Services.Services
             DateTime createAt = ExtensionHelper.GetVietnamTime();
             var existingProfileByUserAndScope = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, tokenResponse.scope);
             var academicProfile = tokenResponse.toModel(userId, createAt);
-            //academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(tokenResponse.expires_in);
-            academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddMinutes(2);
+            academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(tokenResponse.expires_in);
+            //academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddMinutes(2);
 
             if (existingProfileByUserAndScope != null)
             {
@@ -193,7 +247,6 @@ namespace ConfRadar.Services.Services
        
         public async Task<String> SyncWorksAsync(string userId)
         {
-            // === PHẦN 1: GỌI API ĐỂ LẤY DỮ LIỆU GỐC ===
             var userToken = await GetValidAccessTokenAsync(userId, "read-limited");
             if (userToken == null)
             {
@@ -211,11 +264,6 @@ namespace ConfRadar.Services.Services
                 var error = await response.Content.ReadAsStringAsync();
                 throw new Exception($"Lỗi khi lấy dữ liệu works từ ORCID: {error}");
             }
-
-            //var orcidJsonString = await response.Content.ReadAsStringAsync();
-
-            // === PHẦN 2: PARSE VÀ TRÍCH XUẤT THÔNG TIN CHÍNH ===
-            //var orcidWorksData = JsonSerializer.Deserialize<OrcidWorksResponse>(orcidJsonString);
 
             var orcidWorksData = await response.Content.ReadFromJsonAsync<OrcidWorksResponse>();
 
@@ -432,6 +480,81 @@ namespace ConfRadar.Services.Services
             }
 
             return simpleJsonToStore;
+        }
+
+        public async Task<string> GetSectionByUserIdFromOrcid(string userId, string section)
+        {
+            // 1. Kiểm tra xem section được yêu cầu có hợp lệ không
+            if (string.IsNullOrWhiteSpace(section) || !_validReadSections.Contains(section.ToLower()))
+            {
+                throw new BadReadException($"Section '{section}' không hợp lệ hoặc không được hỗ trợ.");
+            }
+
+            // 2. Lấy profile với token đã được xác thực và làm mới nếu cần
+            // Chúng ta cần scope 'read-limited' để đọc tất cả các section
+            var validProfile = await GetValidProfileAsync(userId, "read-limited");
+
+            // 3. Xây dựng URL và gọi API ORCID
+            var requestUrl = $"https://api.sandbox.orcid.org/v3.0/{validProfile.OrcidId}/{section}";
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", validProfile.AccessToken);
+
+            var response = await _httpClient.GetAsync(requestUrl);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Lỗi khi lấy dữ liệu section '{section}' từ ORCID: {response.StatusCode} - {error}");
+            }
+
+            // 4. Trả về nội dung JSON nếu thành công
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<object> GetSectionByUserIdFromDb(string userId, string section)
+        {
+            // 1. Chuyển đổi chuỗi "section" thành enum.
+            // Dùng Enum.TryParse để xử lý an toàn.
+            if (!Enum.TryParse<OrcidDataTypeEnum>(section, true, out var dataType))
+            {
+                throw new BadReadException($"Section '{section}' không hợp lệ hoặc không được hỗ trợ. Phải thuộc: Works, Education,Biography");
+            }
+
+            // 2. Gọi phương thức repository mạnh mẽ mới
+            // Chỉ một lần gọi DB duy nhất!
+            var orcidCacheData = await _unitOfWork.OrcidDataCacheRepository.GetCacheByUserIdAndDataTypeAsync(userId, dataType.ToString());
+
+            // 3. Kiểm tra và trả về kết quả
+            if (orcidCacheData == null)
+            {
+                // Có thể người dùng chưa có quyền, hoặc chưa từng đồng bộ section này
+                throw new BadRequestException($"Không tìm thấy dữ liệu cache cho section '{section}' của người dùng ID {userId}. Vui lòng đồng bộ trước.");
+            }
+
+            string jsonContent = orcidCacheData.JsonContent;
+
+            if (string.IsNullOrEmpty(jsonContent))
+            {
+                return null;
+            }
+
+            switch (dataType)
+            {
+                case OrcidDataTypeEnum.Works:
+                    return JsonSerializer.Deserialize<List<WorkConfRadarResponse>>(jsonContent);
+
+                case OrcidDataTypeEnum.Biography:
+                    return JsonSerializer.Deserialize<BiographyConfRadarResponse>(jsonContent);
+
+                case OrcidDataTypeEnum.Education:
+                    return JsonSerializer.Deserialize<List<EducationConfRadarResponse>>(jsonContent);
+
+                default:
+                    // Hoặc bạn có thể parse thành một đối tượng chung nếu không muốn định kiểu
+                    return JsonSerializer.Deserialize<object>(jsonContent);
+            }
         }
     }
 }

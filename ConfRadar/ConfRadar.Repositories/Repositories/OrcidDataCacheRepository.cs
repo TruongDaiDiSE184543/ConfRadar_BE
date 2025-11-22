@@ -1,4 +1,4 @@
-using ConfRadar.Repositories.Base;
+﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +15,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<OrcidDataCache>> GetOrcidDataCachesByAcademicProfileIdAsync(string academicProfileId);
         Task<List<OrcidDataCache>> GetOrcidDataCachesByDataTypeAsync(string dataType);
         Task<List<OrcidDataCache>> GetAllOrcidDataCachesAsync();
+        Task<OrcidDataCache> GetCacheByUserIdAndDataTypeAsync(string userId, string dataType);
     }
 
     public class OrcidDataCacheRepository : GenericRepository<OrcidDataCache>, IOrcidDataCacheRepository
@@ -73,6 +74,18 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.OrcidDataCaches
                 .Include(oc => oc.AcademicProfile)
                 .ToListAsync();
+        }
+
+        public async Task<OrcidDataCache> GetCacheByUserIdAndDataTypeAsync(string userId, string dataType)
+        {
+            // Đây là truy vấn LINQ sẽ được EF Core dịch thành câu lệnh SQL JOIN hiệu quả
+            return await _context.OrcidDataCaches
+                .Include(cache => cache.AcademicProfile) // Dùng Include để JOIN
+                .FirstOrDefaultAsync(cache =>
+                    cache.AcademicProfile.UserId == userId && // Lọc theo UserId từ bảng cha
+                    cache.DataType == dataType &&             // Lọc theo DataType từ bảng con
+                    cache.AcademicProfile.Scope == "read-limited" // Đảm bảo profile đó có quyền đọc
+                );
         }
     }
 }
