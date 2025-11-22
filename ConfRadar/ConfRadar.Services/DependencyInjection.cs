@@ -63,6 +63,7 @@ namespace ConfRadar.Services
             //services.AddScoped<IOrcidService, OrcidService>();
             services.AddScoped<IExcelExportService, ExcelExportService>();
             services.AddScoped<IStatisticsService, StatisticsService>();
+            services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IServiceManager, ServiceManager>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
