@@ -17,6 +17,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<AcademicProfile>> GetAcademicProfilesByUserIdAsync(string userId);
         Task<List<AcademicProfile>> GetAcademicProfilesByScopeAsync(string scope);
         Task<List<AcademicProfile>> GetAllAcademicProfilesAsync();
+        Task<List<AcademicProfile>> GetAllAcademicProfilesByUserId(string userId);
     }
 
     public class AcademicProfileRepository : GenericRepository<AcademicProfile>, IAcademicProfileRepository
@@ -89,6 +90,11 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.AcademicProfiles
                .Include(ap => ap.User)
                .FirstOrDefaultAsync(ap => ap.OrcidId == orcidId && ap.Scope == scope);
+        }
+
+        public async Task<List<AcademicProfile>> GetAllAcademicProfilesByUserId(string userId)
+        {
+            return await _context.AcademicProfiles.Where(ap => ap.UserId != null && ap.UserId == userId).ToListAsync();
         }
     }
 }

@@ -41,7 +41,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> getSubmittedPapers([FromQuery] string confId)
         {
             var result = await _serviceManager.StatisticsService.GetPaperStatisticsByConferenceIdAsync(confId);
-            return Ok(ApiResponse<PaperStatisticsResponse>.SuccessResponse(result, "Lấy thành công thông tin vé đã bán và người mua"));
+            return Ok(ApiResponse<PaperStatisticsResponse>.SuccessResponse(result, "Lấy thành công thông tin papers của hội nghị"));
         }
 
         [HttpGet("assign-reviewers")]

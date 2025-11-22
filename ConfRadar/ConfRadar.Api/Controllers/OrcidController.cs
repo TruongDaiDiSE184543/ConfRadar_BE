@@ -6,6 +6,7 @@ using ConfRadar.Services.Services;
 using Google.Apis.Auth.OAuth2.Responses;
 using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -57,25 +58,33 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<OrcidAuthorizationResponse>.SuccessResponse(tokenResponse, ""));
         }
 
-        [HttpGet("Get-works")]
+        [HttpGet("Get-works-from-orcid")]
         public async Task<IActionResult> getWork([FromQuery] string userId)
         {
             var result = await _serviceManager.OrcidService.SyncWorksAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
         }
 
-        [HttpGet("Get-biography")]
+        [HttpGet("Get-biography-from-orcid")]
         public async Task<IActionResult> getBiography([FromQuery] string userId)
         {
             var result = await _serviceManager.OrcidService.SyncBiographyAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
         }
 
-        [HttpGet("Get-Educations")]
+        [HttpGet("Get-Educations-from-orcid")]
         public async Task<IActionResult> getEducations([FromQuery] string userId)
         {
             var result = await _serviceManager.OrcidService.SyncEducationAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
+        }
+
+        [HttpGet("Get-section-from-db")]
+        public async Task<IActionResult> getSectionByUserId([FromQuery]string section)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId,section);
+            return Ok(ApiResponse<object>.SuccessResponse(result, ""));
         }
     }
 }

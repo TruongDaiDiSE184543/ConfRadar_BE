@@ -24,6 +24,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
         Task<Paper> GetAllIncludeById(string paper);
         Task<List<Paper>> GetPapersByConferenceIdAsync(string confId);
+        Task<List<Paper>> GetPapersWithPhasesForStatisticsByConferenceIdAsync(string confId);
         Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
         Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus, ReviewStatus rejectedFullPaperStatus, string confId);
 
@@ -397,6 +398,21 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Paper>> GetPapersByConferenceIdAsync(string confId)
         {
             return await _context.Papers.Where(p => p.ConferenceId == confId).ToListAsync();
+        }
+
+        public async Task<List<Paper>> GetPapersWithPhasesForStatisticsByConferenceIdAsync(string confId)
+        {
+            return await _context.Papers
+                .Include(p => p.Abstract)
+                    .ThenInclude(a => a.GlobalStatus)
+                .Include(p => p.FullPaper)
+                    .ThenInclude(fp => fp.ReviewStatus)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rp => rp.GlobalStatus)
+                .Include(p => p.CameraReady)
+                    .ThenInclude(cr => cr.GlobalStatus)
+                .Where(p => p.ConferenceId == confId)
+                .ToListAsync();
         }
 
         public async Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus,ReviewStatus rejectedFullPaperStatus, string confId)
