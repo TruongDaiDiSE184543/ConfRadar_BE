@@ -9,7 +9,7 @@ using PayOS.Models.Webhooks;
 
 namespace ConfRadar.Api.Controllers
 {
-    //[Route("api/[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class OrcidController : ControllerBase
     {
@@ -31,8 +31,8 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<string>.SuccessResponse(orcidOauth, "Lấy link oauth thành công"));
         }
 
-        //[HttpGet("callback")]
-        [HttpGet("signin-orcid")]
+        [HttpGet("callback")]
+        //[HttpGet("signin-orcid")]
         public async Task<IActionResult> ExchangeForAccessToken([FromQuery] string code, [FromQuery] string state)
         {
             if (string.IsNullOrEmpty(code))

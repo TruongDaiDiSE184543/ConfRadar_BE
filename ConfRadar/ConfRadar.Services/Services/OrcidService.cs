@@ -27,6 +27,7 @@ namespace ConfRadar.Services.Services
         private readonly string fullAccess = "read-limited%20/activities/update%20/person/update";
         private readonly string baseVersion3 = "https://api.sandbox.orcid.org/v3.0/";
         private readonly string localRedirect = "https://localhost:7001/signin-orcid";
+        private readonly string deployedRedirect = "https://confradar.io.vn/api/Orcid/callback";
         public OrcidService(IUnitOfWork unitOfWork, HttpClient httpClient, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
@@ -114,12 +115,12 @@ namespace ConfRadar.Services.Services
 
             //localhost version orcid redirect
             string clientId = "APP-CYDYAGET07D4CRW0";
-            string redirectUri = "https://localhost:7001/signin-orcid";
+            //string redirectUri = "https://localhost:7001/signin-orcid";
 
             string orcidBaseUrl = "https://sandbox.orcid.org";
             // Include the userId in the state parameter so we can retrieve it in the callback
             string state = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(userId));
-            string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={clientId}&response_type=code&scope=/{scope}&redirect_uri={redirectUri}&state={state}";
+            string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={clientId}&response_type=code&scope=/{scope}&redirect_uri={deployedRedirect}&state={state}";
 
             return authorizationUrl;
         }
@@ -133,7 +134,7 @@ namespace ConfRadar.Services.Services
 
             //localhost version orcid redirect
 
-            string redirectUri = "https://localhost:7001/signin-orcid";
+            //string redirectUri = "https://localhost:7001/signin-orcid";
             string clientId = "APP-CYDYAGET07D4CRW0";
             string clientSecret = "29854145-dffe-48d9-9a30-698be511c149";
             var formData = new Dictionary<string, string>()
@@ -142,7 +143,7 @@ namespace ConfRadar.Services.Services
                  { "client_secret", clientSecret },
                  { "grant_type", "authorization_code" },
                  { "code", authorizationCode },
-                 { "redirect_uri", redirectUri }
+                 { "redirect_uri", deployedRedirect }
             };
 
             var response = await _httpClient.PostAsync("oauth/token", new FormUrlEncodedContent(formData));
