@@ -6,6 +6,7 @@ using ConfRadar.Services.Services;
 using Google.Apis.Auth.OAuth2.Responses;
 using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -79,8 +80,9 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("Get-section-from-db")]
-        public async Task<IActionResult> getSectionByUserId([FromQuery] string userId, [FromQuery]string section)
+        public async Task<IActionResult> getSectionByUserId([FromQuery]string section)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId,section);
             return Ok(ApiResponse<object>.SuccessResponse(result, ""));
         }

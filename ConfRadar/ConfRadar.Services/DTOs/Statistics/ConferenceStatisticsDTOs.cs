@@ -85,6 +85,36 @@
         public string SubmittingAuthorId { get; set; }
         public string PaperPhase { get; set; }
         public List<string> AssignedReviewers { get; set; } = new();
+        public PaperAbstractPhaseResponse? AbstractPhase { get; set; }
+        public PaperFullPaperPhaseResponse? FullPaperPhase { get; set; }
+        public PaperRevisionPhaseResponse? RevisionPhase { get; set; }
+        public PaperCameraReadyPhaseResponse? CameraReadyPhase { get; set; }
+    }
+
+    public class PaperAbstractPhaseResponse
+    {
+        public string? Status { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class PaperFullPaperPhaseResponse
+    {
+        public string? Status { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class PaperRevisionPhaseResponse
+    {
+        public string? Status { get; set; }
+    }
+
+    public class PaperCameraReadyPhaseResponse
+    {
+        public string? Status { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
     }
 
     // Danh sách Reviewer được gán
