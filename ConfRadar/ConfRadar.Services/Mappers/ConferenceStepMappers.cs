@@ -1,4 +1,4 @@
-using ConfRadar.Repositories.Models;
+﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.ConferenceStep;
 
 namespace ConfRadar.Services.Mappers
@@ -478,16 +478,39 @@ namespace ConfRadar.Services.Mappers
             {
                 ResearchConferencePhaseId = Guid.NewGuid().ToString(),
                 ConferenceId = conferenceId,
+
                 RegistrationStartDate = request.RegistrationStartDate,
                 RegistrationEndDate = request.RegistrationEndDate,
+
+                AbstractDecideStatusStart = request.AbstractDecideStatusStart,
+                AbstractDecideStatusEnd = request.AbstractDecideStatusEnd,
+                
+                
                 FullPaperStartDate = request.FullPaperStartDate,
                 FullPaperEndDate = request.FullPaperEndDate,
+                
                 ReviewStartDate = request.ReviewStartDate,
                 ReviewEndDate = request.ReviewEndDate,
+                
+                FullPaperDecideStatusStart = request.FullPaperDecideStatusStart,
+                FullPaperDecideStatusEnd = request.FullPaperDecideStatusEnd,
+                
+                
                 ReviseStartDate = request.ReviseStartDate,
                 ReviseEndDate = request.ReviseEndDate,
+                
+                RevisionPaperReviewStart = request.RevisionPaperReviewStart,
+                RevisionPaperReviewEnd = request.RevisionPaperReviewEnd,
+                
+                RevisionPaperDecideStatusStart = request.RevisionPaperDecideStatusStart,
+                RevisionPaperDecideStatusEnd = request.RevisionPaperDecideStatusEnd,
+                
+                
                 CameraReadyStartDate = request.CameraReadyStartDate,
                 CameraReadyEndDate = request.CameraReadyEndDate,
+                
+                CameraReadyDecideStatusStart = request.CameraReadyDecideStatusStart,
+                CameraReadyDecideStatusEnd = request.CameraReadyDecideStatusEnd,
                 IsWaitlist = request.IsWaitlist
             };
         }
@@ -498,16 +521,48 @@ namespace ConfRadar.Services.Mappers
             {
                 ResearchConferencePhaseId = model.ResearchConferencePhaseId,
                 ConferenceId = model.ConferenceId,
+
+                // 1. Registration
                 RegistrationStartDate = model.RegistrationStartDate,
                 RegistrationEndDate = model.RegistrationEndDate,
+
+                // 2. Abstract Decide Status (Đã thêm mới)
+                AbstractDecideStatusStart = model.AbstractDecideStatusStart,
+                AbstractDecideStatusEnd = model.AbstractDecideStatusEnd,
+
+                // 3. Full Paper
                 FullPaperStartDate = model.FullPaperStartDate,
                 FullPaperEndDate = model.FullPaperEndDate,
+
+                // 4. Review
                 ReviewStartDate = model.ReviewStartDate,
                 ReviewEndDate = model.ReviewEndDate,
+
+                // 5. Full Paper Decide Status (Đã thêm mới)
+                FullPaperDecideStatusStart = model.FullPaperDecideStatusStart,
+                FullPaperDecideStatusEnd = model.FullPaperDecideStatusEnd,
+
+                // 6. Revise
                 ReviseStartDate = model.ReviseStartDate,
                 ReviseEndDate = model.ReviseEndDate,
+
+                // 7. Revision Paper Review (Đã thêm mới)
+                RevisionPaperReviewStart = model.RevisionPaperReviewStart,
+                RevisionPaperReviewEnd = model.RevisionPaperReviewEnd,
+
+                // 8. Revision Paper Decide Status (Đã thêm mới)
+                RevisionPaperDecideStatusStart = model.RevisionPaperDecideStatusStart,
+                RevisionPaperDecideStatusEnd = model.RevisionPaperDecideStatusEnd,
+
+                // 9. Camera Ready
                 CameraReadyStartDate = model.CameraReadyStartDate,
                 CameraReadyEndDate = model.CameraReadyEndDate,
+
+                // 10. Camera Ready Decide Status (Đã thêm mới)
+                CameraReadyDecideStatusStart = model.CameraReadyDecideStatusStart,
+                CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
+
+                // Các trường khác
                 IsWaitlist = model.IsWaitlist,
                 IsActive = model.IsActive,
                 RevisionRoundDeadlines = model.RevisionRoundDeadlines?.Select(r => r.ToResponse()).ToList()

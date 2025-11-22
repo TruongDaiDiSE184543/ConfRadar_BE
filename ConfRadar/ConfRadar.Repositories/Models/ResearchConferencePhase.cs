@@ -33,6 +33,26 @@ public partial class ResearchConferencePhase
 
     public bool? IsActive { get; set; }
 
+    public DateOnly? AbstractDecideStatusStart { get; set; }
+
+    public DateOnly? AbstractDecideStatusEnd { get; set; }
+
+    public DateOnly? FullPaperDecideStatusStart { get; set; }
+
+    public DateOnly? FullPaperDecideStatusEnd { get; set; }
+
+    public DateOnly? RevisionPaperReviewStart { get; set; }
+
+    public DateOnly? RevisionPaperReviewEnd { get; set; }
+
+    public DateOnly? RevisionPaperDecideStatusStart { get; set; }
+
+    public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
+
+    public DateOnly? CameraReadyDecideStatusStart { get; set; }
+
+    public DateOnly? CameraReadyDecideStatusEnd { get; set; }
+
     public virtual Conference? Conference { get; set; }
 
     public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();

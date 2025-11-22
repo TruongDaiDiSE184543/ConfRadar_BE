@@ -1960,6 +1960,8 @@ namespace ConfRadar.Services.Services
             // 6. Xác th?c s? t?n t?i c?a RankingCategoryId (d?a trên hình ?nh b?n cung c?p)
             await ValidatePaperFormat(request.PaperFormat);
             await ValidateRankValueAsync(request.RankingCategoryId, request.RankValue);
+            if (conference.TotalSlot < request.NumberPaperAccept)
+                throw new Exception($"Không thể có số bài báo có thể nhận lớn hơn totalslot của toàn hội nghị (numberPaperAccept{request.NumberPaperAccept} > conference totalslot{conference.TotalSlot})");
 
             // 7. Xác th?c nam x?p h?ng h?p l?
             if (request.RankYear.HasValue)
@@ -2013,7 +2015,9 @@ namespace ConfRadar.Services.Services
                 if (await _unitOfWork.RankingCategoryRepository.GetRankingCategoryByIdAsync(request.RankingCategoryId) == null)
                     throw new NotFoundException($"Lo?i x?p h?ng v?i ID '{request.RankingCategoryId}' không t?n t?i.");
             }
-
+            if (request.NumberPaperAccept.HasValue)
+                if (conference.TotalSlot < request.NumberPaperAccept)
+                    throw new Exception($"Không thể có số bài báo có thể nhận lớn hơn totalslot của toàn hội nghị (numberPaperAccept{request.NumberPaperAccept} > conference totalslot{conference.TotalSlot})");
             // *** G?I VALIDATION Ð?NG M?I ***
             // Luôn g?i v?i các giá tr? cu?i cùng d? d?m b?o tính nh?t quán
             if (request.PaperFormat != null)
@@ -2046,18 +2050,18 @@ namespace ConfRadar.Services.Services
         public async Task<CreatePhasesResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhasesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Không tìm th?y h?i ngh? v?i ID {conferenceId}");
+            if (conference == null) throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
 
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
-            if (researchDetail == null) throw new BadRequestException("H?i ngh? này chua có chi ti?t nghiên c?u (Research Detail).");
+            if (researchDetail == null) throw new BadRequestException("Hội nghị này chưa có chi tiết nghiên cứu (Research Detail).");
 
 
             // 1. Phân quy?n, tr?ng thái, và lo?i h?i ngh?
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("B?n không có quy?n th?c hi?n thao tác này.");
+                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
             await EnsureConferenceIsEditable(conference);
             if (conference.IsResearchConference != true)
-                throw new BadRequestException("Ch?c nang này ch? dành cho h?i ngh? nghiên c?u.");
+                throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
 
             // 2. Ki?m tra xem h?i ngh? dã có phase nào chua (ch? cho phép t?o m?t l?n)
             var existingPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
@@ -2078,27 +2082,50 @@ namespace ConfRadar.Services.Services
 
             var requestWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == true);
             var requestNotWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == false);
-            if (newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase d?u tiên ph?i là phase chính.");
+            if (newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase đâu tiên phải là phase chính.");
 
-            if (newPhases.Count != 2) throw new BadRequestException("Ph?i có chính xác 2 phase 1 cho chính th?c và 1 cho waitlist");
+            if (newPhases.Count != 2) throw new BadRequestException("Phải có chính xác 2 phase 1 cho chính thức và 1 cho waitlist");
             // 4. Validation logic cho ngày tháng (tu?n t? và h?p l?)
             DateOnly? lastPhaseEndDate = null;
             foreach (var phase in newPhases)
             {
-                // 4a. Các m?c th?i gian trong cùng m?t phase ph?i tu?n t?
+                //// 4a. Các m?c th?i gian trong cùng m?t phase ph?i tu?n t?
+                //if (phase.RegistrationStartDate > phase.RegistrationEndDate ||
+                //    phase.RegistrationEndDate > phase.FullPaperStartDate ||
+                //    phase.FullPaperStartDate > phase.FullPaperEndDate ||
+                //    phase.FullPaperEndDate > phase.ReviewStartDate ||
+                //    phase.ReviewStartDate > phase.ReviewEndDate ||
+                //    phase.ReviewEndDate > phase.ReviseStartDate ||
+                //    phase.ReviseStartDate > phase.ReviseEndDate ||
+                //    phase.ReviseEndDate > phase.CameraReadyStartDate ||
+                //    phase.CameraReadyStartDate > phase.CameraReadyEndDate)
+                //{
+                //    throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
+                //}
                 if (phase.RegistrationStartDate > phase.RegistrationEndDate ||
-                    phase.RegistrationEndDate > phase.FullPaperStartDate ||
+                    phase.RegistrationEndDate > phase.AbstractDecideStatusStart ||
+                    phase.AbstractDecideStatusStart > phase.AbstractDecideStatusEnd ||
+                    phase.AbstractDecideStatusEnd > phase.FullPaperStartDate ||
                     phase.FullPaperStartDate > phase.FullPaperEndDate ||
                     phase.FullPaperEndDate > phase.ReviewStartDate ||
                     phase.ReviewStartDate > phase.ReviewEndDate ||
-                    phase.ReviewEndDate > phase.ReviseStartDate ||
+                    phase.ReviewEndDate > phase.FullPaperDecideStatusStart ||
+                    phase.FullPaperDecideStatusStart > phase.FullPaperDecideStatusEnd ||
+                    phase.FullPaperDecideStatusEnd > phase.ReviseStartDate ||
                     phase.ReviseStartDate > phase.ReviseEndDate ||
-                    phase.ReviseEndDate > phase.CameraReadyStartDate ||
-                    phase.CameraReadyStartDate > phase.CameraReadyEndDate)
+                    phase.ReviseEndDate > phase.RevisionPaperReviewStart ||
+                    phase.RevisionPaperReviewStart > phase.RevisionPaperReviewEnd ||
+                    phase.RevisionPaperReviewEnd > phase.RevisionPaperDecideStatusStart ||
+                    phase.RevisionPaperDecideStatusStart > phase.RevisionPaperDecideStatusEnd ||
+                    phase.RevisionPaperDecideStatusEnd > phase.CameraReadyStartDate ||
+                    phase.CameraReadyStartDate > phase.CameraReadyEndDate ||
+                    phase.CameraReadyEndDate > phase.CameraReadyDecideStatusStart ||
+                    phase.CameraReadyDecideStatusStart > phase.CameraReadyDecideStatusEnd
+                    )
                 {
-                    throw new BadRequestException("Các m?c th?i gian trong m?t phase không theo dúng th? t? tu?n t?.");
+                    throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
                 }
-
+                        
                 // 4b. Các phase ph?i di?n ra n?i ti?p nhau, không du?c g?i lên nhau
                 if (lastPhaseEndDate.HasValue && phase.RegistrationStartDate <= lastPhaseEndDate)
                 {
@@ -2191,7 +2218,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<ResearchConferencePhaseResponse> GetResearchConferencePhaseAsync(string conferenceId)
         {
-            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
+            var phase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(conferenceId);
             if (phase == null) throw new NotFoundException($"Research conference phase for conference ID {conferenceId} not found");
 
             return phase.ToResponse();
@@ -2221,26 +2248,95 @@ namespace ConfRadar.Services.Services
             //    throw new BadRequestException("Không th? thay d?i tr?ng thái 'IsActive' tr?c ti?p. Vui lòng s? d?ng ch?c nang 'ActivateWaitlist'.");
 
             // 2.3. Xác d?nh các giá tr? ngày tháng cu?i cùng sau khi c?p nh?t
+            // 1. CHUẨN BỊ DỮ LIỆU (Merge dữ liệu mới và cũ)
+            // Dùng toán tử ?? : Nếu request có dữ liệu thì lấy, nếu null thì giữ nguyên dữ liệu cũ trong DB
+
+            // Giai đoạn 1: Registration
             var finalRegStart = request.RegistrationStartDate ?? phaseToUpdate.RegistrationStartDate;
             var finalRegEnd = request.RegistrationEndDate ?? phaseToUpdate.RegistrationEndDate;
-            var finalPaperStart = request.FullPaperStartDate ?? phaseToUpdate.FullPaperStartDate;
-            var finalPaperEnd = request.FullPaperEndDate ?? phaseToUpdate.FullPaperEndDate;
+
+            // Giai đoạn 2: Abstract Decide
+            var finalAbsDecideStart = request.AbstractDecideStatusStart ?? phaseToUpdate.AbstractDecideStatusStart;
+            var finalAbsDecideEnd = request.AbstractDecideStatusEnd ?? phaseToUpdate.AbstractDecideStatusEnd;
+
+            // Giai đoạn 3: Full Paper Submit
+            var finalFullPaperStart = request.FullPaperStartDate ?? phaseToUpdate.FullPaperStartDate;
+            var finalFullPaperEnd = request.FullPaperEndDate ?? phaseToUpdate.FullPaperEndDate;
+
+            // Giai đoạn 4: Review Full Paper
             var finalReviewStart = request.ReviewStartDate ?? phaseToUpdate.ReviewStartDate;
             var finalReviewEnd = request.ReviewEndDate ?? phaseToUpdate.ReviewEndDate;
+
+            // Giai đoạn 5: Full Paper Decide
+            var finalFullPaperDecideStart = request.FullPaperDecideStatusStart ?? phaseToUpdate.FullPaperDecideStatusStart;
+            var finalFullPaperDecideEnd = request.FullPaperDecideStatusEnd ?? phaseToUpdate.FullPaperDecideStatusEnd;
+
+            // Giai đoạn 6: Revise (Chỉnh sửa)
             var finalReviseStart = request.ReviseStartDate ?? phaseToUpdate.ReviseStartDate;
             var finalReviseEnd = request.ReviseEndDate ?? phaseToUpdate.ReviseEndDate;
+
+            // Giai đoạn 7: Review lại bài đã sửa (Revision Review)
+            var finalReviseReviewStart = request.RevisionPaperReviewStart ?? phaseToUpdate.RevisionPaperReviewStart;
+            var finalReviseReviewEnd = request.RevisionPaperReviewEnd ?? phaseToUpdate.RevisionPaperReviewEnd;
+
+            // Giai đoạn 8: Quyết định bài sửa (Revision Decide)
+            var finalReviseDecideStart = request.RevisionPaperDecideStatusStart ?? phaseToUpdate.RevisionPaperDecideStatusStart;
+            var finalReviseDecideEnd = request.RevisionPaperDecideStatusEnd ?? phaseToUpdate.RevisionPaperDecideStatusEnd;
+
+            // Giai đoạn 9: Camera Ready (Nộp bản in)
             var finalCameraStart = request.CameraReadyStartDate ?? phaseToUpdate.CameraReadyStartDate;
             var finalCameraEnd = request.CameraReadyEndDate ?? phaseToUpdate.CameraReadyEndDate;
 
-            // 2.4. Ki?m tra tính tu?n t? c?a các ngày tháng trong chính phase dang c?p nh?t
-            if (finalRegStart > finalRegEnd || finalRegEnd > finalPaperStart || finalPaperStart > finalPaperEnd ||
-                finalPaperEnd > finalReviewStart || finalReviewStart > finalReviewEnd ||
-                finalReviewEnd > finalReviseStart || finalReviseStart > finalReviseEnd ||
-                finalReviseEnd > finalCameraStart || finalCameraStart > finalCameraEnd)
-            {
-                throw new BadRequestException("Các m?c th?i gian sau khi c?p nh?t không theo dúng th? t? tu?n t?.");
-            }
+            // Giai đoạn 10: Camera Ready Decide
+            var finalCameraDecideStart = request.CameraReadyDecideStatusStart ?? phaseToUpdate.CameraReadyDecideStatusStart;
+            var finalCameraDecideEnd = request.CameraReadyDecideStatusEnd ?? phaseToUpdate.CameraReadyDecideStatusEnd;
 
+
+            // 2. KIỂM TRA LOGIC (Validation)
+            // Kiểm tra dây chuyền từ trên xuống dưới theo đúng thứ tự DTO
+            if (
+                // 1. Registration
+                finalRegStart > finalRegEnd ||
+                finalRegEnd > finalAbsDecideStart ||
+
+                // 2. Abstract Decide
+                finalAbsDecideStart > finalAbsDecideEnd ||
+                finalAbsDecideEnd > finalFullPaperStart ||
+
+                // 3. Full Paper
+                finalFullPaperStart > finalFullPaperEnd ||
+                finalFullPaperEnd > finalReviewStart ||
+
+                // 4. Review
+                finalReviewStart > finalReviewEnd ||
+                finalReviewEnd > finalFullPaperDecideStart ||
+
+                // 5. Full Paper Decide
+                finalFullPaperDecideStart > finalFullPaperDecideEnd ||
+                finalFullPaperDecideEnd > finalReviseStart ||
+
+                // 6. Revise
+                finalReviseStart > finalReviseEnd ||
+                finalReviseEnd > finalReviseReviewStart ||
+
+                // 7. Revision Review
+                finalReviseReviewStart > finalReviseReviewEnd ||
+                finalReviseReviewEnd > finalReviseDecideStart ||
+
+                // 8. Revision Decide
+                finalReviseDecideStart > finalReviseDecideEnd ||
+                finalReviseDecideEnd > finalCameraStart ||
+
+                // 9. Camera Ready
+                finalCameraStart > finalCameraEnd ||
+                finalCameraEnd > finalCameraDecideStart ||
+
+                // 10. Camera Ready Decide
+                finalCameraDecideStart > finalCameraDecideEnd
+            )
+            {
+                throw new BadRequestException("Các mốc thời gian sau khi cập nhật không tuân thủ đúng thứ tự quy trình.");
+            }
             // 2.5. Ki?m tra ch?ng chéo v?i các phase khác
             var allOtherPhases = (await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conference.ConferenceId))
                 .Where(p => p.ResearchConferencePhaseId != phaseId)
@@ -2270,16 +2366,50 @@ namespace ConfRadar.Services.Services
             await _unitOfWork.BeginTransactionAsync();
             try
             {
+                // 3. CẬP NHẬT MODEL (Gán giá trị đã validate vào Entity)
+
+                // 1. Registration
                 phaseToUpdate.RegistrationStartDate = finalRegStart;
                 phaseToUpdate.RegistrationEndDate = finalRegEnd;
-                phaseToUpdate.FullPaperStartDate = finalPaperStart;
-                phaseToUpdate.FullPaperEndDate = finalPaperEnd;
+
+                // 2. Abstract Decide (Thêm mới)
+                phaseToUpdate.AbstractDecideStatusStart = finalAbsDecideStart;
+                phaseToUpdate.AbstractDecideStatusEnd = finalAbsDecideEnd;
+
+                // 3. Full Paper
+                phaseToUpdate.FullPaperStartDate = finalFullPaperStart;
+                phaseToUpdate.FullPaperEndDate = finalFullPaperEnd;
+
+                // 4. Review
                 phaseToUpdate.ReviewStartDate = finalReviewStart;
                 phaseToUpdate.ReviewEndDate = finalReviewEnd;
+
+                // 5. Full Paper Decide (Thêm mới)
+                phaseToUpdate.FullPaperDecideStatusStart = finalFullPaperDecideStart;
+                phaseToUpdate.FullPaperDecideStatusEnd = finalFullPaperDecideEnd;
+
+                // 6. Revise
                 phaseToUpdate.ReviseStartDate = finalReviseStart;
                 phaseToUpdate.ReviseEndDate = finalReviseEnd;
+
+                // 7. Revision Review (Thêm mới)
+                phaseToUpdate.RevisionPaperReviewStart = finalReviseReviewStart;
+                phaseToUpdate.RevisionPaperReviewEnd = finalReviseReviewEnd;
+
+                // 8. Revision Decide (Thêm mới)
+                phaseToUpdate.RevisionPaperDecideStatusStart = finalReviseDecideStart;
+                phaseToUpdate.RevisionPaperDecideStatusEnd = finalReviseDecideEnd;
+
+                // 9. Camera Ready
                 phaseToUpdate.CameraReadyStartDate = finalCameraStart;
                 phaseToUpdate.CameraReadyEndDate = finalCameraEnd;
+
+                // 10. Camera Ready Decide (Thêm mới)
+                phaseToUpdate.CameraReadyDecideStatusStart = finalCameraDecideStart;
+                phaseToUpdate.CameraReadyDecideStatusEnd = finalCameraDecideEnd;
+
+                // Sau bước này, bạn gọi lệnh SaveChangesAsync() để lưu xuống DB
+                // await _context.SaveChangesAsync();
                 // Không c?p nh?t IsWaitlist và IsActive ? dây
 
                 await _unitOfWork.ResearchConferencePhaseRepository.UpdateResearchConferencePhaseAsync(phaseToUpdate);

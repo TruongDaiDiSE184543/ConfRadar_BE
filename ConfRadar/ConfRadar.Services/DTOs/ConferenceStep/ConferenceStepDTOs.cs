@@ -665,7 +665,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public int? RankYear { get; set; }
 
         // Có thể không bắt buộc (nếu miễn phí), nhưng nếu có thì không được âm.
-        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí phản biện không được là số âm.")]
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí review không được là số âm.")]
         public decimal? ReviewFee { get; set; }
 
         [Required(ErrorMessage = "Loại xếp hạng (Ranking Category) là bắt buộc.")]
@@ -695,10 +695,10 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         public string? RankValue { get; set; }
 
-        [Range(2000, 2050, ErrorMessage = "Năm xếp hạng không hợp lệ.")]
+        [Range(2000, 2025, ErrorMessage = "Năm xếp hạng không hợp lệ (2000-2025).")]
         public int? RankYear { get; set; }
 
-        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí phản biện không được là số âm.")]
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí review không được là số âm.")]
         public decimal? ReviewFee { get; set; }
 
         [MaxLength(50)]
@@ -736,6 +736,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? RegistrationStartDate { get; set; }
         [Required]
         public DateOnly? RegistrationEndDate { get; set; }
+        public DateOnly? AbstractDecideStatusStart { get; set; }
+        public DateOnly? AbstractDecideStatusEnd { get; set; }
         [Required]
         public DateOnly? FullPaperStartDate { get; set; }
         [Required]
@@ -744,18 +746,25 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? ReviewStartDate { get; set; }
         [Required]
         public DateOnly? ReviewEndDate { get; set; }
+        public DateOnly? FullPaperDecideStatusStart { get; set; }
+        public DateOnly? FullPaperDecideStatusEnd { get; set; }
         [Required]
         public DateOnly? ReviseStartDate { get; set; }
         [Required]
         public DateOnly? ReviseEndDate { get; set; }
+        public DateOnly? RevisionPaperReviewStart { get; set; }
+        public DateOnly? RevisionPaperReviewEnd { get; set; }
+        public DateOnly? RevisionPaperDecideStatusStart { get; set; }
+        public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
         [Required]
         public DateOnly? CameraReadyStartDate { get; set; }
         [Required]
         public DateOnly? CameraReadyEndDate { get; set; }
+        public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        public DateOnly? CameraReadyDecideStatusEnd { get; set; }
 
         [Required(ErrorMessage = "Phải xác định đây có phải là phase waitlist hay không.")]
         public bool? IsWaitlist { get; set; }
-
         public List<CreateRevisionRoundDeadlineRequest>? RevisionRoundDeadlines { get; set; }
     }
 
@@ -778,14 +787,24 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
         public DateOnly? RegistrationStartDate { get; set; }
         public DateOnly? RegistrationEndDate { get; set; }
+        public DateOnly? AbstractDecideStatusStart { get; set; }
+        public DateOnly? AbstractDecideStatusEnd { get; set; }
         public DateOnly? FullPaperStartDate { get; set; }
         public DateOnly? FullPaperEndDate { get; set; }
         public DateOnly? ReviewStartDate { get; set; }
         public DateOnly? ReviewEndDate { get; set; }
+        public DateOnly? FullPaperDecideStatusStart { get; set; }
+        public DateOnly? FullPaperDecideStatusEnd { get; set; }
         public DateOnly? ReviseStartDate { get; set; }
         public DateOnly? ReviseEndDate { get; set; }
+        public DateOnly? RevisionPaperReviewStart { get; set; }
+        public DateOnly? RevisionPaperReviewEnd { get; set; }
+        public DateOnly? RevisionPaperDecideStatusStart { get; set; }
+        public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
         public DateOnly? CameraReadyStartDate { get; set; }
         public DateOnly? CameraReadyEndDate { get; set; }
+        public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        public DateOnly? CameraReadyDecideStatusEnd { get; set; }
     }
 
     public class UpdateRevisionRoundDeadlineRequest
@@ -807,14 +826,30 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? ConferenceId { get; set; }
         public DateOnly? RegistrationStartDate { get; set; }
         public DateOnly? RegistrationEndDate { get; set; }
+        // Abstract phase decide status dates (conference organizer only)
+        public DateOnly? AbstractDecideStatusStart { get; set; }
+        public DateOnly? AbstractDecideStatusEnd { get; set; }
         public DateOnly? FullPaperStartDate { get; set; }
         public DateOnly? FullPaperEndDate { get; set; }
+        // Full paper review dates (normal reviewers)
         public DateOnly? ReviewStartDate { get; set; }
         public DateOnly? ReviewEndDate { get; set; }
+        // Full paper decide status dates (head reviewer)
+        public DateOnly? FullPaperDecideStatusStart { get; set; }
+        public DateOnly? FullPaperDecideStatusEnd { get; set; }
         public DateOnly? ReviseStartDate { get; set; }
         public DateOnly? ReviseEndDate { get; set; }
+        // Revision paper review dates (normal reviewers)
+        public DateOnly? RevisionPaperReviewStart { get; set; }
+        public DateOnly? RevisionPaperReviewEnd { get; set; }
+        // Revision paper decide status dates (head reviewer)
+        public DateOnly? RevisionPaperDecideStatusStart { get; set; }
+        public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
         public DateOnly? CameraReadyStartDate { get; set; }
         public DateOnly? CameraReadyEndDate { get; set; }
+        // Camera ready decide status dates (head reviewer only)
+        public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        public DateOnly? CameraReadyDecideStatusEnd { get; set; }
         public bool? IsWaitlist { get; set; }
         public bool? IsActive { get; set; }
         public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
