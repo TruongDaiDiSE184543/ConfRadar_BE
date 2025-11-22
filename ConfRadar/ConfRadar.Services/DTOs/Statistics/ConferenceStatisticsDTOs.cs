@@ -69,6 +69,7 @@
         public decimal ActualPrice { get; set; }
         public DateOnly PurchaseDate { get; set; }
         public string Status { get; set; } // "Đã thanh toán", "Đã hoàn tiền"
+        public bool isRefunded { get; set; }
     }
 
     // Thống kê Bài báo

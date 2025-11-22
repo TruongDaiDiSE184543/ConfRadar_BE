@@ -142,7 +142,8 @@ namespace ConfRadar.Services.Services
                     PhaseName = pricePhase?.PhaseName ?? "N/A", // Get the phase name
                     ActualPrice = (conferencePrice?.TicketPrice * pricePhase.ApplyPercent / 100) ?? 0, // Price based on the phase
                     PurchaseDate = ticket.RegisteredDate.Value, // Register date from ticket
-                    Status = ticket.IsRefunded == true ? "Đã hoàn tiền" : "Đã thanh toán" // Status based on IsRefunded flag
+                    Status = ticket.IsRefunded == true ? "Đã hoàn tiền" : "Đã thanh toán", // Status based on IsRefunded flag
+                    isRefunded = ticket.IsRefunded.Value
                 };
 
                 ticketHolders.Add(ticketHolder);
