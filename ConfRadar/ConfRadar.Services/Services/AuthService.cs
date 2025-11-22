@@ -8,6 +8,7 @@ using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.User;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
+using Quartz.Util;
 using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -36,7 +37,7 @@ namespace ConfRadar.Services.Services
         Task<List<ReviewerDetailResponse>> ListAllReviewer();
         Task<int> SuspendExternalReviewerAccount(string userId);
         Task<int> ActivateExternalReviewerAccount(string userId);
-
+        Task<int> CreateLocalReviewerAccount(CreateLocalReviewerAccountRequest request);
     }
     public class AuthService : IAuthService
     {
@@ -76,6 +77,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("User with this full name already exists");
             }
+            var timeNow = await _timeProviderService.GetVietnamTime();
             string fileUrl = null;
             if (request.AvatarFile != null)
             {
@@ -102,18 +104,18 @@ namespace ConfRadar.Services.Services
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.ConfirmRegistrationEmail + $"?token={verificationToken}";
-            var userCreated = UserMapper.FromCreateUserRequestToUser(request, await _timeProviderService.GetVietnamTime());
+            var userCreated = UserMapper.FromCreateUserRequestToUser(request, timeNow);
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
             userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
-            userCreated.VerificationTokenExpiry = (await _timeProviderService.GetVietnamTime()).AddDays(1);
+            userCreated.VerificationTokenExpiry = timeNow.AddDays(1);
             userCreated.AvatarUrl = fileUrl;
             var role = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Customer.GetDescription());
             var userRole = new UserRole()
             {
                 UserId = userCreated.UserId,
                 RoleId = role!.RoleId,
-                AssignedAt = await _timeProviderService.GetVietnamTime(),
+                AssignedAt = timeNow,
                 IsActive = true
             };
             var userWallet = new Wallet()
@@ -121,7 +123,7 @@ namespace ConfRadar.Services.Services
                 WalletId = Guid.NewGuid().ToString(),
                 UserId = userCreated.UserId,
                 Balance = 0,
-                CreatedAt = await _timeProviderService.GetVietnamTime(),
+                CreatedAt = timeNow,
                 UpdatedAt = null
             };
             userCreated.UserRoles.Add(userRole);
@@ -174,16 +176,16 @@ namespace ConfRadar.Services.Services
             {
                 throw new ConfRadarAuthenticationException("Invalid password");
             }
-
-            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
+            bool isUserActive = (bool)user.IsActive;
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email, isUserActive);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             var timeNow = await _timeProviderService.GetVietnamTime();
             user.LastLogin = timeNow;
-            if (request.FirebaseMobileFcmToken != null)
+            if (!string.IsNullOrWhiteSpace(request.FirebaseMobileFcmToken))
             {
                 user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
             }
-            if (request.FirebaseWebFcmToken != null)
+            if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken) )
             {
                 user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
             }
@@ -310,6 +312,7 @@ namespace ConfRadar.Services.Services
                     }
                 };
                 await _unitOfWork.UserRepository.CreateUserAsync(user);
+                user = await _unitOfWork.UserRepository.GetUserByEmail(email);
             }
             else
             {
@@ -321,18 +324,19 @@ namespace ConfRadar.Services.Services
                 //{
                 //    throw new ConfRadarAuthenticationException("User is disabled");
                 //}
-                if (request.FirebaseMobileFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(request.FirebaseMobileFcmToken))
                 {
                     user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
                 }
-                if (request.FirebaseWebFcmToken != null)
+                if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken))
                 {
                     user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
                 }
                 user.LastLogin = timeNow;
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
             }
-            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email);
+            bool isUserActive = (bool)user.IsActive;
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email,isUserActive);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
@@ -369,7 +373,8 @@ namespace ConfRadar.Services.Services
             }
             tokenFound.IsRevoked = true;
             await _unitOfWork.UserRefreshTokenRepository.UpdateUserRefreshToken(tokenFound);
-            var accessToken = await _tokenService.GenerateAccessToken(tokenFound.UserId, tokenFound.User.Email!);
+            bool isUserActive = (bool)tokenFound.User.IsActive;
+            var accessToken = await _tokenService.GenerateAccessToken(tokenFound.UserId, tokenFound.User.Email!, isUserActive);
             var newRefreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
@@ -528,6 +533,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request)
         {
+            var timeNow = await _timeProviderService.GetVietnamTime();
             request.Email = request.Email.Trim().ToLower();
             request.FullName = request.FullName.Trim();
             var userByEmail = await _unitOfWork.UserRepository.GetUserByEmail(request.Email);
@@ -556,27 +562,27 @@ namespace ConfRadar.Services.Services
                 IsActive = true,
                 IsEmailConfirmed = true,
                 LoginProvider = LoginProviderEnum.Local.ToString(),
-                CreatedAt = await _timeProviderService.GetVietnamTime(),
+                CreatedAt = timeNow,
                 UserRoles = new List<UserRole>(),
                 PasswordResetToken = verificationToken,
-                PasswordResetTokenExpiry = (await _timeProviderService.GetVietnamTime()).AddDays(1),
+                PasswordResetTokenExpiry = timeNow.AddDays(1),
                 Wallet = new Wallet()
                 {
                     WalletId = Guid.NewGuid().ToString(),
                     UserId = userId,
                     Balance = 0,
-                    CreatedAt = await _timeProviderService.GetVietnamTime(),
+                    CreatedAt = timeNow,
                     UpdatedAt = null
                 }
             };
             var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
             if (collabRole == null)
             {
-                throw new NotFoundException("Role collab không tìm thấy trong hệ thống");
+                throw new NotFoundException("Collab role không tìm thấy trong hệ thống");
             }
             var userRoleObj = new UserRole()
             {
-                AssignedAt = await _timeProviderService.GetVietnamTime(),
+                AssignedAt = timeNow,
                 RoleId = collabRole.RoleId,
                 UserId = userCreated.UserId,
                 IsActive = true
@@ -701,6 +707,76 @@ namespace ConfRadar.Services.Services
             }).ToList();
             return result;
         }
+
+
+        public async Task<int> CreateLocalReviewerAccount(CreateLocalReviewerAccountRequest request)
+        {
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            request.Email = request.Email.Trim().ToLower();
+            request.FullName = request.FullName.Trim();
+            var userByEmail = await _unitOfWork.UserRepository.GetUserByEmail(request.Email);
+            if (userByEmail != null)
+            {
+                throw new ConfRadarAuthenticationException("Người dùng với email này đã tồn tại");
+            }
+            var userByName = await _unitOfWork.UserRepository.GetUserByName(request.FullName);
+            if (userByName != null)
+            {
+                throw new ConfRadarAuthenticationException("Người dùng với tên đã tồn tại");
+            }
+
+            var hashedPassword = _passwordHasher.Hash(request.Password);
+            var verificationToken = _tokenService.GenerateSecureRandomToken();
+
+
+            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string userId = Guid.NewGuid().ToString();
+            var userCreated = new User()
+            {
+                UserId = userId,
+                Email = request.Email,
+                FullName = request.FullName,
+                PasswordHash = hashedPassword,
+                IsActive = true,
+                IsEmailConfirmed = true,
+                LoginProvider = LoginProviderEnum.Local.ToString(),
+                CreatedAt = timeNow,
+                UserRoles = new List<UserRole>(),
+                PasswordResetToken = verificationToken,
+                PasswordResetTokenExpiry = timeNow.AddDays(1),
+                Wallet = new Wallet()
+                {
+                    WalletId = Guid.NewGuid().ToString(),
+                    UserId = userId,
+                    Balance = 0,
+                    CreatedAt = timeNow,
+                    UpdatedAt = null
+                }
+            };
+            var localReviewRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
+            if (localReviewRole == null)
+            {
+                throw new NotFoundException("Role local reviewer không tìm thấy trong hệ thống");
+            }
+            var userRoleObj = new UserRole()
+            {
+                AssignedAt = timeNow,
+                RoleId = localReviewRole.RoleId,
+                UserId = userCreated.UserId,
+                IsActive = true
+            };
+            userCreated.UserRoles.Add(userRoleObj);
+            int result = 0;
+            result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
+            if (result > 0)
+            {
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho local reviewer", "EmailChangePassword.html");
+            }
+            return result;
+        }
+
+
+
     }
 }
 

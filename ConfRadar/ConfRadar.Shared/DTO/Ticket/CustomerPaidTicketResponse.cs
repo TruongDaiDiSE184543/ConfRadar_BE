@@ -93,6 +93,7 @@
     public class CustomerCheckInDetailResponse
     {
         public string? UserCheckinId { get; set; }
+        public string? QrUrl { get; set; }
         public bool? IsPresenter { get; set; }
         public string? CheckinStatusId { get; set; }
         public string? CheckinStatusName { get; set; }

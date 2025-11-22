@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,7 +13,7 @@ namespace ConfRadar.Services.Services
 {
     public interface ITokenService
     {
-        Task<string> GenerateAccessToken(string userId, string email);
+        Task<string> GenerateAccessToken(string userId, string email,bool active);
         string GenerateSecureRandomToken();
         string CreateSignature(string rawData, string secretKey);
         string CreateSignature512(string rawData, string secretKey);
@@ -30,7 +31,7 @@ namespace ConfRadar.Services.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<string> GenerateAccessToken(string userId, string email)
+        public async Task<string> GenerateAccessToken(string userId, string email,bool active)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
@@ -40,6 +41,7 @@ namespace ConfRadar.Services.Services
             {
                 new Claim(JwtRegisteredClaimNames.Email,email),
                 new Claim(JwtRegisteredClaimNames.Sub,userId),
+                new Claim("active", active ? "true" : "false")
 
             };
             foreach (var role in activeUserRole)

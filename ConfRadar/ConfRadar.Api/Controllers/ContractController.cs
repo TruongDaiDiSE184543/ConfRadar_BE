@@ -42,7 +42,7 @@ namespace ConfRadar.Api.Controllers
 
         [Authorize(Roles = "Conference Organizer")]
         [HttpPost("create-review-contract-for-new-user")]
-        public async Task<IActionResult> CreateReviewerContractForNewUser([FromBody] CreateReviewerContractForNewUserRequest request)
+        public async Task<IActionResult> CreateReviewerContractForNewUser([FromForm] CreateReviewerContractForNewUserRequest request)
         {
             var result = await _serviceManager.ContractService.CreateReviewerContractForNewUser(request);
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo hợp đồng thành công cho người dùng {request.FullName}"));
@@ -55,7 +55,7 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ContractService.GetListOwnContract(userId);
             return Ok(ApiResponse<List<OwnContractDetailResponse>>.SuccessResponse(result, "Danh sách review contract"));
         }
-        [Authorize("Conference Organizer")]
+        [Authorize(Roles ="Conference Organizer")]
         [HttpGet("list-review-contract-by-reviewer")]
         public async Task<IActionResult> GetListReviewContractByReviewerId([FromQuery] string reviewerId)
         {
