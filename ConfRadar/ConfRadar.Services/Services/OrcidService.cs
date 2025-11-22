@@ -75,8 +75,8 @@ namespace ConfRadar.Services.Services
             // CẬP NHẬT PROFILE VỚI TOKEN MỚI
             profile.AccessToken = tokenResponse.access_token;
             profile.RefreshToken = tokenResponse.refresh_token; // QUAN TRỌNG: ORCID có thể trả về refresh token mới
-            //profile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(tokenResponse.expires_in);
-            profile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(120);
+            profile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(tokenResponse.expires_in);
+            //profile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(120);
 
             // Lưu ngay lập tức thay đổi vào DB
             await _unitOfWork.AcademicProfileRepository.UpdateAcademicProfileAsync(profile);
