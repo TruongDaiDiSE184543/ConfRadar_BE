@@ -39,10 +39,69 @@ namespace ConfRadar.Services.Services
             _timeProviderService = timeProviderService;
         }
 
+        #region 
         private readonly List<string> validScopes = new List<string>()
         {
             "authenticate ","read-limited","activities/update","person/update","webhook","read-public",
         };
+        private async Task RefreshTokenAsync(AcademicProfile profile)
+        {
+            // Lấy Client ID và Secret từ cấu hình thay vì hardcode
+            string clientId = "APP-CYDYAGET07D4CRW0";
+            string clientSecret = "29854145-dffe-48d9-9a30-698be511c149";
+
+            var formData = new Dictionary<string, string>()
+             {
+                 { "client_id", clientId },
+                 { "client_secret", clientSecret },
+                 { "grant_type", "refresh_token" },
+                 { "refresh_token", profile.RefreshToken } // Dùng refresh token đang có
+             };
+
+            // Endpoint để refresh token
+            var response = await _httpClient.PostAsync("https://sandbox.orcid.org/oauth/token", new FormUrlEncodedContent(formData));
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // Nếu refresh token thất bại (ví dụ: người dùng đã thu hồi quyền),
+                // bạn cần xử lý, có thể là xóa profile hoặc đánh dấu là "invalid"
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Không thể refresh token cho ORCID {profile.OrcidId}. Lỗi: {error}. Người dùng cần phải xác thực lại.");
+            }
+
+            var tokenResponse = await response.Content.ReadFromJsonAsync<OrcidAuthorizationResponse>();
+
+            // CẬP NHẬT PROFILE VỚI TOKEN MỚI
+            profile.AccessToken = tokenResponse.access_token;
+            profile.RefreshToken = tokenResponse.refresh_token; // QUAN TRỌNG: ORCID có thể trả về refresh token mới
+            //profile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(tokenResponse.expires_in);
+            profile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(120);
+
+            // Lưu ngay lập tức thay đổi vào DB
+            await _unitOfWork.AcademicProfileRepository.UpdateAcademicProfileAsync(profile);
+        }
+
+        private async Task<AcademicProfile> GetValidAccessTokenAsync(string userId, string requiredScope)
+        {
+            // 1. Lấy profile từ DB
+            var userProfile = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, requiredScope);
+            if (userProfile == null)
+            {
+                throw new Exception($"Không tìm thấy scope {requiredScope} cho user với ID {userId}");
+            }
+
+            // 2. Kiểm tra token có hết hạn không (trừ đi 5 phút để an toàn)
+            if (userProfile.ExpiresAt == null || userProfile.ExpiresAt <= ExtensionHelper.GetVietnamTime().AddMinutes(5))
+            {
+                // Token đã hết hạn hoặc sắp hết hạn -> Gọi refresh
+                await RefreshTokenAsync(userProfile);
+            }
+
+            // 3. Trả về access token (bây giờ đã chắc chắn là hợp lệ)
+            return userProfile;
+        }
+        #endregion
+
 
         public string GenerateAuthorizationLink(string scope, string userId)
         {
@@ -104,6 +163,8 @@ namespace ConfRadar.Services.Services
             DateTime createAt = ExtensionHelper.GetVietnamTime();
             var existingProfileByUserAndScope = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, tokenResponse.scope);
             var academicProfile = tokenResponse.toModel(userId, createAt);
+            //academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(tokenResponse.expires_in);
+            academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddMinutes(2);
 
             if (existingProfileByUserAndScope != null)
             {
@@ -128,51 +189,11 @@ namespace ConfRadar.Services.Services
             return tokenResponse;
         }
 
-        public async Task<string> SyncWorksAsync(string userId)
-        {
-            // Get user token from database
-            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
-            if (userToken == null)
-            {
-                throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");
-            }
-
-            // Check if token is expired (optional - you might want to refresh if expired)
-            //if (userToken.IsExpired())
-            //{
-            //    throw new Exception($"ORCID token for user {name} has expired. Please re-authorize.");
-            //}
-
-            // Make API call to get ORCID works
-            var requestUrl = $"{baseVersion3}{userToken.OrcidId}/works";
-
-            _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken.AccessToken);
-
-            try
-            {
-                var response = await _httpClient.GetAsync(requestUrl);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Error getting data from ORCID: {error}");
-                }
-
-                var content = await response.Content.ReadAsStringAsync();
-                return content;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Network error when calling ORCID API: {ex.Message}");
-            }
-        }
-
-        public async Task<String> SyncAndProcessWorksAsync(string userId)
+       
+        public async Task<String> SyncWorksAsync(string userId)
         {
             // === PHẦN 1: GỌI API ĐỂ LẤY DỮ LIỆU GỐC ===
-            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
+            var userToken = await GetValidAccessTokenAsync(userId, "read-limited");
             if (userToken == null)
             {
                 throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");
@@ -242,6 +263,7 @@ namespace ConfRadar.Services.Services
                     OrcidDataCacheId = Guid.NewGuid().ToString(),
                     LastSyncedAt = now,
                 };
+
                 await _unitOfWork.OrcidDataCacheRepository.CreateOrcidDataCacheAsync(newCache);
 
 
@@ -262,7 +284,7 @@ namespace ConfRadar.Services.Services
         public async Task<string> SyncBiographyAsync(string userId)
         {
             // === PHẦN 1: GỌI API ĐỂ LẤY DỮ LIỆU GỐC (Giữ nguyên) ===
-            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
+            var userToken = await GetValidAccessTokenAsync(userId, "read-limited");
             if (userToken == null)
             {
                 throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");
@@ -331,7 +353,7 @@ namespace ConfRadar.Services.Services
         public async Task<string> SyncEducationAsync(string userId)
         {
             // === PHẦN 1: GỌI API (Giữ nguyên) ===
-            var userToken = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, "read-limited");
+            var userToken = await GetValidAccessTokenAsync(userId, "read-limited");
             if (userToken == null)
             {
                 throw new Exception($"Không tìm thấy scope read-limited cho user với ID {userId}");

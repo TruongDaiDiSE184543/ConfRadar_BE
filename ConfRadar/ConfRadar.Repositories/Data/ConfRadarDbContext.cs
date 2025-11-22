@@ -177,6 +177,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.AcademicProfileId).HasMaxLength(50);
             entity.Property(e => e.AccessToken).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.ExpiresAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.OrcidId).HasMaxLength(50);
             entity.Property(e => e.RefreshToken).HasMaxLength(50);
             entity.Property(e => e.Scope).HasMaxLength(50);
