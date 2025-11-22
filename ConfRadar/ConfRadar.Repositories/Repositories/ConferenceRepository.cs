@@ -54,7 +54,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public IQueryable<Conference> GetAllConferences()
         {
-            return _context.Conferences.AsNoTracking(); ;
+            return _context.Conferences.Include(c => c.City).Include(c => c.ConferenceStatus).AsNoTracking(); ;
         }
 
         public async Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId)

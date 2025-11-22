@@ -16,11 +16,33 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
         
-        [HttpGet("conference-stats")]
+        [HttpGet("conferences-group-by-status")]
         public async Task<IActionResult> GetConferenceStatsByUserId([FromQuery] string userId)
         {
             var result = await _serviceManager.DashboardService.GetConferenceStatsByUserIdAsync(userId);
-            return Ok(ApiResponse<ConferenceStatsResponse>.SuccessResponse(result, "Thống kê hội nghị theo người dùng"));
+            return Ok(ApiResponse<ConferenceStatsResponse>.SuccessResponse(result, "Thống kê hội nghị status theo người tạo"));
+        }
+
+        [HttpGet("revenue")]
+        public async Task<IActionResult> GetConferenceStatsByUserId([FromQuery] string userId, [FromQuery]int monthBack)
+        {
+            var result = await _serviceManager.DashboardService.GetRevenueAnalyticsAsync(userId,monthBack);
+            return Ok(ApiResponse<RevenueAnalyticsResponse>.SuccessResponse(result, "Thống kê doanh thu theo người tạo"));
+        }
+
+        [HttpGet("upcoming-conferences")]
+        public async Task<IActionResult> GetUpcomingConferenceByUserId([FromQuery] string userId, [FromQuery] int nextmonths)
+        {
+            var result = await _serviceManager.DashboardService.GetUpcomingConferencesAsync(userId, nextmonths);
+            return Ok(ApiResponse<List<ConferenceReminderDto>>.SuccessResponse(result, "Lấy hội nghị sắp diễn ra"));
+        }
+
+        [HttpGet("top-registered-conferences")]
+        public async Task<IActionResult> MostRegisterConference([FromQuery] string userId, [FromQuery] int numberToTake)
+        {
+            if (numberToTake <= 0) numberToTake = 5;
+            var result = await _serviceManager.DashboardService.GetTopRegisteredConferencesAsync(userId, numberToTake);
+            return Ok(ApiResponse<RegisterConferenceResponse>.SuccessResponse(result, "Lấy hội nghị được mua vé nhiều nhất"));
         }
     }
 }
