@@ -1,6 +1,7 @@
-﻿using ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -60,6 +61,8 @@ public partial class ConfRadarDbContext : DbContext
     public virtual DbSet<MaterialDownload> MaterialDownloads { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
+
+    public virtual DbSet<OrcidDataCache> OrcidDataCaches { get; set; }
 
     public virtual DbSet<Paper> Papers { get; set; }
 
@@ -143,18 +146,9 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
-    public static string GetConnectionString(string connectionStringName)
-    {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        string connectionString = config.GetConnectionString(connectionStringName);
-        return connectionString;
-    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -181,7 +175,14 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("AcademicProfile");
 
             entity.Property(e => e.AcademicProfileId).HasMaxLength(50);
+            entity.Property(e => e.AccessToken).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.ExpiresAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.OrcidId).HasMaxLength(50);
+            entity.Property(e => e.RefreshToken).HasMaxLength(50);
+            entity.Property(e => e.Scope).HasMaxLength(50);
             entity.Property(e => e.UserId).HasMaxLength(50);
+            entity.Property(e => e.UserName).HasMaxLength(50);
 
             entity.HasOne(d => d.User).WithMany(p => p.AcademicProfiles)
                 .HasForeignKey(d => d.UserId)
@@ -528,6 +529,23 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_Notification_UserId");
+        });
+
+        modelBuilder.Entity<OrcidDataCache>(entity =>
+        {
+            entity.ToTable("OrcidDataCache");
+
+            entity.HasIndex(e => new { e.AcademicProfileId, e.DataType }, "IX_OrcidDataCache_ProfileId_DataType").IsUnique();
+
+            entity.Property(e => e.OrcidDataCacheId).HasMaxLength(50);
+            entity.Property(e => e.AcademicProfileId).HasMaxLength(50);
+            entity.Property(e => e.DataType).HasMaxLength(50);
+            entity.Property(e => e.JsonContent).HasColumnType("jsonb");
+            entity.Property(e => e.LastSyncedAt).HasColumnType("timestamp without time zone");
+
+            entity.HasOne(d => d.AcademicProfile).WithMany(p => p.OrcidDataCaches)
+                .HasForeignKey(d => d.AcademicProfileId)
+                .HasConstraintName("FK_OrcidDataCache_AcademicProfile");
         });
 
         modelBuilder.Entity<Paper>(entity =>

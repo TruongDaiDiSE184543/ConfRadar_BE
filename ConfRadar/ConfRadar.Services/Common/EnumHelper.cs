@@ -8,6 +8,14 @@ namespace ConfRadar.Services.Common
         Firebase,
         Orcid,
     }
+
+    public enum OrcidDataTypeEnum
+    {
+        Works,
+        Biography,
+        Education
+    }
+
     public enum SystemRoleEnum
     {
 
