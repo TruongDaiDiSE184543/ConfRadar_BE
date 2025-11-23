@@ -136,6 +136,7 @@ namespace ConfRadar.Services.DTOs.Paper
     {
         public string RevisionPaperId { get; set; }
         public int? RevisionRound { get; set; }
+        public string? RevisionRoundDeadlineId { get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
         public DateTime? Created { get; set; }
         public DateTime? Updated { get; set; }
