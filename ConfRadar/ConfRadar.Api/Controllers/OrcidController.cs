@@ -4,6 +4,7 @@ using ConfRadar.Services.DTOs.Orcid;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using Google.Apis.Auth.OAuth2.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
 using System.Security.Claims;
@@ -21,12 +22,12 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
+        [Authorize]
         [HttpGet("authorize-orcid")]
         public async Task<IActionResult> AuthorizeOrcid()
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                throw new BadRequestException("Người dùng chưa đăng nhập");
+          
 
             string orcidOauth = _serviceManager.OrcidService.GenerateAuthorizationLink("read-limited", userId);
             return Ok(ApiResponse<string>.SuccessResponse(orcidOauth, "Lấy link oauth thành công"));
@@ -59,22 +60,25 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("Get-works-from-orcid")]
-        public async Task<IActionResult> getWork([FromQuery] string userId)
+        public async Task<IActionResult> getWork(/*[FromQuery] string userId*/)
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.OrcidService.SyncWorksAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
         }
 
         [HttpGet("Get-biography-from-orcid")]
-        public async Task<IActionResult> getBiography([FromQuery] string userId)
+        public async Task<IActionResult> getBiography()
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.OrcidService.SyncBiographyAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
         }
 
         [HttpGet("Get-Educations-from-orcid")]
-        public async Task<IActionResult> getEducations([FromQuery] string userId)
+        public async Task<IActionResult> getEducations()
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.OrcidService.SyncEducationAsync(userId);
             return Ok(ApiResponse<string>.SuccessResponse(result, ""));
         }

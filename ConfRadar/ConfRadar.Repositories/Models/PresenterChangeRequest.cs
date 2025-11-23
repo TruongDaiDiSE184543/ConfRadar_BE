@@ -30,4 +30,6 @@ public partial class PresenterChangeRequest
     public virtual Paper? Paper { get; set; }
 
     public virtual User? RequestedBy { get; set; }
+
+    public virtual Ticket? Ticket { get; set; }
 }

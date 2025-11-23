@@ -1774,17 +1774,47 @@ namespace ConfRadar.Services.Services
                 ResearchPhase = paper.ResearchConferencePhase != null ? new ResearchPhaseDtoDetail
                 {
                     ResearchConferencePhaseId = paper.ResearchConferencePhase.ResearchConferencePhaseId,
+                    ConferenceId = paper.ConferenceId,
+
+                    // 1. Registration
                     RegistrationStartDate = paper.ResearchConferencePhase.RegistrationStartDate,
                     RegistrationEndDate = paper.ResearchConferencePhase.RegistrationEndDate,
+
+                    // 2. Abstract Decide
+                    AbstractDecideStatusStart = paper.ResearchConferencePhase.AbstractDecideStatusStart,
+                    AbstractDecideStatusEnd = paper.ResearchConferencePhase.AbstractDecideStatusEnd,
+
+                    // 3. Full Paper
                     FullPaperStartDate = paper.ResearchConferencePhase.FullPaperStartDate,
                     FullPaperEndDate = paper.ResearchConferencePhase.FullPaperEndDate,
+
+                    // 4. Review
                     ReviewStartDate = paper.ResearchConferencePhase.ReviewStartDate,
                     ReviewEndDate = paper.ResearchConferencePhase.ReviewEndDate,
+
+                    // 5. Full Paper Decide
+                    FullPaperDecideStatusStart = paper.ResearchConferencePhase.FullPaperDecideStatusStart,
+                    FullPaperDecideStatusEnd = paper.ResearchConferencePhase.FullPaperDecideStatusEnd,
+
+                    // 6. Revise
                     ReviseStartDate = paper.ResearchConferencePhase.ReviseStartDate,
                     ReviseEndDate = paper.ResearchConferencePhase.ReviseEndDate,
+
+                    // 7. Revision Review
+                    RevisionPaperReviewStart = paper.ResearchConferencePhase.RevisionPaperReviewStart,
+                    RevisionPaperReviewEnd = paper.ResearchConferencePhase.RevisionPaperReviewEnd,
+
+                    // 8. Revision Decide
+                    RevisionPaperDecideStatusStart = paper.ResearchConferencePhase.RevisionPaperDecideStatusStart,
+                    RevisionPaperDecideStatusEnd = paper.ResearchConferencePhase.RevisionPaperDecideStatusEnd,
+
+                    // 9. Camera Ready
                     CameraReadyStartDate = paper.ResearchConferencePhase.CameraReadyStartDate,
                     CameraReadyEndDate = paper.ResearchConferencePhase.CameraReadyEndDate,
-                    ConferenceId = paper.ConferenceId
+
+                    // 10. Camera Ready Decide
+                    CameraReadyDecideStatusStart = paper.ResearchConferencePhase.CameraReadyDecideStatusStart,
+                    CameraReadyDecideStatusEnd = paper.ResearchConferencePhase.CameraReadyDecideStatusEnd
                 } : null,
 
                 // Map properties we already have from the initial query

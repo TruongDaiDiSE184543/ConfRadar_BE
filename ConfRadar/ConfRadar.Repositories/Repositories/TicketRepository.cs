@@ -38,7 +38,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Ticket>> GetNotRefundTechnicalTicketListByTicketIdsForCancel(List<string> ticketIds);
         Task<List<Ticket>> GetNotRefundResearchTicketListByTicketIdsForCancel(List<string> ticketIds);
         Task<int> UpdateTicketListAsync(List<Ticket> tickets);
-
+        IQueryable<Ticket> GetIncludedQueryable();
     }
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
     {
@@ -685,6 +685,11 @@ namespace ConfRadar.Repositories.Repositories
                t.IsRefunded == true &&
                t.PricePhase.ConferencePrice.ConferenceId == conferenceId).ToListAsync();
 
+        }
+
+        public IQueryable<Ticket> GetIncludedQueryable()
+        {
+            return _context.Tickets.AsNoTracking().Include(t => t.PricePhase).ThenInclude(pp => pp.ConferencePrice).ThenInclude(cp => cp.Conference).AsQueryable();
         }
 
         //public async Task<List<Ticket>> GetRefundedNonAuthorTicketsByConferenceIdAsync(string conferenceId)

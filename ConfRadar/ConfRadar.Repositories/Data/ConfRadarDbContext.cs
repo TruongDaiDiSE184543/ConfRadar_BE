@@ -746,6 +746,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.RequestedBy).WithMany(p => p.PresenterChangeRequestRequestedBies)
                 .HasForeignKey(d => d.RequestedById)
                 .HasConstraintName("FK_PresenterChangeRequest_RequestedById");
+
+            entity.HasOne(d => d.Ticket).WithMany(p => p.PresenterChangeRequests)
+                .HasForeignKey(d => d.TicketId)
+                .HasConstraintName("FK_PresenterChangeRequest_Ticket");
         });
 
         modelBuilder.Entity<PricePhase>(entity =>
@@ -962,10 +966,15 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
             entity.Property(e => e.ReviewAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.RevisionRoundDeadlineId).HasMaxLength(50);
 
             entity.HasOne(d => d.GlobalStatus).WithMany(p => p.RevisionPapers)
                 .HasForeignKey(d => d.GlobalStatusId)
                 .HasConstraintName("FK_RevisionPaper_GlobalStatusId");
+
+            entity.HasOne(d => d.RevisionRoundDeadline).WithMany(p => p.RevisionPapers)
+                .HasForeignKey(d => d.RevisionRoundDeadlineId)
+                .HasConstraintName("FK_RevisionPaper_RevisionRoundDeadlineId");
         });
 
         modelBuilder.Entity<RevisionPaperReview>(entity =>

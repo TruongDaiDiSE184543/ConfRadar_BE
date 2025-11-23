@@ -19,6 +19,8 @@ public partial class Ticket
 
     public virtual Paper? Paper { get; set; }
 
+    public virtual ICollection<PresenterChangeRequest> PresenterChangeRequests { get; set; } = new List<PresenterChangeRequest>();
+
     public virtual PricePhase? PricePhase { get; set; }
 
     public virtual ICollection<RefundRequest> RefundRequests { get; set; } = new List<RefundRequest>();
