@@ -1275,9 +1275,11 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        public Task CancelPayOsPayment(string id)
+        
+
+        public async Task CancelPayOsPayment(string id)
         {
-            throw new NotImplementedException();
+            await _payOsService.CancelPayOs(id);
         }
 
 

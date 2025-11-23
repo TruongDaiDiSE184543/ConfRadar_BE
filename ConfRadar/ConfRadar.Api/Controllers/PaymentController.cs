@@ -94,12 +94,12 @@ namespace ConfRadar.Api.Controllers
             string message = "Đã thanh toán thành công payos";
             return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
         }
-        //[HttpPost("payos/{id}/cancel")]
-        //public async Task<IActionResult> CancelPayOs([FromRoute] string id)
-        //{
-        //    await _serviceManager.PaymentService.CreatePaymentForResearchAsAttendee
-        //    return Ok(ApiResponse<object>.SuccessResponse("hi", "Đã hủy"));
-        //}
+        [HttpPost("cancel-payos")]
+        public async Task<IActionResult> CancelPayOs([FromQuery] string id)
+        {
+            await _serviceManager.PaymentService.CancelPayOsPayment(id);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Đã hủy"));
+        }
         [HttpGet("success-momo")]
         public async Task<IActionResult> SuccessMomo([FromQuery] MomoPaymentCallBackResponse data)
         {
