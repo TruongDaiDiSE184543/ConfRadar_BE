@@ -22,6 +22,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await CreateAsync(auditLog);
         }
+        public async Task<int> CreateMutipleAuditLogAsync(List<AuditLog> auditLogs)
+        {
+            _context.AuditLogs.AddRange(auditLogs);
+            return await _context.SaveChangesAsync();
+        }
 
         public async Task<AuditLog?> GetAuditLogByIdAsync(string auditLogId)
         {

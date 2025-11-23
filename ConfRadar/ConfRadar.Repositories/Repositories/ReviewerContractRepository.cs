@@ -20,6 +20,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferenceBelongToReviewContractResponse>> GetListConferenceBelongToReviewContractByUserId(string userId);
         Task<List<PaperDetailBelongToConferenceInReviewContractResposne>> GetPapersBelongToAConferenceByConferenceIdAndUserId(string conferenceId, string userId);
         Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(string conferenceId, List<string> systemRoles);
+        Task<int> GetOwnContractCount(string userId);
     }
     public class ReviewerContractRepository : GenericRepository<ReviewerContract>, IReviewerContractRepository
     {
@@ -60,7 +61,14 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(rc => rc.UserId == userId)
                 .ToListAsync();
         }
-
+        public async Task<int> GetOwnContractCount(string userId)
+        {
+            return await _context.ReviewerContracts
+                .AsNoTracking()
+                .Where(rc => rc.UserId == userId)
+                .Select(rc => rc.ReviewerContractId)
+                .CountAsync();
+        }
         public async Task<List<ReviewerContract>> GetReviewerContractsByConferenceIdAsync(string conferenceId)
         {
             return await _context.ReviewerContracts

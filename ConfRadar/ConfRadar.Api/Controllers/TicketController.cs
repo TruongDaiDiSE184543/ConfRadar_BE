@@ -62,7 +62,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> CancelTechnicalTickets([FromBody] CancelTechnicalTickets request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.TicketService.CancelTechTickets(request);
+            var result = await _serviceManager.TicketService.CancelTechTickets(request,userId);
             var message = string.Empty;
             if (result > 0)
             {
@@ -81,7 +81,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> RefundToUsers([FromBody] CancelResearchTickets request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.TicketService.CancelResearchTickets(request);
+            var result = await _serviceManager.TicketService.CancelResearchTickets(request,userId);
             var message = string.Empty;
             if (result > 0)
             {

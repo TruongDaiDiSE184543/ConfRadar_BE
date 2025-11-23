@@ -18,6 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperReviewer>> GetPaperReviewersByUserIdAndConferenceIdAsync(string userId, string conferenceId);
         Task<List<Paper>> getAllAssignedPapers(string userId);
         Task<List<PaperReviewer>> GetPaperReviewersByConferenceIdAsync(string conferenceId);
+        Task<List<Paper>> GetTotalPapersBelongToReviewer(string userId);
     }
     public class PaperReviewerRepository : GenericRepository<PaperReviewer>, IPaperReviewerRepository
     {
@@ -53,9 +54,10 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
              .AsNoTracking()
-
+             .Include(p => p.Ticket)
              .Include(p => p.Conference)
              .Include(p => p.PaperPhase)
+             .Include(p=> p.PaperReviewers)
 
              .Where(p => p.PaperReviewers.Any(pr => pr.UserId == userId))
              .ToListAsync();
@@ -103,6 +105,36 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(pr => pr.Paper)
                     .ThenInclude(p => p.PaperPhase)
                 .Where(pr => pr.Paper.ConferenceId == conferenceId)
+                .ToListAsync();
+        }
+
+
+        public async Task<List<Paper>> GetTotalPapersBelongToReviewer(string userId)
+        {
+            return await _context.Papers
+                .AsNoTracking()
+
+                .Include(p=>p.PaperPhase)
+                .Include(p=>p.Ticket)
+
+                .Include(p=>p.PaperReviewers)
+                //full paper
+                .Include(p=> p.FullPaper)
+                    .ThenInclude(fp=> fp.FullPaperReviews)
+                .Include(p => p.FullPaper)
+                    .ThenInclude(fp => fp.ReviewStatus)
+                // revision
+                .Include(p=> p.RevisionPaper)
+                    .ThenInclude(rp=> rp.RevisionPaperReviews)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rp => rp.GlobalStatus)
+
+                // camera ready
+                .Include(p=>p.CameraReady)
+                    .ThenInclude(c=>c.GlobalStatus)
+
+                .Where(p=> p.PaperReviewers.Any(pa=>pa.UserId==userId))
+                .AsSplitQuery()
                 .ToListAsync();
         }
     }

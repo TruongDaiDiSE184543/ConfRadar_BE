@@ -11,6 +11,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateMultipleRevisionPaperReviewsAsync(List<RevisionPaperReview> revisionPaperReviews);
         Task<int> CreateRevisionPaperReviewAsync(RevisionPaperReview revisionPaperReview);
         Task<RevisionPaperReview?> GetRevisionPaperReviewByIdAsync(string revisionPaperReviewId);
+        Task<RevisionPaperReview?> GetRevisionPaperReviewByRevisionPaperAndUserAsync(string revisionPaperId,string userId);
         Task<List<RevisionPaperReview>> GetRevisionPaperReviewByRevisionPaperIdAsync(string revisionPaperId);
         Task<int> UpdateRevisionPaperReviewAsync(RevisionPaperReview revisionPaperReview);
     }
@@ -35,6 +36,12 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.RevisionPaperReviews
                 .FirstOrDefaultAsync(rpr => rpr.RevisionPaperReviewId == revisionPaperReviewId);
+        }
+
+        public async Task<RevisionPaperReview?> GetRevisionPaperReviewByRevisionPaperAndUserAsync(string revisionPaperId, string userId)
+        {
+            return await _context.RevisionPaperReviews
+                .FirstOrDefaultAsync(rpr => rpr.RevisionPaperId == revisionPaperId && rpr.ReviewerId==userId);
         }
 
         public async Task<List<RevisionPaperReview>> GetRevisionPaperReviewByRevisionPaperIdAsync(string revisionPaperId)

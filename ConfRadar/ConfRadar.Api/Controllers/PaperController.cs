@@ -340,6 +340,13 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<AddWaitListResponse>.SuccessResponse(result, "Đã thêm vào  hàng đợi"));
         }
 
-
+        [Authorize]
+        [HttpPut("mark-complete-revise")]
+        public async Task<IActionResult> MarkCompleteRevise([FromBody] MarkCompleteReviseRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.MarkCompleteRevise(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã đánh dấu thành công"));
+        }
     }
 }
