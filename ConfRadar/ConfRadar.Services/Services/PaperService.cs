@@ -26,8 +26,10 @@ namespace ConfRadar.Services.Services
         Task<string> SubmitReviewForFullPaper(CreateFullPaperReviewRequest request, string userId); //
 
         Task<int> CreateRevisionPaperSubmission(CreateRevisionPaperSubmissionRequest request, string userId);//
+        //feed back + response dùng chung revise start-end
         Task<int> CreateRevisionSubmissionFeedBack(CreateRevisionPaperSubmissionFeedback request, string userId);//
         Task<int> CreateRevisionSubmissionResponse(CreateRevisionPaperSubmissionResponse request, string userId);//
+        //dùng revise review start -end
         Task<int> CreateRevisionReview(CreateRevisionPaperReviewRequest request, string userId);//
         Task<string> CreateCameraReady(CreateCameraReadyRequest request, string userId);//
 
@@ -795,9 +797,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.RevisionPaperReviewStart || dateNow > activeCurrentPhase.RevisionPaperReviewEnd)
+            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
             {
-                throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.RevisionPaperReviewStart} đến {activeCurrentPhase.RevisionPaperReviewEnd}");
+                throw new BadRequestException($"Giai đoạn gửi feedback revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
             }
             var revisionPaperSubmission = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(request.RevisionPaperSubmissionId);
             if (revisionPaperSubmission == null)
@@ -859,10 +861,10 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            //if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
-            //{
-            //    throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
-            //}
+            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            {
+                throw new BadRequestException($"Giai đoạn gửi response revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
+            }
             var revisionPaperSubmission = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(request.RevisionPaperSubmissionId);
             if (revisionPaperSubmission == null)
             {
@@ -928,7 +930,7 @@ namespace ConfRadar.Services.Services
             var dateNow = await _timeProviderService.GetVietnamDate();
             if (dateNow < activeCurrentPhase.RevisionPaperReviewStart || dateNow > activeCurrentPhase.RevisionPaperReviewEnd)
             {
-                throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.RevisionPaperReviewStart} đến {activeCurrentPhase.RevisionPaperReviewEnd}");
+                throw new BadRequestException($"Giai đoạn gửi review revise diễn ra từ {activeCurrentPhase.RevisionPaperReviewStart} đến {activeCurrentPhase.RevisionPaperReviewEnd}");
             }
 
 
