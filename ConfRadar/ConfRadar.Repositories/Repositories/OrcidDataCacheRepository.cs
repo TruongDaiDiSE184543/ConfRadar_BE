@@ -50,7 +50,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.OrcidDataCaches
                 .Include(oc => oc.AcademicProfile)
-                .FirstOrDefaultAsync(oc => oc.AcademicProfileId == academicProfileId && oc.DataType == dataType);
+                .FirstOrDefaultAsync(oc => oc.AcademicProfileId == academicProfileId && oc.DataType.ToLower() == dataType.ToLower());
         }
 
         public async Task<List<OrcidDataCache>> GetOrcidDataCachesByAcademicProfileIdAsync(string academicProfileId)

@@ -24,12 +24,12 @@ namespace ConfRadar.Api.Controllers
 
         [Authorize]
         [HttpGet("authorize-orcid")]
-        public async Task<IActionResult> AuthorizeOrcid()
+        public async Task<IActionResult> AuthorizeOrcid(/*[FromQuery] string userId*/)
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
           
 
-            string orcidOauth = _serviceManager.OrcidService.GenerateAuthorizationLink("read-limited", userId);
+            string orcidOauth = _serviceManager.OrcidService.GenerateAuthorizationLink(userId);
             return Ok(ApiResponse<string>.SuccessResponse(orcidOauth, "Lấy link oauth thành công"));
         }
 
@@ -42,6 +42,7 @@ namespace ConfRadar.Api.Controllers
 
             if (string.IsNullOrEmpty(state))
                 throw new BadRequestException($"Không tìm thấy state parameter");
+            string redirectType = "link-orcid";
 
             // Decode the state parameter to get the userId
             string userId;
@@ -54,9 +55,19 @@ namespace ConfRadar.Api.Controllers
             {
                 throw new BadRequestException($"State parameter không hợp lệ");
             }
+            try
+            {
+                var tokenResponse = await _serviceManager.OrcidService.ExchangeCodeForTokenAsync(code, userId);
+                //return Ok(ApiResponse<OrcidAuthorizationResponse>.SuccessResponse(tokenResponse, ""));
 
-            var tokenResponse = await _serviceManager.OrcidService.ExchangeCodeForTokenAsync(code, userId);
-            return Ok(ApiResponse<OrcidAuthorizationResponse>.SuccessResponse(tokenResponse, ""));
+                string URL = $"https://confradar.vercel.app/{redirectType}/success";
+                return Redirect(URL);
+            }catch (Exception e)
+            {
+                string URL = $"https://confradar.vercel.app/{redirectType}/fail";
+                return Redirect(URL);
+            }
+            
         }
 
         [HttpGet("Get-works-from-orcid")]
@@ -84,11 +95,20 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("Get-section-from-db")]
-        public async Task<IActionResult> getSectionByUserId([FromQuery]string section)
+        public async Task<IActionResult> getSectionByUserId([FromQuery]string section  /*,[FromQuery] string userId */)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId,section);
             return Ok(ApiResponse<object>.SuccessResponse(result, ""));
+        }
+
+        [HttpGet("status")]
+        public async Task<IActionResult> GetOrcidStatus(/*[FromQuery] string userId*/)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var status = await _serviceManager.OrcidService.CheckOrcidStatusAsync(userId);
+
+            return Ok(ApiResponse<OrcidStatusResponse>.SuccessResponse(status, "Kiểm tra trạng thái ORCID thành công."));
         }
     }
 }

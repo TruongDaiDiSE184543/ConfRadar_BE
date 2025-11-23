@@ -1,8 +1,9 @@
+using ConfRadar.Services.Mappers;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.Conference
 {
-    public class ConferenceResponse
+    public class ConferenceResponseDTO
     {
         public string? ConferenceId { get; set; }
         public string? ConferenceName { get; set; }
@@ -258,7 +259,10 @@ namespace ConfRadar.Services.DTOs.Conference
         public string RoomId { get; set; } = string.Empty;
         public string? Number { get; set; }
         public string? DisplayName { get; set; }
-        public string? DestinationId { get; set; }
+        public string CityId { get; set; }
+        public string Cityname { get; set; }
+        public string DestinationId { get; set; }
+        public string DestinationName { get; set; }
     }
 
     public class ConferenceSessionWithSpeakersResponse
@@ -371,7 +375,6 @@ namespace ConfRadar.Services.DTOs.Conference
     public class MaterialDownloadResponse
     {
         public string? MaterialDownloadId { get; set; }
-        public string? FileName { get; set; }
         public string? FileDescription { get; set; }
         public string? FileUrl { get; set; }
     }

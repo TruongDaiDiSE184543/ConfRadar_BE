@@ -211,6 +211,7 @@ namespace ConfRadar.Services.Services
                 {
                     paperDetail.AbstractPhase = new DTOs.Statistics.PaperAbstractPhaseResponse
                     {
+                        Id = paper.Abstract.AbstractId,
                         Status = paper.Abstract.GlobalStatus?.Name ?? "Chưa xác định",
                         Title = paper.Abstract.Title,
                         Description = paper.Abstract.Description
@@ -222,6 +223,7 @@ namespace ConfRadar.Services.Services
                 {
                     paperDetail.FullPaperPhase = new DTOs.Statistics.PaperFullPaperPhaseResponse
                     {
+                        Id = paper.FullPaper.FullPaperId,
                         Status = paper.FullPaper.ReviewStatus?.Name ?? "Chưa xác định",
                         Title = paper.FullPaper.Title,
                         Description = paper.FullPaper.Description
@@ -233,6 +235,7 @@ namespace ConfRadar.Services.Services
                 {
                     paperDetail.RevisionPhase = new DTOs.Statistics.PaperRevisionPhaseResponse
                     {
+                        Id = paper.RevisionPaper.RevisionPaperId,
                         Status = paper.RevisionPaper.GlobalStatus?.Name ?? "Chưa xác định"
                     };
                 }
@@ -242,6 +245,7 @@ namespace ConfRadar.Services.Services
                 {
                     paperDetail.CameraReadyPhase = new DTOs.Statistics.PaperCameraReadyPhaseResponse
                     {
+                        Id = paper.CameraReady.CameraReadyId,
                         Status = paper.CameraReady.GlobalStatus?.Name ?? "Chưa xác định",
                         Title = paper.CameraReady.Title,
                         Description = paper.CameraReady.Description

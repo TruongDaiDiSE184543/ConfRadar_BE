@@ -94,6 +94,7 @@
 
     public class PaperAbstractPhaseResponse
     {
+        public string? Id {  get; set; }
         public string? Status { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
@@ -101,6 +102,7 @@
 
     public class PaperFullPaperPhaseResponse
     {
+        public string? Id { get; set; }
         public string? Status { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
@@ -108,11 +110,13 @@
 
     public class PaperRevisionPhaseResponse
     {
+        public string? Id { get; set; }
         public string? Status { get; set; }
     }
 
     public class PaperCameraReadyPhaseResponse
     {
+        public string? Id { get; set; }
         public string? Status { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }

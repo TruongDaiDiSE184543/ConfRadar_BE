@@ -870,6 +870,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         [MaxLength(1000)]
         public string? FileDescription { get; set; }
+        //public string? FileName{ get; set; }
 
         public IFormFile? File { get; set; }
     }

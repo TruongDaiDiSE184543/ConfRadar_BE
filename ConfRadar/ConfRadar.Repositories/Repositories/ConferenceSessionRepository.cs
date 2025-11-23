@@ -66,7 +66,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ConferenceSession>> GetSessionsByConferenceIdWithRoomAsync(string conferenceId)
         {
             return await _context.ConferenceSessions
-                .Include(cs => cs.Room)
+                .Include(cs => cs.Room).ThenInclude(r => r.Destination).ThenInclude(d => d.City)
                 .Where(cs => cs.ConferenceId == conferenceId)
                 .ToListAsync();
         }

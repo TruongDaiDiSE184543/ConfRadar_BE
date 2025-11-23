@@ -13,13 +13,14 @@ namespace ConfRadar.Services.Services
 {
     public interface IOrcidService
     {
-        string GenerateAuthorizationLink(string scope, string userId);
+        string GenerateAuthorizationLink(string userId);
         Task<OrcidAuthorizationResponse> ExchangeCodeForTokenAsync(string authorizationCode, string userId);
         Task<String> SyncWorksAsync(string userId);
         Task<string> SyncBiographyAsync(string userId);
         Task<string> SyncEducationAsync(string userId);
         Task<string> GetSectionByUserIdFromOrcid(string userId,string section);
         Task<object> GetSectionByUserIdFromDb(string userId, string section);
+        Task<OrcidStatusResponse> CheckOrcidStatusAsync(string userId);
 
     }
 
@@ -44,7 +45,7 @@ namespace ConfRadar.Services.Services
             _timeProviderService = timeProviderService;
         }
 
-        #region 
+        #region helpers
         private readonly List<string> validScopes = new List<string>()
         {
             "authenticate ","read-limited","activities/update","person/update","webhook","read-public",
@@ -117,10 +118,16 @@ namespace ConfRadar.Services.Services
         private async Task<AcademicProfile> GetValidAccessTokenAsync(string userId, string requiredScope)
         {
             // 1. Lấy profile từ DB
-            var userProfile = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, requiredScope);
+            var userProfile = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAsync(userId);
             if (userProfile == null)
             {
                 throw new Exception($"Không tìm thấy scope {requiredScope} cho user với ID {userId}");
+            }
+
+            // 2. Kiểm tra xem chuỗi Scope có chứa quyền yêu cầu không
+            if (string.IsNullOrEmpty(userProfile.Scope) || !userProfile.Scope.Contains(requiredScope))
+            {
+                throw new Exception($"Người dùng chưa cấp quyền '{requiredScope}'. Các quyền hiện có: '{userProfile.Scope}'");
             }
 
             // 2. Kiểm tra token có hết hạn không (trừ đi 5 phút để an toàn)
@@ -158,23 +165,20 @@ namespace ConfRadar.Services.Services
         #endregion
 
 
-        public string GenerateAuthorizationLink(string scope, string userId)
+        public string GenerateAuthorizationLink(string userId) 
         {
-            // Hardcoded ORCID credentials
-            //string clientId = "APP-VD0FICYKL76Y895Y";
-            //string redirectUri = "https://confradar.io.vn/api/Orcid/callback";
+            // Dấu cách phải được encode thành %20 trong URL.
+            string fullAccessScope = "/read-limited /activities/update /person/update";
 
-            if (!validScopes.Contains(scope) && scope != fullAccess)
-                throw new Exception("Scope không hợp lệ");
-
-            //localhost version orcid redirect
             string clientId = "APP-CYDYAGET07D4CRW0";
-            //string redirectUri = "https://localhost:7001/signin-orcid";
-
             string orcidBaseUrl = "https://sandbox.orcid.org";
-            // Include the userId in the state parameter so we can retrieve it in the callback
+
             string state = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(userId));
-            string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={clientId}&response_type=code&scope=/{scope}&redirect_uri={deployedRedirect}&state={state}";
+
+            // Encode scope để đảm bảo URL hợp lệ
+            string encodedScope = System.Net.WebUtility.UrlEncode(fullAccessScope);
+
+            string authorizationUrl = $"{orcidBaseUrl}/oauth/authorize?client_id={clientId}&response_type=code&scope={encodedScope}&redirect_uri={deployedRedirect}&state={state}";
 
             return authorizationUrl;
         }
@@ -209,14 +213,9 @@ namespace ConfRadar.Services.Services
 
             var tokenResponse = await response.Content.ReadFromJsonAsync<OrcidAuthorizationResponse>();
 
-            if (!string.IsNullOrEmpty(tokenResponse.scope) && tokenResponse.scope.StartsWith("/"))
-            {
-                tokenResponse.scope = tokenResponse.scope.TrimStart('/');
-            }
-
             // Check if there's already an academic profile with this ORCID and scope for this user
             DateTime createAt = ExtensionHelper.GetVietnamTime();
-            var existingProfileByUserAndScope = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAndScopeAsync(userId, tokenResponse.scope);
+            var existingProfileByUserAndScope = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAsync(userId);
             var academicProfile = tokenResponse.toModel(userId, createAt);
             academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddSeconds(tokenResponse.expires_in);
             //academicProfile.ExpiresAt = ExtensionHelper.GetVietnamTime().AddMinutes(2);
@@ -227,6 +226,7 @@ namespace ConfRadar.Services.Services
                 existingProfileByUserAndScope.UserId = userId; // Update to the current user
                 existingProfileByUserAndScope.AccessToken = academicProfile.AccessToken;
                 existingProfileByUserAndScope.RefreshToken = academicProfile.RefreshToken;
+                existingProfileByUserAndScope.Scope = academicProfile.Scope;
                 existingProfileByUserAndScope.UserName = academicProfile.UserName;
                 existingProfileByUserAndScope.CreatedAt = createAt;
 
@@ -240,11 +240,57 @@ namespace ConfRadar.Services.Services
 
             }
 
+            try
+            {
+                await SyncWorksAsync(userId);
+                await SyncBiographyAsync(userId);
+                await SyncEducationAsync(userId);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
 
             return tokenResponse;
         }
 
-       
+        public async Task<OrcidStatusResponse> CheckOrcidStatusAsync(string userId)
+        {
+ 
+            var userProfile = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAsync(userId);
+
+            if (userProfile == null)
+            {
+                return new OrcidStatusResponse { IsLinked = false };
+            }
+
+
+            var grantedScopes = new List<string>();
+
+           
+
+
+            if (!string.IsNullOrWhiteSpace(userProfile.Scope))
+            {
+                grantedScopes = userProfile.Scope
+                    // 1. Tách chuỗi bằng dấu cách, tự động loại bỏ các phần tử rỗng
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    // 2. Với mỗi scope, xóa dấu "/" ở đầu
+                    .Select(scope => scope.TrimStart('/'))
+                    // 3. Chuyển kết quả thành một danh sách
+                    .ToList();
+            }
+
+            return new OrcidStatusResponse
+            {
+                IsLinked = true,
+                OrcidId = userProfile.OrcidId,
+                UserName = userProfile.UserName,
+                GrantedScopes = grantedScopes
+            };
+        }
+
+
         public async Task<String> SyncWorksAsync(string userId)
         {
             var userToken = await GetValidAccessTokenAsync(userId, "read-limited");
@@ -294,9 +340,7 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-            // === PHẦN 3: CHUYỂN DANH SÁCH ĐƠN GIẢN THÀNH JSON VÀ LƯU VÀO DB ===
 
-            // Chuyển danh sách DTO thành một chuỗi JSON sạch sẽ
             string simpleJsonToStore = JsonSerializer.Serialize(simpleWorksList);
             DateTime now = ExtensionHelper.GetVietnamTime();
 
@@ -522,9 +566,13 @@ namespace ConfRadar.Services.Services
                 throw new BadReadException($"Section '{section}' không hợp lệ hoặc không được hỗ trợ. Phải thuộc: Works, Education,Biography");
             }
 
+            var ap = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAsync(userId);
+            if (ap == null)
+                throw new Exception($"User với ID {userId} chưa tích hợp Orcid");
+
             // 2. Gọi phương thức repository mạnh mẽ mới
             // Chỉ một lần gọi DB duy nhất!
-            var orcidCacheData = await _unitOfWork.OrcidDataCacheRepository.GetCacheByUserIdAndDataTypeAsync(userId, dataType.ToString());
+            var orcidCacheData = await _unitOfWork.OrcidDataCacheRepository.GetOrcidDataCacheByAcademicProfileIdAndDataTypeAsync(ap.AcademicProfileId, dataType.ToString());
 
             // 3. Kiểm tra và trả về kết quả
             if (orcidCacheData == null)
