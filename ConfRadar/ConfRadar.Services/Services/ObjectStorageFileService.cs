@@ -29,12 +29,12 @@ namespace ConfRadar.Services.Services
     };
 
         // Dictionary of allowed document content types for research papers.
-        private static readonly Dictionary<string, string> AllowedDocumentTypes = new()
-    {
-        { "application/pdf", ".pdf" },
-        { "application/msword", ".doc" },
-        { "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx" }
-    };
+        private static readonly Dictionary<string, string> AllowedDocumentTypes = new(StringComparer.OrdinalIgnoreCase)
+{
+    { "application/pdf", ".pdf" },
+    { "application/msword", ".doc" },
+    { "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx" }
+};
 
         // Dictionary of allowed video content types.
         private static readonly Dictionary<string, string> AllowedVideoTypes = new()
