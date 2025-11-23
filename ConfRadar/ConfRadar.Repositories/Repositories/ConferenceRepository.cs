@@ -16,7 +16,7 @@ namespace ConfRadar.Repositories.Repositories
         IQueryable<Conference> GetAllConferences();
         Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId);
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
-        Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string statusId);
+        Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId);
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId);
         //Task<List<Conference>> GetConferencesByUserId(string userId);
         Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId, bool isResearchConference);
@@ -56,7 +56,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public IQueryable<Conference> GetAllConferences()
         {
-            return _context.Conferences.AsNoTracking(); ;
+            return _context.Conferences.Include(c => c.City).Include(c => c.ConferenceStatus).AsNoTracking(); ;
         }
 
         public async Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId)
@@ -89,7 +89,10 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId)
         {
-            var query = _context.Conferences.AsQueryable();
+            var query = _context.Conferences
+        .Include(c => c.ConferenceStatus)    // Lấy tên trạng thái
+        .Include(c => c.ConferenceCategory)  // Lấy tên loại (Type)
+        .AsQueryable();
 
             if (!string.IsNullOrEmpty(userId))
             {
@@ -101,9 +104,11 @@ namespace ConfRadar.Repositories.Repositories
                 query = query.Where(c => c.ConferenceStatusId == statusId);
             }
 
+            // Sắp xếp giảm dần theo ngày tạo (tùy chọn)
+            query = query.OrderByDescending(c => c.CreatedAt);
+
             return await query.ToListAsync();
         }
-
         public async Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId)
         {
             var conferenceList = await _context.Tickets

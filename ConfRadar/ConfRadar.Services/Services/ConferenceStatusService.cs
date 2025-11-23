@@ -10,6 +10,7 @@ namespace ConfRadar.Services.Services
         Task<ConferenceStatus?> GetConferenceStatusByNameAsync(string statusName);
         Task<List<ConferenceStatus>> GetAllConferenceStatusesAsync(string? userId);
         Task<List<ConferenceStatus>> GetAllConferenceStatusesForCustomerAsync();
+        Task<List<ConferenceStatus>> GetAllConferenceStatusesByRoleAsync(List<string> userRoles);
     }
 
     public class ConferenceStatusService : IConferenceStatusService
@@ -93,6 +94,58 @@ namespace ConfRadar.Services.Services
         public Task<List<ConferenceStatus>> GetAllConferenceStatusesForCustomerAsync()
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<List<ConferenceStatus>> GetAllConferenceStatusesByRoleAsync(List<string> userRoles)
+        {
+            var conferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusesAsync();
+            
+            // Get all status entities that need to be filtered
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
+            var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
+            var preparingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
+            var deletedStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
+
+            // If no roles provided, return all statuses except draft, pending, preparing, deleted (same as Customer)
+            if (userRoles == null || !userRoles.Any())
+            {
+                conferenceStatus.Remove(draftStatus);
+                conferenceStatus.Remove(pendingStatus);
+                conferenceStatus.Remove(preparingStatus);
+                conferenceStatus.Remove(deletedStatus);
+                return conferenceStatus;
+            }
+
+            // Check user roles and apply appropriate filtering
+            if (userRoles.Contains(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
+            {
+                // Customer: exclude draft, pending, preparing, deleted
+                conferenceStatus.Remove(draftStatus);
+                conferenceStatus.Remove(deletedStatus);
+                return conferenceStatus;
+            }
+            else if (userRoles.Contains(SystemRoleEnum.Customer.GetDescription()))
+            {
+                // Conference Organizer: exclude draft, deleted
+                conferenceStatus.Remove(draftStatus);
+                conferenceStatus.Remove(pendingStatus);
+                conferenceStatus.Remove(preparingStatus);
+                conferenceStatus.Remove(deletedStatus);
+                return conferenceStatus;
+            }
+            else if (userRoles.Contains(SystemRoleEnum.Collaborator.GetDescription()))
+            {
+                // Collaborator: exclude deleted only
+                conferenceStatus.Remove(deletedStatus);
+                return conferenceStatus;
+            }
+            else
+            {
+                // For any other roles (Admin, Reviewers, etc.), return all statuses except deleted
+                conferenceStatus.Remove(deletedStatus);
+            }
+
+            return conferenceStatus;
         }
     }
 }

@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class RevisionRoundDeadline
 {
@@ -15,4 +18,6 @@ public partial class RevisionRoundDeadline
     public virtual ResearchConferencePhase? ResearchConferencePhase { get; set; }
 
     public virtual ICollection<RevisionPaperSubmission> RevisionPaperSubmissions { get; set; } = new List<RevisionPaperSubmission>();
+
+    public virtual ICollection<RevisionPaper> RevisionPapers { get; set; } = new List<RevisionPaper>();
 }

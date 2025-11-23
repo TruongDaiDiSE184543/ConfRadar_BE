@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class PresenterChangeRequest
 {
@@ -27,4 +30,6 @@ public partial class PresenterChangeRequest
     public virtual Paper? Paper { get; set; }
 
     public virtual User? RequestedBy { get; set; }
+
+    public virtual Ticket? Ticket { get; set; }
 }

@@ -35,27 +35,46 @@ namespace ConfRadar.Services.DTOs.Paper
 
         public string? ConferenceId { get; set; }
 
+        // 1. Registration
         public DateOnly? RegistrationStartDate { get; set; }
-
         public DateOnly? RegistrationEndDate { get; set; }
 
-        public DateOnly? FullPaperStartDate { get; set; }
+        // 2. Abstract Decide (Mới thêm)
+        public DateOnly? AbstractDecideStatusStart { get; set; }
+        public DateOnly? AbstractDecideStatusEnd { get; set; }
 
+        // 3. Full Paper
+        public DateOnly? FullPaperStartDate { get; set; }
         public DateOnly? FullPaperEndDate { get; set; }
 
+        // 4. Review
         public DateOnly? ReviewStartDate { get; set; }
-
         public DateOnly? ReviewEndDate { get; set; }
 
-        public DateOnly? ReviseStartDate { get; set; }
+        // 5. Full Paper Decide (Mới thêm)
+        public DateOnly? FullPaperDecideStatusStart { get; set; }
+        public DateOnly? FullPaperDecideStatusEnd { get; set; }
 
+        // 6. Revise
+        public DateOnly? ReviseStartDate { get; set; }
         public DateOnly? ReviseEndDate { get; set; }
 
+        // 7. Revision Review (Mới thêm)
+        public DateOnly? RevisionPaperReviewStart { get; set; }
+        public DateOnly? RevisionPaperReviewEnd { get; set; }
+
+        // 8. Revision Decide (Mới thêm)
+        public DateOnly? RevisionPaperDecideStatusStart { get; set; }
+        public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
+
+        // 9. Camera Ready
         public DateOnly? CameraReadyStartDate { get; set; }
-
         public DateOnly? CameraReadyEndDate { get; set; }
-    }
 
+        // 10. Camera Ready Decide (Mới thêm)
+        public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        public DateOnly? CameraReadyDecideStatusEnd { get; set; }
+    }
 
     /// <summary>
     /// Represents the current phase of the paper submission process.
