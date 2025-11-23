@@ -18,6 +18,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
         Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId);
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId);
+        //Task<List<Conference>> GetConferencesByUserId(string userId);
+        Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId, bool isResearchConference);
     }
 
     public class ConferenceRepository : GenericRepository<Conference>, IConferenceRepository
@@ -196,5 +198,19 @@ namespace ConfRadar.Repositories.Repositories
                                  .ToListAsync();
             return conferenceList;
         }
+        public async Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId,bool isResearchConference)
+        {
+            var conferences = await _context.Conferences
+                .AsNoTracking()
+                .Where(c => c.CreatedBy == userId && c.IsResearchConference == isResearchConference)
+                .Select( c=>c.ConferenceId)
+                .ToListAsync();
+            return conferences;
+        }
+
+        //public Task<List<Conference>> GetConferencesByUserId(string userId)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }

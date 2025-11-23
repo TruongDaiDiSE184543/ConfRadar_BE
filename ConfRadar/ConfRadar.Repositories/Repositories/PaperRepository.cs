@@ -193,16 +193,37 @@ namespace ConfRadar.Repositories.Repositories
                 {
                     ResearchConferencePhaseId = currentActivePhase.ResearchConferencePhaseId,
                     ConferenceId = currentActivePhase.ConferenceId,
+
                     RegistrationStartDate = currentActivePhase.RegistrationStartDate,
                     RegistrationEndDate = currentActivePhase.RegistrationEndDate,
+                    AbstractDecideStatusStart = currentActivePhase.AbstractDecideStatusStart,
+                    AbstractDecideStatusEnd = currentActivePhase.AbstractDecideStatusEnd,
+
                     FullPaperStartDate = currentActivePhase.FullPaperStartDate,
                     FullPaperEndDate = currentActivePhase.FullPaperEndDate,
                     ReviewStartDate = currentActivePhase.ReviewStartDate,
                     ReviewEndDate = currentActivePhase.ReviewEndDate,
+                    FullPaperDecideStatusStart = currentActivePhase.FullPaperDecideStatusStart,
+                    FullPaperDecideStatusEnd = currentActivePhase.FullPaperDecideStatusEnd,
+
+
+
                     ReviseStartDate = currentActivePhase.ReviseStartDate,
                     ReviseEndDate = currentActivePhase.ReviseEndDate,
+                    RevisionPaperReviewStart = currentActivePhase.RevisionPaperReviewStart,
+                    RevisionPaperReviewEnd = currentActivePhase.RevisionPaperReviewEnd,
+                    RevisionPaperDecideStatusStart = currentActivePhase.RevisionPaperDecideStatusStart,
+                    RevisionPaperDecideStatusEnd = currentActivePhase.RevisionPaperDecideStatusEnd,
+
+
+
+
                     CameraReadyStartDate = currentActivePhase.CameraReadyStartDate,
                     CameraReadyEndDate = currentActivePhase.CameraReadyEndDate,
+                    CameraReadyDecideStatusStart = currentActivePhase.CameraReadyDecideStatusStart,
+                    CameraReadyDecideStatusEnd =currentActivePhase.CameraReadyDecideStatusEnd,
+
+
                     IsActive = currentActivePhase.IsActive,
                     IsWaitlist = currentActivePhase.IsWaitlist,
                     RevisionRoundsDetail = currentActivePhase.RevisionRoundDeadlines.Any() ? currentActivePhase.RevisionRoundDeadlines.Select(rrd => new RevisionRoundDeadLineDetailForReviewerResponse()
@@ -233,8 +254,15 @@ namespace ConfRadar.Repositories.Repositories
                     ReviewStatusName = paper.FullPaper.ReviewStatus?.Name,
                     Description = paper.FullPaper?.Description,
                     Title = paper.FullPaper?.Title,
+
                     FullPaperStartDate = currentActivePhase?.FullPaperStartDate,
                     FullPaperEndDate = currentActivePhase?.FullPaperEndDate,
+                    ReviewStartDate = currentActivePhase?.ReviewStartDate,
+                    ReviewEndDate = currentActivePhase?.ReviewEndDate,
+                    FullPaperDecideStatusStart = currentActivePhase?.FullPaperDecideStatusStart,
+                    FullPaperDecideStatusEnd = currentActivePhase?.FullPaperDecideStatusEnd,
+                    
+
                 };
 
                 if (isHeadReviewer)
@@ -272,8 +300,16 @@ namespace ConfRadar.Repositories.Repositories
                     RevisionRound = paper.RevisionPaper.RevisionRound,
                     GlobalStatusId = paper.RevisionPaper.GlobalStatusId,
                     GlobalStatusName = paper.RevisionPaper.GlobalStatus?.Name,
-                    ReviewStartDate = currentActivePhase?.ReviewStartDate,
-                    ReviewEndDate = currentActivePhase?.ReviewEndDate,
+                    RevisionRoundDeadlineId = paper.RevisionPaper.RevisionRoundDeadlineId,
+
+                    ReviseStartDate = currentActivePhase?.ReviseStartDate,
+                    ReviseEndDate = currentActivePhase?.ReviseEndDate,
+                    RevisionPaperReviewStart = currentActivePhase?.RevisionPaperReviewStart,
+                    RevisionPaperReviewEnd = currentActivePhase?.RevisionPaperReviewEnd,
+                    RevisionPaperDecideStatusStart = currentActivePhase?.RevisionPaperDecideStatusStart,
+                    RevisionPaperDecideStatusEnd = currentActivePhase?.RevisionPaperDecideStatusEnd,
+                    
+
                     CreatedAt = paper.RevisionPaper.CreatedAt,
                     ReviewAt = paper.RevisionPaper.ReviewAt,
                 };
@@ -365,8 +401,11 @@ namespace ConfRadar.Repositories.Repositories
                     Description = paper.CameraReady?.Description,
                     CreatedAt = paper.CameraReady?.CreatedAt,
                     ReviewAt = paper.CameraReady?.ReviewAt,
+
                     CameraReadyStartDate = currentActivePhase?.CameraReadyStartDate,
-                    CameraReadyEndDate = currentActivePhase?.CameraReadyEndDate
+                    CameraReadyEndDate = currentActivePhase?.CameraReadyEndDate,
+                    CameraReadyDecideStatusStart = currentActivePhase?.CameraReadyDecideStatusStart,
+                    CameraReadyDecideStatusEnd = currentActivePhase?.CameraReadyDecideStatusEnd,
                 };
             }
             return totalPaperDetailResponse;

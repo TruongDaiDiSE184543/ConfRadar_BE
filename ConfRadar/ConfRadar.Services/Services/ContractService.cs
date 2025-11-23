@@ -17,6 +17,8 @@ namespace ConfRadar.Services.Services
         Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(GetUsersForReviewerContractRequest request);
         Task<List<OwnContractDetailResponse>> GetListOwnContract(string userId);
         Task<List<ContractDetailResponseForOrganizer>> GetListContractByReviewerId(string reviewerId);
+        Task<int> GetOwnContractCount(string userId);
+        Task<OwnActiveContractDetailResponse> GetUserActiveExternalContract(string userId);
     }
     public class ContractService : IContractService
     {
@@ -314,6 +316,34 @@ namespace ConfRadar.Services.Services
                 ConferenceDescription = rc.Conference?.Description,
                 ConferenceBannerImageUrl = rc.Conference?.BannerImageUrl,
             }).ToList();
+            return result;
+        }
+
+        public async Task<int> GetOwnContractCount(string userId)
+        {
+            return await _unitOfWork.ReviewerContractRepository.GetOwnContractCount(userId);
+        }
+        public async Task<OwnActiveContractDetailResponse> GetUserActiveExternalContract(string userId)
+        {
+            var ownReviewerContract = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+            var activeReviewerContract = ownReviewerContract.Where(rc => rc.IsActive == true);
+            var result = new OwnActiveContractDetailResponse()
+            {
+                ActiveContractCount = activeReviewerContract.Count(),
+                ContractDetail = activeReviewerContract.Select(rc => new OwnContractDetailResponse()
+                {
+                    ReviewerContractId = rc.ReviewerContractId,
+                    IsActive = rc.IsActive,
+                    SignDay = rc.SignDay,
+                    ExpireDay = rc.ExpireDay,
+                    Wage = rc.Wage,
+                    ContractUrl = rc.ContractUrl,
+                    ConferenceId = rc.ConferenceId,
+                    ConferenceName = rc.Conference?.ConferenceName,
+                    ConferenceDescription = rc.Conference?.Description,
+                    ConferenceBannerImageUrl = rc.Conference?.BannerImageUrl,
+                }).ToList()
+            };
             return result;
         }
     }
