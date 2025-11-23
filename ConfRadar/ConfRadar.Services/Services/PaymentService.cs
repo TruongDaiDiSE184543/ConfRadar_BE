@@ -31,7 +31,7 @@ namespace ConfRadar.Services.Services
         Task VerifyPayOsDataForConference(Webhook data);
         Task VerifyMomoDataForConference(MomoPaymentCallBackResponse data);
         Task VerifyVnPayDataForConference(VnPayResponse data);
-
+        Task CancelPayOsPayment(string id);
     }
     public class PaymentService : IPaymentService
     {
@@ -1273,6 +1273,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Dữ liệu thanh toán không khả dụng");
             }
+        }
+
+        public Task CancelPayOsPayment(string id)
+        {
+            throw new NotImplementedException();
         }
 
 
