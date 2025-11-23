@@ -34,5 +34,53 @@ namespace ConfRadar.Services.Mappers
                 TotalSlot = model.TotalSlot,
             };
         }
+
+        public static ResearchConferencePhaseResponse toResearchPhaseResponse(this ResearchConferencePhase model)
+        {
+            return new ResearchConferencePhaseResponse
+            {
+                RegistrationStartDate = model.RegistrationStartDate,
+                RegistrationEndDate = model.RegistrationEndDate,
+                AbstractDecideStatusStart = model.AbstractDecideStatusStart,
+                AbstractDecideStatusEnd = model.AbstractDecideStatusEnd,
+
+                FullPaperStartDate = model.FullPaperStartDate,
+                FullPaperEndDate = model.FullPaperEndDate,
+                ReviewStartDate = model.ReviewStartDate,
+                ReviewEndDate = model.ReviewEndDate,
+                FullPaperDecideStatusStart = model.FullPaperDecideStatusStart,
+                FullPaperDecideStatusEnd = model.FullPaperDecideStatusEnd,
+
+                ReviseStartDate = model.ReviseStartDate,
+                ReviseEndDate = model.ReviseEndDate,
+                RevisionPaperReviewStart = model.RevisionPaperReviewStart,
+                RevisionPaperReviewEnd = model.RevisionPaperReviewEnd,
+                RevisionPaperDecideStatusStart = model.RevisionPaperDecideStatusStart,
+                RevisionPaperDecideStatusEnd = model.RevisionPaperDecideStatusEnd,
+
+                CameraReadyStartDate = model.CameraReadyStartDate,
+                CameraReadyEndDate = model.CameraReadyEndDate,
+                CameraReadyDecideStatusStart = model.CameraReadyDecideStatusStart,
+                CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
+
+                ConferenceId = model.ConferenceId,
+                IsActive = model.IsActive,
+                IsWaitlist = model.IsWaitlist,
+                ResearchConferencePhaseId = model.ResearchConferencePhaseId,
+                RevisionRoundDeadlines = model.RevisionRoundDeadlines.Select(r => r.toRevisionRoundDeadlineResponse()).ToList(),
+            };
+        }
+
+        public static RevisionRoundDeadlineResponse toRevisionRoundDeadlineResponse(this RevisionRoundDeadline model)
+        {
+            return new RevisionRoundDeadlineResponse
+            {
+                ResearchConferencePhaseId = model.ResearchConferencePhaseId,
+                RevisionRoundDeadlineId = model.RevisionRoundDeadlineId,
+                RoundNumber = model.RoundNumber,
+                StartSubmissionDate = model.StartSubmissionDate,
+                EndSubmissionDate = model.EndSubmissionDate,
+            };
+        }
     }
 }

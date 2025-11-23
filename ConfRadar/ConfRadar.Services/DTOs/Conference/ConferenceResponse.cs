@@ -388,14 +388,30 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceId { get; set; }
         public DateOnly? RegistrationStartDate { get; set; }
         public DateOnly? RegistrationEndDate { get; set; }
+        // Abstract phase decide status dates (conference organizer only)
+        public DateOnly? AbstractDecideStatusStart { get; set; }
+        public DateOnly? AbstractDecideStatusEnd { get; set; }
         public DateOnly? FullPaperStartDate { get; set; }
         public DateOnly? FullPaperEndDate { get; set; }
+        // Full paper review dates (normal reviewers)
         public DateOnly? ReviewStartDate { get; set; }
         public DateOnly? ReviewEndDate { get; set; }
+        // Full paper decide status dates (head reviewer)
+        public DateOnly? FullPaperDecideStatusStart { get; set; }
+        public DateOnly? FullPaperDecideStatusEnd { get; set; }
         public DateOnly? ReviseStartDate { get; set; }
         public DateOnly? ReviseEndDate { get; set; }
+        // Revision paper review dates (normal reviewers)
+        public DateOnly? RevisionPaperReviewStart { get; set; }
+        public DateOnly? RevisionPaperReviewEnd { get; set; }
+        // Revision paper decide status dates (head reviewer)
+        public DateOnly? RevisionPaperDecideStatusStart { get; set; }
+        public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
         public DateOnly? CameraReadyStartDate { get; set; }
         public DateOnly? CameraReadyEndDate { get; set; }
+        // Camera ready decide status dates (head reviewer only)
+        public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        public DateOnly? CameraReadyDecideStatusEnd { get; set; }
         public bool? IsWaitlist { get; set; }
         public bool? IsActive { get; set; }
         public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
