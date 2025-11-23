@@ -44,5 +44,12 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.DashboardService.GetTopRegisteredConferencesAsync(userId, numberToTake);
             return Ok(ApiResponse<RegisterConferenceResponse>.SuccessResponse(result, "Lấy hội nghị được mua vé nhiều nhất"));
         }
+
+        [HttpGet("get-contract-with-confradar")]
+        public async Task<IActionResult> GetContract([FromQuery] string userId)
+        {
+            var result = await _serviceManager.DashboardService.GetCollaboratorContractsAsync(userId);
+            return Ok(ApiResponse<List<ConferenceContractResponse>>.SuccessResponse(result, "Lấy hợp đồng cho cộng tác viên"));
+        }
     }
 }

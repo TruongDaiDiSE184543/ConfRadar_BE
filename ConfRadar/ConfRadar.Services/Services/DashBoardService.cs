@@ -12,6 +12,7 @@ namespace ConfRadar.Services.Services
         Task<ConferenceStatsResponse> GetConferenceStatsByUserIdAsync(string userId);
         Task<List<ConferenceReminderDto>> GetUpcomingConferencesAsync(string userId, int nextMonths);
         Task<RegisterConferenceResponse> GetTopRegisteredConferencesAsync(string userId, int topN = 5);
+        Task<List<ConferenceContractResponse>> GetCollaboratorContractsAsync(string userId);
     }
 
     public class DashboardService : IDashboardService
@@ -236,6 +237,41 @@ namespace ConfRadar.Services.Services
             {
                 ConferenceRegisters = resultList
             };
+        }
+
+        public async Task<List<ConferenceContractResponse>> GetCollaboratorContractsAsync(string userId)
+        {
+            // BƯỚC 1: Tạo Query và Lọc (Vẫn là IQueryable để chạy dưới DB)
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences()
+                .AsNoTracking()
+                .Include(c => c.TechnicalConferenceDetail) // Bắt buộc include để lấy Commission
+                .Include(c => c.ConferenceStatus)
+                .Where(c => c.CreatedBy == userId)
+                .Where(c => c.IsInternalHosted == false)
+                .Where(c => c.TechnicalConferenceDetail != null);
+
+            // BƯỚC 2: Sắp xếp ngay trên Entity (SQL hiểu được cột StartDate)
+            // Thay vì sort trên DTO, hãy sort trên Entity gốc
+            query = query.OrderByDescending(c => c.StartDate);
+
+            // BƯỚC 3: Thực thi SQL và lấy dữ liệu thô về RAM
+            // Lúc này biến entities là List<Conference> thật sự trong bộ nhớ
+            var entities = await query.ToListAsync();
+
+            // BƯỚC 4: Map sang DTO bằng C# (Client Evaluation)
+            // Bây giờ hàm toConferenceResponse() sẽ chạy bình thường vì dữ liệu đã ở trên RAM
+            var result = entities.Select(c => new ConferenceContractResponse
+            {
+                // Gọi hàm mapper của bạn thoải mái
+                ConferenceResponse = c.toConferenceResponse(),
+
+                // Map các trường từ bảng con
+                Commission = c.TechnicalConferenceDetail?.Commission,
+                ContractUrl = c.TechnicalConferenceDetail?.ContractUrl,
+                TargetAudience = c.TechnicalConferenceDetail?.TargetAudience
+            }).ToList();
+
+            return result;
         }
     }
 }
