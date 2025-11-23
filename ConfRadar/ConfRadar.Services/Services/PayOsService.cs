@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Options;
 using PayOS;
 using PayOS.Exceptions;
+using PayOS.Models;
 using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
+using System.Text.Json;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -11,6 +13,7 @@ namespace ConfRadar.Services.Services
     {
         Task<string> CreatePayOsPayment(long orderCode, long amount, string description, double expireMinute, List<PaymentLinkItem> payOsItems);
         Task<bool> VerifyPayOs(Webhook data);
+        Task CancelPayOs(string id);
     }
     public class PayOsService : IPayOsService
     {
@@ -79,7 +82,32 @@ namespace ConfRadar.Services.Services
             }
 
         }
+        public async Task CancelPayOs(string id)
+        {
+            var client = InitPayOs();
+            var payLoad = new PayOS.Models.V2.PaymentRequests.CancelPaymentLinkRequest
+            {
+                CancellationReason = "Huy giao dich"
+            };
+            var options = new PayOS.Models.RequestOptions<object>
+            {
+                Body = payLoad
+            };
+            string cancelLink = $"https://api-merchant.payos.vn/v2/payment-requests/{id}/cancel";
+            var response = client.PostAsync<object, object>(cancelLink, options);
 
+            Console.WriteLine("---- RAW RESPONSE ----");
+            Console.WriteLine(JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }));
+
+        }
+    
+
+           
+
+        }
 
     }
-}
+
