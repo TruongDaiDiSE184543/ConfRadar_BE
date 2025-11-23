@@ -30,4 +30,11 @@
         public string? ConferenceDescription { get; set; }
         public string? ConferenceBannerImageUrl { get; set; }
     }
+
+    public class OwnActiveContractDetailResponse
+    {
+        public int ActiveContractCount { get; set; } = 0;
+        public List<OwnContractDetailResponse> ContractDetail { get; set; } = new List<OwnContractDetailResponse>();
+    }
+
 }

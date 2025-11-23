@@ -71,8 +71,33 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<GetUsersForReviewerContractResponse>>.SuccessResponse(result, "Danh sách người dùng"));
         }
 
+        [HttpGet("external-contracts-count")]
+        [Authorize]
+        public async Task<IActionResult> GetUserExternalContractCount()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ContractService.GetOwnContractCount(userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Tổng hợp đồng review của bạn"));
 
+        }
+        [HttpGet("external-contracts-active")]
+        [Authorize]
+        public async Task<IActionResult> GetUserActiveExternalContract()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ContractService.GetUserActiveExternalContract(userId);
+            return Ok(ApiResponse<OwnActiveContractDetailResponse>.SuccessResponse(result, "Tổng hợp đồng review đang hoạt động của bạn"));
 
+        }
+        [HttpGet("external-contracts-wage-total")]
+        [Authorize]
+        public async Task<IActionResult> GetUserExternalWageTotal()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ContractService.GetUserActiveExternalContract(userId);
+            return Ok(ApiResponse<OwnActiveContractDetailResponse>.SuccessResponse(result, "Tổng hợp đồng review đang hoạt động của bạn"));
+
+        }
 
 
 

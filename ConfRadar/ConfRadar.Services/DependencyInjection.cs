@@ -64,6 +64,7 @@ namespace ConfRadar.Services
             services.AddScoped<IExcelExportService, ExcelExportService>();
             services.AddScoped<IStatisticsService, StatisticsService>();
             services.AddScoped<IServiceManager, ServiceManager>();
+            services.AddScoped<IReviewerService, ReviewerService>();
 
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>
