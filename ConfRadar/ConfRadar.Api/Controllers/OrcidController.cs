@@ -22,11 +22,11 @@ namespace ConfRadar.Api.Controllers
             _serviceManager = serviceManager;
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("authorize-orcid")]
-        public async Task<IActionResult> AuthorizeOrcid([FromQuery] string userId)
+        public async Task<IActionResult> AuthorizeOrcid(/*[FromQuery] string userId*/)
         {
-            //var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
           
 
             string orcidOauth = _serviceManager.OrcidService.GenerateAuthorizationLink(userId);
@@ -95,7 +95,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("Get-section-from-db")]
-        public async Task<IActionResult> getSectionByUserId([FromQuery]string section)
+        public async Task<IActionResult> getSectionByUserId([FromQuery]string section  /*,[FromQuery] string userId */)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId,section);
@@ -103,9 +103,9 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("status")]
-        public async Task<IActionResult> GetOrcidStatus([FromQuery] string userId)
+        public async Task<IActionResult> GetOrcidStatus(/*[FromQuery] string userId*/)
         {
-
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var status = await _serviceManager.OrcidService.CheckOrcidStatusAsync(userId);
 
             return Ok(ApiResponse<OrcidStatusResponse>.SuccessResponse(status, "Kiểm tra trạng thái ORCID thành công."));

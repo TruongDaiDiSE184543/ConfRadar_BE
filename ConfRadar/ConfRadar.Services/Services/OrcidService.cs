@@ -45,7 +45,7 @@ namespace ConfRadar.Services.Services
             _timeProviderService = timeProviderService;
         }
 
-        #region 
+        #region helpers
         private readonly List<string> validScopes = new List<string>()
         {
             "authenticate ","read-limited","activities/update","person/update","webhook","read-public",
@@ -165,9 +165,8 @@ namespace ConfRadar.Services.Services
         #endregion
 
 
-        public string GenerateAuthorizationLink(string userId) // Bỏ tham số scope
+        public string GenerateAuthorizationLink(string userId) 
         {
-            // Định nghĩa scope đầy đủ mà bạn muốn. 
             // Dấu cách phải được encode thành %20 trong URL.
             string fullAccessScope = "/read-limited /activities/update /person/update";
 
@@ -567,9 +566,13 @@ namespace ConfRadar.Services.Services
                 throw new BadReadException($"Section '{section}' không hợp lệ hoặc không được hỗ trợ. Phải thuộc: Works, Education,Biography");
             }
 
+            var ap = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAsync(userId);
+            if (ap == null)
+                throw new Exception($"User với ID {userId} chưa tích hợp Orcid");
+
             // 2. Gọi phương thức repository mạnh mẽ mới
             // Chỉ một lần gọi DB duy nhất!
-            var orcidCacheData = await _unitOfWork.OrcidDataCacheRepository.GetCacheByUserIdAndDataTypeAsync(userId, dataType.ToString());
+            var orcidCacheData = await _unitOfWork.OrcidDataCacheRepository.GetOrcidDataCacheByAcademicProfileIdAndDataTypeAsync(ap.AcademicProfileId, dataType.ToString());
 
             // 3. Kiểm tra và trả về kết quả
             if (orcidCacheData == null)
