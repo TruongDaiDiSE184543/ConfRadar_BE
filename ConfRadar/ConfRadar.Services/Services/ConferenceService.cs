@@ -404,6 +404,8 @@ namespace ConfRadar.Services.Services
                 conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferencePriceId;
             }
 
+
+
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
@@ -417,6 +419,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.ConferenceSessionMedia)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
@@ -425,6 +429,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Conference with ID {conferenceId} not found");
             }
+
+            if (conference.IsResearchConference == true)
+                throw new Exception("chức năng chỉ dành cho tech");
 
             // Get technical conference detail if it exists (for technical conferences)
             var technicalDetail = conference.TechnicalConferenceDetail;
@@ -449,8 +456,8 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, 
-                contractURL = technicalDetail.ContractUrl,
-                commission = technicalDetail.Commission,
+                contractURL = technicalDetail?.ContractUrl,
+                commission = technicalDetail?.Commission,
                 Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                 Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
                 Sessions = conference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
@@ -687,6 +694,7 @@ namespace ConfRadar.Services.Services
                 IsInternalHosted = conference.IsInternalHosted,
                 IsResearchConference = conference.IsResearchConference,
                 CityId = conference.CityId,
+                CreatedBy = conference.CreatedBy,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId
             }).ToList();
@@ -884,6 +892,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
@@ -892,6 +902,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
+
+            if (conference.IsResearchConference == false)
+                throw new Exception("chức năng chỉ dành cho research");
 
             // Get research conference detail if it exists (for research conferences)
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
@@ -975,6 +988,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.RefundPolicies)
                 .Include(c => c.ConferenceTimelines) // Include timeline
@@ -988,6 +1003,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
+
+            if (conference.IsResearchConference == false)
+                throw new Exception("chức năng chỉ dành cho research");
 
             // Get research conference detail if it exists (for research conferences)
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
@@ -1088,6 +1106,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.ConferenceSessionMedia)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
                 .Include(c => c.ConferenceTimelines) // Include timeline
@@ -1101,6 +1121,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
+
+            if (conference.IsResearchConference == true)
+                throw new Exception("chức năng chỉ dành cho tech");
 
             // Get technical conference detail if it exists (for technical conferences)
             var technicalDetail = fullConference.TechnicalConferenceDetail;
@@ -1610,6 +1633,8 @@ namespace ConfRadar.Services.Services
                         .ThenInclude(cs => cs.ConferenceSessionMedia)
                     .Include(c => c.ConferenceSessions)
                         .ThenInclude(cs => cs.Room) // Include room information
+                            .ThenInclude(r => r.Destination)
+                                .ThenInclude(d => d.City)
                     .Include(c => c.Sponsors)
                     .Include(c => c.TechnicalConferenceDetail)
                     .Where(c => c.ConferenceId == conference.ConferenceId)
