@@ -266,8 +266,8 @@ namespace ConfRadar.Services.Services
                 ConferenceResponse = c.toConferenceResponse(),
 
                 // Map các trường từ bảng con
-                Commission = c.TechnicalConferenceDetail?.Commission,
-                ContractUrl = c.TechnicalConferenceDetail?.ContractUrl,
+                //Commission = c.TechnicalConferenceDetail?.Commission,
+                //ContractUrl = c.TechnicalConferenceDetail?.ContractUrl,
                 TargetAudience = c.TechnicalConferenceDetail?.TargetAudience
             }).ToList();
 

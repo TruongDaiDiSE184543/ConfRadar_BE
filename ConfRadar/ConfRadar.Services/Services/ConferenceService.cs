@@ -457,8 +457,8 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, 
-                contractURL = technicalDetail?.ContractUrl,
-                commission = technicalDetail?.Commission,
+                //contractURL = technicalDetail?.ContractUrl,
+                //commission = technicalDetail?.Commission,
                 Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                 Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
                 Sessions = conference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
@@ -1149,8 +1149,8 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = fullConference.ConferenceCategoryId,
                 ConferenceStatusId = fullConference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                commission = technicalDetail?.Commission,
-                contractURL = technicalDetail?.ContractUrl,
+                //commission = technicalDetail?.Commission,
+                //contractURL = technicalDetail?.ContractUrl,
                 createdBy = fullConference.CreatedBy,
              
                 Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
@@ -1665,8 +1665,8 @@ namespace ConfRadar.Services.Services
                         ConferenceCategoryId = fullConference.ConferenceCategoryId,
                         ConferenceStatusId = fullConference.ConferenceStatusId,
                         TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                        contractURL = technicalDetail?.ContractUrl,
-                        commission = technicalDetail?.Commission,
+                        //contractURL = technicalDetail?.ContractUrl,
+                        //commission = technicalDetail?.Commission,
                         createdBy = fullConference.CreatedBy,
                         Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                         Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),

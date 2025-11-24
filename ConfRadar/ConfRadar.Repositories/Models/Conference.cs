@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class Conference
 {
@@ -39,6 +42,8 @@ public partial class Conference
     public string? ConferenceStatusId { get; set; }
 
     public virtual City? City { get; set; }
+
+    public virtual ICollection<CollaboratorContract> CollaboratorContracts { get; set; } = new List<CollaboratorContract>();
 
     public virtual ConferenceCategory? ConferenceCategory { get; set; }
 

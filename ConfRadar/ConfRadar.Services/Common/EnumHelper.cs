@@ -189,7 +189,7 @@ namespace ConfRadar.Services.Common
     }
     public enum CheckInStatusEnum
     {
-        [Description("Pending")]
+        [Description("Not Checked In")]
         Pending,
 
         [Description("Checked In")]

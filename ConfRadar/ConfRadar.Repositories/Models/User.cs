@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class User
 {
@@ -36,15 +39,17 @@ public partial class User
 
     public string? BioDescription { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
-
     public string? FirebaseWebFcmToken { get; set; }
 
     public string? FirebaseMobileFcmToken { get; set; }
 
+    public DateTime? CreatedAt { get; set; }
+
     public virtual ICollection<AcademicProfile> AcademicProfiles { get; set; } = new List<AcademicProfile>();
 
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+
+    public virtual ICollection<CollaboratorContract> CollaboratorContracts { get; set; } = new List<CollaboratorContract>();
 
     public virtual ICollection<ConferenceFeedback> ConferenceFeedbacks { get; set; } = new List<ConferenceFeedback>();
 
@@ -55,6 +60,8 @@ public partial class User
     public virtual ICollection<FullPaperReview> FullPaperReviews { get; set; } = new List<FullPaperReview>();
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+    public virtual Organization? Organization { get; set; }
 
     public virtual ICollection<PaperAuthor> PaperAuthors { get; set; } = new List<PaperAuthor>();
 
