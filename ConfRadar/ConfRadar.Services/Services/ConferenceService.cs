@@ -2,6 +2,7 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Conference;
+using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.DTOs.General;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
@@ -15,7 +16,7 @@ namespace ConfRadar.Services.Services
     {
 
         //Task<List<ConferenceResponse>> GetAllConferencesAsync();
-        Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize);
+        Task<PagedResult<ConferenceResponseDTO>> GetAllConferencesPaginatedAsync(int page, int pageSize);
 
         // NEW ENDPOINTS
         // Endpoint 1: Get all conferences with their price phases (with pagination/filtering)
@@ -25,13 +26,13 @@ namespace ConfRadar.Services.Services
         Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId, string? userId);
 
         // Endpoint 3: Get conferences by status ID with filtering
-        Task<PagedResult<ConferenceResponse>> GetConferencesByStatusAsync(string conferenceStatusId, int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
+        Task<PagedResult<ConferenceResponseDTO>> GetConferencesByStatusAsync(string conferenceStatusId, int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
 
         // Endpoint 4: Get conferences with step completion status
         Task<PagedResult<ConferenceStepCompletionStatusResponse>> GetTechnicalConferencesStepCompletionStatusAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
 
         // NEW ENDPOINT 5: Get all pending conferences
-        Task<PagedResult<ConferenceResponse>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null);
+        Task<PagedResult<ConferenceResponseDTO>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null);
 
         // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
         Task<bool> ApproveConferenceAsync(string conferenceId, ApproveConferenceRequest request);
@@ -70,7 +71,7 @@ namespace ConfRadar.Services.Services
 
         Task<int> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request, string userId);
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId);
-        Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId);
+        Task<List<ConferenceResponseDTO>> GetConferenceByAssignedPapers(string? userId);
         Task<bool> RequestOrganizerApproval(string confId, string userId);
         Task<bool> ActivateWaitlist(string confId, string userId);
         Task ValidateForReadyStateAsync(Conference conf);
@@ -254,7 +255,7 @@ namespace ConfRadar.Services.Services
         #endregion
 
 
-        public async Task<PagedResult<ConferenceResponse>> GetAllConferencesPaginatedAsync(int page, int pageSize)
+        public async Task<PagedResult<ConferenceResponseDTO>> GetAllConferencesPaginatedAsync(int page, int pageSize)
         {
             var query = _unitOfWork.ConferenceRepository.GetAllConferences();
 
@@ -266,7 +267,7 @@ namespace ConfRadar.Services.Services
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-            var responses = pagedConferences.Select(conference => new ConferenceResponse
+            var responses = pagedConferences.Select(conference => new ConferenceResponseDTO
             {
                 ConferenceId = conference.ConferenceId,
                 ConferenceName = conference.ConferenceName,
@@ -285,7 +286,7 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
 
             }).ToList();
-            return new PagedResult<ConferenceResponse>
+            return new PagedResult<ConferenceResponseDTO>
             {
                 Items = responses,
                 TotalCount = totalCount,
@@ -404,6 +405,8 @@ namespace ConfRadar.Services.Services
                 conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferencePriceId;
             }
 
+
+
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
@@ -417,6 +420,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.ConferenceSessionMedia)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
@@ -425,6 +430,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Conference with ID {conferenceId} not found");
             }
+
+            if (conference.IsResearchConference == true)
+                throw new Exception("chức năng chỉ dành cho tech");
 
             // Get technical conference detail if it exists (for technical conferences)
             var technicalDetail = conference.TechnicalConferenceDetail;
@@ -448,91 +456,14 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
-                TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                contractURL = technicalDetail.ContractUrl,
-                commission = technicalDetail.Commission,
-                //RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                //{
-                //    RefundPolicyId = rp.RefundPolicyId,
-                //    PercentRefund = rp.PercentRefund,
-                //    RefundDeadline = rp.RefundDeadline,
-                //    RefundOrder = rp.RefundOrder
-                //}).ToList(),
-                Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
-                {
-                    PolicyId = p.PolicyId,
-                    PolicyName = p.PolicyName,
-                    Description = p.Description
-                }).ToList(),
-                Sponsors = conference.Sponsors?.Select(s => new DTOs.Conference.SponsorResponse
-                {
-                    SponsorId = s.SponsorId,
-                    Name = s.Name,
-                    ImageUrl = s.ImageUrl
-                }).ToList(),
-                Sessions = conference.ConferenceSessions?.Select(cs => new ConferenceSessionWithSpeakersResponse
-                {
-                    ConferenceSessionId = cs.ConferenceSessionId,
-                    Title = cs.Title,
-                    Description = cs.Description,
-                    StartTime = cs.StartTime,
-                    EndTime = cs.EndTime,
-                    SessionDate = cs.SessionDate,
-                    ConferenceId = cs.ConferenceId,
-                    RoomId = cs.RoomId,
-                    Room = cs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information
-                    {
-                        RoomId = cs.Room.RoomId,
-                        Number = cs.Room.Number,
-                        DisplayName = cs.Room.DisplayName,
-                        DestinationId = cs.Room.DestinationId
-                    } : null,
-                    Speakers = cs.Speakers?.Select(s => new DTOs.Conference.SpeakerResponse
-                    {
-                        SpeakerId = s.SpeakerId,
-                        Name = s.Name,
-                        Description = s.Description,
-                        Image = s.Image
-                    }).ToList(),
-                    SessionMedia = cs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
-                    {
-                        ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
-                        ConferenceSessionMediaUrl = csm.MediaUrl
-                    }).ToList()
-                }).ToList(),
-                ConferenceMedia = conference.ConferenceMedia?.Select(cfm => new DTOs.Conference.ConferenceMediaResponse
-                {
-                    MediaId = cfm.ConferenceMediaId,
-                    MediaUrl = cfm.ConferenceMediaUrl
-                }).ToList(),
-                ConferencePrices = conference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
-                {
-                    ConferencePriceId = cp.ConferencePriceId,
-                    TicketPrice = cp.TicketPrice,
-                    TicketName = cp.TicketName,
-                    TicketDescription = cp.TicketDescription,
-                    IsAuthor = cp.IsAuthor,
-                    TotalSlot = cp.TotalSlot,
-                    AvailableSlot = cp.AvailableSlot,
-                    PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
-                    {
-                        PricePhaseId = pp.PricePhaseId,
-                        PhaseName = pp.PhaseName,
-                        StartDate = pp.StartDate,
-                        EndDate = pp.EndDate,
-                        ApplyPercent = pp.ApplyPercent,
-                        TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                        {
-                            RefundPolicyId = rp.RefundPolicyId,
-                            PercentRefund = rp.PercentRefund,
-                            RefundDeadline = rp.RefundDeadline,
-                            RefundOrder = rp.RefundOrder,
-                            PricePhaseID = pp.PricePhaseId
-                        }).OrderBy(rp => rp.RefundOrder).ToList(),
-                    }).ToList()
-                }).ToList(),
+                TargetAudience = technicalDetail?.TargetAudience, 
+                contractURL = technicalDetail?.ContractUrl,
+                commission = technicalDetail?.Commission,
+                Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                Sessions = conference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
+                ConferenceMedia = conference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
+                ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
                 purchasedInfo = new PurchasedInfo
                 {
                     ticketId = ticketId,
@@ -542,7 +473,7 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<PagedResult<ConferenceResponse>> GetConferencesByStatusAsync(string conferenceStatusId, int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
+        public async Task<PagedResult<ConferenceResponseDTO>> GetConferencesByStatusAsync(string conferenceStatusId, int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
         {
             var query = _unitOfWork.ConferenceRepository.GetAllConferences()
                 .Where(c => c.ConferenceStatusId == conferenceStatusId);
@@ -576,7 +507,7 @@ namespace ConfRadar.Services.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            var responses = pagedConferences.Select(conference => new ConferenceResponse
+            var responses = pagedConferences.Select(conference => new ConferenceResponseDTO
             {
                 ConferenceId = conference.ConferenceId,
                 ConferenceName = conference.ConferenceName,
@@ -597,7 +528,7 @@ namespace ConfRadar.Services.Services
                 ConferenceStatusId = conference.ConferenceStatusId
             }).ToList();
 
-            return new PagedResult<ConferenceResponse>
+            return new PagedResult<ConferenceResponseDTO>
             {
                 Items = responses,
                 TotalCount = totalCount,
@@ -713,7 +644,7 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS IMPLEMENTATION 5 & 6
 
-        public async Task<PagedResult<ConferenceResponse>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null)
+        public async Task<PagedResult<ConferenceResponseDTO>> GetPendingConferencesAsync(int page, int pageSize, string? searchKeyword = null)
         {
             // Get the "Pending" status ID first
             var allStatuses = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusAsync();
@@ -721,9 +652,9 @@ namespace ConfRadar.Services.Services
 
             if (pendingStatus == null)
             {
-                return new PagedResult<ConferenceResponse>
+                return new PagedResult<ConferenceResponseDTO>
                 {
-                    Items = new List<ConferenceResponse>(),
+                    Items = new List<ConferenceResponseDTO>(),
                     TotalCount = 0,
                     Page = page,
                     PageSize = pageSize
@@ -747,7 +678,7 @@ namespace ConfRadar.Services.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            var responses = pagedConferences.Select(conference => new ConferenceResponse
+            var responses = pagedConferences.Select(conference => new ConferenceResponseDTO
             {
                 ConferenceId = conference.ConferenceId,
                 ConferenceName = conference.ConferenceName,
@@ -764,11 +695,12 @@ namespace ConfRadar.Services.Services
                 IsInternalHosted = conference.IsInternalHosted,
                 IsResearchConference = conference.IsResearchConference,
                 CityId = conference.CityId,
+                CreatedBy = conference.CreatedBy,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId
             }).ToList();
 
-            return new PagedResult<ConferenceResponse>
+            return new PagedResult<ConferenceResponseDTO>
             {
                 Items = responses,
                 TotalCount = totalCount,
@@ -961,6 +893,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
@@ -970,185 +904,8 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
 
-            // Get research conference detail if it exists (for research conferences)
-            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
-
-            // Get research conference phase
-            var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
-
-            // Get related research data
-            var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
-            var materialDownloads = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conferenceId);
-            var rankingReferenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conferenceId);
-            var researchSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
-
-            // Map to response DTO
-            return new DTOs.Conference.ResearchConferenceDetailResponse
-            {
-                ConferenceId = conference.ConferenceId,
-                ConferenceName = conference.ConferenceName,
-                Description = conference.Description,
-                StartDate = conference.StartDate,
-                EndDate = conference.EndDate,
-                TotalSlot = conference.TotalSlot,
-                AvailableSlot = conference.AvailableSlot,
-                Address = conference.Address,
-                BannerImageUrl = conference.BannerImageUrl,
-                CreatedAt = conference.CreatedAt,
-                TicketSaleStart = conference.TicketSaleStart,
-                TicketSaleEnd = conference.TicketSaleEnd,
-                IsInternalHosted = conference.IsInternalHosted,
-                IsResearchConference = conference.IsResearchConference,
-                CityId = conference.CityId,
-                ConferenceCategoryId = conference.ConferenceCategoryId,
-                ConferenceStatusId = conference.ConferenceStatusId,
-                createdBy = userId,
-
-                // Research Conference Detail specific fields
-                Name = researchDetail?.Name,
-                PaperFormat = researchDetail?.PaperFormat,
-                NumberPaperAccept = researchDetail?.NumberPaperAccept,
-                RevisionAttemptAllowed = researchDetail?.RevisionAttemptAllowed,
-                RankingDescription = researchDetail?.RankingDescription,
-                AllowListener = researchDetail?.AllowListener,
-                RankValue = researchDetail?.RankValue,
-                RankYear = researchDetail?.RankYear,
-                ReviewFee = researchDetail?.ReviewFee,
-                RankingCategoryId = researchDetail?.RankingCategoryId,
-                RankingCategoryName = researchDetail?.RankingCategory?.RankName,
-
-                // Research Conference related data
-                RankingFileUrls = rankingFileUrls?.Select(r => new DTOs.Conference.RankingFileUrlResponse
-                {
-                    RankingFileUrlId = r.RankingFileUrlId,
-                    FileUrl = r.FileUrl
-                }).ToList(),
-                MaterialDownloads = materialDownloads?.Select(m => new DTOs.Conference.MaterialDownloadResponse
-                {
-                    MaterialDownloadId = m.MaterialDownloadId,
-                    FileName = m.FileName,
-                    FileDescription = m.FileDescription,
-                    FileUrl = m.FileName
-                }).ToList(),
-                RankingReferenceUrls = rankingReferenceUrls?.Select(r => new DTOs.Conference.RankingReferenceUrlResponse
-                {
-                    ReferenceUrlId = r.ReferenceUrlId,
-                    ReferenceUrl = r.ReferenceUrl
-                }).ToList(),
-                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).ToList() : null,
-                ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
-                {
-                    ConferenceSessionId = rs.ConferenceSessionId,
-                    Title = rs.Title,
-                    Description = rs.Description,
-                    StartTime = rs.StartTime.HasValue ? TimeOnly.FromDateTime(rs.StartTime.Value) : null,
-                    EndTime = rs.EndTime.HasValue ? TimeOnly.FromDateTime(rs.EndTime.Value) : null,
-                    Date = rs.SessionDate,
-                    ConferenceId = rs.ConferenceId,
-                    RoomId = rs.RoomId,
-                    Room = rs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information for research sessions
-                    {
-                        RoomId = rs.Room.RoomId,
-                        Number = rs.Room.Number,
-                        DisplayName = rs.Room.DisplayName,
-                        DestinationId = rs.Room.DestinationId
-                    } : null,
-                    // Note: No speakers for research sessions
-                    SessionMedia = rs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
-                    {
-                        ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
-                        ConferenceSessionMediaUrl = csm.MediaUrl
-                    }).ToList()
-                }).ToList(),
-
-                // Shared tables data (same as technical conference)
-                Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
-                {
-                    PolicyId = p.PolicyId,
-                    PolicyName = p.PolicyName,
-                    Description = p.Description
-                }).ToList(),
-                Sponsors = conference.Sponsors?.Select(s => new DTOs.Conference.SponsorResponse
-                {
-                    SponsorId = s.SponsorId,
-                    Name = s.Name,
-                    ImageUrl = s.ImageUrl
-                }).ToList(),
-                //RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                //{
-                //    RefundPolicyId = rp.RefundPolicyId,
-                //    PercentRefund = rp.PercentRefund,
-                //    RefundDeadline = rp.RefundDeadline,
-                //    RefundOrder = rp.RefundOrder
-                //}).ToList(),
-                ConferenceMedia = conference.ConferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
-                {
-                    MediaId = cm.ConferenceMediaId,
-                    MediaUrl = cm.ConferenceMediaUrl
-                }).ToList(),
-                ConferencePrices = conference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
-                {
-                    ConferencePriceId = cp.ConferencePriceId,
-                    TicketPrice = cp.TicketPrice,
-                    TicketName = cp.TicketName,
-                    TicketDescription = cp.TicketDescription,
-                    IsAuthor = cp.IsAuthor,
-                    TotalSlot = cp.TotalSlot,
-                    AvailableSlot = cp.AvailableSlot,
-                    PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
-                    {
-                        PricePhaseId = pp.PricePhaseId,
-                        PhaseName = pp.PhaseName,
-                        StartDate = pp.StartDate,
-                        EndDate = pp.EndDate,
-                        ApplyPercent = pp.ApplyPercent,
-                        TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                        {
-                            RefundPolicyId = rp.RefundPolicyId,
-                            PercentRefund = rp.PercentRefund,
-                            RefundDeadline = rp.RefundDeadline,
-                            RefundOrder = rp.RefundOrder
-                        }).OrderBy(rp => rp.RefundOrder).ToList(),
-                    }).ToList()
-                }).ToList(),
-                purchasedInfo = new PurchasedInfo
-                {
-                    ticketId = ticketId,
-                    conferencePriceId = conferencePriceId,
-                    pricePhaseId = pricePhaseId
-                }
-            };
-        }
-
-        public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetDetailResearchForOrganizerAsync(string conferenceId)
-        {
-            // Get the main conference with related data and timeline
-            var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
-                .Include(c => c.ConferenceCategory)
-                .Include(c => c.ConferenceMedia)
-                .Include(c => c.Policies)
-                .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhases)
-                        .ThenInclude(pp => pp.RefundPolicies)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Room) // Include room information
-                .Include(c => c.Sponsors)
-                .Include(c => c.RefundPolicies)
-                .Include(c => c.ConferenceTimelines) // Include timeline
-                    .ThenInclude(ct => ct.PreviousStatus)
-                .Include(c => c.ConferenceTimelines)
-                    .ThenInclude(ct => ct.AfterwardStatus)
-                .Include(c => c.RefundPolicies)
-                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
-
-            if (conference == null)
-            {
-                throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
-            }
+            if (conference.IsResearchConference == false)
+                throw new Exception("chức năng chỉ dành cho research");
 
             // Get research conference detail if it exists (for research conferences)
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
@@ -1198,117 +955,121 @@ namespace ConfRadar.Services.Services
                 RankingCategoryName = researchDetail?.RankingCategory?.RankName,
 
                 // Research Conference related data
-                RankingFileUrls = rankingFileUrls?.Select(r => new DTOs.Conference.RankingFileUrlResponse
-                {
-                    RankingFileUrlId = r.RankingFileUrlId,
-                    FileUrl = r.FileUrl
-                }).ToList(),
-                MaterialDownloads = materialDownloads?.Select(m => new DTOs.Conference.MaterialDownloadResponse
-                {
-                    MaterialDownloadId = m.MaterialDownloadId,
-                    FileName = m.FileName,
-                    FileDescription = m.FileDescription,
-                    FileUrl = m.FileName
-                }).ToList(),
-                RankingReferenceUrls = rankingReferenceUrls?.Select(r => new DTOs.Conference.RankingReferenceUrlResponse
-                {
-                    ReferenceUrlId = r.ReferenceUrlId,
-                    ReferenceUrl = r.ReferenceUrl
-                }).ToList(),
+                RankingFileUrls = rankingFileUrls?.Select(r => r.ToRankingFileUrlResponse()).ToList(),
+                MaterialDownloads = materialDownloads?.Select(m => m.ToMaterialDownloadResponse()).ToList(),
+                RankingReferenceUrls = rankingReferenceUrls?.Select(r => r.ToRankingReferenceUrlResponse()).ToList(),
                 ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).ToList() : null,
-                ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
+                ResearchSessions = researchSessions?.Select(rs => rs.ToResearchSessionWithMediaResponse()).ToList(),
+
+                Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                
+                ConferenceMedia = conference.ConferenceMedia?.Select(cm => cm.ToConferenceMediaResponse()).ToList(),
+                ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
+                purchasedInfo = new PurchasedInfo
                 {
-                    ConferenceSessionId = rs.ConferenceSessionId,
-                    Title = rs.Title,
-                    Description = rs.Description,
-                    StartTime = rs.StartTime.HasValue ? TimeOnly.FromDateTime(rs.StartTime.Value) : null,
-                    EndTime = rs.EndTime.HasValue ? TimeOnly.FromDateTime(rs.EndTime.Value) : null,
-                    Date = rs.SessionDate,
-                    ConferenceId = rs.ConferenceId,
-                    RoomId = rs.RoomId,
-                    Room = rs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information for research sessions
-                    {
-                        RoomId = rs.Room.RoomId,
-                        Number = rs.Room.Number,
-                        DisplayName = rs.Room.DisplayName,
-                        DestinationId = rs.Room.DestinationId
-                    } : null,
-                    // Note: No speakers for research sessions
-                    SessionMedia = rs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
-                    {
-                        ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
-                        ConferenceSessionMediaUrl = csm.MediaUrl
-                    }).ToList()
-                }).ToList(),
+                    ticketId = ticketId,
+                    conferencePriceId = conferencePriceId,
+                    pricePhaseId = pricePhaseId
+                }
+            };
+        }
+
+        public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetDetailResearchForOrganizerAsync(string conferenceId)
+        {
+            // Get the main conference with related data and timeline
+            var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.ConferenceCategory)
+                .Include(c => c.ConferenceMedia)
+                .Include(c => c.Policies)
+                .Include(c => c.ConferencePrices)
+                    .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
+                .Include(c => c.Sponsors)
+                .Include(c => c.RefundPolicies)
+                .Include(c => c.ConferenceTimelines) // Include timeline
+                    .ThenInclude(ct => ct.PreviousStatus)
+                .Include(c => c.ConferenceTimelines)
+                    .ThenInclude(ct => ct.AfterwardStatus)
+                .Include(c => c.RefundPolicies)
+                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
+
+            if (conference == null)
+            {
+                throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
+            }
+
+            if (conference.IsResearchConference == false)
+                throw new Exception("chức năng chỉ dành cho research");
+
+            // Get research conference detail if it exists (for research conferences)
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+
+            // Get research conference phase
+            var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
+
+            // Get related research data
+            var rankingFileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
+            var materialDownloads = await _unitOfWork.MaterialDownloadRepository.GetMaterialsByConferenceIdAsync(conferenceId);
+            var rankingReferenceUrls = await _unitOfWork.RankingReferenceUrlRepository.GetRankingReferenceUrlsByConferenceIdAsync(conferenceId);
+            var researchSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+
+            // Map to response DTO
+            return new DTOs.Conference.ResearchConferenceDetailResponse
+            {
+                ConferenceId = conference.ConferenceId,
+                ConferenceName = conference.ConferenceName,
+                Description = conference.Description,
+                StartDate = conference.StartDate,
+                EndDate = conference.EndDate,
+                TotalSlot = conference.TotalSlot,
+                AvailableSlot = conference.AvailableSlot,
+                Address = conference.Address,
+                BannerImageUrl = conference.BannerImageUrl,
+                CreatedAt = conference.CreatedAt,
+                TicketSaleStart = conference.TicketSaleStart,
+                TicketSaleEnd = conference.TicketSaleEnd,
+                IsInternalHosted = conference.IsInternalHosted,
+                IsResearchConference = conference.IsResearchConference,
+                CityId = conference.CityId,
+                ConferenceCategoryId = conference.ConferenceCategoryId,
+                ConferenceStatusId = conference.ConferenceStatusId,
+                createdBy = conference.CreatedBy,
+
+                // Research Conference Detail specific fields
+                Name = researchDetail?.Name,
+                PaperFormat = researchDetail?.PaperFormat,
+                NumberPaperAccept = researchDetail?.NumberPaperAccept,
+                RevisionAttemptAllowed = researchDetail?.RevisionAttemptAllowed,
+                RankingDescription = researchDetail?.RankingDescription,
+                AllowListener = researchDetail?.AllowListener,
+                RankValue = researchDetail?.RankValue,
+                RankYear = researchDetail?.RankYear,
+                ReviewFee = researchDetail?.ReviewFee,
+                RankingCategoryId = researchDetail?.RankingCategoryId,
+                RankingCategoryName = researchDetail?.RankingCategory?.RankName,
+
+                // Research Conference related data
+                RankingFileUrls = rankingFileUrls?.Select(r => r.ToRankingFileUrlResponse()).ToList(),
+                MaterialDownloads = materialDownloads?.Select(m => m.ToMaterialDownloadResponse()).ToList(),
+                RankingReferenceUrls = rankingReferenceUrls?.Select(r => r.ToRankingReferenceUrlResponse()).ToList(),
+                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).ToList() : null,
+                ResearchSessions = researchSessions?.Select(rs => rs.ToResearchSessionWithMediaResponse()).ToList(),
 
                 // Shared tables data (same as technical conference)
-                Policies = conference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
-                {
-                    PolicyId = p.PolicyId,
-                    PolicyName = p.PolicyName,
-                    Description = p.Description
-                }).ToList(),
-                Sponsors = conference.Sponsors?.Select(s => new DTOs.Conference.SponsorResponse
-                {
-                    SponsorId = s.SponsorId,
-                    Name = s.Name,
-                    ImageUrl = s.ImageUrl
-                }).ToList(),
-                //RefundPolicies = conference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                //{
-                //    RefundPolicyId = rp.RefundPolicyId,
-                //    PercentRefund = rp.PercentRefund,
-                //    RefundDeadline = rp.RefundDeadline,
-                //    RefundOrder = rp.RefundOrder
-                //}).ToList(),
-                ConferenceMedia = conference.ConferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
-                {
-                    MediaId = cm.ConferenceMediaId,
-                    MediaUrl = cm.ConferenceMediaUrl
-                }).ToList(),
-                ConferencePrices = conference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
-                {
-                    ConferencePriceId = cp.ConferencePriceId,
-                    TicketPrice = cp.TicketPrice,
-                    TicketName = cp.TicketName,
-                    TicketDescription = cp.TicketDescription,
-                    IsAuthor = cp.IsAuthor,
-                    TotalSlot = cp.TotalSlot,
-                    AvailableSlot = cp.AvailableSlot,
-                    PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
-                    {
-                        PricePhaseId = pp.PricePhaseId,
-                        PhaseName = pp.PhaseName,
-                        StartDate = pp.StartDate,
-                        EndDate = pp.EndDate,
-                        ApplyPercent = pp.ApplyPercent,
-                        TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                        {
-                            RefundPolicyId = rp.RefundPolicyId,
-                            PercentRefund = rp.PercentRefund,
-                            RefundDeadline = rp.RefundDeadline,
-                            RefundOrder = rp.RefundOrder,
-                            PricePhaseID = pp.PricePhaseId
-                        }).OrderBy(rp => rp.RefundOrder).ToList(),
-                    }).ToList(),
-
-                }).ToList(),
+                Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                ConferenceMedia = conference.ConferenceMedia?.Select(cm => cm.ToConferenceMediaResponse()).ToList(),
+                ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
 
                 // Include conference timeline data
-                ConferenceTimelines = conference.ConferenceTimelines?.Select(ct => new DTOs.Conference.ConferenceTimelineResponse
-                {
-                    ConferenceTimelineId = ct.ConferenceTimelineId,
-                    ConferenceId = ct.ConferenceId,
-                    ChangeDate = ct.ChangeDate,
-                    PreviousStatusId = ct.PreviousStatusId,
-                    AfterwardStatusId = ct.AfterwardStatusId,
-                    Reason = ct.Reason,
-                    PreviousStatusName = ct.PreviousStatus?.ConferenceStatusName,
-                    AfterwardStatusName = ct.AfterwardStatus?.ConferenceStatusName,
-                    ConferenceName = ct.Conference?.ConferenceName
-                }).ToList()
+                ConferenceTimelines = conference.ConferenceTimelines?.Select(ct => ct.ToConferenceTimelineResponse()).ToList()
             };
         }
 
@@ -1346,6 +1107,8 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.ConferenceSessionMedia)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
                 .Include(c => c.ConferenceTimelines) // Include timeline
@@ -1359,6 +1122,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
+
+            if (conference.IsResearchConference == true)
+                throw new Exception("chức năng chỉ dành cho tech");
 
             // Get technical conference detail if it exists (for technical conferences)
             var technicalDetail = fullConference.TechnicalConferenceDetail;
@@ -1385,103 +1151,16 @@ namespace ConfRadar.Services.Services
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
                 commission = technicalDetail?.Commission,
                 contractURL = technicalDetail?.ContractUrl,
-                createdBy = userId,
-                //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                //{
-                //    RefundPolicyId = rp.RefundPolicyId,
-                //    PercentRefund = rp.PercentRefund,
-                //    RefundDeadline = rp.RefundDeadline,
-                //    RefundOrder = rp.RefundOrder
-                //}).ToList(),
-                Policies = fullConference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
-                {
-                    PolicyId = p.PolicyId,
-                    PolicyName = p.PolicyName,
-                    Description = p.Description
-                }).ToList(),
-                Sponsors = fullConference.Sponsors?.Select(s => new DTOs.Conference.SponsorResponse
-                {
-                    SponsorId = s.SponsorId,
-                    Name = s.Name,
-                    ImageUrl = s.ImageUrl
-                }).ToList(),
-                Sessions = fullConference.ConferenceSessions?.Select(cs => new DTOs.Conference.ConferenceSessionWithSpeakersResponse
-                {
-                    ConferenceSessionId = cs.ConferenceSessionId,
-                    Title = cs.Title,
-                    Description = cs.Description,
-                    StartTime = cs.StartTime,
-                    EndTime = cs.EndTime,
-                    SessionDate = cs.SessionDate,
-                    ConferenceId = cs.ConferenceId,
-                    RoomId = cs.RoomId,
-                    Room = cs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information
-                    {
-                        RoomId = cs.Room.RoomId,
-                        Number = cs.Room.Number,
-                        DisplayName = cs.Room.DisplayName,
-                        DestinationId = cs.Room.DestinationId
-                    } : null,
-                    Speakers = cs.Speakers?.Select(s => new DTOs.Conference.SpeakerResponse
-                    {
-                        SpeakerId = s.SpeakerId,
-                        Name = s.Name,
-                        Description = s.Description,
-                        Image = s.Image
-                    }).ToList(),
-                    SessionMedia = cs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
-                    {
-                        ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
-                        ConferenceSessionMediaUrl = csm.MediaUrl
-                    }).ToList()
-                }).ToList(),
-                ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => new DTOs.Conference.ConferenceMediaResponse
-                {
-                    MediaId = cfm.ConferenceMediaId,
-                    MediaUrl = cfm.ConferenceMediaUrl
-                }).ToList(),
-                ConferencePrices = fullConference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
-                {
-                    ConferencePriceId = cp.ConferencePriceId,
-                    TicketPrice = cp.TicketPrice,
-                    TicketName = cp.TicketName,
-                    TicketDescription = cp.TicketDescription,
-                    IsAuthor = cp.IsAuthor,
-                    TotalSlot = cp.TotalSlot,
-                    AvailableSlot = cp.AvailableSlot,
-                    PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
-                    {
-                        PricePhaseId = pp.PricePhaseId,
-                        PhaseName = pp.PhaseName,
-                        StartDate = pp.StartDate,
-                        EndDate = pp.EndDate,
-                        ApplyPercent = pp.ApplyPercent,
-                        TotalSlot = pp.TotalSlot,
-                        AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                        {
-                            RefundPolicyId = rp.RefundPolicyId,
-                            PercentRefund = rp.PercentRefund,
-                            RefundDeadline = rp.RefundDeadline,
-                            RefundOrder = rp.RefundOrder,
-                            PricePhaseID = pp.PricePhaseId
-                        }).OrderBy(rp => rp.RefundOrder).ToList(),
-                    }).ToList()
-                }).ToList(),
+                createdBy = fullConference.CreatedBy,
+             
+                Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                Sessions = fullConference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
+                ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
+                ConferencePrices = fullConference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
 
                 // Include conference timeline data
-                ConferenceTimelines = fullConference.ConferenceTimelines?.Select(ct => new DTOs.Conference.ConferenceTimelineResponse
-                {
-                    ConferenceTimelineId = ct.ConferenceTimelineId,
-                    ConferenceId = ct.ConferenceId,
-                    ChangeDate = ct.ChangeDate,
-                    PreviousStatusId = ct.PreviousStatusId,
-                    AfterwardStatusId = ct.AfterwardStatusId,
-                    Reason = ct.Reason,
-                    PreviousStatusName = ct.PreviousStatus?.ConferenceStatusName,
-                    AfterwardStatusName = ct.AfterwardStatus?.ConferenceStatusName,
-                    ConferenceName = ct.Conference?.ConferenceName
-                }).ToList(),
+                ConferenceTimelines = fullConference.ConferenceTimelines?.Select(ct => ct.ToConferenceTimelineResponse()).ToList(),
 
             };
         }
@@ -1825,7 +1504,7 @@ namespace ConfRadar.Services.Services
                     CityId = conference.CityId,
                     ConferenceCategoryId = conference.ConferenceCategoryId,
                     ConferenceStatusId = conference.ConferenceStatusId,
-                    createdBy = userId,
+                    createdBy = conference.CreatedBy,
 
                     // Research Conference Detail specific fields
                     Name = researchDetail?.Name,
@@ -1841,61 +1520,15 @@ namespace ConfRadar.Services.Services
                     RankingCategoryName = researchDetail?.RankingCategory?.RankName,
 
                     // Research Conference related data
-                    RankingFileUrls = rankingFileUrls?.Select(r => new DTOs.Conference.RankingFileUrlResponse
-                    {
-                        RankingFileUrlId = r.RankingFileUrlId,
-                        FileUrl = r.FileUrl
-                    }).ToList(),
-                    MaterialDownloads = materialDownloads?.Select(m => new DTOs.Conference.MaterialDownloadResponse
-                    {
-                        MaterialDownloadId = m.MaterialDownloadId,
-                        FileName = m.FileName,
-                        FileDescription = m.FileDescription,
-                        FileUrl = m.FileName
-                    }).ToList(),
-                    RankingReferenceUrls = rankingReferenceUrls?.Select(r => new DTOs.Conference.RankingReferenceUrlResponse
-                    {
-                        ReferenceUrlId = r.ReferenceUrlId,
-                        ReferenceUrl = r.ReferenceUrl
-                    }).ToList(),
+                    RankingFileUrls = rankingFileUrls?.Select(r => r.ToRankingFileUrlResponse()).ToList(),
+                    MaterialDownloads = materialDownloads?.Select(m => m.ToMaterialDownloadResponse()).ToList(),
+                    RankingReferenceUrls = rankingReferenceUrls?.Select(r => r.ToRankingReferenceUrlResponse()).ToList(),
                     ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).ToList() : null,
-                    ResearchSessions = researchSessions?.Select(rs => new DTOs.Conference.ResearchSessionWithMediaResponse
-                    {
-                        ConferenceSessionId = rs.ConferenceSessionId,
-                        Title = rs.Title,
-                        Description = rs.Description,
-                        StartTime = rs.StartTime.HasValue ? TimeOnly.FromDateTime(rs.StartTime.Value) : null,
-                        EndTime = rs.EndTime.HasValue ? TimeOnly.FromDateTime(rs.EndTime.Value) : null,
-                        Date = rs.SessionDate,
-                        ConferenceId = rs.ConferenceId,
-                        RoomId = rs.RoomId,
-                        Room = rs.Room != null ? new DTOs.Conference.RoomInfoResponse
-                        {
-                            RoomId = rs.Room.RoomId,
-                            Number = rs.Room.Number,
-                            DisplayName = rs.Room.DisplayName,
-                            DestinationId = rs.Room.DestinationId
-                        } : null,
-                        SessionMedia = rs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
-                        {
-                            ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
-                            ConferenceSessionMediaUrl = csm.MediaUrl
-                        }).ToList()
-                    }).ToList(),
+                    ResearchSessions = researchSessions?.Select(rs => rs.ToResearchSessionWithMediaResponse()).ToList(),
 
                     // Shared tables data (same as technical conference)
-                    Policies = policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
-                    {
-                        PolicyId = p.PolicyId,
-                        PolicyName = p.PolicyName,
-                        Description = p.Description
-                    }).ToList(),
-                    Sponsors = sponsors?.Select(s => new DTOs.Conference.SponsorResponse
-                    {
-                        SponsorId = s.SponsorId,
-                        Name = s.Name,
-                        ImageUrl = s.ImageUrl
-                    }).ToList(),
+                    Policies = policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                    Sponsors = sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
                     //RefundPolicies = refundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
                     //{
                     //    RefundPolicyId = rp.RefundPolicyId,
@@ -1903,39 +1536,8 @@ namespace ConfRadar.Services.Services
                     //    RefundDeadline = rp.RefundDeadline,
                     //    RefundOrder = rp.RefundOrder
                     //}).ToList(),
-                    ConferenceMedia = conferenceMedia?.Select(cm => new DTOs.Conference.ConferenceMediaResponse
-                    {
-                        MediaId = cm.ConferenceMediaId,
-                        MediaUrl = cm.ConferenceMediaUrl
-                    }).ToList(),
-                    ConferencePrices = conferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
-                    {
-                        ConferencePriceId = cp.ConferencePriceId,
-                        TicketPrice = cp.TicketPrice,
-                        TicketName = cp.TicketName,
-                        TicketDescription = cp.TicketDescription,
-                        IsAuthor = cp.IsAuthor,
-                        TotalSlot = cp.TotalSlot,
-                        AvailableSlot = cp.AvailableSlot,
-                        PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
-                        {
-                            PricePhaseId = pp.PricePhaseId,
-                            PhaseName = pp.PhaseName,
-                            StartDate = pp.StartDate,
-                            EndDate = pp.EndDate,
-                            ApplyPercent = pp.ApplyPercent,
-                            TotalSlot = pp.TotalSlot,
-                            AvailableSlot = pp.AvailableSlot,
-                            RefundPolicies = refundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                            {
-                                RefundPolicyId = rp.RefundPolicyId,
-                                PercentRefund = rp.PercentRefund,
-                                RefundDeadline = rp.RefundDeadline,
-                                RefundOrder = rp.RefundOrder,
-                                PricePhaseID = pp.PricePhaseId
-                            }).ToList(),
-                        }).ToList()
-                    }).ToList()
+                    ConferenceMedia = conferenceMedia?.Select(cm => cm.ToConferenceMediaResponse()).ToList(),
+                    ConferencePrices = conferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList()
                 };
 
                 responses.Add(response);
@@ -2032,6 +1634,8 @@ namespace ConfRadar.Services.Services
                         .ThenInclude(cs => cs.ConferenceSessionMedia)
                     .Include(c => c.ConferenceSessions)
                         .ThenInclude(cs => cs.Room) // Include room information
+                            .ThenInclude(r => r.Destination)
+                                .ThenInclude(d => d.City)
                     .Include(c => c.Sponsors)
                     .Include(c => c.TechnicalConferenceDetail)
                     .Where(c => c.ConferenceId == conference.ConferenceId)
@@ -2063,89 +1667,12 @@ namespace ConfRadar.Services.Services
                         TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
                         contractURL = technicalDetail?.ContractUrl,
                         commission = technicalDetail?.Commission,
-                        createdBy = userId,
-                        //RefundPolicies = fullConference.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                        //{
-                        //    RefundPolicyId = rp.RefundPolicyId,
-                        //    PercentRefund = rp.PercentRefund,
-                        //    RefundDeadline = rp.RefundDeadline,
-                        //    RefundOrder = rp.RefundOrder
-                        //}).ToList(),
-                        Policies = fullConference.Policies?.Select(p => new DTOs.Conference.ConferencePolicyResponse
-                        {
-                            PolicyId = p.PolicyId,
-                            PolicyName = p.PolicyName,
-                            Description = p.Description
-                        }).ToList(),
-                        Sponsors = fullConference.Sponsors?.Select(s => new DTOs.Conference.SponsorResponse
-                        {
-                            SponsorId = s.SponsorId,
-                            Name = s.Name,
-                            ImageUrl = s.ImageUrl
-                        }).ToList(),
-                        Sessions = fullConference.ConferenceSessions?.Select(cs => new DTOs.Conference.ConferenceSessionWithSpeakersResponse
-                        {
-                            ConferenceSessionId = cs.ConferenceSessionId,
-                            Title = cs.Title,
-                            Description = cs.Description,
-                            StartTime = cs.StartTime,
-                            EndTime = cs.EndTime,
-                            SessionDate = cs.SessionDate,
-                            ConferenceId = cs.ConferenceId,
-                            RoomId = cs.RoomId,
-                            Room = cs.Room != null ? new DTOs.Conference.RoomInfoResponse // Include room information
-                            {
-                                RoomId = cs.Room.RoomId,
-                                Number = cs.Room.Number,
-                                DisplayName = cs.Room.DisplayName,
-                                DestinationId = cs.Room.DestinationId
-                            } : null,
-                            Speakers = cs.Speakers?.Select(s => new DTOs.Conference.SpeakerResponse
-                            {
-                                SpeakerId = s.SpeakerId,
-                                Name = s.Name,
-                                Description = s.Description,
-                                Image = s.Image
-                            }).ToList(),
-                            SessionMedia = cs.ConferenceSessionMedia?.Select(csm => new DTOs.Conference.ConferenceSessionMediaResponse
-                            {
-                                ConferenceSessionMediaId = csm.ConferenceSessionMediaId,
-                                ConferenceSessionMediaUrl = csm.MediaUrl
-                            }).ToList()
-                        }).ToList(),
-                        ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => new DTOs.Conference.ConferenceMediaResponse
-                        {
-                            MediaId = cfm.ConferenceMediaId,
-                            MediaUrl = cfm.ConferenceMediaUrl
-                        }).ToList(),
-                        ConferencePrices = fullConference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
-                        {
-                            ConferencePriceId = cp.ConferencePriceId,
-                            TicketPrice = cp.TicketPrice,
-                            TicketName = cp.TicketName,
-                            TicketDescription = cp.TicketDescription,
-                            IsAuthor = cp.IsAuthor,
-                            TotalSlot = cp.TotalSlot,
-                            AvailableSlot = cp.AvailableSlot,
-                            PricePhases = cp.PricePhases?.Select(pp => new DTOs.Conference.PricePhaseResponse
-                            {
-                                PricePhaseId = pp.PricePhaseId,
-                                PhaseName = pp.PhaseName,
-                                StartDate = pp.StartDate,
-                                EndDate = pp.EndDate,
-                                ApplyPercent = pp.ApplyPercent,
-                                TotalSlot = pp.TotalSlot,
-                                AvailableSlot = pp.AvailableSlot,
-                                RefundPolicies = pp.RefundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                                {
-                                    RefundPolicyId = rp.RefundPolicyId,
-                                    PercentRefund = rp.PercentRefund,
-                                    RefundDeadline = rp.RefundDeadline,
-                                    RefundOrder = rp.RefundOrder,
-                                    PricePhaseID = pp.PricePhaseId
-                                }).OrderBy(rp => rp.RefundOrder).ToList(),
-                            }).ToList()
-                        }).ToList()
+                        createdBy = fullConference.CreatedBy,
+                        Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                        Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                        Sessions = fullConference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
+                        ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
+                        ConferencePrices = fullConference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList()
                     };
 
                     responses.Add(response);
@@ -2244,14 +1771,14 @@ namespace ConfRadar.Services.Services
             return await _unitOfWork.ConferenceRepository.GetListConferencesForScheduleByUserId(userId, await _timeProviderService.GetVietnamDate(), readyStatusConference.ConferenceStatusId);
         }
 
-        public async Task<List<ConferenceResponse>> GetConferenceByAssignedPapers(string? userId)
+        public async Task<List<ConferenceResponseDTO>> GetConferenceByAssignedPapers(string? userId)
         {
             List<PaperReviewer> AssignPaper = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
             List<Conference> AssignedConference = AssignPaper.Select(ap => ap.Paper.Conference).OrderByDescending(c => c.CreatedAt).ToList();
-            List<ConferenceResponse> responses = new();
+            List<ConferenceResponseDTO> responses = new();
             foreach (var conference in AssignedConference)
             {
-                ConferenceResponse conferenceResponse = new ConferenceResponse
+                ConferenceResponseDTO conferenceResponse = new ConferenceResponseDTO
                 {
                     ConferenceId = conference.ConferenceId,
                     ConferenceName = conference.ConferenceName,

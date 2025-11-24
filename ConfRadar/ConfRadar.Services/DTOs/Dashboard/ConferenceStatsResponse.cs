@@ -17,6 +17,6 @@
         public string GroupId { get; set; }
         public string GroupName { get; set; }
         public int Count { get; set; }
-        public List<ConfRadar.Services.DTOs.Conference.ConferenceResponse> Conferences { get; set; } // Hoặc dùng ConferenceDTO nếu muốn gọn nhẹ hơn
+        public List<ConfRadar.Services.DTOs.Conference.ConferenceResponseDTO> Conferences { get; set; } // Hoặc dùng ConferenceDTO nếu muốn gọn nhẹ hơn
     }
 }

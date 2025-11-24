@@ -34,7 +34,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetAllConferencesWithPagination([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var conferences = await _serviceManager.ConferenceService.GetAllConferencesPaginatedAsync(page, pageSize);
-            return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
+            return Ok(ApiResponse<PagedResult<ConferenceResponseDTO>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
         }
 
         // NEW ENDPOINT 1: Get all conferences with their price phases (with pagination/filtering)
@@ -76,7 +76,7 @@ namespace ConfRadar.Api.Controllers
             [FromQuery] DateOnly? endDate = null)
         {
             var conferences = await _serviceManager.ConferenceService.GetConferencesByStatusAsync(conferenceStatusId, page, pageSize, searchKeyword, cityId, startDate, endDate);
-            return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
+            return Ok(ApiResponse<PagedResult<ConferenceResponseDTO>>.SuccessResponse(conferences, "Conferences retrieved successfully"));
         }
 
         // NEW ENDPOINT 4: Get conferences with step completion status
@@ -103,7 +103,7 @@ namespace ConfRadar.Api.Controllers
             [FromQuery] string? searchKeyword = null)
         {
             var conferences = await _serviceManager.ConferenceService.GetPendingConferencesAsync(page, pageSize, searchKeyword);
-            return Ok(ApiResponse<PagedResult<ConferenceResponse>>.SuccessResponse(conferences, "Pending conferences retrieved successfully"));
+            return Ok(ApiResponse<PagedResult<ConferenceResponseDTO>>.SuccessResponse(conferences, "Pending conferences retrieved successfully"));
         }
 
         // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
@@ -275,7 +275,7 @@ namespace ConfRadar.Api.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.GetConferenceByAssignedPapers(userId);
-            return Ok(ApiResponse<List<ConferenceResponse>>.SuccessResponse(result, "Lấy thành công danh sách conference có papers được assigned cho local reviewer"));
+            return Ok(ApiResponse<List<ConferenceResponseDTO>>.SuccessResponse(result, "Lấy thành công danh sách conference có papers được assigned cho local reviewer"));
         }
 
         [HttpPut("request-a-conference-to-be-approved")]
