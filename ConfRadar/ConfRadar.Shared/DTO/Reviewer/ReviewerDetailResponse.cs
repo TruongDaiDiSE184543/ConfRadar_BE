@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.Shared.DTO.Reviewer
+﻿namespace ConfRadar.Shared.DTO.Reviewer
 {
     public class GetTotalAssignPapersDetailResponse
     {
         public int? TotalPaperAssignPaper { get; set; }
-        public List<PapersDetailResponseForReviewer> PaperDetails {get;set;} = new List<PapersDetailResponseForReviewer>();
+        public List<PapersDetailResponseForReviewer> PaperDetails { get; set; } = new List<PapersDetailResponseForReviewer>();
 
     }
     public class PapersDetailResponseForReviewer

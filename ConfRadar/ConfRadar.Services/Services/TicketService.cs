@@ -20,8 +20,8 @@ namespace ConfRadar.Services.Services
         Task<List<RefundRequestResponse>> GetAllRefundRequests();
         Task<int> RefundAuthorCloneFunction(string userId, string ticketId, string walletTransactionDescription);
 
-        Task<int> CancelTechTickets(CancelTechnicalTickets tickets,string userId);
-        Task<int> CancelResearchTickets(CancelResearchTickets tickets,string userId);
+        Task<int> CancelTechTickets(CancelTechnicalTickets tickets, string userId);
+        Task<int> CancelResearchTickets(CancelResearchTickets tickets, string userId);
 
     }
     public class TicketService : ITicketService
@@ -324,7 +324,7 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<int> CancelTechTickets(CancelTechnicalTickets tickets,string userId)
+        public async Task<int> CancelTechTickets(CancelTechnicalTickets tickets, string userId)
         {
 
             var dateTime = await _timeProviderService.GetVietnamTime();
@@ -338,9 +338,9 @@ namespace ConfRadar.Services.Services
             }
 
             var ownTechConferenceIds = (await _unitOfWork.ConferenceRepository
-                .GetTechnicalConferenceOrResearchConferenceIdsByUserId(userId,isResearchConference:false)).ToHashSet();
+                .GetTechnicalConferenceOrResearchConferenceIdsByUserId(userId, isResearchConference: false)).ToHashSet();
 
-            
+
 
             List<WalletTransaction> walletTransactions = new List<WalletTransaction>();
             List<Transaction> transactions = new List<Transaction>();
@@ -457,9 +457,9 @@ namespace ConfRadar.Services.Services
                 //userwallet (update chung ticket)
 
                 bool isValidTicketBelongToOwnConference = ownResearchConferenceIds.Contains(ticket.PricePhase.ConferencePrice.ConferenceId);
-                if (isValidTicketBelongToOwnConference == false) 
+                if (isValidTicketBelongToOwnConference == false)
                 {
-                    throw new BadRequestException($"Chúng tôi phát hiện vé {ticket.TicketId} không thuộc về bất cứ hội nghị nào của bạn"); 
+                    throw new BadRequestException($"Chúng tôi phát hiện vé {ticket.TicketId} không thuộc về bất cứ hội nghị nào của bạn");
                 }
 
                 var userWallet = ticket.User!.Wallet;

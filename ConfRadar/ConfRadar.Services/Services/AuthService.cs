@@ -8,7 +8,6 @@ using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.User;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
-using Quartz.Util;
 using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -185,7 +184,7 @@ namespace ConfRadar.Services.Services
             {
                 user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
             }
-            if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken) )
+            if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken))
             {
                 user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
             }
@@ -336,7 +335,7 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
             }
             bool isUserActive = (bool)user.IsActive;
-            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email,isUserActive);
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email, isUserActive);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {

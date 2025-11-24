@@ -10,12 +10,12 @@ namespace ConfRadar.Api.Controllers
     public class DashboardController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
-        
+
         public DashboardController(IServiceManager serviceManager)
         {
             _serviceManager = serviceManager;
         }
-        
+
         [HttpGet("conferences-group-by-status")]
         public async Task<IActionResult> GetConferenceStatsByUserId([FromQuery] string userId)
         {
@@ -24,9 +24,9 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("revenue")]
-        public async Task<IActionResult> GetConferenceStatsByUserId([FromQuery] string userId, [FromQuery]int monthBack)
+        public async Task<IActionResult> GetConferenceStatsByUserId([FromQuery] string userId, [FromQuery] int monthBack)
         {
-            var result = await _serviceManager.DashboardService.GetRevenueAnalyticsAsync(userId,monthBack);
+            var result = await _serviceManager.DashboardService.GetRevenueAnalyticsAsync(userId, monthBack);
             return Ok(ApiResponse<RevenueAnalyticsResponse>.SuccessResponse(result, "Thống kê doanh thu theo người tạo"));
         }
 

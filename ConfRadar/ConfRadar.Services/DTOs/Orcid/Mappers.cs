@@ -1,15 +1,10 @@
 ﻿using ConfRadar.Repositories.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.DTOs.Orcid
 {
     public static class Mappers
     {
-        public static AcademicProfile toModel(this OrcidAuthorizationResponse response,string userId,DateTime createdAt)
+        public static AcademicProfile toModel(this OrcidAuthorizationResponse response, string userId, DateTime createdAt)
         {
             return new AcademicProfile
             {

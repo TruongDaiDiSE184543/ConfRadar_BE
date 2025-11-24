@@ -57,7 +57,7 @@ namespace ConfRadar.Repositories.Repositories
              .Include(p => p.Ticket)
              .Include(p => p.Conference)
              .Include(p => p.PaperPhase)
-             .Include(p=> p.PaperReviewers)
+             .Include(p => p.PaperReviewers)
 
              .Where(p => p.PaperReviewers.Any(pr => pr.UserId == userId))
              .ToListAsync();
@@ -114,26 +114,26 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Papers
                 .AsNoTracking()
 
-                .Include(p=>p.PaperPhase)
-                .Include(p=>p.Ticket)
+                .Include(p => p.PaperPhase)
+                .Include(p => p.Ticket)
 
-                .Include(p=>p.PaperReviewers)
+                .Include(p => p.PaperReviewers)
                 //full paper
-                .Include(p=> p.FullPaper)
-                    .ThenInclude(fp=> fp.FullPaperReviews)
+                .Include(p => p.FullPaper)
+                    .ThenInclude(fp => fp.FullPaperReviews)
                 .Include(p => p.FullPaper)
                     .ThenInclude(fp => fp.ReviewStatus)
                 // revision
-                .Include(p=> p.RevisionPaper)
-                    .ThenInclude(rp=> rp.RevisionPaperReviews)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rp => rp.RevisionPaperReviews)
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rp => rp.GlobalStatus)
 
                 // camera ready
-                .Include(p=>p.CameraReady)
-                    .ThenInclude(c=>c.GlobalStatus)
+                .Include(p => p.CameraReady)
+                    .ThenInclude(c => c.GlobalStatus)
 
-                .Where(p=> p.PaperReviewers.Any(pa=>pa.UserId==userId))
+                .Where(p => p.PaperReviewers.Any(pa => pa.UserId == userId))
                 .AsSplitQuery()
                 .ToListAsync();
         }

@@ -2125,7 +2125,7 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
                 }
-                        
+
                 // 4b. Các phase ph?i di?n ra n?i ti?p nhau, không du?c g?i lên nhau
                 if (lastPhaseEndDate.HasValue && phase.RegistrationStartDate <= lastPhaseEndDate)
                 {

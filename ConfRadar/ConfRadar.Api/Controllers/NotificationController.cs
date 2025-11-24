@@ -1,8 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
-using ConfRadar.Services.DTOs.User;
 using ConfRadar.Shared.DTO.Notification;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 

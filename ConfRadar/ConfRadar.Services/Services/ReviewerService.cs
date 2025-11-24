@@ -3,11 +3,6 @@ using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.Reviewer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -17,12 +12,12 @@ namespace ConfRadar.Services.Services
         Task<GetTotalReviewedPapersDetailResponse> GetTotalReviewedPapers(string userId);
         Task<GetTotalPendingReviewsDetailResponse> GetTotalPendingReviews(string userId);
     }
-    public class ReviewerService :IReviewerService
+    public class ReviewerService : IReviewerService
     {
         private readonly IUnitOfWork _unitOfWork;
         public ReviewerService(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork;   
+            _unitOfWork = unitOfWork;
 
         }
         public async Task<GetTotalAssignPapersDetailResponse> GetTotalAssignPapers(string userId)
@@ -34,7 +29,7 @@ namespace ConfRadar.Services.Services
                 TotalPaperAssignPaper = totalPaper.Count(),
                 PaperDetails = totalPaper.Select(p => new PapersDetailResponseForReviewer()
                 {
-                    IsHeadReviewer = p.PaperReviewers.Any(pa => (bool)pa.IsHeadReviewer && pa.UserId ==userId),
+                    IsHeadReviewer = p.PaperReviewers.Any(pa => (bool)pa.IsHeadReviewer && pa.UserId == userId),
                     PaperId = p.PaperId,
                     ConferenceId = p.ConferenceId,
                     ConferenceName = p.Conference?.ConferenceName,
@@ -52,13 +47,13 @@ namespace ConfRadar.Services.Services
 
         }
 
-       
+
 
         public async Task<GetTotalReviewedPapersDetailResponse> GetTotalReviewedPapers(string userId)
         {
             var totalReviewedPapersDetailResponse = new GetTotalReviewedPapersDetailResponse();
             var papers = await _unitOfWork.PaperReviewerRepository.GetTotalPapersBelongToReviewer(userId);
-            if (papers.Count <= 0) 
+            if (papers.Count <= 0)
             {
                 return totalReviewedPapersDetailResponse;
             }
@@ -80,29 +75,29 @@ namespace ConfRadar.Services.Services
                 bool isHeadReviewer = (bool)paperReviewRole.IsHeadReviewer;
                 bool isAllReviewed = true;
                 var paperPhase = paper.PaperPhase;
-                    if (paperPhase == abstractPhase)
-                    {
-                        continue;
-                    }
-                    if (paper.FullPaper != null) 
-                    {
-                        if (paper.FullPaper.ReviewStatus == pendingReviewStatus) isAllReviewed = false;
-                    }
-                    if (paper.RevisionPaper != null)
-                    {
-                        if (paper.RevisionPaper.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
-                    }
-                    if (paper.CameraReady != null)
-                    {
-                        if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
-                    }
-                    if (isAllReviewed)
-                    {
-                        totalReviewedPapersDetailResponse.TotalPaperReviewed += 1;
-                        var paperDetail = CreatePaperDetail(paper, isHeadReviewer);
-                        totalReviewedPapersDetailResponse.PaperDetails.Add(paperDetail);
-                    }
+                if (paperPhase == abstractPhase)
+                {
+                    continue;
                 }
+                if (paper.FullPaper != null)
+                {
+                    if (paper.FullPaper.ReviewStatus == pendingReviewStatus) isAllReviewed = false;
+                }
+                if (paper.RevisionPaper != null)
+                {
+                    if (paper.RevisionPaper.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
+                }
+                if (paper.CameraReady != null)
+                {
+                    if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
+                }
+                if (isAllReviewed)
+                {
+                    totalReviewedPapersDetailResponse.TotalPaperReviewed += 1;
+                    var paperDetail = CreatePaperDetail(paper, isHeadReviewer);
+                    totalReviewedPapersDetailResponse.PaperDetails.Add(paperDetail);
+                }
+            }
             var result = totalReviewedPapersDetailResponse;
             return result;
         }
@@ -197,7 +192,7 @@ namespace ConfRadar.Services.Services
 
 
 
-        private PapersDetailResponseForReviewer CreatePaperDetail(Paper paper,bool? isHeadReviewer)
+        private PapersDetailResponseForReviewer CreatePaperDetail(Paper paper, bool? isHeadReviewer)
         {
             return new PapersDetailResponseForReviewer()
             {
@@ -212,7 +207,7 @@ namespace ConfRadar.Services.Services
                 PaperDescription = paper.Description,
                 PaperRefundedStatus = paper.Ticket?.IsRefunded,
                 IsHeadReviewer = isHeadReviewer
-                
+
             };
         }
     }
