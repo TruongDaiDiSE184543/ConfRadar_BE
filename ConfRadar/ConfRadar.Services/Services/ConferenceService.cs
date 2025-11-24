@@ -1666,7 +1666,7 @@ namespace ConfRadar.Services.Services
                         TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
                         contractURL = technicalDetail?.ContractUrl,
                         commission = technicalDetail?.Commission,
-                        createdBy = userId,
+                        createdBy = fullConference.CreatedBy,
                         Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                         Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
                         Sessions = fullConference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
