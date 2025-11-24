@@ -938,7 +938,7 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
-                createdBy = userId,
+                createdBy = conference.CreatedBy,
 
                 // Research Conference Detail specific fields
                 Name = researchDetail?.Name,
@@ -1150,7 +1150,7 @@ namespace ConfRadar.Services.Services
                 TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
                 commission = technicalDetail?.Commission,
                 contractURL = technicalDetail?.ContractUrl,
-                createdBy = userId,
+                createdBy = fullConference.CreatedBy,
              
                 Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                 Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
@@ -1503,7 +1503,7 @@ namespace ConfRadar.Services.Services
                     CityId = conference.CityId,
                     ConferenceCategoryId = conference.ConferenceCategoryId,
                     ConferenceStatusId = conference.ConferenceStatusId,
-                    createdBy = userId,
+                    createdBy = conference.CreatedBy,
 
                     // Research Conference Detail specific fields
                     Name = researchDetail?.Name,
