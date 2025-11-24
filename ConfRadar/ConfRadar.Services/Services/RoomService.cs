@@ -162,7 +162,7 @@ namespace ConfRadar.Services.Services
             ? conferences[session.ConferenceId!].ConferenceName
             : "Unknown Conference",
                 CityId = session.Room.Destination.CityId,
-                Cityname =session.Room.Destination.City.CityName,
+                Cityname = session.Room.Destination.City.CityName,
                 DestinationId = session.Room.Destination.DestinationId,
                 DestinationName = session.Room.Destination.Name
             }).ToList();
@@ -428,7 +428,7 @@ namespace ConfRadar.Services.Services
                 RoomId = room.RoomId,
                 Number = room.Number,
                 DisplayName = room.DisplayName,
-                CityId =room.Destination.CityId,
+                CityId = room.Destination.CityId,
                 Cityname = room.Destination.City.CityName,
                 DestinationId = room.Destination.DestinationId,
                 DestinationName = room.Destination.Name,

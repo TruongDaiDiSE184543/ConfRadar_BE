@@ -94,7 +94,7 @@ namespace ConfRadar.Services.Services
         private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
 
         public ConferenceService(IUnitOfWork unitOfWork, IConferenceStatusService conferenceStatusService, IConferenceTimelineService conferenceTimelineService,
-            IObjectStorageFileService objectStorageFileService, ITokenService tokenService, 
+            IObjectStorageFileService objectStorageFileService, ITokenService tokenService,
             ISystemConfigurationService systemConfigurationService,
             IOptions<AppSettingConfig.ObjectStorageSettings> objectStorageSettings, ITimeProviderService timeProviderService,
             INotificationService notificationService)
@@ -131,7 +131,7 @@ namespace ConfRadar.Services.Services
         //}
 
         #region Helper methods to validateDate
-     
+
 
 
 
@@ -221,22 +221,23 @@ namespace ConfRadar.Services.Services
             //get not refunded ticket
             var refundedTicket = await _unitOfWork.TicketRepository.GetNotRefundedTicketsByConferenceIdAsync(conference.ConferenceId);
             var invalidMessages = new List<string>();
-            if (refundedTicket.Any()){
-                foreach(var ticket in refundedTicket)
+            if (refundedTicket.Any())
+            {
+                foreach (var ticket in refundedTicket)
                 {
                     string typeOfTicket = ticket.PricePhase.ConferencePrice.IsAuthor.Value ? "tác giả" : "thường";
                     invalidMessages.Add($"Còn vé {ticket.TicketId} thuộc loại {typeOfTicket} của khách với ID {ticket.UserId} chưa được refund");
                 }
             }
 
-            if(conference.IsResearchConference == true)
+            if (conference.IsResearchConference == true)
             {
                 //get not rejected paper
                 var reviewStatusNotRejected = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Rejected.GetDescription());
                 var globalStatusRejected = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
                 var notRejectedPapers = await _unitOfWork.PaperRepository.GetAllNotRejectEdPaper(globalStatusRejected, reviewStatusNotRejected, conference.ConferenceId);
 
-                foreach(var paper in notRejectedPapers)
+                foreach (var paper in notRejectedPapers)
                 {
                     invalidMessages.Add($"Còn paper với ID {paper.PaperId} ở phase {paper.PaperPhase.PhaseName} chưa trong trạng thái rejected");
                 }
@@ -722,15 +723,15 @@ namespace ConfRadar.Services.Services
                 bool rejectedResult = await UpdateConferenceStatusAsync(conferenceId, "Rejected", request.Reason);
                 if (rejectedResult)
                 {
-                    await SendConferenceApprovalNotification(creator,conference,false);
+                    await SendConferenceApprovalNotification(creator, conference, false);
                 }
                 return rejectedResult;
             }
             // Change conference status from Pending to Preparing
             bool approveResult = await UpdateConferenceStatusAsync(conferenceId, "Preparing", request.Reason);
-            if (approveResult) 
+            if (approveResult)
             {
-                await SendConferenceApprovalNotification(creator,conference,true);
+                await SendConferenceApprovalNotification(creator, conference, true);
             }
             return approveResult;
         }
@@ -740,9 +741,9 @@ namespace ConfRadar.Services.Services
             var timeNow = await _timeProviderService.GetVietnamTime();
 
             string title = "Kết quả duyệt hội nghị";
-            string message = isApproved? $"Hội nghị {conference.ConferenceName} đã được xét duyệt.": $"Hội nghị {conference.ConferenceName} đã bị từ chối.";
+            string message = isApproved ? $"Hội nghị {conference.ConferenceName} đã được xét duyệt." : $"Hội nghị {conference.ConferenceName} đã bị từ chối.";
 
-            
+
             var notification = new Notification
             {
                 NotificationId = Guid.NewGuid().ToString(),
@@ -836,7 +837,7 @@ namespace ConfRadar.Services.Services
 
                 if (newStatus.ConferenceStatusName == "Cancelled")
                     await ValidateForCancelledStateAsync(conference);
-                
+
 
                 // Update the conference status
                 conference.ConferenceStatusId = newStatus.ConferenceStatusId;
@@ -868,7 +869,7 @@ namespace ConfRadar.Services.Services
 
         }
 
-        
+
 
         public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId, string? userId)
         {

@@ -2,11 +2,8 @@
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Orcid;
 using ConfRadar.Services.Exceptions;
-using ConfRadar.Services.Services;
-using Google.Apis.Auth.OAuth2.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PayOS.Models.Webhooks;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -27,7 +24,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> AuthorizeOrcid(/*[FromQuery] string userId*/)
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-          
+
 
             string orcidOauth = _serviceManager.OrcidService.GenerateAuthorizationLink(userId);
             return Ok(ApiResponse<string>.SuccessResponse(orcidOauth, "Lấy link oauth thành công"));
@@ -98,7 +95,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> getSectionByUserId([FromQuery]string section  /*,[FromQuery] string userId */)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId,section);
+            var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId, section);
             return Ok(ApiResponse<object>.SuccessResponse(result, ""));
         }
 

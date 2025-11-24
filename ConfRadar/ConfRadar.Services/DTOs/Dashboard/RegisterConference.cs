@@ -16,10 +16,10 @@
         public DateOnly? StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
 
-        public int? TotalSlot { get; set; }    
-        public int PurchaseSlot { get; set; } 
+        public int? TotalSlot { get; set; }
+        public int PurchaseSlot { get; set; }
 
- 
+
         public decimal OccupancyRate { get; set; }
     }
 }

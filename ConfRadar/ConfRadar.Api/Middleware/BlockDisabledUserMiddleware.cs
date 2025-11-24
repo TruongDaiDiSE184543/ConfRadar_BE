@@ -1,5 +1,4 @@
 ﻿using ConfRadar.Repositories;
-using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text.Json;
 

@@ -2,8 +2,6 @@
 using ConfRadar.Services;
 using ConfRadar.Shared.DTO.Reviewer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -21,7 +19,7 @@ namespace ConfRadar.Api.Controllers
         // tổng số bài dc assign
         [HttpGet("stats/assigned")]
         [Authorize]
-        public async Task<IActionResult>  GetTotalAssignPapers()
+        public async Task<IActionResult> GetTotalAssignPapers()
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ReviewerService.GetTotalAssignPapers(userId);

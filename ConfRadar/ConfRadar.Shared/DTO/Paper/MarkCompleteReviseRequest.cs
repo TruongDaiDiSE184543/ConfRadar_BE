@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Shared.DTO.Paper
 {
     public class MarkCompleteReviseRequest
     {
-        [Required(ErrorMessage ="Mã revision round deadline là bắt buộc")]
+        [Required(ErrorMessage = "Mã revision round deadline là bắt buộc")]
         public string RevisionRoundDeadlineId { get; set; }
         [Required(ErrorMessage = "Mã revision paper là bắt buộc")]
         public string RevisionPaperId { get; set; } = null!;

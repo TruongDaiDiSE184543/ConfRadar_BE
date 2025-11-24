@@ -14,7 +14,7 @@ namespace ConfRadar.Services.Services
         #region getForJson
         Task<ConferenceStatisticsResponse> GetConferenceStatisticsAsync(string conferenceId);
         Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId);
-        
+
         Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.ReviewerAssignmentResponse>> GetReviewersByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.SessionWithPresentersResponse>> GetSessionsWithPresentersByConferenceIdAsync(string conferenceId);
@@ -495,10 +495,10 @@ namespace ConfRadar.Services.Services
         }
         #endregion
 
-       
-     
 
-        
+
+
+
 
 
         #region export

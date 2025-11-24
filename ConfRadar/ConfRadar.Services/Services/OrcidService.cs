@@ -7,7 +7,6 @@ using OfficeOpenXml.Packaging.Ionic.Zip;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Xml.Linq;
 
 namespace ConfRadar.Services.Services
 {
@@ -18,7 +17,7 @@ namespace ConfRadar.Services.Services
         Task<String> SyncWorksAsync(string userId);
         Task<string> SyncBiographyAsync(string userId);
         Task<string> SyncEducationAsync(string userId);
-        Task<string> GetSectionByUserIdFromOrcid(string userId,string section);
+        Task<string> GetSectionByUserIdFromOrcid(string userId, string section);
         Task<object> GetSectionByUserIdFromDb(string userId, string section);
         Task<OrcidStatusResponse> CheckOrcidStatusAsync(string userId);
 
@@ -133,15 +132,15 @@ namespace ConfRadar.Services.Services
             // 2. Kiểm tra token có hết hạn không (trừ đi 5 phút để an toàn)
             if (userProfile.ExpiresAt == null || userProfile.ExpiresAt <= ExtensionHelper.GetVietnamTime().AddMinutes(5))
             {
-               
+
                 await RefreshTokenAsync(userProfile);
             }
 
-       
+
             return userProfile;
         }
 
-     
+
         private async Task<AcademicProfile> GetValidProfileAsync(string userId, string requiredScope)
         {
             // 1. Lấy profile từ DB
@@ -158,7 +157,7 @@ namespace ConfRadar.Services.Services
                 await RefreshTokenAsync(userProfile);
             }
 
-           
+
             return userProfile;
         }
 

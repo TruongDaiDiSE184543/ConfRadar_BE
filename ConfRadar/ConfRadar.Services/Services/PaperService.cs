@@ -12,7 +12,6 @@ using ConfRadar.Shared.DTO.Abstract;
 using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.Extensions.Options;
-using Quartz.Util;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -527,7 +526,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy paper với id {request.PaperId}.");
             }
-            
+
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
@@ -938,9 +937,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không thể review vì paper đang không trong giai đoạn revise");
             }
-          
+
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
-            
+
             if (paperReviewer == null)
             {
                 throw new BadRequestException($"Bạn không có trong danh sách gán review");
@@ -2625,7 +2624,7 @@ namespace ConfRadar.Services.Services
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            if (currentRevisePhase == null || pendingGlobalStatus == null )
+            if (currentRevisePhase == null || pendingGlobalStatus == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
