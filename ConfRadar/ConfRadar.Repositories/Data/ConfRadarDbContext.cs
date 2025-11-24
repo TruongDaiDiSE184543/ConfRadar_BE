@@ -1,5 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -25,6 +28,8 @@ public partial class ConfRadarDbContext : DbContext
     public virtual DbSet<CheckinStatus> CheckinStatuses { get; set; }
 
     public virtual DbSet<City> Cities { get; set; }
+
+    public virtual DbSet<CollaboratorContract> CollaboratorContracts { get; set; }
 
     public virtual DbSet<Conference> Conferences { get; set; }
 
@@ -61,6 +66,8 @@ public partial class ConfRadarDbContext : DbContext
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<OrcidDataCache> OrcidDataCaches { get; set; }
+
+    public virtual DbSet<Organization> Organizations { get; set; }
 
     public virtual DbSet<Paper> Papers { get; set; }
 
@@ -144,9 +151,18 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
+    public static string GetConnectionString(string connectionStringName)
+    {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        string connectionString = config.GetConnectionString(connectionStringName);
+        return connectionString;
+    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -168,23 +184,18 @@ public partial class ConfRadarDbContext : DbContext
 
         modelBuilder.Entity<AcademicProfile>(entity =>
         {
-            entity.HasKey(e => e.AcademicProfileId).HasName("AcademicProfile_pkey");
-
             entity.ToTable("AcademicProfile");
 
             entity.Property(e => e.AcademicProfileId).HasMaxLength(50);
-            entity.Property(e => e.AccessToken).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.ExpiresAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.OrcidId).HasMaxLength(50);
-            entity.Property(e => e.RefreshToken).HasMaxLength(50);
-            entity.Property(e => e.Scope).HasMaxLength(50);
+            entity.Property(e => e.Scope).HasMaxLength(250);
             entity.Property(e => e.UserId).HasMaxLength(50);
-            entity.Property(e => e.UserName).HasMaxLength(50);
 
             entity.HasOne(d => d.User).WithMany(p => p.AcademicProfiles)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK_AcademicProfile_UserId");
+                .HasConstraintName("Fk_AcademicProfile_User");
         });
 
         modelBuilder.Entity<AuditLog>(entity =>
@@ -236,6 +247,25 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("City");
 
             entity.Property(e => e.CityId).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<CollaboratorContract>(entity =>
+        {
+            entity.HasKey(e => e.CollaboratorContractId).HasName("CollaboratorContract_pkey");
+
+            entity.ToTable("CollaboratorContract");
+
+            entity.Property(e => e.CollaboratorContractId).HasMaxLength(50);
+            entity.Property(e => e.ConferenceId).HasMaxLength(50);
+            entity.Property(e => e.UserId).HasMaxLength(50);
+
+            entity.HasOne(d => d.Conference).WithMany(p => p.CollaboratorContracts)
+                .HasForeignKey(d => d.ConferenceId)
+                .HasConstraintName("FK_CollaboratorContract_ConferenceId");
+
+            entity.HasOne(d => d.User).WithMany(p => p.CollaboratorContracts)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_CollaboratorContract_UserId");
         });
 
         modelBuilder.Entity<Conference>(entity =>
@@ -319,7 +349,6 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.ConferencePriceId).HasMaxLength(50);
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
-            entity.Property(e => e.TicketName).HasMaxLength(50);
             entity.Property(e => e.TicketPrice).HasPrecision(10, 2);
 
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferencePrices)
@@ -533,17 +562,31 @@ public partial class ConfRadarDbContext : DbContext
         {
             entity.ToTable("OrcidDataCache");
 
-            entity.HasIndex(e => new { e.AcademicProfileId, e.DataType }, "IX_OrcidDataCache_ProfileId_DataType").IsUnique();
-
             entity.Property(e => e.OrcidDataCacheId).HasMaxLength(50);
             entity.Property(e => e.AcademicProfileId).HasMaxLength(50);
-            entity.Property(e => e.DataType).HasMaxLength(50);
+            entity.Property(e => e.DataType).HasMaxLength(250);
             entity.Property(e => e.JsonContent).HasColumnType("jsonb");
             entity.Property(e => e.LastSyncedAt).HasColumnType("timestamp without time zone");
 
             entity.HasOne(d => d.AcademicProfile).WithMany(p => p.OrcidDataCaches)
                 .HasForeignKey(d => d.AcademicProfileId)
                 .HasConstraintName("FK_OrcidDataCache_AcademicProfile");
+        });
+
+        modelBuilder.Entity<Organization>(entity =>
+        {
+            entity.HasKey(e => e.OrganizationId).HasName("Organization_pkey");
+
+            entity.ToTable("Organization");
+
+            entity.HasIndex(e => e.UserId, "Organization_UserId_key").IsUnique();
+
+            entity.Property(e => e.OrganizationId).HasMaxLength(50);
+            entity.Property(e => e.UserId).HasMaxLength(50);
+
+            entity.HasOne(d => d.User).WithOne(p => p.Organization)
+                .HasForeignKey<Organization>(d => d.UserId)
+                .HasConstraintName("FK_Organization_UserId");
         });
 
         modelBuilder.Entity<Paper>(entity =>
@@ -747,7 +790,7 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.HasOne(d => d.Ticket).WithMany(p => p.PresenterChangeRequests)
                 .HasForeignKey(d => d.TicketId)
-                .HasConstraintName("FK_PresenterChangeRequest_Ticket");
+                .HasConstraintName("FK_PresenterChangeRequest_TicketId");
         });
 
         modelBuilder.Entity<PricePhase>(entity =>

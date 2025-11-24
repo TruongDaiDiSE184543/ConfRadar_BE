@@ -582,8 +582,8 @@ namespace ConfRadar.Services.Services
                 };
                 if (isCollaborator)
                 {
-                    technicalConferenceDetail.Commission = request.commission;
-                    technicalConferenceDetail.ContractUrl = contractLink;
+                    //technicalConferenceDetail.Commission = request.commission;
+                    //technicalConferenceDetail.ContractUrl = contractLink;
                 }
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
 
@@ -624,8 +624,8 @@ namespace ConfRadar.Services.Services
                 TicketSaleStart = conference.TicketSaleStart,
                 TicketSaleEnd = conference.TicketSaleEnd,
                 TargetAudience = technical?.TargetAudience,
-                contractURL = technical?.ContractUrl,
-                commission = technical?.Commission
+                //contractURL = technical?.ContractUrl,
+                //commission = technical?.Commission
             };
         }
 
@@ -728,14 +728,14 @@ namespace ConfRadar.Services.Services
                 // Ch? cho phép Collaborator c?p nh?t commission và contract
                 if (isCollaborator)
                 {
-                    technicalDetail.Commission = request.commission ?? technicalDetail.Commission;
+                    //technicalDetail.Commission = request.commission ?? technicalDetail.Commission;
 
                     // T?i và c?p nh?t URL file h?p d?ng n?u có
                     if (request.contractURL != null)
                     {
                         using var stream = request.contractURL.OpenReadStream();
                         var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.contractURL.FileName);
-                        technicalDetail.ContractUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), uniqueFileName, stream, request.contractURL.ContentType);
+                        //technicalDetail.ContractUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), uniqueFileName, stream, request.contractURL.ContentType);
                     }
                 }
 

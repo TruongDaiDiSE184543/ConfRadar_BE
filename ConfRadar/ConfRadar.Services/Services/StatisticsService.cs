@@ -89,9 +89,9 @@ namespace ConfRadar.Services.Services
                     if (!conference.IsInternalHosted.Value)
                     {
                         var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
-                        if (technicalDetail != null && technicalDetail.Commission.HasValue)
+                        if (technicalDetail != null /*&& technicalDetail.Commission.HasValue*/)
                         {
-                            var commissionPercentage = technicalDetail.Commission.Value;
+                            var commissionPercentage = /*technicalDetail.Commission.Value;*/  1;
                             var commissionAmount = totalAmount * (commissionPercentage / 100m);
                             var amountToConfRadar = commissionAmount;
                             var amountToCollaborator = totalAmount - commissionAmount;
