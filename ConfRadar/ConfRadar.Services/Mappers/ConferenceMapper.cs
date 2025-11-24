@@ -135,15 +135,17 @@ namespace ConfRadar.Services.Mappers
 
         public static RoomInfoResponse ToRoomInfoResponse(this Room model)
         {
+            if (model == null) 
+                return null;
             return new RoomInfoResponse
             {
-                RoomId = model.RoomId,
-                DisplayName = model.DisplayName,
-                CityId = model.Destination.CityId,
-                Cityname = model.Destination.City.CityName,
-                DestinationId = model.Destination.DestinationId,
-                DestinationName = model.Destination.Name,
-                Number = model.Number,
+                RoomId = model?.RoomId,
+                DisplayName = model?.DisplayName,
+                CityId = model?.Destination?.CityId,
+                Cityname = model?.Destination?.City?.CityName,
+                DestinationId = model?.Destination?.DestinationId,
+                DestinationName = model?.Destination?.Name,
+                Number = model?.Number,
             };
         }
 
@@ -247,9 +249,9 @@ namespace ConfRadar.Services.Mappers
                 SessionDate = model.SessionDate,
                 ConferenceId = model.ConferenceId,
                 RoomId = model.RoomId,
-                Room = model.Room != null ? model.Room.ToRoomInfoResponse() : null,
                 Speakers = model.Speakers?.Select(s => s.ToSpeakerResponse()).ToList(),
-                SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList()
+                SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList(),
+                Room = model.Room != null ? model?.Room?.ToRoomInfoResponse() : null
             };
         }
 
