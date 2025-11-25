@@ -439,7 +439,6 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetail
             {
                 ConferenceId = conferenceId,
-                Name = request.Name,
                 PaperFormat = request.PaperFormat,
                 NumberPaperAccept = request.NumberPaperAccept,
                 RevisionAttemptAllowed = request.RevisionAttemptAllowed,

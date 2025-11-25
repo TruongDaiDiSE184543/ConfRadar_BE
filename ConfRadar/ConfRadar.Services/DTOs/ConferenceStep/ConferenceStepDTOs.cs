@@ -619,10 +619,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class CreateResearchConferenceDetailRequest
     {
-        [Required(ErrorMessage = "Tên (chuyên ngành) của hội nghị là bắt buộc.")]
-        [MaxLength(255, ErrorMessage = "Tên chuyên ngành không được vượt quá 255 ký tự.")]
-        public string Name { get; set; }
-
+     
         [Required(ErrorMessage = "Định dạng bài báo là bắt buộc.")]
         [MaxLength(255, ErrorMessage = "Định dạng bài báo không được vượt quá 255 ký tự.")]
         public string PaperFormat { get; set; }
@@ -661,8 +658,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateResearchConferenceDetailRequest
     {
-        [MaxLength(255, ErrorMessage = "Tên chuyên ngành không được vượt quá 255 ký tự.")]
-        public string? Name { get; set; }
 
         [MaxLength(255, ErrorMessage = "Định dạng bài báo không được vượt quá 255 ký tự.")]
         public string? PaperFormat { get; set; }
@@ -732,21 +727,25 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? ReviewStartDate { get; set; }
         [Required]
         public DateOnly? ReviewEndDate { get; set; }
+        [Required]
         public DateOnly? FullPaperDecideStatusStart { get; set; }
+        [Required]
         public DateOnly? FullPaperDecideStatusEnd { get; set; }
         [Required]
         public DateOnly? ReviseStartDate { get; set; }
         [Required]
         public DateOnly? ReviseEndDate { get; set; }
-        public DateOnly? RevisionPaperReviewStart { get; set; }
-        public DateOnly? RevisionPaperReviewEnd { get; set; }
+        [Required]  
         public DateOnly? RevisionPaperDecideStatusStart { get; set; }
+        [Required]
         public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
         [Required]
         public DateOnly? CameraReadyStartDate { get; set; }
         [Required]
         public DateOnly? CameraReadyEndDate { get; set; }
+        [Required]
         public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        [Required]
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
 
         [Required(ErrorMessage = "Phải xác định đây có phải là phase waitlist hay không.")]
@@ -783,8 +782,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? FullPaperDecideStatusEnd { get; set; }
         public DateOnly? ReviseStartDate { get; set; }
         public DateOnly? ReviseEndDate { get; set; }
-        public DateOnly? RevisionPaperReviewStart { get; set; }
-        public DateOnly? RevisionPaperReviewEnd { get; set; }
         public DateOnly? RevisionPaperDecideStatusStart { get; set; }
         public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
         public DateOnly? CameraReadyStartDate { get; set; }

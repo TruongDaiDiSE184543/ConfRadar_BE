@@ -2044,7 +2044,6 @@ namespace ConfRadar.Services.Services
             await EnsureConferenceIsEditable(conference);
 
 
-            researchDetail.Name = request.Name ?? researchDetail.Name;
             researchDetail.PaperFormat = request.PaperFormat ?? researchDetail.PaperFormat;
             researchDetail.NumberPaperAccept = request.NumberPaperAccept ?? researchDetail.NumberPaperAccept;
             researchDetail.RevisionAttemptAllowed = request.RevisionAttemptAllowed ?? researchDetail.RevisionAttemptAllowed;
@@ -2129,9 +2128,7 @@ namespace ConfRadar.Services.Services
                     phase.FullPaperDecideStatusStart > phase.FullPaperDecideStatusEnd ||
                     phase.FullPaperDecideStatusEnd > phase.ReviseStartDate ||
                     phase.ReviseStartDate > phase.ReviseEndDate ||
-                    phase.ReviseEndDate > phase.RevisionPaperReviewStart ||
-                    phase.RevisionPaperReviewStart > phase.RevisionPaperReviewEnd ||
-                    phase.RevisionPaperReviewEnd > phase.RevisionPaperDecideStatusStart ||
+                    phase.ReviseEndDate > phase.RevisionPaperDecideStatusStart ||
                     phase.RevisionPaperDecideStatusStart > phase.RevisionPaperDecideStatusEnd ||
                     phase.RevisionPaperDecideStatusEnd > phase.CameraReadyStartDate ||
                     phase.CameraReadyStartDate > phase.CameraReadyEndDate ||
@@ -2293,7 +2290,7 @@ namespace ConfRadar.Services.Services
 
             // Giai đoạn 7: Review lại bài đã sửa (Revision Review)
             //var finalReviseReviewStart = request.RevisionPaperReviewStart ?? phaseToUpdate.RevisionPaperReviewStart;
-            //var finalReviseReviewEnd = request.RevisionPaperReviewEnd ?? phaseToUpdate.RevisionPaperReviewEnd;
+            //var finalReviseReviewEnd = request.RevisionPaperReviewEnd ?? phaseToUpdate.RevisionPaperReviewEnd;s
 
             // Giai đoạn 8: Quyết định bài sửa (Revision Decide)
             var finalReviseDecideStart = request.RevisionPaperDecideStatusStart ?? phaseToUpdate.RevisionPaperDecideStatusStart;
