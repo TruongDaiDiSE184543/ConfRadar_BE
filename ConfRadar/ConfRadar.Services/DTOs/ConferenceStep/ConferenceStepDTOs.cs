@@ -127,11 +127,9 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Ngày diễn ra phiên là bắt buộc")]
         public DateOnly? Date { get; set; }
 
-        [Required(ErrorMessage = "ID phòng là bắt buộc cho phiên")]
-
         public string? RoomId { get; set; }
-        [Required(ErrorMessage = "Cần có ít nhất một diễn giả")]
-        public List<CreateSpeakerRequest> Speaker { get; set; }
+
+        public List<CreateSpeakerRequest>? Speaker { get; set; }
         public List<CreateConferenceSessionMediaRequest>? SessionMedias { get; set; }
     }
 

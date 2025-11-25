@@ -75,7 +75,7 @@ namespace ConfRadar.Services.Services
         Task<bool> ActivateWaitlist(string confId, string userId);
         Task ValidateForReadyStateAsync(Conference conf);
         Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId);
-        Task getSkeletonTechConf(string collaboratorId);
+        Task<List<SkeletonTechConfResponse>> getSkeletonTechConf(string collaboratorId);
     }
 
     public class ConferenceService : IConferenceService
