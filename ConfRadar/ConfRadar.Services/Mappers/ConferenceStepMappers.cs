@@ -456,7 +456,6 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetailResponse
             {
                 ConferenceId = model.ConferenceId,
-                Name = model.Name,
                 PaperFormat = model.PaperFormat,
                 NumberPaperAccept = model.NumberPaperAccept,
                 RevisionAttemptAllowed = model.RevisionAttemptAllowed,
