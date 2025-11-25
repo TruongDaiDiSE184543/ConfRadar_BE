@@ -56,12 +56,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         [Required(ErrorMessage = "Đối tượng mục tiêu là bắt buộc.")]
         public string targetAudienceTechnicalConference { get; set; }
-
-        // Các trường dành riêng cho Collaborator, không bắt buộc với Organizer
-        public IFormFile? contractURL { get; set; }
-
-        [Range(0, 100, ErrorMessage = "Hoa hồng phải nằm trong khoảng từ 0 đến 100.")]
-        public int? commission { get; set; }
     }
 
     // Step 2: Price Phase and Conference Prices
@@ -235,10 +229,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? CityId { get; set; }
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
-        public IFormFile? contractURL { get; set; }
-
-        [Range(0, 100, ErrorMessage = "Hoa hồng phải nằm trong khoảng từ 0 đến 100.")]
-        public int? commission { get; set; }
 
         public string? targetaudience { get; set; }
     }
@@ -377,8 +367,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? TicketSaleEnd { get; set; }
         public string? createdby { get; set; }
         public string? TargetAudience { get; set; }
-        public string? contractURL { get; set; }
-        public int? commission { get; set; }
     }
 
     public class ConferencePriceStepResponse

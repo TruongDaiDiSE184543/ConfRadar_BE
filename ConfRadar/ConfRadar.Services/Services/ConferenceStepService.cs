@@ -532,21 +532,6 @@ namespace ConfRadar.Services.Services
             if (request.BannerImageFile.Length > maxBannerSize)
                 throw new BadRequestException("Kích thu?c t?p ?nh bìa không du?c vu?t quá 5 MB.");
 
-            // 1.6. Validation d?a trên vai trò ngu?i dùng (Collaborator)
-            var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userid);
-            var roleNames = userRoles.Select(ur => ur.Role?.RoleName).ToHashSet(); // Gi? s? có navigation property
-            bool isCollaborator = roleNames.Contains(SystemRoleEnum.Collaborator.GetDescription());
-
-            string? contractLink = null; // Bi?n d? luu link h?p d?ng sau khi upload
-            if (isCollaborator)
-            {
-                if (request.contractURL == null)
-                    throw new BadRequestException("C?n ph?i có t?p h?p d?ng (contractURL) cho c?ng tác viên.");
-                if (request.commission == null || request.commission < 0 || request.commission > 100)
-                    throw new BadRequestException("Hoa h?ng (commission) ph?i n?m trong kho?ng t? 0 d?n 100 cho c?ng tác viên.");
-                if (!_objectStorageFileService.IsValidDocumentFile(request.contractURL))
-                    throw new BadRequestException($"Không h? tr? d?nh d?ng h?p d?ng '{request.contractURL.ContentType}'. Vui lòng s? d?ng PDF ho?c DOC/DOCX.");
-            }
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -558,16 +543,10 @@ namespace ConfRadar.Services.Services
                 var bannerFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
                 request.bannerImageFileUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), bannerFileName, bannerStream, request.BannerImageFile.ContentType);
 
-                // 2.2. T?i file h?p d?ng (n?u là collaborator)
-                if (isCollaborator)
-                {
-                    using var contractStream = request.contractURL!.OpenReadStream();
-                    var contractFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.contractURL.FileName);
-                    contractLink = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), contractFileName, contractStream, request.contractURL.ContentType);
-                }
+
 
                 // 2.3. Xác d?nh tr?ng thái ban d?u
-                string initialStatusName = isCollaborator ? ConferenceStatusEnum.Draft.GetDescription() : ConferenceStatusEnum.Preparing.GetDescription();
+                string initialStatusName = ConferenceStatusEnum.Preparing.GetDescription();
                 var initialStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(initialStatusName);
 
                 // 2.4. T?o Conference
@@ -580,11 +559,7 @@ namespace ConfRadar.Services.Services
                     ConferenceId = conference.ConferenceId,
                     TargetAudience = request.targetAudienceTechnicalConference,
                 };
-                if (isCollaborator)
-                {
-                    //technicalConferenceDetail.Commission = request.commission;
-                    //technicalConferenceDetail.ContractUrl = contractLink;
-                }
+
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
 
                 await _unitOfWork.CommitAsync();
@@ -624,8 +599,6 @@ namespace ConfRadar.Services.Services
                 TicketSaleStart = conference.TicketSaleStart,
                 TicketSaleEnd = conference.TicketSaleEnd,
                 TargetAudience = technical?.TargetAudience,
-                //contractURL = technical?.ContractUrl,
-                //commission = technical?.Commission
             };
         }
 
@@ -666,14 +639,12 @@ namespace ConfRadar.Services.Services
 
 
             if (request.BannerImageFile != null && !_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
-                throw new BadRequestException("Ð?nh d?ng ?nh bìa không du?c h? tr?.");
+                throw new BadRequestException("Định d?ng ?nh bìa không du?c h? tr?.");
 
             var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(conference.CreatedBy);
             var roleNames = userRoles.Select(ur => ur.Role?.RoleName).ToHashSet();
             bool isCollaborator = roleNames.Contains(SystemRoleEnum.Collaborator.GetDescription());
 
-            if (isCollaborator && request.contractURL != null && !_objectStorageFileService.IsValidDocumentFile(request.contractURL))
-                throw new BadRequestException("Ð?nh d?ng t?p h?p d?ng không du?c h? tr?.");
             if (!string.IsNullOrWhiteSpace(request.CityId) && request.CityId != conference.CityId)
             {
                 if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
@@ -725,19 +696,6 @@ namespace ConfRadar.Services.Services
                 // 2.3. C?p nh?t các thu?c tính c?a TechnicalDetail
                 technicalDetail.TargetAudience = request.targetaudience ?? technicalDetail.TargetAudience;
 
-                // Ch? cho phép Collaborator c?p nh?t commission và contract
-                if (isCollaborator)
-                {
-                    //technicalDetail.Commission = request.commission ?? technicalDetail.Commission;
-
-                    // T?i và c?p nh?t URL file h?p d?ng n?u có
-                    if (request.contractURL != null)
-                    {
-                        using var stream = request.contractURL.OpenReadStream();
-                        var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.contractURL.FileName);
-                        //technicalDetail.ContractUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), uniqueFileName, stream, request.contractURL.ContentType);
-                    }
-                }
 
                 // 2.4. Luu các thay d?i vào DB
                 await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conference);
