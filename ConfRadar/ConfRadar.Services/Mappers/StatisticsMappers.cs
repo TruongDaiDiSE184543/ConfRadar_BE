@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Statistics;
 
 namespace ConfRadar.Services.Mappers
@@ -101,8 +102,8 @@ namespace ConfRadar.Services.Mappers
             // Logic tính toán Overall Status
             string overallStatus = "Chưa tham gia";
             if (ticket.IsRefunded == true) overallStatus = "Đã hoàn tiền";
-            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == "CheckedIn")) overallStatus = "Đã tham gia";
-            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == "Expired")) overallStatus = "Vắng mặt (Hết hạn)";
+            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription())) overallStatus = "Đã tham gia";
+            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.Expired.GetDescription())) overallStatus = "Vắng mặt (Hết hạn)";
 
             return new TicketHolderDetailResponse
             {

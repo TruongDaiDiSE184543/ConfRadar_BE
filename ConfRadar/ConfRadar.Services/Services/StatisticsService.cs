@@ -302,14 +302,14 @@ namespace ConfRadar.Services.Services
             // Nếu muốn tìm ai "Đã check-in" (bất kể session nào)
             if (!string.IsNullOrEmpty(request.CheckInStatus))
             {
-                if (request.CheckInStatus == "CheckedIn")
+                if (request.CheckInStatus == CheckInStatusEnum.CheckedIn.GetDescription())
                 {
-                    query = query.Where(t => t.UserCheckIns.Any(uc => uc.CheckinStatus.CheckinStatusName == "Checked In"));
+                    query = query.Where(t => t.UserCheckIns.Any(uc => uc.CheckinStatus.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription()));
                 }
-                else if (request.CheckInStatus == "Not Checked In")
+                else if (request.CheckInStatus == CheckInStatusEnum.Pending.GetDescription())
                 {
                     // Pending nghĩa là chưa check-in cái nào và chưa hết hạn
-                    query = query.Where(t => !t.UserCheckIns.Any() || t.UserCheckIns.All(uc => uc.CheckinStatus.CheckinStatusName == "Not Checked In"));
+                    query = query.Where(t => !t.UserCheckIns.Any() || t.UserCheckIns.All(uc => uc.CheckinStatus.CheckinStatusName == CheckInStatusEnum.Pending.GetDescription()));
                 }
             }
 
