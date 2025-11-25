@@ -767,8 +767,7 @@ namespace ConfRadar.Services.Services
 
             if (conference.CreatedBy != userId)
                 throw new ForbiddenException("B?n không có quy?n thêm giá vé cho h?i ngh? này.");
-            await EnsureConferenceIsEditable(conference);
-
+            
             if (request.TypeOfTicket == null || !request.TypeOfTicket.Any())
                 throw new BadRequestException("Yêu c?u ph?i ch?a ít nh?t m?t lo?i vé.");
             ConferencePriceListWithPhasesResponse result = new ConferencePriceListWithPhasesResponse
@@ -805,14 +804,14 @@ namespace ConfRadar.Services.Services
                     //Phase for each ticket type
                     List<PricePhaseResponse> pricePhaseResponses = new();
                     if (existingConferencePrice.Any(p => p.TicketName.Equals(toBeConferencePrice.TicketName, StringComparison.OrdinalIgnoreCase)))
-                        throw new BadRequestException($"Tên vé '{toBeConferencePrice.TicketName}' dã t?n t?i trong h?i ngh? này.");
-                    if (toBeConferencePrice.TicketPrice < 0) throw new BadRequestException($"Giá vé cho '{toBeConferencePrice.TicketName}' không du?c là s? âm.");
-                    if (toBeConferencePrice.TotalSlot <= 0) throw new BadRequestException($"S? lu?ng vé cho '{toBeConferencePrice.TicketName}' ph?i l?n hon 0.");
+                        throw new BadRequestException($"Tên vé '{toBeConferencePrice.TicketName}' đã tồn tại trong hội nghih này.");
+                    if (toBeConferencePrice.TicketPrice < 0) throw new BadRequestException($"Giá vé cho '{toBeConferencePrice.TicketName}' không được là số âm.");
+                    if (toBeConferencePrice.TotalSlot <= 0) throw new BadRequestException($"Số lượng vé cho '{toBeConferencePrice.TicketName}' phải lớn hơn 0.");
                     //check if totalslot of phases in a ticket type is larger than the totalslot of the ticket itself
-                    if (toBeConferencePrice.Phases == null || !toBeConferencePrice.Phases.Any()) throw new BadRequestException($"Lo?i vé '{toBeConferencePrice.TicketName}' ph?i có ít nh?t m?t giai do?n bán vé.");
+                    if (toBeConferencePrice.Phases == null || !toBeConferencePrice.Phases.Any()) throw new BadRequestException($"Loại vé '{toBeConferencePrice.TicketName}' phải có ít nhất một giai đoạn bán vé.");
                     var totalSlotFromPhases = toBeConferencePrice.Phases.Sum(phase => phase.Totalslot);
                     if (toBeConferencePrice.TotalSlot != totalSlotFromPhases)
-                        throw new BadRequestException($"V?i vé '{toBeConferencePrice.TicketName}', t?ng s? vé trong các giai do?n ({totalSlotFromPhases}) không kh?p v?i t?ng s? vé c?a lo?i vé dó ({toBeConferencePrice.TotalSlot}).");
+                        throw new BadRequestException($"V?i vé '{toBeConferencePrice.TicketName}', tổng số vé trong các giai đoạn ({totalSlotFromPhases}) không khớp với tổng số vé củaa loại vé đó ({toBeConferencePrice.TotalSlot}).");
 
 
 

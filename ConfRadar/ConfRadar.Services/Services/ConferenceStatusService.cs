@@ -69,6 +69,9 @@ namespace ConfRadar.Services.Services
                 if (roleOfUser.Contains(SystemRoleEnum.ConferenceOrganizer.ToString()))
                 {
                     conferenceStatus.Remove(draftStatus);
+                    conferenceStatus.Remove(deletedStatus);
+                    return conferenceStatus;
+
                 }
                 else if (roleOfUser.Contains(SystemRoleEnum.Customer.ToString()))
                 {
@@ -77,6 +80,8 @@ namespace ConfRadar.Services.Services
                     conferenceStatus.Remove(pendingStatus);
                     conferenceStatus.Remove(preparingStatus);
                     conferenceStatus.Remove(rejectedStatus);
+                } else if (roleOfUser.Contains(SystemRoleEnum.Collaborator.ToString()){
+                    conferenceStatus.Remove(deletedStatus);
                 }
             }
             else
