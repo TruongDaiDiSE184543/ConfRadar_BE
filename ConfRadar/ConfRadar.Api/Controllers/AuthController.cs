@@ -59,7 +59,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> VerifyForgetPassword([FromBody] ForgetPasswordRequest request)
         {
             await _serviceManager.AuthService.VerifyForgetPassword(request.Token, request.Password);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "Password changed successfully"));
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Password đổi thành công"));
         }
         [Authorize]
         [HttpPut("change-password")]

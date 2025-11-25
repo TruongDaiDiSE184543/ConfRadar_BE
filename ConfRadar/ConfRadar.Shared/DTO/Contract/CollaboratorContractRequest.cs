@@ -39,4 +39,15 @@ namespace ConfRadar.Shared.DTO.Contract
         [Required(ErrorMessage = "Mã hội nghị là bắt buộc")]
         public string ConferenceId { get; set; }
     }
+
+    public class CollaboratorContractSearchParam
+    {
+        public string? ConferenceName { get; set; }
+        public string? OrganizationId { get; set; }
+        public string? Status { get; set; }
+
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
+
 }
