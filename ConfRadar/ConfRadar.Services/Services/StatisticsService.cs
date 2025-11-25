@@ -14,7 +14,7 @@ namespace ConfRadar.Services.Services
         #region getForJson
         Task<ConferenceStatisticsResponse> GetConferenceStatisticsAsync(string conferenceId);
         Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId);
-        
+
         Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.ReviewerAssignmentResponse>> GetReviewersByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.SessionWithPresentersResponse>> GetSessionsWithPresentersByConferenceIdAsync(string conferenceId);
@@ -89,9 +89,9 @@ namespace ConfRadar.Services.Services
                     if (!conference.IsInternalHosted.Value)
                     {
                         var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
-                        if (technicalDetail != null && technicalDetail.Commission.HasValue)
+                        if (technicalDetail != null /*&& technicalDetail.Commission.HasValue*/)
                         {
-                            var commissionPercentage = technicalDetail.Commission.Value;
+                            var commissionPercentage = /*technicalDetail.Commission.Value;*/  1;
                             var commissionAmount = totalAmount * (commissionPercentage / 100m);
                             var amountToConfRadar = commissionAmount;
                             var amountToCollaborator = totalAmount - commissionAmount;
@@ -495,10 +495,10 @@ namespace ConfRadar.Services.Services
         }
         #endregion
 
-       
-     
 
-        
+
+
+
 
 
         #region export

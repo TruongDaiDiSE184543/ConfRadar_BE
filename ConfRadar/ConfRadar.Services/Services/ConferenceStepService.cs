@@ -582,8 +582,8 @@ namespace ConfRadar.Services.Services
                 };
                 if (isCollaborator)
                 {
-                    technicalConferenceDetail.Commission = request.commission;
-                    technicalConferenceDetail.ContractUrl = contractLink;
+                    //technicalConferenceDetail.Commission = request.commission;
+                    //technicalConferenceDetail.ContractUrl = contractLink;
                 }
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
 
@@ -624,8 +624,8 @@ namespace ConfRadar.Services.Services
                 TicketSaleStart = conference.TicketSaleStart,
                 TicketSaleEnd = conference.TicketSaleEnd,
                 TargetAudience = technical?.TargetAudience,
-                contractURL = technical?.ContractUrl,
-                commission = technical?.Commission
+                //contractURL = technical?.ContractUrl,
+                //commission = technical?.Commission
             };
         }
 
@@ -728,14 +728,14 @@ namespace ConfRadar.Services.Services
                 // Ch? cho phép Collaborator c?p nh?t commission và contract
                 if (isCollaborator)
                 {
-                    technicalDetail.Commission = request.commission ?? technicalDetail.Commission;
+                    //technicalDetail.Commission = request.commission ?? technicalDetail.Commission;
 
                     // T?i và c?p nh?t URL file h?p d?ng n?u có
                     if (request.contractURL != null)
                     {
                         using var stream = request.contractURL.OpenReadStream();
                         var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.contractURL.FileName);
-                        technicalDetail.ContractUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), uniqueFileName, stream, request.contractURL.ContentType);
+                        //technicalDetail.ContractUrl = _objectStorageSettings.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.contract.ToString(), uniqueFileName, stream, request.contractURL.ContentType);
                     }
                 }
 
@@ -2124,7 +2124,7 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
                 }
-                        
+
                 // 4b. Các phase ph?i di?n ra n?i ti?p nhau, không du?c g?i lên nhau
                 if (lastPhaseEndDate.HasValue && phase.RegistrationStartDate <= lastPhaseEndDate)
                 {
@@ -2275,8 +2275,8 @@ namespace ConfRadar.Services.Services
             var finalReviseEnd = request.ReviseEndDate ?? phaseToUpdate.ReviseEndDate;
 
             // Giai đoạn 7: Review lại bài đã sửa (Revision Review)
-            var finalReviseReviewStart = request.RevisionPaperReviewStart ?? phaseToUpdate.RevisionPaperReviewStart;
-            var finalReviseReviewEnd = request.RevisionPaperReviewEnd ?? phaseToUpdate.RevisionPaperReviewEnd;
+            //var finalReviseReviewStart = request.RevisionPaperReviewStart ?? phaseToUpdate.RevisionPaperReviewStart;
+            //var finalReviseReviewEnd = request.RevisionPaperReviewEnd ?? phaseToUpdate.RevisionPaperReviewEnd;
 
             // Giai đoạn 8: Quyết định bài sửa (Revision Decide)
             var finalReviseDecideStart = request.RevisionPaperDecideStatusStart ?? phaseToUpdate.RevisionPaperDecideStatusStart;
@@ -2316,11 +2316,11 @@ namespace ConfRadar.Services.Services
 
                 // 6. Revise
                 finalReviseStart > finalReviseEnd ||
-                finalReviseEnd > finalReviseReviewStart ||
+               /* finalReviseEnd > finalReviseReviewStart ||
 
                 // 7. Revision Review
                 finalReviseReviewStart > finalReviseReviewEnd ||
-                finalReviseReviewEnd > finalReviseDecideStart ||
+                finalReviseReviewEnd > finalReviseDecideStart || */
 
                 // 8. Revision Decide
                 finalReviseDecideStart > finalReviseDecideEnd ||
@@ -2392,8 +2392,8 @@ namespace ConfRadar.Services.Services
                 phaseToUpdate.ReviseEndDate = finalReviseEnd;
 
                 // 7. Revision Review (Thêm mới)
-                phaseToUpdate.RevisionPaperReviewStart = finalReviseReviewStart;
-                phaseToUpdate.RevisionPaperReviewEnd = finalReviseReviewEnd;
+                //phaseToUpdate.RevisionPaperReviewStart = finalReviseReviewStart;
+                //phaseToUpdate.RevisionPaperReviewEnd = finalReviseReviewEnd;
 
                 // 8. Revision Decide (Thêm mới)
                 phaseToUpdate.RevisionPaperDecideStatusStart = finalReviseDecideStart;

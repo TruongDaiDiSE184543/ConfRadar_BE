@@ -53,8 +53,8 @@
 
         public DateOnly? ReviseStartDate { get; set; }
         public DateOnly? ReviseEndDate { get; set; }
-        public DateOnly? RevisionPaperReviewStart { get; set; }
-        public DateOnly? RevisionPaperReviewEnd { get; set; }
+        //public DateOnly? RevisionPaperReviewStart { get; set; }
+        //public DateOnly? RevisionPaperReviewEnd { get; set; }
         public DateOnly? RevisionPaperDecideStatusStart { get; set; }
 
         public DateOnly? RevisionPaperDecideStatusEnd { get; set; }

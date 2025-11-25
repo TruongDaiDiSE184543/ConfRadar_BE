@@ -37,7 +37,7 @@ namespace ConfRadar.Services
         //public ICityService CityService { get; }
         public INotificationService NotificationService { get; }
         public IDashboardService DashboardService { get; }
-        public IReviewerService ReviewerService{ get; }
+        public IReviewerService ReviewerService { get; }
 
 
     }
@@ -114,7 +114,7 @@ namespace ConfRadar.Services
             IExcelExportService excelExportService,
             INotificationService notificationService,
             IDashboardService dashboardService,
-          
+
             IReviewerService reviewerService
 
            )
@@ -150,7 +150,7 @@ namespace ConfRadar.Services
             _orcidService = orcidService;
             _statisticsService = statisticsService;
             _excelExportService = excelExportService;
-           
+
             _reviewerService = reviewerService;
             _notificationService = notificationService;
             _dashboardService = dashboardService;

@@ -2,6 +2,7 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Shared.DTO.Contract;
 using ConfRadar.Shared.DTO.ReviewContract;
 using Microsoft.Extensions.Options;
 using static ConfRadar.Services.Common.AppSettingConfig;
@@ -19,6 +20,7 @@ namespace ConfRadar.Services.Services
         Task<List<ContractDetailResponseForOrganizer>> GetListContractByReviewerId(string reviewerId);
         Task<int> GetOwnContractCount(string userId);
         Task<OwnActiveContractDetailResponse> GetUserActiveExternalContract(string userId);
+        Task<int> CreateCollaboratorContract(CollaboratorContractRequest request);
     }
     public class ContractService : IContractService
     {
@@ -345,6 +347,82 @@ namespace ConfRadar.Services.Services
                 }).ToList()
             };
             return result;
+        }
+
+        public async Task<int> CreateCollaboratorContract(CollaboratorContractRequest request)
+        {
+            var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
+            if (collabRole == null)
+                throw new NotFoundException("Không tìm thấy role trong hệ thống");
+
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(request.UserId);
+            if (user == null)
+                throw new NotFoundException("Không tìm thấy người dùng");
+
+            if (!user.UserRoles.Any(ur => ur.RoleId == collabRole.RoleId))
+                throw new BadRequestException("Người dùng này không phải collaborator");
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(request.ConferenceId);
+            if (conference == null)
+                throw new NotFoundException($"Không tìm thấy hội nghị với mã {request.ConferenceId}");
+
+           
+
+            var collabContract = await _unitOfWork.CollaboratorContractRepository.GetListCollaboratorContractByUserIdAsync(request.UserId);
+            var currentCollabContract = collabContract.FirstOrDefault(cc => cc.ConferenceId == request.ConferenceId && cc.UserId == request.UserId);
+            if (currentCollabContract != null)
+            {
+                throw new BadRequestException($"Đã tìm thấy hợp đồng cho collaborator {currentCollabContract.CollaboratorContractId} của {currentCollabContract.User!.FullName} được kí vào ngày {currentCollabContract.SignDay}");
+            }
+
+            if (request.IsTicketSelling == true)
+            {
+                if (request.IsPriceStep == false || request.IsSessionStep == false)
+                    throw new BadRequestException("price step và session step là bắt buộc cho hội nghị bán vé");
+                if (request.Commission == null || request.Commission <= 0)
+                    throw new BadRequestException("commission không được bỏ trống hoặc có giá trị <=0");
+
+            }
+            if (request.SignDay > request.FinalizePaymentDate)
+                throw new BadRequestException("Ngày kí hợp đồng phải trước ngày giải ngân");
+
+
+
+            string fileUrl = null;
+            if (request.ContractFile != null)
+            {
+                if (request.ContractFile.ContentType == null)
+                {
+                    throw new BadRequestException("Content type is null");
+                }
+                
+                using var stream = request.ContractFile.OpenReadStream();
+                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.ContractFile.FileName);
+                var baseUri = _objectStorageSettings.Value.EndPoint;
+                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.collaboratorcontract.ToString(), uniqueFileName, stream, request.ContractFile.ContentType);
+                fileUrl = baseUri + objectStorageFileUrl;
+            }
+
+            var collabContractObj = new CollaboratorContract()
+            {
+                CollaboratorContractId = Guid.NewGuid().ToString(),
+                UserId = request.UserId,
+                IsSponsorStep = request.IsSponsorStep,
+                IsMediaStep = request.IsMediaStep,
+                IsPolicyStep = request.IsPolicyStep,
+                IsSessionStep = request.IsSessionStep,
+                IsPriceStep = request.IsPriceStep,
+                IsTicketSelling = request.IsTicketSelling,
+                IsClosed = false,
+                SignDay = request.SignDay,
+                FinalizePaymentDate = request.FinalizePaymentDate,
+                Commission = request.Commission,
+                ConferenceId = request.ConferenceId,
+                ContractUrl = fileUrl,
+            };
+            return await _unitOfWork.CollaboratorContractRepository.CreateCollaboratorContractAsync(collabContractObj);
+            
+
         }
     }
 }

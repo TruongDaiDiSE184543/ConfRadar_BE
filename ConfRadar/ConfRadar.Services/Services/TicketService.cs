@@ -20,8 +20,8 @@ namespace ConfRadar.Services.Services
         Task<List<RefundRequestResponse>> GetAllRefundRequests();
         Task<int> RefundAuthorCloneFunction(string userId, string ticketId, string walletTransactionDescription);
 
-        Task<int> CancelTechTickets(CancelTechnicalTickets tickets,string userId);
-        Task<int> CancelResearchTickets(CancelResearchTickets tickets,string userId);
+        Task<int> CancelTechTickets(CancelTechnicalTickets tickets, string userId);
+        Task<int> CancelResearchTickets(CancelResearchTickets tickets, string userId);
 
     }
     public class TicketService : ITicketService
@@ -324,7 +324,7 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<int> CancelTechTickets(CancelTechnicalTickets tickets,string userId)
+        public async Task<int> CancelTechTickets(CancelTechnicalTickets tickets, string userId)
         {
 
             var dateTime = await _timeProviderService.GetVietnamTime();
@@ -337,10 +337,10 @@ namespace ConfRadar.Services.Services
                 return 0;
             }
 
-            var ownTechConferenceIds = (await _unitOfWork.ConferenceRepository
-                .GetTechnicalConferenceOrResearchConferenceIdsByUserId(userId,isResearchConference:false)).ToHashSet();
+            //var ownTechConferenceIds = (await _unitOfWork.ConferenceRepository
+            //    .GetTechnicalConferenceOrResearchConferenceIdsByUserId(userId, isResearchConference: false)).ToHashSet();
 
-            
+
 
             List<WalletTransaction> walletTransactions = new List<WalletTransaction>();
             List<Transaction> transactions = new List<Transaction>();
@@ -350,11 +350,11 @@ namespace ConfRadar.Services.Services
                 var validTransaction = usertransactionList.FirstOrDefault(t => t.IsRefunded == false);
                 var refundAmount = validTransaction!.Amount;
 
-                bool isValidTicketBelongToConference = ownTechConferenceIds.Contains(ticket.PricePhase.ConferencePrice.ConferenceId);
-                if (isValidTicketBelongToConference == false)
-                {
-                    throw new BadRequestException($"Bạn không thể refund vé này vì vé {ticket.TicketId} không thuộc về hội nghị của bạn");
-                }
+                //bool isValidTicketBelongToConference = ownTechConferenceIds.Contains(ticket.PricePhase.ConferencePrice.ConferenceId);
+                //if (isValidTicketBelongToConference == false)
+                //{
+                //    throw new BadRequestException($"Bạn không thể refund vé này vì vé {ticket.TicketId} không thuộc về hội nghị của bạn");
+                //}
                 //userwallet (update chung ticket)
 
                 var userWallet = ticket.User!.Wallet;
@@ -444,8 +444,8 @@ namespace ConfRadar.Services.Services
                 return 0;
             }
 
-            var ownResearchConferenceIds = (await _unitOfWork.ConferenceRepository
-                .GetTechnicalConferenceOrResearchConferenceIdsByUserId(userId, isResearchConference: true)).ToHashSet();
+            //var ownResearchConferenceIds = (await _unitOfWork.ConferenceRepository
+            //    .GetTechnicalConferenceOrResearchConferenceIdsByUserId(userId, isResearchConference: true)).ToHashSet();
             List<WalletTransaction> walletTransactions = new List<WalletTransaction>();
             List<Transaction> transactions = new List<Transaction>();
             foreach (var ticket in ticketList)
@@ -456,11 +456,11 @@ namespace ConfRadar.Services.Services
 
                 //userwallet (update chung ticket)
 
-                bool isValidTicketBelongToOwnConference = ownResearchConferenceIds.Contains(ticket.PricePhase.ConferencePrice.ConferenceId);
-                if (isValidTicketBelongToOwnConference == false) 
-                {
-                    throw new BadRequestException($"Chúng tôi phát hiện vé {ticket.TicketId} không thuộc về bất cứ hội nghị nào của bạn"); 
-                }
+                //bool isValidTicketBelongToOwnConference = ownResearchConferenceIds.Contains(ticket.PricePhase.ConferencePrice.ConferenceId);
+                //if (isValidTicketBelongToOwnConference == false)
+                //{
+                //    throw new BadRequestException($"Chúng tôi phát hiện vé {ticket.TicketId} không thuộc về bất cứ hội nghị nào của bạn");
+                //}
 
                 var userWallet = ticket.User!.Wallet;
                 if (userWallet == null)

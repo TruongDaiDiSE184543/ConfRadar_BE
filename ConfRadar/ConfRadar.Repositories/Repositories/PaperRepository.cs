@@ -210,8 +210,8 @@ namespace ConfRadar.Repositories.Repositories
 
                     ReviseStartDate = currentActivePhase.ReviseStartDate,
                     ReviseEndDate = currentActivePhase.ReviseEndDate,
-                    RevisionPaperReviewStart = currentActivePhase.RevisionPaperReviewStart,
-                    RevisionPaperReviewEnd = currentActivePhase.RevisionPaperReviewEnd,
+                    //RevisionPaperReviewStart = currentActivePhase.RevisionPaperReviewStart,
+                    //RevisionPaperReviewEnd = currentActivePhase.RevisionPaperReviewEnd,
                     RevisionPaperDecideStatusStart = currentActivePhase.RevisionPaperDecideStatusStart,
                     RevisionPaperDecideStatusEnd = currentActivePhase.RevisionPaperDecideStatusEnd,
 
@@ -221,7 +221,7 @@ namespace ConfRadar.Repositories.Repositories
                     CameraReadyStartDate = currentActivePhase.CameraReadyStartDate,
                     CameraReadyEndDate = currentActivePhase.CameraReadyEndDate,
                     CameraReadyDecideStatusStart = currentActivePhase.CameraReadyDecideStatusStart,
-                    CameraReadyDecideStatusEnd =currentActivePhase.CameraReadyDecideStatusEnd,
+                    CameraReadyDecideStatusEnd = currentActivePhase.CameraReadyDecideStatusEnd,
 
 
                     IsActive = currentActivePhase.IsActive,
@@ -261,7 +261,7 @@ namespace ConfRadar.Repositories.Repositories
                     ReviewEndDate = currentActivePhase?.ReviewEndDate,
                     FullPaperDecideStatusStart = currentActivePhase?.FullPaperDecideStatusStart,
                     FullPaperDecideStatusEnd = currentActivePhase?.FullPaperDecideStatusEnd,
-                    
+
 
                 };
 
@@ -304,11 +304,11 @@ namespace ConfRadar.Repositories.Repositories
 
                     ReviseStartDate = currentActivePhase?.ReviseStartDate,
                     ReviseEndDate = currentActivePhase?.ReviseEndDate,
-                    RevisionPaperReviewStart = currentActivePhase?.RevisionPaperReviewStart,
-                    RevisionPaperReviewEnd = currentActivePhase?.RevisionPaperReviewEnd,
+                    //RevisionPaperReviewStart = currentActivePhase?.RevisionPaperReviewStart,
+                    //RevisionPaperReviewEnd = currentActivePhase?.RevisionPaperReviewEnd,
                     RevisionPaperDecideStatusStart = currentActivePhase?.RevisionPaperDecideStatusStart,
                     RevisionPaperDecideStatusEnd = currentActivePhase?.RevisionPaperDecideStatusEnd,
-                    
+
 
                     CreatedAt = paper.RevisionPaper.CreatedAt,
                     ReviewAt = paper.RevisionPaper.ReviewAt,
@@ -454,10 +454,10 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus,ReviewStatus rejectedFullPaperStatus, string confId)
+        public async Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus, ReviewStatus rejectedFullPaperStatus, string confId)
         {
             return await _context.Papers.
-                Include(p =>p.PaperPhase).
+                Include(p => p.PaperPhase).
                 Include(p => p.Abstract).Include(p => p.FullPaper).
                 Include(p => p.RevisionPaper).Include(p => p.CameraReady)
                 .Where(p =>

@@ -2,8 +2,6 @@
 using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
-using FirebaseAdmin.Messaging;
-using System.Reactive;
 
 namespace ConfRadar.Services.Services
 {
@@ -18,7 +16,7 @@ namespace ConfRadar.Services.Services
         private readonly ITimeProviderService _timeProviderService;
         private readonly INotificationService _notificationService;
 
-        public PaperAssignmentService(IUnitOfWork unitOfWork,ITimeProviderService timeProviderService,INotificationService notificationService)
+        public PaperAssignmentService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _timeProviderService = timeProviderService;
@@ -153,7 +151,7 @@ namespace ConfRadar.Services.Services
             if (result > 0)
             {
                 var timeNow = await _timeProviderService.GetVietnamTime();
-                
+
                 var notification = new ConfRadar.Repositories.Models.Notification()
                 {
                     NotificationId = Guid.NewGuid().ToString(),
@@ -165,7 +163,7 @@ namespace ConfRadar.Services.Services
                     ReadStatus = false,
                 };
                 await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
-                
+
 
             }
 

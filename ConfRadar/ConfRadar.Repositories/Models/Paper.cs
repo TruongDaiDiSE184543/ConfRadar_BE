@@ -21,13 +21,13 @@ public partial class Paper
 
     public string? ResearchConferencePhaseId { get; set; }
 
+    public string? TicketId { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public string? Title { get; set; }
 
     public string? Description { get; set; }
-
-    public string? TicketId { get; set; }
 
     public virtual Abstract? Abstract { get; set; }
 

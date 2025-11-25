@@ -104,7 +104,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferenceStatus>> GetAllConferenceStatusesByRoleAsync(List<string> userRoles)
         {
             var conferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusesAsync();
-            
+
             // Get all status entities that need to be filtered
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());

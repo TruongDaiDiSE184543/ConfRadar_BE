@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
+using ConfRadar.Shared.DTO.Contract;
 using ConfRadar.Shared.DTO.ReviewContract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -55,7 +56,7 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ContractService.GetListOwnContract(userId);
             return Ok(ApiResponse<List<OwnContractDetailResponse>>.SuccessResponse(result, "Danh sách review contract"));
         }
-        [Authorize(Roles ="Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpGet("list-review-contract-by-reviewer")]
         public async Task<IActionResult> GetListReviewContractByReviewerId([FromQuery] string reviewerId)
         {
@@ -98,8 +99,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<OwnActiveContractDetailResponse>.SuccessResponse(result, "Tổng hợp đồng review đang hoạt động của bạn"));
 
         }
+        [HttpPost("create-collaborator-contract")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> CreateCollaboratorContract([FromForm] CollaboratorContractRequest request)
+        {
+            var result = await _serviceManager.ContractService.CreateCollaboratorContract(request);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã tạo hợp đồng"));
 
-
+        }
 
     }
 }

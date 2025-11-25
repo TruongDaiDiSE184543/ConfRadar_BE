@@ -484,31 +484,31 @@ namespace ConfRadar.Services.Mappers
 
                 AbstractDecideStatusStart = request.AbstractDecideStatusStart,
                 AbstractDecideStatusEnd = request.AbstractDecideStatusEnd,
-                
-                
+
+
                 FullPaperStartDate = request.FullPaperStartDate,
                 FullPaperEndDate = request.FullPaperEndDate,
-                
+
                 ReviewStartDate = request.ReviewStartDate,
                 ReviewEndDate = request.ReviewEndDate,
-                
+
                 FullPaperDecideStatusStart = request.FullPaperDecideStatusStart,
                 FullPaperDecideStatusEnd = request.FullPaperDecideStatusEnd,
-                
-                
+
+
                 ReviseStartDate = request.ReviseStartDate,
                 ReviseEndDate = request.ReviseEndDate,
-                
-                RevisionPaperReviewStart = request.RevisionPaperReviewStart,
-                RevisionPaperReviewEnd = request.RevisionPaperReviewEnd,
-                
+
+                //RevisionPaperReviewStart = request.RevisionPaperReviewStart,
+                //RevisionPaperReviewEnd = request.RevisionPaperReviewEnd,
+
                 RevisionPaperDecideStatusStart = request.RevisionPaperDecideStatusStart,
                 RevisionPaperDecideStatusEnd = request.RevisionPaperDecideStatusEnd,
-                
-                
+
+
                 CameraReadyStartDate = request.CameraReadyStartDate,
                 CameraReadyEndDate = request.CameraReadyEndDate,
-                
+
                 CameraReadyDecideStatusStart = request.CameraReadyDecideStatusStart,
                 CameraReadyDecideStatusEnd = request.CameraReadyDecideStatusEnd,
                 IsWaitlist = request.IsWaitlist
@@ -547,8 +547,8 @@ namespace ConfRadar.Services.Mappers
                 ReviseEndDate = model.ReviseEndDate,
 
                 // 7. Revision Paper Review (Đã thêm mới)
-                RevisionPaperReviewStart = model.RevisionPaperReviewStart,
-                RevisionPaperReviewEnd = model.RevisionPaperReviewEnd,
+                //RevisionPaperReviewStart = model.RevisionPaperReviewStart,
+                //RevisionPaperReviewEnd = model.RevisionPaperReviewEnd,
 
                 // 8. Revision Paper Decide Status (Đã thêm mới)
                 RevisionPaperDecideStatusStart = model.RevisionPaperDecideStatusStart,

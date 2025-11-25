@@ -1,12 +1,5 @@
 ﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Conference;
-using ConfRadar.Services.DTOs.Paper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Mappers
 {
@@ -55,8 +48,8 @@ namespace ConfRadar.Services.Mappers
 
                 ReviseStartDate = model.ReviseStartDate,
                 ReviseEndDate = model.ReviseEndDate,
-                RevisionPaperReviewStart = model.RevisionPaperReviewStart,
-                RevisionPaperReviewEnd = model.RevisionPaperReviewEnd,
+                //RevisionPaperReviewStart = model.RevisionPaperReviewStart,
+                //RevisionPaperReviewEnd = model.RevisionPaperReviewEnd,
                 RevisionPaperDecideStatusStart = model.RevisionPaperDecideStatusStart,
                 RevisionPaperDecideStatusEnd = model.RevisionPaperDecideStatusEnd,
 
@@ -95,7 +88,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static RankingFileUrlResponse ToRankingFileUrlResponse(this  RankingFileUrl model)
+        public static RankingFileUrlResponse ToRankingFileUrlResponse(this RankingFileUrl model)
         {
             return new RankingFileUrlResponse
             {
@@ -114,7 +107,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static RankingReferenceUrlResponse ToRankingReferenceUrlResponse (this RankingReferenceUrl model)
+        public static RankingReferenceUrlResponse ToRankingReferenceUrlResponse(this RankingReferenceUrl model)
         {
             return new RankingReferenceUrlResponse
             {
@@ -135,19 +128,21 @@ namespace ConfRadar.Services.Mappers
 
         public static RoomInfoResponse ToRoomInfoResponse(this Room model)
         {
+            if (model == null)
+                return null;
             return new RoomInfoResponse
             {
-                RoomId = model.RoomId,
-                DisplayName = model.DisplayName,
-                CityId = model.Destination.CityId,
-                Cityname = model.Destination.City.CityName,
-                DestinationId = model.Destination.DestinationId,
-                DestinationName = model.Destination.Name,
-                Number = model.Number,
+                RoomId = model?.RoomId,
+                DisplayName = model?.DisplayName,
+                CityId = model?.Destination?.CityId,
+                Cityname = model?.Destination?.City?.CityName,
+                DestinationId = model?.Destination?.DestinationId,
+                DestinationName = model?.Destination?.Name,
+                Number = model?.Number,
             };
         }
 
-        public static ConferenceSessionMediaResponse ToConferenceSessionMediaResponse (this ConferenceSessionMedium model)
+        public static ConferenceSessionMediaResponse ToConferenceSessionMediaResponse(this ConferenceSessionMedium model)
         {
             return new ConferenceSessionMediaResponse
             {
@@ -156,7 +151,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static ConferenceMediaResponse ToConferenceMediaResponse (this ConferenceMedium model)
+        public static ConferenceMediaResponse ToConferenceMediaResponse(this ConferenceMedium model)
         {
             return new ConferenceMediaResponse
             {
@@ -177,7 +172,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static PricePhaseResponse ToPricePhaseResponse (this PricePhase model)
+        public static PricePhaseResponse ToPricePhaseResponse(this PricePhase model)
         {
             return new PricePhaseResponse
             {
@@ -224,7 +219,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static SpeakerResponse ToSpeakerResponse (this Speaker model)
+        public static SpeakerResponse ToSpeakerResponse(this Speaker model)
         {
             return new SpeakerResponse
             {
@@ -235,7 +230,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static ConferenceSessionWithSpeakersResponse ToConferenceSessionWithSpeakersResponse (this ConferenceSession model)
+        public static ConferenceSessionWithSpeakersResponse ToConferenceSessionWithSpeakersResponse(this ConferenceSession model)
         {
             return new ConferenceSessionWithSpeakersResponse
             {
@@ -247,13 +242,13 @@ namespace ConfRadar.Services.Mappers
                 SessionDate = model.SessionDate,
                 ConferenceId = model.ConferenceId,
                 RoomId = model.RoomId,
-                Room = model.Room != null ? model.Room.ToRoomInfoResponse() : null,
                 Speakers = model.Speakers?.Select(s => s.ToSpeakerResponse()).ToList(),
-                SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList()
+                SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList(),
+                Room = model.Room != null ? model?.Room?.ToRoomInfoResponse() : null
             };
         }
 
-        public static ConferenceTimelineResponse ToConferenceTimelineResponse (this ConferenceTimeline model)
+        public static ConferenceTimelineResponse ToConferenceTimelineResponse(this ConferenceTimeline model)
         {
             return new ConferenceTimelineResponse
             {

@@ -5,10 +5,10 @@ using ConfRadar.Services.DTOs.User;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using ConfRadar.Shared.DTO.Collaborator;
+using ConfRadar.Shared.DTO.Organization;
 using ConfRadar.Shared.DTO.User;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
-using Quartz.Util;
 using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
@@ -38,6 +38,9 @@ namespace ConfRadar.Services.Services
         Task<int> SuspendExternalReviewerAccount(string userId);
         Task<int> ActivateExternalReviewerAccount(string userId);
         Task<int> CreateLocalReviewerAccount(CreateLocalReviewerAccountRequest request);
+        Task<List<OrganizationDetailResponse>> GetListOrganization();
+        Task<int> UpdateOrganization(OrganizationUpdateRequest request);
+        Task<List<CollaboratorDetailResponse>> GetListCollaboratorAccounts();
     }
     public class AuthService : IAuthService
     {
@@ -185,7 +188,7 @@ namespace ConfRadar.Services.Services
             {
                 user.FirebaseMobileFcmToken = request.FirebaseMobileFcmToken;
             }
-            if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken) )
+            if (!string.IsNullOrWhiteSpace(request.FirebaseWebFcmToken))
             {
                 user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
             }
@@ -336,7 +339,7 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
             }
             bool isUserActive = (bool)user.IsActive;
-            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email,isUserActive);
+            var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email, isUserActive);
             var refreshToken = _tokenService.GenerateSecureRandomToken();
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
@@ -775,8 +778,54 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
+        public async Task<List<OrganizationDetailResponse>> GetListOrganization()
+        {
+            var organizations = await _unitOfWork.OrganizationRepository.GetAllOrganizationsAsync();
+            var result = organizations.Select(o => new OrganizationDetailResponse()
+            {
+                OrganizationId = o.OrganizationId,
+                OrganizationName = o.OrganizationName,
+                OrganizationDescription = o.OrganizationDescription,
+                UserId = o.User?.UserId,
+                Email = o.User?.Email,
+                FullName = o.User?.FullName,
+                AvatarUrl = o.User?.AvatarUrl,
+                PhoneNumber = o.User?.PhoneNumber,
+            }).ToList();
+            return result;
+        }
 
+        public async Task<int> UpdateOrganization(OrganizationUpdateRequest request)
+        {
+            var organization = await _unitOfWork.OrganizationRepository.GetOrganizationByIdAsync(request.OrganizationId);
+            if (organization == null)
+            {
+                throw new NotFoundException("Organization với id không tìm thấy trong hệ thống");
+            }
+            if (!string.IsNullOrWhiteSpace(request.OrganizationName))
+                organization.OrganizationName = request.OrganizationName;
 
+            if (!string.IsNullOrWhiteSpace(request.OrganizationDescription))
+                organization.OrganizationDescription = request.OrganizationDescription;
+
+            return await _unitOfWork.OrganizationRepository.UpdateOrganizationAsync(organization);
+        }
+
+        public async Task<List<CollaboratorDetailResponse>> GetListCollaboratorAccounts()
+        {
+            var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
+            if (collabRole == null) throw new NotFoundException("Không tìm thấy role trong hệ thống");
+
+            var user = await _unitOfWork.UserRepository.GetUserByRole(collabRole);
+            return user.Select(u => new CollaboratorDetailResponse()
+            {
+                UserId = u.UserId,
+                Email = u.Email,
+                FullName = u.FullName,
+                AvatarUrl = u.AvatarUrl,
+                BioDescription = u.BioDescription,
+            }).ToList();
+        }
     }
 }
 

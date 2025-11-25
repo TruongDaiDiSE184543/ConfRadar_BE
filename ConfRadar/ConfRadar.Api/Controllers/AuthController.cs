@@ -2,6 +2,7 @@
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.User;
 using ConfRadar.Shared.DTO.Collaborator;
+using ConfRadar.Shared.DTO.Organization;
 using ConfRadar.Shared.DTO.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -154,6 +155,27 @@ namespace ConfRadar.Api.Controllers
         {
             var result = await _serviceManager.AuthService.CreateLocalReviewerAccount(request);
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo account cho local reviewer"));
+        }
+
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpGet("list-organization")]
+        public async Task<IActionResult> GetListOrganization()
+        {
+            var result = await _serviceManager.AuthService.GetListOrganization();
+            return Ok(ApiResponse<List<OrganizationDetailResponse>>.SuccessResponse(result, $"Danh sách organization"));
+        }
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPut("update-organization")]
+        public async Task<IActionResult> UpdateOrganization([FromBody] OrganizationUpdateRequest request)
+        {
+            var result = await _serviceManager.AuthService.UpdateOrganization(request);
+            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã update"));
+        }
+        [HttpGet("list-collaborator-accounts")]
+        public async Task<IActionResult> GetListCollaboratorAccounts()
+        {
+            var result = await _serviceManager.AuthService.GetListCollaboratorAccounts();
+            return Ok(ApiResponse<List<CollaboratorDetailResponse>>.SuccessResponse(result, $"Danh sách các collaborator"));
         }
     }
 }
