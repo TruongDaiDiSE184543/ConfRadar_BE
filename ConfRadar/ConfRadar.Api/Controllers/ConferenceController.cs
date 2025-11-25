@@ -106,6 +106,15 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResult<ConferenceResponseDTO>>.SuccessResponse(conferences, "Pending conferences retrieved successfully"));
         }
 
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        [HttpGet("get-skeleton-tech-conf-created-for-collaborator")]
+        public async Task<IActionResult> GetSkeletonConferenceBasicForCollaboratorToBuildOn([FromQuery] string collaboratorId)
+        {
+            var conferenceList = await _serviceManager.ConferenceService.getSkeletonTechConf(collaboratorId);
+            return Ok(ApiResponse<List<SkeletonTechConfResponse>>.SuccessResponse(conferenceList,$"Láy thành công những conference tạo cho collaborator với ID {collaboratorId}"));
+        }
+
+
         // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
         [HttpPut("approve-conference/{conferenceId}")]
         [Authorize(Roles = "Conference Organizer")]

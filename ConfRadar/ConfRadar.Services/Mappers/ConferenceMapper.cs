@@ -263,5 +263,7 @@ namespace ConfRadar.Services.Mappers
                 ConferenceName = model.Conference?.ConferenceName
             };
         }
+
+        
     }
 }

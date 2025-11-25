@@ -75,8 +75,7 @@ namespace ConfRadar.Services.Services
         Task<bool> ActivateWaitlist(string confId, string userId);
         Task ValidateForReadyStateAsync(Conference conf);
         Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId);
-
-
+        Task getSkeletonTechConf(string collaboratorId);
     }
 
     public class ConferenceService : IConferenceService
@@ -2039,6 +2038,17 @@ namespace ConfRadar.Services.Services
                                     + string.Join("|", invalidMessages.Distinct());
                 throw new BadRequestException(errorMessage);
             }
+        }
+
+        public async Task<List<SkeletonTechConfResponse>> getSkeletonTechConf(string collaboratorId)
+        {
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
+            var conferencesCreatedForCollaborator = await _unitOfWork.ConferenceRepository.GetConferencesByUserIdAndStatusAsync(collaboratorId, draftStatus.ConferenceStatusId);
+            return conferencesCreatedForCollaborator.Select(c => new SkeletonTechConfResponse
+            {
+                ConferenceId = c.ConferenceId,
+                Name = c.ConferenceName
+            }).ToList();
         }
     }
 }

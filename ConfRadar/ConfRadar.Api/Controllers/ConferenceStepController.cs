@@ -20,7 +20,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         #region Step 1: Basic Conference Creation
-        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpPost("basic")]
         public async Task<IActionResult> CreateConferenceBasic([FromForm] CreateTechnicalConferenceBasicRequest request)
         {
@@ -30,6 +30,16 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<TechnicalConferenceBasicStepResponse>.SuccessResponse(conference, "Hội nghị được tạo thành công"));
         }
 
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPost("create-basic-name-for-conference-in-contract-with-collaborator")]
+        public async Task<IActionResult> CreateSkeletonConferenceBasicForCollaboratorToBuildOn([FromQuery] string name, [FromQuery]string collabId)
+        {
+
+            var conferenceId = await _serviceManager.ConferenceStepService.CreateSkeletonTechnicalConferenceBasicForCollaboratorAsync(name,collabId);
+            return Ok(ApiResponse<string>.SuccessResponse(conferenceId, "Hội nghị chỉ có name được tạo thành công với ID như sau"));
+        }
+
+        
         [HttpGet("{conferenceId}/basic")]
         public async Task<IActionResult> GetConferenceBasic(string conferenceId)
         {

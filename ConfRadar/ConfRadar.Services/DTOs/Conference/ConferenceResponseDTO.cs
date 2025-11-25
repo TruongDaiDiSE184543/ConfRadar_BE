@@ -1,3 +1,4 @@
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Mappers;
 using System.ComponentModel.DataAnnotations;
 
@@ -442,4 +443,12 @@ namespace ConfRadar.Services.DTOs.Conference
         public RoomInfoResponse? Room { get; set; } // Include room information
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
+
+    public class SkeletonTechConfResponse
+    {
+        public string? ConferenceId { get; set; }
+        public string? Name { get; set; }
+    }
+
+  
 }

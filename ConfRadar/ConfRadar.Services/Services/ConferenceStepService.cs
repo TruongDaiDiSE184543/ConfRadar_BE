@@ -11,8 +11,9 @@ namespace ConfRadar.Services.Services
 {
     public interface IConferenceStepService
     {
-        Task<TechnicalConferenceBasicStepResponse> CreateTechnicalConferenceBasicAsync(CreateTechnicalConferenceBasicRequest request, string userid);
         // Step 1: Basic Conference Creation
+        Task<TechnicalConferenceBasicStepResponse> CreateTechnicalConferenceBasicAsync(CreateTechnicalConferenceBasicRequest request, string userid);
+        Task<string> CreateSkeletonTechnicalConferenceBasicForCollaboratorAsync(string name);
         Task<TechnicalConferenceBasicStepResponse> GetConferenceBasicAsync(string conferenceId);
         Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request, string userId);
 
@@ -571,6 +572,26 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<string> CreateSkeletonTechnicalConferenceBasicForCollaboratorAsync(string name,string collabId)
+        {
+           if (string.IsNullOrEmpty(name)) 
+                throw new Exception("Phải có tên của hội nghị để có thể tạo một hội nghị cho collab");
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
+            var now = await _timeProviderService.GetVietnamTime();
+            Conference techConference = new Conference
+            {
+                ConferenceId = Guid.NewGuid().ToString(),
+                IsInternalHosted = false,
+                IsResearchConference = false,
+                ConferenceName = name,
+                CreatedAt = now,
+                CreatedBy = collabId,
+                ConferenceStatusId = draftStatus.ConferenceStatusId
+            };
+            await _unitOfWork.ConferenceRepository.CreateConferenceAsync(techConference);
+            return techConference.ConferenceId;
         }
 
         public async Task<TechnicalConferenceBasicStepResponse> GetConferenceBasicAsync(string conferenceId)
@@ -3516,6 +3537,8 @@ namespace ConfRadar.Services.Services
 
             return await _unitOfWork.RevisionRoundDeadlineRepository.DeleteCsAsync(deadline) > 0;
         }
+
+
         #endregion
     }
 }
