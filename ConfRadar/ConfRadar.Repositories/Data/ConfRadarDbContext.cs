@@ -929,7 +929,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("ResearchConferenceDetail");
 
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
-            entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.PaperFormat).HasMaxLength(255);
             entity.Property(e => e.RankValue).HasMaxLength(255);
             entity.Property(e => e.RankingCategoryId).HasMaxLength(50);
