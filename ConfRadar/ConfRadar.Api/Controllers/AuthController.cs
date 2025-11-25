@@ -53,7 +53,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> ForgetPassword(string email)
         {
             await _serviceManager.AuthService.ForgetPassword(email);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "An email has been sent to your mailbox"));
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Đã gửi thư qua email"));
         }
         [HttpPost("verify-forget-password")]
         public async Task<IActionResult> VerifyForgetPassword([FromBody] ForgetPasswordRequest request)

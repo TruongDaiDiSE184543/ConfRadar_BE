@@ -1,14 +1,11 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
-using ConfRadar.Services.DTOs.General;
-using ConfRadar.Services.DTOs.Orcid;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.Contract;
 using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.ReviewContract;
 using Microsoft.Extensions.Options;
-using System.Drawing.Printing;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -22,10 +19,11 @@ namespace ConfRadar.Services.Services
         Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(GetUsersForReviewerContractRequest request);
         Task<List<OwnContractDetailResponse>> GetListOwnContract(string userId);
         Task<List<ContractDetailResponseForOrganizer>> GetListContractByReviewerId(string reviewerId);
-        Task<int> GetOwnContractCount(string userId);
+        Task<UserExternalContractCount> GetOwnContractCount(string userId);
         Task<OwnActiveContractDetailResponse> GetUserActiveExternalContract(string userId);
         Task<int> CreateCollaboratorContract(CollaboratorContractRequest request);
         Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContract(CollaboratorContractSearchParam request);
+        Task<UserExternalWageTotal> GetUserExternalWageTotal(string userId);
     }
     public class ContractService : IContractService
     {
@@ -326,9 +324,27 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<int> GetOwnContractCount(string userId)
+        public async Task<UserExternalContractCount> GetOwnContractCount(string userId)
         {
-            return await _unitOfWork.ReviewerContractRepository.GetOwnContractCount(userId);
+            var contracts =  await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+            return new UserExternalContractCount()
+            {
+                ContractCount = contracts.Count(),
+                ContractDetail = contracts.Select(rc => new OwnContractDetailResponse()
+                {
+                    ReviewerContractId = rc.ReviewerContractId,
+                    IsActive = rc.IsActive,
+                    SignDay = rc.SignDay,
+                    ExpireDay = rc.ExpireDay,
+                    Wage = rc.Wage,
+                    ContractUrl = rc.ContractUrl,
+                    ConferenceId = rc.ConferenceId,
+                    ConferenceName = rc.Conference?.ConferenceName,
+                    ConferenceDescription = rc.Conference?.Description,
+                    ConferenceBannerImageUrl = rc.Conference?.BannerImageUrl,
+                    
+                }).ToList()
+            };
         }
         public async Task<OwnActiveContractDetailResponse> GetUserActiveExternalContract(string userId)
         {
@@ -371,7 +387,7 @@ namespace ConfRadar.Services.Services
             if (conference == null)
                 throw new NotFoundException($"Không tìm thấy hội nghị với mã {request.ConferenceId}");
 
-           
+
 
             var collabContract = await _unitOfWork.CollaboratorContractRepository.GetListCollaboratorContractByUserIdAsync(request.UserId);
             var currentCollabContract = collabContract.FirstOrDefault(cc => cc.ConferenceId == request.ConferenceId && cc.UserId == request.UserId);
@@ -400,7 +416,7 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException("Content type is null");
                 }
-                
+
                 using var stream = request.ContractFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.ContractFile.FileName);
                 var baseUri = _objectStorageSettings.Value.EndPoint;
@@ -426,15 +442,39 @@ namespace ConfRadar.Services.Services
                 ContractUrl = fileUrl,
             };
             return await _unitOfWork.CollaboratorContractRepository.CreateCollaboratorContractAsync(collabContractObj);
-            
+
 
         }
 
-       
+
         public async Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContract(CollaboratorContractSearchParam request)
         {
             return await _unitOfWork.CollaboratorContractRepository.GetListCollaboratorContractWithFilter(request);
-           
+
+        }
+
+        public async Task<UserExternalWageTotal> GetUserExternalWageTotal(string userId)
+        {
+            var reviewerContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+
+            return new UserExternalWageTotal
+            {
+                Wage = reviewerContracts.Sum(rc => rc.Wage),
+                ContractDetail = reviewerContracts.Select(rc => new OwnContractDetailResponse()
+                {
+                    ReviewerContractId = rc.ReviewerContractId,
+                    IsActive = rc.IsActive,
+                    SignDay = rc.SignDay,
+                    ExpireDay = rc.ExpireDay,
+                    Wage = rc.Wage,
+                    ContractUrl = rc.ContractUrl,
+                    ConferenceId = rc.ConferenceId,
+                    ConferenceName = rc.Conference?.ConferenceName,
+                    ConferenceDescription = rc.Conference?.Description,
+                    ConferenceBannerImageUrl = rc.Conference?.BannerImageUrl,
+                    
+                }).ToList()
+            };
         }
     }
 }
