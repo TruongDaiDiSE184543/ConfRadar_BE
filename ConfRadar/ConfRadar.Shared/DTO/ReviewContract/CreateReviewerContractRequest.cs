@@ -29,14 +29,14 @@ namespace ConfRadar.Shared.DTO.ReviewContract
         [Required(ErrorMessage = "Tên là bắt buộc")]
         public string FullName { get; set; }
 
-        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
-        [MinLength(6, ErrorMessage = "Mật khẩu ít nhất 6 kí tự")]
-        public string Password { get; set; }
+        //[Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        //[MinLength(6, ErrorMessage = "Mật khẩu ít nhất 6 kí tự")]
+        //public string Password { get; set; }
 
 
-        [Required(ErrorMessage = "Mật khẩu xác nhận là bắt buộc")]
-        [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp với mật khẩu")]
-        public string ConfirmPassword { get; set; }
+        //[Required(ErrorMessage = "Mật khẩu xác nhận là bắt buộc")]
+        //[Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp với mật khẩu")]
+        //public string ConfirmPassword { get; set; }
 
 
 

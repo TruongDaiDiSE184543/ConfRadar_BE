@@ -1,9 +1,11 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Shared.DTO.Contract;
+using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.ReviewContract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -107,6 +109,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã tạo hợp đồng"));
 
         }
+       
+        [HttpGet("list-collaborator-contract")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> GetListCollaboratorContract([FromQuery] CollaboratorContractSearchParam request)
+        {
+            var result = await _serviceManager.ContractService.GetListCollaboratorContract(request);
+            return Ok(ApiResponse<PagedResultResponseDto<CollaboratorContractResponse>>.SuccessResponse(result, ""));
 
+        }
     }
 }
