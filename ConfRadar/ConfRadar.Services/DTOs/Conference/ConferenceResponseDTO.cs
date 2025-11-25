@@ -173,6 +173,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? createdBy { get; set; }
         public string? UserNameCreator {  get; set; }
         public string? Organization {  get; set; }
+        public CollaboratorContractResponseForConferenceDetail Contract { get; set; }
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
@@ -180,6 +181,33 @@ namespace ConfRadar.Services.DTOs.Conference
         public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
         public List<ConferenceTimelineResponse>? ConferenceTimelines { get; set; } // Include conference timeline data
         public PurchasedInfo? purchasedInfo { get; set; }
+
+    }
+
+    public class CollaboratorContractResponseForConferenceDetail
+    {
+        public string CollaboratorContractId { get; set; } 
+        public bool? IsSponsorStep { get; set; }
+
+        public bool? IsMediaStep { get; set; }
+
+        public bool? IsPolicyStep { get; set; }
+
+        public bool? IsSessionStep { get; set; }
+
+        public bool? IsPriceStep { get; set; }
+
+        public bool? IsTicketSelling { get; set; }
+
+        public bool? IsClosed { get; set; }
+
+        public DateOnly? SignDay { get; set; }
+
+        public DateOnly? FinalizePaymentDate { get; set; }
+
+        public int? Commission { get; set; }
+
+        public string? ContractUrl { get; set; }
 
     }
 
