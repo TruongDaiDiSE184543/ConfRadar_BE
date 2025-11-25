@@ -2330,11 +2330,11 @@ namespace ConfRadar.Services.Services
 
                 // 6. Revise
                 finalReviseStart > finalReviseEnd ||
-               /* finalReviseEnd > finalReviseReviewStart ||
+                /* finalReviseEnd > finalReviseReviewStart ||
 
-                // 7. Revision Review
-                finalReviseReviewStart > finalReviseReviewEnd ||
-                finalReviseReviewEnd > finalReviseDecideStart || */
+                 // 7. Revision Review
+                 finalReviseReviewStart > finalReviseReviewEnd ||
+                 finalReviseReviewEnd > finalReviseDecideStart || */
 
                 // 8. Revision Decide
                 finalReviseDecideStart > finalReviseDecideEnd ||

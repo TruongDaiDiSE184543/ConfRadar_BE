@@ -13,7 +13,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdateCollaboratorContractAsync(CollaboratorContract collaboratorContract);
         Task<CollaboratorContract?> GetCollaboratorContractByIdAsync(string collaboratorContractId);
         Task<List<CollaboratorContract>> GetListCollaboratorContractByUserIdAsync(string userId);
-       
+
         Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContractWithFilter(CollaboratorContractSearchParam request);
     }
     public class CollaboratorContractRepository : GenericRepository<CollaboratorContract>, ICollaboratorContractRepository
@@ -49,9 +49,9 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContractWithFilter(CollaboratorContractSearchParam request)
         {
-            var query =  _context.CollaboratorContracts
+            var query = _context.CollaboratorContracts
                 .Include(cc => cc.User)
-                    .ThenInclude(u=>u.Organization)
+                    .ThenInclude(u => u.Organization)
                 .Include(cc => cc.Conference)
                     .ThenInclude(c => c.ConferenceStatus)
 
@@ -61,7 +61,7 @@ namespace ConfRadar.Repositories.Repositories
 
                 .AsQueryable();
 
-           
+
 
             if (!string.IsNullOrEmpty(request.ConferenceName))
             {
@@ -70,12 +70,17 @@ namespace ConfRadar.Repositories.Repositories
                     cc.Conference.ConferenceName != null &&
                     cc.Conference.ConferenceName.Contains(request.ConferenceName));
             }
-
+            if (!string.IsNullOrEmpty(request.UserId))
+            {
+                query = query.Where(cc =>
+                    cc.User != null &&
+                    cc.User.UserId.Equals(request.UserId));
+            }
 
             if (!string.IsNullOrEmpty(request.OrganizationId))
             {
                 query = query.Where(cc =>
-                    cc.User != null && cc.User.Organization !=null &&
+                    cc.User != null && cc.User.Organization != null &&
                     cc.User.Organization.OrganizationId == request.OrganizationId);
             }
             var totalCount = await query.CountAsync();
@@ -91,8 +96,8 @@ namespace ConfRadar.Repositories.Repositories
                 CollaboratorContractUserId = cc.UserId,
                 OrganizationId = cc.User?.Organization?.OrganizationId,
                 OrganizationDescription = cc.User?.Organization?.OrganizationDescription,
-                OrganizationName = cc.User?.Organization?.OrganizationName, 
-                
+                OrganizationName = cc.User?.Organization?.OrganizationName,
+
 
                 IsSponsorStep = cc.IsSponsorStep,
                 IsMediaStep = cc.IsMediaStep,
@@ -141,6 +146,6 @@ namespace ConfRadar.Repositories.Repositories
 
         }
 
-       
+
     }
 }

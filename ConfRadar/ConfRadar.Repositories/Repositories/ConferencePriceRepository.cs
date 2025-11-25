@@ -61,6 +61,8 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(c => c.ResearchConferencePhases)
                 .Include(c => c.Conference)
                     .ThenInclude(c => c.ConferenceSessions)
+                .Include(c => c.Conference)
+                    .ThenInclude(c => c.ResearchConferenceDetail)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.ConferencePriceId == priceId);
         }
