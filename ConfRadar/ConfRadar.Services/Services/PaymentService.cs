@@ -31,7 +31,7 @@ namespace ConfRadar.Services.Services
         Task VerifyPayOsDataForConference(Webhook data);
         Task VerifyMomoDataForConference(MomoPaymentCallBackResponse data);
         Task VerifyVnPayDataForConference(VnPayResponse data);
-        Task CancelPayOsPayment(string id);
+        Task CancelPayment(PaymentMethodEnum paymentMethodEnum, string orderCode);
     }
     public class PaymentService : IPaymentService
     {
@@ -1275,11 +1275,39 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        
 
-        public async Task CancelPayOsPayment(string id)
+
+
+
+        public async Task CancelPayment(PaymentMethodEnum paymentMethodEnum, string orderCode)
         {
-            await _payOsService.CancelPayOs(id);
+            var existingOrder = await _redisService.KeyExistsAsync(orderCode);
+            if (!existingOrder)
+            {
+                throw new NotFoundException($"Mã order {orderCode} không tồn tại trong hệ thống");
+            }
+
+            switch (paymentMethodEnum)
+            {
+                case PaymentMethodEnum.PayOs:
+
+                    await _payOsService.CancelPayOs(orderCode);
+                    break;
+                default:
+                    throw new BadRequestException($"Payment method  không hỗ trợ hủy");
+            }
+            var transac = await _redisService.GetStringAsync(orderCode);
+            var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
+            {
+                PropertyNameCaseInsensitive = true,
+            });
+            if (transacDataHolder == null)
+            {
+                throw new NotFoundException("Thông tin đơn hàng không tồn tại");
+            }
+            await _redisService.DeleteKeyAsync(orderCode);
+            await _redisService.DeleteKeyAsync(transacDataHolder.PaymentConferenceLockKey);
+            await _redisService.DeleteKeyAsync(transacDataHolder.PaymentPhaseLockKey);
         }
 
 

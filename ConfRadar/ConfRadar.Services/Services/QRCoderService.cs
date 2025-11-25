@@ -150,6 +150,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("Không tìm thấy user check in trong hệ thống");
             }
+            var ticket = userCheckIn.Ticket;
+            if (ticket!.IsRefunded == true)
+            {
+                throw new BadRequestException("Vé này đã được refund nên không thể checkin");
+            }
             if (userCheckIn.UserId != qrDataPayload.userId || userCheckIn.TicketId != qrDataPayload.ticketId || userCheckIn.ConferenceSessionId != qrDataPayload.conferenceSessionId)
             {
                 throw new BadRequestException("Thông tin trong qr không trùng khớp");

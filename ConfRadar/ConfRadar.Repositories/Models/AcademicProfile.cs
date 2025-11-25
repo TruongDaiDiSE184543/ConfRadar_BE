@@ -7,7 +7,7 @@ public partial class AcademicProfile
 {
     public string AcademicProfileId { get; set; } = null!;
 
-    public string? UserId { get; set; }
+    public string UserId { get; set; } = null!;
 
     public string? AccessToken { get; set; }
 
@@ -25,5 +25,5 @@ public partial class AcademicProfile
 
     public virtual ICollection<OrcidDataCache> OrcidDataCaches { get; set; } = new List<OrcidDataCache>();
 
-    public virtual User? User { get; set; }
+    public virtual User User { get; set; } = null!;
 }

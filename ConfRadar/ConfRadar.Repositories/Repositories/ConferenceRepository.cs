@@ -45,7 +45,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Conference?> GetConferenceByIdAsync(string conferenceId)
         {
             return await _context.Conferences
-                .Include(c=>c.CreatedByNavigation)
+                .Include(c => c.CreatedByNavigation)
                 .Include(c => c.ResearchConferencePhases)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
         }
@@ -198,12 +198,12 @@ namespace ConfRadar.Repositories.Repositories
                                  .ToListAsync();
             return conferenceList;
         }
-        public async Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId,bool isResearchConference)
+        public async Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId, bool isResearchConference)
         {
             var conferences = await _context.Conferences
                 .AsNoTracking()
                 .Where(c => c.CreatedBy == userId && c.IsResearchConference == isResearchConference)
-                .Select( c=>c.ConferenceId)
+                .Select(c => c.ConferenceId)
                 .ToListAsync();
             return conferences;
         }

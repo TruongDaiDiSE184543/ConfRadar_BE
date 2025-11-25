@@ -9,9 +9,9 @@ public partial class UserRole
 
     public string RoleId { get; set; } = null!;
 
-    public DateTime? AssignedAt { get; set; }
-
     public bool? IsActive { get; set; }
+
+    public DateTime? AssignedAt { get; set; }
 
     public virtual Role Role { get; set; } = null!;
 

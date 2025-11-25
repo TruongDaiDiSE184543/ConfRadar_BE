@@ -30,7 +30,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-      
+
         public static List<ConferenceTimelineResponse> ToResponseList(this IEnumerable<ConferenceTimeline> models)
         {
             return models.Select(m => m.ToConferenceTimelineResponse()).ToList();

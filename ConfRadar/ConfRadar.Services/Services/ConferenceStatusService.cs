@@ -80,7 +80,7 @@ namespace ConfRadar.Services.Services
                     conferenceStatus.Remove(pendingStatus);
                     conferenceStatus.Remove(preparingStatus);
                     conferenceStatus.Remove(rejectedStatus);
-                } else if (roleOfUser.Contains(SystemRoleEnum.Collaborator.ToString()){
+                } else if (roleOfUser.Contains(SystemRoleEnum.Collaborator.ToString())){
                     conferenceStatus.Remove(deletedStatus);
                 }
             }
@@ -104,7 +104,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferenceStatus>> GetAllConferenceStatusesByRoleAsync(List<string> userRoles)
         {
             var conferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusesAsync();
-            
+
             // Get all status entities that need to be filtered
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());

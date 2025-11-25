@@ -7,6 +7,8 @@ public partial class UserCheckIn
 {
     public string UserCheckinId { get; set; } = null!;
 
+    public string? QrUrl { get; set; }
+
     public bool? IsPresenter { get; set; }
 
     public string? CheckinStatusId { get; set; }
@@ -18,8 +20,6 @@ public partial class UserCheckIn
     public string? TicketId { get; set; }
 
     public string? ConferenceSessionId { get; set; }
-
-    public string? QrUrl { get; set; }
 
     public virtual CheckinStatus? CheckinStatus { get; set; }
 

@@ -79,8 +79,8 @@ namespace ConfRadar.Services.Common
         revisionpaperreviewfile,
         reviewercontractfile,
         qrcodefile,
-        report
-
+        report,
+        collaboratorcontract
     }
 
     //public enum ConferenceStatus
@@ -189,7 +189,7 @@ namespace ConfRadar.Services.Common
     }
     public enum CheckInStatusEnum
     {
-        [Description("Pending")]
+        [Description("Not Checked In")]
         Pending,
 
         [Description("Checked In")]

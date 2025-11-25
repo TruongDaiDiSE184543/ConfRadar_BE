@@ -43,6 +43,8 @@ public partial class Conference
 
     public virtual City? City { get; set; }
 
+    public virtual CollaboratorContract? CollaboratorContract { get; set; }
+
     public virtual ConferenceCategory? ConferenceCategory { get; set; }
 
     public virtual ICollection<ConferenceMedium> ConferenceMedia { get; set; } = new List<ConferenceMedium>();

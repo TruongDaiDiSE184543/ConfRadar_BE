@@ -82,7 +82,8 @@ namespace ConfRadar.Repositories
 
         IAcademicProfileRepository AcademicProfileRepository { get; }
         IOrcidDataCacheRepository OrcidDataCacheRepository { get; }
-
+        IOrganizationRepository OrganizationRepository { get; }
+        ICollaboratorContractRepository CollaboratorContractRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -170,6 +171,8 @@ namespace ConfRadar.Repositories
         private IAcademicProfileRepository _AcademicProfileRepository;
         private IOrcidDataCacheRepository _OrcidDataCacheRepository;
         private IAuditLogRepository _AuditLogRepository;
+        private IOrganizationRepository _OrganizationRepository;
+        private ICollaboratorContractRepository _CollaboratorContractRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -301,6 +304,10 @@ namespace ConfRadar.Repositories
         public IOrcidDataCacheRepository OrcidDataCacheRepository => _OrcidDataCacheRepository ??= new OrcidDataCacheRepository(_context);
 
         public IAuditLogRepository AuditLogRepository => _AuditLogRepository ??= new AuditLogRepository(_context);
+
+        public IOrganizationRepository OrganizationRepository => _OrganizationRepository ??= new OrganizationRepository(_context);
+
+        public ICollaboratorContractRepository CollaboratorContractRepository => _CollaboratorContractRepository ??= new CollaboratorContractRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

@@ -176,9 +176,9 @@ namespace ConfRadar.Services.Services
                 Message = n.Message,
                 Type = n.Type,
                 CreatedAt = n.CreatedAt,
-                ReadStatus = n.ReadStatus,  
+                ReadStatus = n.ReadStatus,
             }).ToList();
-            return userNotification;    
+            return userNotification;
         }
 
 

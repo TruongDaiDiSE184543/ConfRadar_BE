@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
+using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.DTOs.Transaction;
 using ConfRadar.Services.Services;
@@ -7,6 +8,7 @@ using ConfRadar.Shared.DTO.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using PayOS.Models.V2.PaymentRequests;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -94,10 +96,11 @@ namespace ConfRadar.Api.Controllers
             string message = "Đã thanh toán thành công payos";
             return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
         }
-        [HttpPost("cancel-payos")]
-        public async Task<IActionResult> CancelPayOs([FromQuery] string id)
+        [HttpGet("cancel-payos")]
+        public async Task<IActionResult> CancelPayOs([FromQuery] CancelPayOsRequest request)
         {
-            await _serviceManager.PaymentService.CancelPayOsPayment(id);
+
+            await _serviceManager.PaymentService.CancelPayment(PaymentMethodEnum.PayOs, request.OrderCode);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đã hủy"));
         }
         [HttpGet("success-momo")]
@@ -171,7 +174,23 @@ namespace ConfRadar.Api.Controllers
             return Ok(result);
         }
 
-
+        [HttpPost("test-payos")]
+        public async Task<IActionResult> TestPayos()
+        {
+            var listPaymentLinkItem = new List<PaymentLinkItem>()
+                    {
+                        new PaymentLinkItem()
+                        {
+                        Name = $"Thanh toán vé cho hội nghị",
+                        Price = 20000,
+                        Quantity = 1,
+                        }
+                    };
+            long orderCode = 999921451;
+            long amount = 20000;
+            var result = await _payOsService.CreatePayOsPayment(orderCode, 20000, "hihe", 90, listPaymentLinkItem);
+            return Ok(result);
+        }
 
 
 

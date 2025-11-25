@@ -1,7 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 

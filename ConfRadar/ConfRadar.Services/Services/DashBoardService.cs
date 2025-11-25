@@ -67,7 +67,7 @@ namespace ConfRadar.Services.Services
             // 2. Query Data (Chỉ dùng bảng Ticket và các bảng thông tin Conference)
             var query = _unitOfWork.TicketRepository.GetIncludedQueryable();
 
-                // Lọc theo người tạo Conference
+            // Lọc theo người tạo Conference
             query = query.Where(t => t.PricePhase.ConferencePrice.Conference.CreatedBy == userId)
                 // Lọc vé đã hoàn tiền (dùng trực tiếp flag IsRefunded)
                 .Where(t => t.IsRefunded != true)
@@ -169,7 +169,7 @@ namespace ConfRadar.Services.Services
                 EndDate = c.EndDate,
                 StatusName = c.ConferenceStatus.ConferenceStatusName,
 
-                
+
 
                 // Tính số ngày còn lại (Logic tính toán trong SQL/LINQ)
                 // DayNumber là property có sẵn của DateOnly để tính khoảng cách ngày
@@ -266,8 +266,8 @@ namespace ConfRadar.Services.Services
                 ConferenceResponse = c.toConferenceResponse(),
 
                 // Map các trường từ bảng con
-                Commission = c.TechnicalConferenceDetail?.Commission,
-                ContractUrl = c.TechnicalConferenceDetail?.ContractUrl,
+                //Commission = c.TechnicalConferenceDetail?.Commission,
+                //ContractUrl = c.TechnicalConferenceDetail?.ContractUrl,
                 TargetAudience = c.TechnicalConferenceDetail?.TargetAudience
             }).ToList();
 
