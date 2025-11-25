@@ -27,7 +27,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Paper>> GetPapersWithPhasesForStatisticsByConferenceIdAsync(string confId);
         Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
         Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus, ReviewStatus rejectedFullPaperStatus, string confId);
-
+        Task<int> GetPaperCountByConference(string conferenceId);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -467,6 +467,14 @@ namespace ConfRadar.Repositories.Repositories
                     p.CameraReady != null && p.CameraReady.GlobalStatus != rejectedGlobalStatus
                  )
                  .ToListAsync();
+        }
+        public async Task<int> GetPaperCountByConference(string conferenceId)
+        {
+            return await _context.Papers
+                .Where(p=> p.Ticket !=null 
+                && p.Ticket.IsRefunded ==false 
+                && p.ConferenceId == conferenceId )
+                .CountAsync();
         }
     }
 

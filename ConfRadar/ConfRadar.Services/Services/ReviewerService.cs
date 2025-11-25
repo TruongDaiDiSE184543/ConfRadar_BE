@@ -110,6 +110,7 @@ namespace ConfRadar.Services.Services
             {
                 return totalPendingReview;
             }
+            papers = papers.Where(p => p.Ticket != null && p.Ticket.IsRefunded == false).ToList();
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
 
@@ -129,7 +130,7 @@ namespace ConfRadar.Services.Services
                 if (isHeadReviewer)
                 {
                     bool isAllCompleted = true;
-                    if (paper.Ticket?.IsRefunded == true || paperPhase == abstractPhase)
+                    if (/*paper.Ticket?.IsRefunded == true || */ paperPhase == abstractPhase)
                     {
                         continue;
                     }
@@ -154,7 +155,7 @@ namespace ConfRadar.Services.Services
                 }
                 else
                 {
-                    if (paper.Ticket?.IsRefunded == true || paperPhase == abstractPhase)
+                    if (/*paper.Ticket?.IsRefunded == true ||*/ paperPhase == abstractPhase)
                     {
                         continue;
                     }

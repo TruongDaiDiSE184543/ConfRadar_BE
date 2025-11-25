@@ -114,6 +114,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<User>> GetUserByRole(Role role)
         {
             return await _context.Users
+                .Include(u => u.Organization)
                  .Where(u => u.UserRoles.Any(ur => ur.RoleId == role.RoleId))
                  .ToListAsync();
         }

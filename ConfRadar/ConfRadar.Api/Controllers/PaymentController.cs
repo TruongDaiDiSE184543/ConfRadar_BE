@@ -122,75 +122,75 @@ namespace ConfRadar.Api.Controllers
             await _serviceManager.PaymentService.VerifyVnPayDataForConference(data);
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
         }
-        [HttpPost("verify-zalopay")]
-        public IActionResult VerifyZaloPay([FromBody] dynamic cbdata)
-        {
-            var result = new Dictionary<string, object>();
+        //[HttpPost("verify-zalopay")]
+        //public IActionResult VerifyZaloPay([FromBody] dynamic cbdata)
+        //{
+        //    var result = new Dictionary<string, object>();
 
-            try
-            {
-                string key2 = "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz";
-                var dataStr = Convert.ToString(cbdata["data"]);
-                var reqMac = Convert.ToString(cbdata["mac"]);
+        //    try
+        //    {
+        //        string key2 = "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz";
+        //        var dataStr = Convert.ToString(cbdata["data"]);
+        //        var reqMac = Convert.ToString(cbdata["mac"]);
 
 
-                Console.WriteLine("mac = {0}", reqMac);
-                Console.WriteLine("cbdata:" + cbdata);
-                var mac = _tokenService.CreateSignature(dataStr, key2);
+        //        Console.WriteLine("mac = {0}", reqMac);
+        //        Console.WriteLine("cbdata:" + cbdata);
+        //        var mac = _tokenService.CreateSignature(dataStr, key2);
 
-                Console.WriteLine("mac = {0}", mac);
-                // kiểm tra callback hợp lệ (đến từ ZaloPay server)
-                if (!reqMac.Equals(mac))
-                {
+        //        Console.WriteLine("mac = {0}", mac);
+        //        // kiểm tra callback hợp lệ (đến từ ZaloPay server)
+        //        if (!reqMac.Equals(mac))
+        //        {
 
-                    // callback không hợp lệ
-                    result["returncode"] = -1;
-                    result["returnmessage"] = "mac not equal";
-                }
-                else
-                {
-                    // thanh toán thành công
-                    // merchant cập nhật trạng thái cho đơn hàng
-                    var dataJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataStr);
-                    Console.WriteLine("update order's status = success where apptransid = {0}", dataJson["apptransid"]);
+        //            // callback không hợp lệ
+        //            result["returncode"] = -1;
+        //            result["returnmessage"] = "mac not equal";
+        //        }
+        //        else
+        //        {
+        //            // thanh toán thành công
+        //            // merchant cập nhật trạng thái cho đơn hàng
+        //            var dataJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataStr);
+        //            Console.WriteLine("update order's status = success where apptransid = {0}", dataJson["apptransid"]);
 
-                    result["returncode"] = 1;
-                    result["returnmessage"] = "success";
-                }
-            }
-            catch (Exception ex)
-            {
-                result["returncode"] = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
-                result["returnmessage"] = ex.Message;
-            }
+        //            result["returncode"] = 1;
+        //            result["returnmessage"] = "success";
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result["returncode"] = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
+        //        result["returnmessage"] = ex.Message;
+        //    }
 
-            // thông báo kết quả cho ZaloPay server
-            return Ok(result);
-        }
-        [HttpPost("create-zalopay")]
-        public async Task<IActionResult> CreateZaloPay()
-        {
-            var result = await _zaloPayService.CreateZaloPayment();
-            return Ok(result);
-        }
+        //    // thông báo kết quả cho ZaloPay server
+        //    return Ok(result);
+        //}
+        //[HttpPost("create-zalopay")]
+        //public async Task<IActionResult> CreateZaloPay()
+        //{
+        //    var result = await _zaloPayService.CreateZaloPayment();
+        //    return Ok(result);
+        //}
 
-        [HttpPost("test-payos")]
-        public async Task<IActionResult> TestPayos()
-        {
-            var listPaymentLinkItem = new List<PaymentLinkItem>()
-                    {
-                        new PaymentLinkItem()
-                        {
-                        Name = $"Thanh toán vé cho hội nghị",
-                        Price = 20000,
-                        Quantity = 1,
-                        }
-                    };
-            long orderCode = 999921451;
-            long amount = 20000;
-            var result = await _payOsService.CreatePayOsPayment(orderCode, 20000, "hihe", 90, listPaymentLinkItem);
-            return Ok(result);
-        }
+        //[HttpPost("test-payos")]
+        //public async Task<IActionResult> TestPayos()
+        //{
+        //    var listPaymentLinkItem = new List<PaymentLinkItem>()
+        //            {
+        //                new PaymentLinkItem()
+        //                {
+        //                Name = $"Thanh toán vé cho hội nghị",
+        //                Price = 20000,
+        //                Quantity = 1,
+        //                }
+        //            };
+        //    long orderCode = 999921451;
+        //    long amount = 20000;
+        //    var result = await _payOsService.CreatePayOsPayment(orderCode, 20000, "hihe", 90, listPaymentLinkItem);
+        //    return Ok(result);
+        //}
 
 
 

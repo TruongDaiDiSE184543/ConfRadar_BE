@@ -37,4 +37,17 @@
         public List<OwnContractDetailResponse> ContractDetail { get; set; } = new List<OwnContractDetailResponse>();
     }
 
+
+
+
+    public class UserExternalWageTotal
+    {
+        public decimal ? Wage { get; set; }
+        public List<OwnContractDetailResponse> ContractDetail { get; set; } = new List<OwnContractDetailResponse>();
+    }
+    public class UserExternalContractCount
+    {
+        public int? ContractCount { get; set; }
+        public List<OwnContractDetailResponse> ContractDetail { get; set; } = new List<OwnContractDetailResponse>();
+    }
 }

@@ -324,6 +324,16 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference tổ chức bởi confradar");
             }
+            var paperCount = await _unitOfWork.PaperRepository.GetPaperCountByConference(conferencePrice.ConferenceId);
+            var researchConfDetail = conferencePrice.Conference.ResearchConferenceDetail;
+            if (researchConfDetail == null) throw new NotFoundException("Không tìm thấy research conference");
+            if (paperCount >= researchConfDetail.NumberPaperAccept)
+            {
+                throw new BadRequestException($"Hiện đang có {paperCount} trên tổng số bài báo quy định cho hội nghị research {researchConfDetail.NumberPaperAccept}");
+            }
+
+
+
             var paymentConferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
             bool paymentConferenceLockFound = await _redisService.KeyExistsAsync(paymentConferenceLockKey);
             if (paymentConferenceLockFound == true)

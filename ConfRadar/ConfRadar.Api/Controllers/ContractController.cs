@@ -5,7 +5,6 @@ using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.ReviewContract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -73,14 +72,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ContractService.GetUsersForReviewerContract(request);
             return Ok(ApiResponse<List<GetUsersForReviewerContractResponse>>.SuccessResponse(result, "Danh sách người dùng"));
         }
-
+        // số hợp đồng đã kí
         [HttpGet("external-contracts-count")]
         [Authorize]
         public async Task<IActionResult> GetUserExternalContractCount()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ContractService.GetOwnContractCount(userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Tổng hợp đồng review của bạn"));
+            return Ok(ApiResponse<UserExternalContractCount>.SuccessResponse(result, "Tổng hợp đồng review của bạn"));
 
         }
         [HttpGet("external-contracts-active")]
@@ -97,8 +96,8 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetUserExternalWageTotal()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ContractService.GetUserActiveExternalContract(userId);
-            return Ok(ApiResponse<OwnActiveContractDetailResponse>.SuccessResponse(result, "Tổng hợp đồng review đang hoạt động của bạn"));
+            var result = await _serviceManager.ContractService.GetUserExternalWageTotal(userId);
+            return Ok(ApiResponse<UserExternalWageTotal>.SuccessResponse(result, "Lương của bạn"));
 
         }
         [HttpPost("create-collaborator-contract")]
@@ -109,7 +108,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã tạo hợp đồng"));
 
         }
-       
+
         [HttpGet("list-collaborator-contract")]
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> GetListCollaboratorContract([FromQuery] CollaboratorContractSearchParam request)

@@ -35,9 +35,12 @@ namespace ConfRadar.Services.Services
         Task<List<GetUsersForCollaboratorCreateResponse>> GetUsersForCollaboratorCreate();
         Task<List<AvailableCustomerResponse>> GetAvailableCustomer();
         Task<List<ReviewerDetailResponse>> ListAllReviewer();
+
         Task<int> SuspendExternalReviewerAccount(string userId);
         Task<int> ActivateExternalReviewerAccount(string userId);
+
         Task<int> CreateLocalReviewerAccount(CreateLocalReviewerAccountRequest request);
+
         Task<List<OrganizationDetailResponse>> GetListOrganization();
         Task<int> UpdateOrganization(OrganizationUpdateRequest request);
         Task<List<CollaboratorDetailResponse>> GetListCollaboratorAccounts();
@@ -218,10 +221,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"User with email {email} not found");
             }
-            if (user.IsEmailConfirmed == false)
-            {
-                throw new ConfRadarAuthenticationException("Email is not confirmed");
-            }
+            //if (user.IsEmailConfirmed == false)
+            //{
+            //    throw new ConfRadarAuthenticationException("Email is not confirmed");
+            //}
             var resetToken = _tokenService.GenerateSecureRandomToken();
             var resetLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
@@ -830,6 +833,9 @@ namespace ConfRadar.Services.Services
             var user = await _unitOfWork.UserRepository.GetUserByRole(collabRole);
             return user.Select(u => new CollaboratorDetailResponse()
             {
+                OrganizationId = u.Organization?.OrganizationId,
+                OrganizationDescription = u.Organization?.OrganizationDescription,
+                OrganizationName = u.Organization?.OrganizationName,
                 UserId = u.UserId,
                 Email = u.Email,
                 FullName = u.FullName,

@@ -40,8 +40,8 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetTotalPendingReviews()
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ReviewerService.GetTotalReviewedPapers(userId);
-            return Ok(ApiResponse<GetTotalReviewedPapersDetailResponse>.SuccessResponse(result, "Thông tin số bài đã review"));
+            var result = await _serviceManager.ReviewerService.GetTotalPendingReviews(userId);
+            return Ok(ApiResponse<GetTotalPendingReviewsDetailResponse>.SuccessResponse(result, "Thông tin số bài đang pending"));
         }
     }
 }
