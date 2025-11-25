@@ -55,7 +55,16 @@ namespace ConfRadar.Services.Services
         Task<PagedResult<DTOs.Conference.ResearchConferenceDetailResponse>> GetResearchConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
 
         // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering
-        Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, string? userId = null, bool isOrganizer = false);
+        Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorAsync(
+          int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
+          string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
+          string? userId = null, bool isOrganizer = false, string collboratorId = null, string organization = null);
+
+        Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByOrganizerAsync(
+         int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
+         string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
+         string? userId = null, bool isOrganizer = false);
+
 
         // NEW ENDPOINT 13: Get detailed research conference data for organizer
         Task<DTOs.Conference.ResearchConferenceDetailResponse> GetDetailResearchForOrganizerAsync(string conferenceId);
@@ -406,6 +415,8 @@ namespace ConfRadar.Services.Services
 
 
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.CreatedByNavigation)
+                    .ThenInclude(u => u.Organization)
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
                 .Include(c => c.Policies)
@@ -448,6 +459,9 @@ namespace ConfRadar.Services.Services
                 BannerImageUrl = conference.BannerImageUrl,
                 CreatedAt = conference.CreatedAt,
                 TicketSaleStart = conference.TicketSaleStart,
+                createdBy = conference.CreatedBy,
+                UserNameCreator = conference.CreatedByNavigation.FullName,
+                
                 TicketSaleEnd = conference.TicketSaleEnd,
                 IsInternalHosted = conference.IsInternalHosted,
                 IsResearchConference = conference.IsResearchConference,
@@ -455,8 +469,6 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 TargetAudience = technicalDetail?.TargetAudience,
-                //contractURL = technicalDetail?.ContractUrl,
-                //commission = technicalDetail?.Commission,
                 Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                 Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
                 Sessions = conference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
@@ -881,6 +893,8 @@ namespace ConfRadar.Services.Services
             }
             // Get the main conference with related data
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.CreatedByNavigation)
+                    .ThenInclude(u => u.Organization)
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
                 .Include(c => c.Policies)
@@ -938,9 +952,9 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 createdBy = conference.CreatedBy,
+                UserNameCreator = conference.CreatedByNavigation.FullName,
 
                 // Research Conference Detail specific fields
-                Name = researchDetail?.Name,
                 PaperFormat = researchDetail?.PaperFormat,
                 NumberPaperAccept = researchDetail?.NumberPaperAccept,
                 RevisionAttemptAllowed = researchDetail?.RevisionAttemptAllowed,
@@ -1041,7 +1055,7 @@ namespace ConfRadar.Services.Services
                 createdBy = conference.CreatedBy,
 
                 // Research Conference Detail specific fields
-                Name = researchDetail?.Name,
+
                 PaperFormat = researchDetail?.PaperFormat,
                 NumberPaperAccept = researchDetail?.NumberPaperAccept,
                 RevisionAttemptAllowed = researchDetail?.RevisionAttemptAllowed,
@@ -1505,7 +1519,6 @@ namespace ConfRadar.Services.Services
                     createdBy = conference.CreatedBy,
 
                     // Research Conference Detail specific fields
-                    Name = researchDetail?.Name,
                     PaperFormat = researchDetail?.PaperFormat,
                     NumberPaperAccept = researchDetail?.NumberPaperAccept,
                     RevisionAttemptAllowed = researchDetail?.RevisionAttemptAllowed,
@@ -1550,30 +1563,161 @@ namespace ConfRadar.Services.Services
             };
         }
 
-        public async Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListAsync(
-            int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
-            string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
-            string? userId = null, bool isOrganizer = false)
+        public async Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByOrganizerAsync(
+     int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
+     string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
+     string? userId = null, bool isOrganizer = false)
+        {
+            // Nếu hàm này chỉ dành cho Organizer, ta có thể bỏ qua check bool isOrganizer 
+            // vì Controller đã Authorize Role rồi. Nhưng giữ lại để double-check cũng tốt.
+
+            if (!isOrganizer)
+            {
+                throw new Exception("Chức năng này chỉ dành cho Organizer.");
+            }
+
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
+            var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
+
+            // Validation
+            if (!string.IsNullOrEmpty(conferenceStatusId) && (conferenceStatusId == draftStatus.ConferenceStatusId || conferenceStatusId == deleteStatus.ConferenceStatusId))
+            {
+                throw new BadRequestException("Organizers không được phép xem chọn lọc theo trạng thái 'Draft' và 'Deleted'.");
+            }
+
+            // 1. Khởi tạo Query với đầy đủ Include ngay từ đầu
+            // Thay vì GetAllConferences(), hãy dùng hàm đã Include sẵn
+            var query = _unitOfWork.ConferenceRepository.GetAllTechnicalIncludedConference();
+
+            // 2. Apply Filters cơ bản
+            query = query.Where(c => c.IsResearchConference != true // Tương đương (false || null)
+                                  && c.ConferenceStatusId != draftStatus.ConferenceStatusId
+                                  && c.ConferenceStatusId != deleteStatus.ConferenceStatusId
+                                  && c.CreatedBy == userId);
+
+            // 3. Apply Dynamic Filters
+            if (!string.IsNullOrEmpty(conferenceStatusId))
+            {
+                query = query.Where(c => c.ConferenceStatusId == conferenceStatusId);
+            }
+
+            if (!string.IsNullOrEmpty(searchKeyword))
+            {
+                var lowerKeyword = searchKeyword.ToLower();
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(lowerKeyword) ||
+                                         c.Description.ToLower().Contains(lowerKeyword));
+            }
+
+            if (!string.IsNullOrEmpty(cityId))
+            {
+                query = query.Where(c => c.CityId == cityId);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(c => c.StartDate >= startDate);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(c => c.EndDate <= endDate);
+            }
+
+            // 4. Thực thi Query (Chỉ 2 câu lệnh SQL: 1 đếm tổng, 1 lấy dữ liệu phân trang)
+            var totalCount = await query.CountAsync();
+
+            var pagedConferences = await query
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // 5. Mapping dữ liệu (Trong bộ nhớ RAM, không gọi DB nữa)
+            var responses = pagedConferences.Select(fullConference => new DTOs.Conference.TechnicalConferenceDetailResponse
+            {
+                ConferenceId = fullConference.ConferenceId,
+                ConferenceName = fullConference.ConferenceName,
+                Description = fullConference.Description,
+                StartDate = fullConference.StartDate,
+                EndDate = fullConference.EndDate,
+                TotalSlot = fullConference.TotalSlot,
+                AvailableSlot = fullConference.AvailableSlot,
+                Address = fullConference.Address,
+                BannerImageUrl = fullConference.BannerImageUrl,
+                CreatedAt = fullConference.CreatedAt,
+                TicketSaleStart = fullConference.TicketSaleStart,
+                TicketSaleEnd = fullConference.TicketSaleEnd,
+                IsInternalHosted = fullConference.IsInternalHosted,
+                IsResearchConference = fullConference.IsResearchConference,
+                CityId = fullConference.CityId,
+                ConferenceCategoryId = fullConference.ConferenceCategoryId,
+                ConferenceStatusId = fullConference.ConferenceStatusId,
+                
+                // Dữ liệu này đã được Include sẵn, không cần query lại
+                TargetAudience = fullConference.TechnicalConferenceDetail?.TargetAudience,
+                createdBy = fullConference.CreatedBy,
+                UserNameCreator = fullConference.CreatedByNavigation.FullName,
+
+                // Mapping các list con
+                Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                Sessions = fullConference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
+                ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
+                ConferencePrices = fullConference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList()
+            }).ToList();
+
+            return new PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>
+            {
+                Items = responses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+
+        public async Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorAsync(
+          int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
+          string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
+          string? userId = null, bool isOrganizer = false, string collboratorId = null, string? organization = null)
         {
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
-            IQueryable<Conference> query;
+            var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
+            var query = _unitOfWork.ConferenceRepository.GetAllTechnicalIncludedConference();
 
-            if (isOrganizer && !string.IsNullOrEmpty(conferenceStatusId) && conferenceStatusId == draftStatus.ConferenceStatusId)
+            // 1. Filter cơ bản cho Technical Conference (Loại bỏ Research)
+            query = query.Where(c => c.IsResearchConference != true); // Tương đương: null hoặc false
+
+
+            if (isOrganizer && !string.IsNullOrEmpty(conferenceStatusId) && (conferenceStatusId == draftStatus.ConferenceStatusId || conferenceStatusId == deleteStatus.ConferenceStatusId))
             {
-                throw new BadRequestException("Organizers không được phép xem chọn lọc theo trạng thái 'Draft'.");
+                throw new BadRequestException("Organizers không được phép xem chọn lọc theo trạng thái 'Draft' và 'Deleted'.");
             }
             if (isOrganizer)
             {
                 // Organizers can see all technical conferences
-                query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null)
-                    && c.ConferenceStatusId != draftStatus.ConferenceStatusId);
+                query =query
+                    .Where(c => c.ConferenceStatusId != draftStatus.ConferenceStatusId &&
+                    c.ConferenceStatusId != deleteStatus.ConferenceStatusId &&
+                    c.CreatedBy != userId);
+                if (!string.IsNullOrEmpty(collboratorId))
+                    query = query.Where(c => c.CreatedBy == collboratorId);
+
+                if (!string.IsNullOrEmpty(organization))
+                {
+                    // Lưu ý: Cần chắc chắn Organization không null để tránh lỗi NullReferenceException trong DB query
+                    query = query.Where(c => c.CreatedByNavigation.Organization != null &&
+                                             c.CreatedByNavigation.Organization.OrganizationName.ToLower() == organization.ToLower());
+                }
+
             }
+
             else
             {
+                if (conferenceStatusId == deleteStatus.ConferenceStatusId)
+                    throw new BadRequestException("Collaborator không được phép xem chọn lọc theo trạng thái 'Deleted'.");
                 // Collaborators can only see technical conferences they created
-                query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Where(c => (c.IsResearchConference == false || c.IsResearchConference == null) && c.CreatedBy == userId);
+                query = query.Where(c => c.CreatedBy == userId && c.ConferenceStatusId != deleteStatus.ConferenceStatusId);
             }
 
             // Apply status filter if provided
@@ -1582,6 +1726,7 @@ namespace ConfRadar.Services.Services
                 query = query.Where(c => c.ConferenceStatusId == conferenceStatusId);
             }
 
+            
             // Apply other filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
@@ -1612,71 +1757,37 @@ namespace ConfRadar.Services.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            var responses = new List<DTOs.Conference.TechnicalConferenceDetailResponse>();
-
-            foreach (var conference in pagedConferences)
+            var responses = pagedConferences.Select(conference => new DTOs.Conference.TechnicalConferenceDetailResponse
             {
-                // For each conference, get the detailed technical conference data
-                var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conference.ConferenceId);
+                ConferenceId = conference.ConferenceId,
+                ConferenceName = conference.ConferenceName,
+                Description = conference.Description,
+                StartDate = conference.StartDate,
+                EndDate = conference.EndDate,
+                TotalSlot = conference.TotalSlot,
+                AvailableSlot = conference.AvailableSlot,
+                Address = conference.Address,
+                BannerImageUrl = conference.BannerImageUrl,
+                CreatedAt = conference.CreatedAt,
+                TicketSaleStart = conference.TicketSaleStart,
+                TicketSaleEnd = conference.TicketSaleEnd,
+                IsInternalHosted = conference.IsInternalHosted,
+                IsResearchConference = conference.IsResearchConference,
+                CityId = conference.CityId,
+                ConferenceCategoryId = conference.ConferenceCategoryId,
+                ConferenceStatusId = conference.ConferenceStatusId,
+                TargetAudience = conference.TechnicalConferenceDetail?.TargetAudience,
+                UserNameCreator = conference.CreatedByNavigation?.FullName, // Null check an toàn
+                Organization = conference.CreatedByNavigation?.Organization?.OrganizationName, // Null check an toàn
+                createdBy = conference.CreatedBy,
 
-                var responsesList = await _unitOfWork.ConferenceRepository.GetAllConferences()
-                    .Include(c => c.ConferenceCategory)
-                    .Include(c => c.ConferenceMedia)
-                    .Include(c => c.Policies)
-                    .Include(c => c.ConferencePrices)
-                        .ThenInclude(cp => cp.PricePhases)
-                            .ThenInclude(pp => pp.RefundPolicies)
-                    .Include(c => c.ConferenceSessions)
-                        .ThenInclude(cs => cs.Speakers)
-                    .Include(c => c.ConferenceSessions)
-                        .ThenInclude(cs => cs.ConferenceSessionMedia)
-                    .Include(c => c.ConferenceSessions)
-                        .ThenInclude(cs => cs.Room) // Include room information
-                            .ThenInclude(r => r.Destination)
-                                .ThenInclude(d => d.City)
-                    .Include(c => c.Sponsors)
-                    .Include(c => c.TechnicalConferenceDetail)
-                    .Where(c => c.ConferenceId == conference.ConferenceId)
-                    .ToListAsync();
-
-                var fullConference = responsesList.FirstOrDefault();
-
-                if (fullConference != null)
-                {
-                    var response = new DTOs.Conference.TechnicalConferenceDetailResponse
-                    {
-                        ConferenceId = fullConference.ConferenceId,
-                        ConferenceName = fullConference.ConferenceName,
-                        Description = fullConference.Description,
-                        StartDate = fullConference.StartDate,
-                        EndDate = fullConference.EndDate,
-                        TotalSlot = fullConference.TotalSlot,
-                        AvailableSlot = fullConference.AvailableSlot,
-                        Address = fullConference.Address,
-                        BannerImageUrl = fullConference.BannerImageUrl,
-                        CreatedAt = fullConference.CreatedAt,
-                        TicketSaleStart = fullConference.TicketSaleStart,
-                        TicketSaleEnd = fullConference.TicketSaleEnd,
-                        IsInternalHosted = fullConference.IsInternalHosted,
-                        IsResearchConference = fullConference.IsResearchConference,
-                        CityId = fullConference.CityId,
-                        ConferenceCategoryId = fullConference.ConferenceCategoryId,
-                        ConferenceStatusId = fullConference.ConferenceStatusId,
-                        TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                        //contractURL = technicalDetail?.ContractUrl,
-                        //commission = technicalDetail?.Commission,
-                        createdBy = fullConference.CreatedBy,
-                        Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
-                        Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
-                        Sessions = fullConference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
-                        ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
-                        ConferencePrices = fullConference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList()
-                    };
-
-                    responses.Add(response);
-                }
-            }
-
+                // Mapping lists
+                Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                Sessions = conference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
+                ConferenceMedia = conference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
+                ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList()
+            }).ToList();
             return new PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>
             {
                 Items = responses,
@@ -1685,6 +1796,9 @@ namespace ConfRadar.Services.Services
                 PageSize = pageSize
             };
         }
+
+
+
 
         public async Task<List<ConferenceWithStatusNameResponse>> GetAllConferenceWithStatusByUserId(string userId, string? statusId)
         {
