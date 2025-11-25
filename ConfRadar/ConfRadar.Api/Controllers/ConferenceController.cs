@@ -52,7 +52,6 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResult<ConferenceWithPricesResponse>>.SuccessResponse(conferences, "Conferences with prices retrieved successfully"));
         }
 
-        // NEW ENDPOINT 2: Get detailed technical conference data
         [HttpGet("technical-detail-for-anon/{conferenceId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetTechnicalConferenceDetail(string conferenceId)
@@ -62,6 +61,23 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully"));
         }
 
+        [HttpGet("research-detail-for-anon/{conferenceId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId, userId);
+            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully"));
+        }
+
+        [Authorize]
+        [HttpPost("submit-conference-feedback")]
+        public async Task<IActionResult> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.SubmitConferenceFeedback(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công feedback"));
+        }
 
         // NEW ENDPOINT 3: Get conferences by status ID with filtering
         [HttpGet("by-status/{conferenceStatusId}")]
@@ -94,40 +110,8 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResult<ConferenceStepCompletionStatusResponse>>.SuccessResponse(conferences, "Conference step completion status retrieved successfully"));
         }
 
-        // NEW ENDPOINT 5: Get all pending conferences
-        [HttpGet("pending-conferences")]
-        [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> GetPendingConferences(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] string? searchKeyword = null)
-        {
-            var conferences = await _serviceManager.ConferenceService.GetPendingConferencesAsync(page, pageSize, searchKeyword);
-            return Ok(ApiResponse<PagedResult<ConferenceResponseDTO>>.SuccessResponse(conferences, "Pending conferences retrieved successfully"));
-        }
 
-        // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
-        [HttpPut("approve-conference/{conferenceId}")]
-        [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> ApproveConference(string conferenceId, [FromBody] ApproveConferenceRequest request)
-        {
-            var result = await _serviceManager.ConferenceService.ApproveConferenceAsync(conferenceId, request);
-            if (result)
-            {
-                return Ok(ApiResponse<object>.SuccessResponse(null, "Conference approved successfully"));
-            }
-            return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
-        }
-
-        // NEW ENDPOINT 7: Get detailed research conference data
-        [HttpGet("research-detail-for-anon/{conferenceId}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetResearchConferenceDetail(string conferenceId)
-        {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var conferenceDetail = await _serviceManager.ConferenceService.GetResearchConferenceDetailAsync(conferenceId, userId);
-            return Ok(ApiResponse<ResearchConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Research conference detail retrieved successfully"));
-        }
+       
 
         // NEW ENDPOINT 8: Get research conferences with step completion status
         [HttpGet("research-step-completion-status")]
@@ -183,9 +167,9 @@ namespace ConfRadar.Api.Controllers
         }
 
         // NEW ENDPOINT 12: Get list of technical conferences with pagination and filtering (for organizers and collaborators)
-        [HttpGet("technical-conferences-for-collaborator-and-Organizer")]
-        [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> GetTechnicalConferencesList(
+        [HttpGet("technical-conferences-by-Organizer")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> GetTechnicalConferencesListByOrganizer(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? conferenceStatusId = null,
@@ -197,28 +181,32 @@ namespace ConfRadar.Api.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var isOrganizer = User.IsInRole("Conference Organizer");
 
-            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListAsync(
+            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListByOrganizerAsync(
                 page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer);
             return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
         }
 
-        //NEW ENDPOINT 13: update conf status
-        [HttpPost("Update-own-conference-Status")]
+        [HttpGet("technical-conferences-by-Collaborator")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus, string? reason = null)
+        public async Task<IActionResult> GetTechnicalConferencesByCollaboratorList(
+         [FromQuery] int page = 1,
+         [FromQuery] int pageSize = 10,
+         [FromQuery] string? conferenceStatusId = null,
+         [FromQuery] string? searchKeyword = null,
+         [FromQuery] string? cityId = null,
+         [FromQuery] DateOnly? startDate = null,
+         [FromQuery] DateOnly? endDate = null,
+         [FromQuery] string? collaboratorId = null, // Đã sửa tên
+         [FromQuery] string? organizationName = null) // Đã sửa tên
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceService.ChangeConferenceStatus(userId, confid, newStatus, reason);
-            if (result)
-            {
-                return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
+            var isOrganizer = User.IsInRole("Conference Organizer");
 
-            }
-            else
-            {
-                return Ok(ApiResponse<bool>.FailResponse("Update Hội nghị thất bại"));
-            }
+            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListByCollaboratorAsync(
+                page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);
+            return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
         }
+
 
         // NEW ENDPOINT 14: Get detailed research conference data for organizer with timeline
         [HttpGet("detail-research-organizer-for-organizer/{conferenceId}")]
@@ -241,6 +229,52 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully with timeline"));
         }
 
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        [HttpGet("get-skeleton-tech-conf-created-for-collaborator")]
+        public async Task<IActionResult> GetSkeletonConferenceBasicForCollaboratorToBuildOn([FromQuery] string collaboratorId)
+        {
+            var conferenceList = await _serviceManager.ConferenceService.getSkeletonTechConf(collaboratorId);
+            return Ok(ApiResponse<List<SkeletonTechConfResponse>>.SuccessResponse(conferenceList, $"Láy thành công những conference tạo cho collaborator với ID {collaboratorId}"));
+        }
+
+
+
+        [HttpPut("request-a-conference-to-be-approved")]
+        [Authorize(Roles = "Collaborator")]
+        public async Task<IActionResult> RequestPendingConference([FromQuery] string confId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.RequestOrganizerApproval(confId, userId);
+            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
+            return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
+        }
+        // NEW ENDPOINT 5: Get all pending conferences
+        [HttpGet("pending-conferences")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> GetPendingConferences(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchKeyword = null)
+        {
+            var conferences = await _serviceManager.ConferenceService.GetPendingConferencesAsync(page, pageSize, searchKeyword);
+            return Ok(ApiResponse<PagedResult<ConferenceResponseDTO>>.SuccessResponse(conferences, "Pending conferences retrieved successfully"));
+        }
+
+
+        // NEW ENDPOINT 6: Approve conference (change status from pending to preparing)
+        [HttpPut("approve-conference/{conferenceId}")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> ApproveConference(string conferenceId, [FromBody] ApproveConferenceRequest request)
+        {
+            var result = await _serviceManager.ConferenceService.ApproveConferenceAsync(conferenceId, request);
+            if (result)
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Conference approved successfully"));
+            }
+            return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
+        }
+
+
 
 
         [HttpGet("get-own-conferences")]
@@ -251,14 +285,26 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.GetAllConferenceWithStatusByUserId(userId, statusId);
             return Ok(ApiResponse<List<ConferenceWithStatusNameResponse>>.SuccessResponse(result, "User conferences retrieved successfully"));
         }
-        [Authorize]
-        [HttpPost("submit-conference-feedback")]
-        public async Task<IActionResult> SubmitConferenceFeedback(CreateConferenceFeedbackRequest request)
+
+
+        //NEW ENDPOINT 13: update conf status
+        [HttpPost("Update-own-conference-Status")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus, string? reason = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceService.SubmitConferenceFeedback(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công feedback"));
+            var result = await _serviceManager.ConferenceService.ChangeConferenceStatus(userId, confid, newStatus, reason);
+            if (result)
+            {
+                return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
+
+            }
+            else
+            {
+                return Ok(ApiResponse<bool>.FailResponse("Update Hội nghị thất bại"));
+            }
         }
+
         [Authorize]
         [HttpGet("own-conferences-for-schedule")]
         public async Task<IActionResult> GetListConferencesForSchedule()
@@ -278,15 +324,6 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ConferenceResponseDTO>>.SuccessResponse(result, "Lấy thành công danh sách conference có papers được assigned cho local reviewer"));
         }
 
-        [HttpPut("request-a-conference-to-be-approved")]
-        [Authorize(Roles = "Collaborator")]
-        public async Task<IActionResult> RequestPendingConference([FromQuery] string confId)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceService.RequestOrganizerApproval(confId, userId);
-            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
-            return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
-        }
 
         [HttpPut("activate-waitlist")]
         [Authorize(Roles = "Conference Organizer")]

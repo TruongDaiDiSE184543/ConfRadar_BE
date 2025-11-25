@@ -1,3 +1,4 @@
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Mappers;
 using System.ComponentModel.DataAnnotations;
 
@@ -169,10 +170,9 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
         public string? TargetAudience { get; set; } // Technical conference detail
-        public string? contractURL { get; set; }
-        public int? commission { get; set; }
         public string? createdBy { get; set; }
-
+        public string? UserNameCreator {  get; set; }
+        public string? Organization {  get; set; }
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
         public List<SponsorResponse>? Sponsors { get; set; }
@@ -205,7 +205,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? createdBy { get; set; }
 
         // Research Conference Detail specific fields
-        public string? Name { get; set; }
+        public string? UserNameCreator { get; set; }
         public string? PaperFormat { get; set; }
         public int? NumberPaperAccept { get; set; }
         public int? RevisionAttemptAllowed { get; set; }
@@ -442,4 +442,12 @@ namespace ConfRadar.Services.DTOs.Conference
         public RoomInfoResponse? Room { get; set; } // Include room information
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
     }
+
+    public class SkeletonTechConfResponse
+    {
+        public string? ConferenceId { get; set; }
+        public string? Name { get; set; }
+    }
+
+  
 }

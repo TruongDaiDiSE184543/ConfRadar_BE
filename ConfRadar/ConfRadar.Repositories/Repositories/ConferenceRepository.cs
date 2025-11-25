@@ -15,6 +15,11 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Conference>> GetAllConferencesAsync();
         IQueryable<Conference> GetAllConferences();
         Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId);
+        IQueryable<Conference> GetAllTechnicalIncludedConference();
+        Task<Conference> GetTechnicalIncludedById(string technicalId);
+        Task<Conference> GetResearchIncludedById(string researchId);
+        IQueryable<Conference> GetAllResearchIncludedConference();
+
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
         Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId);
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId);
@@ -206,6 +211,70 @@ namespace ConfRadar.Repositories.Repositories
                 .Select(c => c.ConferenceId)
                 .ToListAsync();
             return conferences;
+        }
+
+
+        public IQueryable<Conference> GetAllTechnicalIncludedConference()
+        {
+            return _context.Conferences
+              .Include(c => c.CreatedByNavigation)
+                        .ThenInclude(u => u.Organization)
+                    .Include(c => c.ConferenceCategory)
+                    .Include(c => c.ConferenceMedia)
+                    .Include(c => c.Policies)
+                    .Include(c => c.ConferencePrices)
+                        .ThenInclude(cp => cp.PricePhases)
+                            .ThenInclude(pp => pp.RefundPolicies)
+                    .Include(c => c.ConferenceSessions)
+                        .ThenInclude(cs => cs.Speakers)
+                    .Include(c => c.ConferenceSessions)
+                        .ThenInclude(cs => cs.ConferenceSessionMedia)
+                    .Include(c => c.ConferenceSessions)
+                        .ThenInclude(cs => cs.Room) // Include room information
+                            .ThenInclude(r => r.Destination)
+                                .ThenInclude(d => d.City)
+                    .Include(c => c.Sponsors)
+                    .Include(c => c.TechnicalConferenceDetail)
+                .AsNoTracking()
+                .AsSplitQuery();
+        }
+
+        public async Task<Conference> GetTechnicalIncludedById(string technicalId)
+        {
+            return await _context.Conferences
+                .Include(c => c.CreatedByNavigation)
+                .Include(c => c.ConferenceCategory)
+                .Include(c => c.ConferenceMedia)
+                .Include(c => c.Policies)
+                .Include(c => c.ConferencePrices)
+                    .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Speakers)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceSessionMedia)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) // Include room information
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
+                .Include(c => c.Sponsors)
+                .Include(c => c.TechnicalConferenceDetail)
+                .Include(c => c.ConferenceTimelines) // Include timeline
+                    .ThenInclude(ct => ct.PreviousStatus)
+                .Include(c => c.ConferenceTimelines)
+                    .ThenInclude(ct => ct.AfterwardStatus)
+                .Include(c => c.RefundPolicies)
+               .FirstOrDefaultAsync(c => c.ConferenceId == technicalId);
+        }
+
+        public Task<Conference> GetResearchIncludedById(string researchId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IQueryable<Conference> GetAllResearchIncludedConference()
+        {
+            throw new NotImplementedException();
         }
 
         //public Task<List<Conference>> GetConferencesByUserId(string userId)
