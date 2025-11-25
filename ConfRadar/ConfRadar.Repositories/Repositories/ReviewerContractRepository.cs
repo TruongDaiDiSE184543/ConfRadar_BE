@@ -119,7 +119,6 @@ namespace ConfRadar.Repositories.Repositories
                     ResearchConferenceDetail = c.ResearchConferenceDetail != null ? new ResearchConferenceDetailForReviewContract()
                     {
                         ConferenceId = c.ConferenceId,
-                        Name = c.ResearchConferenceDetail.Name,
                         PaperFormat = c.ResearchConferenceDetail.PaperFormat,
                         NumberPaperAccept = c.ResearchConferenceDetail.NumberPaperAccept,
                         RevisionAttemptAllowed = c.ResearchConferenceDetail.RevisionAttemptAllowed,
