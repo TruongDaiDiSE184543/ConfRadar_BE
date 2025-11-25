@@ -7,9 +7,16 @@
         public string TicketName { get; set; }
         public string PhaseName { get; set; }
         public decimal ApplyPhasePercent { get; set; }
+        public int HasCheckin { get; set; }
+        public int ExpireCheckin { get; set; }
+        public int Pending { get; set; }
 
+        public int TotalNotRefuned { get; set; }
+        public int TotalRefunded { get; set; }
         public int TotalSold { get; set; }
-        public decimal TotalAmount { get; set; }
+        public decimal? TotalAmountNotRefunded { get; set; }
+        public decimal? TotalAmountRefunded { get; set; }
+        public decimal? TotalAmount { get; set; }
         public decimal? CommissionPercentage { get; set; } // Only for non-internal hosted conferences
         public decimal? AmountToCollaborator { get; set; } // For non-internal hosted conferences
         public decimal? AmountToConfRadar { get; set; } // For non-internal hosted conferences
@@ -20,9 +27,14 @@
         public string ConferenceId { get; set; }
         public string ConferenceName { get; set; }
         public bool IsInternalHosted { get; set; }
+        public int commision { get; set; }
         public List<TicketPhaseStatisticsResponse> TicketPhaseStatistics { get; set; }
+        public int TotalTicketRefunded { get; set; }
+        public int TotalNotRefundedTicket { get; set; }
         public int TotalTicketsSold { get; set; }
-        public decimal TotalRevenue { get; set; }
+        public decimal? TotalRefundedAmount { get; set; }
+        public decimal? TotalRevenueWithoutRefunded {  get; set; }
+        public decimal? TotalRevenue { get; set; }
     }
 
     public class ExportStatisticsRequest
@@ -60,16 +72,54 @@
     }
 
     // Chi tiết người mua vé
+
+    //param parameter
+    public class TicketHolderSearchParam
+    {
+        public string ConferenceId { get; set; } = null!; // Bắt buộc
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+
+        public string? SearchKeyword { get; set; } // Tìm theo tên User, Email hoặc TicketId
+        public bool? IsRefunded { get; set; } // Lọc vé đã hoàn hay chưa
+        public string? TicketType { get; set; } // Lọc theo tên loại vé (ConferencePrice Name)
+        public string? CheckInStatus { get; set; } // Lọc theo trạng thái: "CheckedIn", "Pending", "Expired"
+        public DateOnly? FromDate { get; set; } // Ngày mua từ
+        public DateOnly? ToDate { get; set; } // Ngày mua đến
+    }
+
+
     public class TicketHolderDetailResponse
     {
         public string TicketId { get; set; }
+        public string CustomerId { get; set; }
         public string CustomerName { get; set; }
-        public string TicketTypeName { get; set; }
-        public string PhaseName { get; set; }
+        public string CustomerEmail { get; set; }
+        public string CustomerPhone { get; set; }
+
+        // Thông tin vé
+        public string TicketTypeName { get; set; } // Tên loại vé (VIP, Standard...)
+        public string PhaseName { get; set; } // Giai đoạn mua (Early Bird...)
         public decimal ActualPrice { get; set; }
         public DateOnly PurchaseDate { get; set; }
-        public string Status { get; set; } // "Đã thanh toán", "Đã hoàn tiền"
-        public bool isRefunded { get; set; }
+        public bool IsRefunded { get; set; }
+
+        // Tổng quan Check-in
+        public string OverallStatus { get; set; } // "Đã tham gia", "Chưa đến", "Hết hạn" (Tính dựa trên logic ưu tiên)
+
+        // Chi tiết từng Session đã check-in (List này trả lời cho câu hỏi của bạn)
+        public List<SessionCheckInDetail> SessionCheckIns { get; set; } = new List<SessionCheckInDetail>();
+    }
+
+    public class SessionCheckInDetail
+    {
+        public string SessionId { get; set; }
+        public string SessionTitle { get; set; }
+        public string RoomName { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public string CheckInStatus { get; set; } // "CheckedIn", "Pending", "Expired"
+        public DateTime? CheckInTime { get; set; }
     }
 
     // Thống kê Bài báo

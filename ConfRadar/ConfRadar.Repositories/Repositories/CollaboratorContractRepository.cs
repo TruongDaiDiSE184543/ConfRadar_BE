@@ -13,6 +13,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdateCollaboratorContractAsync(CollaboratorContract collaboratorContract);
         Task<CollaboratorContract?> GetCollaboratorContractByIdAsync(string collaboratorContractId);
         Task<List<CollaboratorContract>> GetListCollaboratorContractByUserIdAsync(string userId);
+        Task<CollaboratorContract> GetCollaboratorContractByConferenceId (string conferenceId);
        
         Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContractWithFilter(CollaboratorContractSearchParam request);
     }
@@ -141,6 +142,9 @@ namespace ConfRadar.Repositories.Repositories
 
         }
 
-       
+        public async Task<CollaboratorContract> GetCollaboratorContractByConferenceId(string conferenceId)
+        {
+            return await _context.CollaboratorContracts.FirstOrDefaultAsync(cc => cc.ConferenceId == conferenceId);
+        }
     }
 }

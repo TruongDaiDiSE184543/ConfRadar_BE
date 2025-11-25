@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Statistics;
+using ConfRadar.Shared.DTO.General;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConfRadar.Api.Controllers
@@ -19,15 +20,15 @@ namespace ConfRadar.Api.Controllers
         [HttpGet("sold-ticket")]
         public async Task<IActionResult> getSoldTicket([FromQuery] string confId)
         {
-            var result = await _serviceManager.StatisticsService.GetConferenceStatisticsAsync(confId);
+            var result = await _serviceManager.StatisticsService.GetSoldTicketStatisticsAsync(confId);
             return Ok(ApiResponse<ConferenceStatisticsResponse>.SuccessResponse(result, "Lấy thành công vé đã bán"));
         }
 
         [HttpGet("ticket-holders")]
-        public async Task<IActionResult> getTicketHolders([FromQuery] string confId)
+        public async Task<IActionResult> getTicketHolders([FromQuery] TicketHolderSearchParam request)
         {
-            var result = await _serviceManager.StatisticsService.GetTicketHoldersByConferenceIdAsync(confId);
-            return Ok(ApiResponse<List<TicketHolderDetailResponse>>.SuccessResponse(result, "Lấy thành công thông tin vé đã bán và người mua"));
+            var result = await _serviceManager.StatisticsService.GetTicketHoldersByConferenceIdAsync(request);
+            return Ok(ApiResponse<PagedResultResponseDto<TicketHolderDetailResponse>>.SuccessResponse(result, "Lấy thành công thông tin vé đã bán và người mua"));
         }
         [HttpGet("export/sold-ticket")]
         public async Task<IActionResult> exportRevenue([FromQuery] string confId)

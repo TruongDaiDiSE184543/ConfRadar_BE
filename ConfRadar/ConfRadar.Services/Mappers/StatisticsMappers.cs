@@ -1,4 +1,4 @@
-using ConfRadar.Repositories.Models;
+﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Statistics;
 
 namespace ConfRadar.Services.Mappers
@@ -49,8 +49,12 @@ namespace ConfRadar.Services.Mappers
         public static ConferenceStatisticsResponse ToConferenceStatisticsResponse(
             this Conference conference,
             List<TicketPhaseStatisticsResponse> ticketPhaseStats,
-            int totalTicketsSold,
-            decimal totalRevenue)
+            int grandTotalSold,
+            int grandTotalRefundedCount,
+            int grandTotalNotRefundedCount,
+            decimal grandTotalRefundedAmountToCustomer, 
+            decimal grandTotalRevenueWithoutRefunded,
+            decimal grandTotalRealRevenue)
         {
             return new ConferenceStatisticsResponse
             {
@@ -58,8 +62,69 @@ namespace ConfRadar.Services.Mappers
                 ConferenceName = conference.ConferenceName,
                 IsInternalHosted = conference.IsInternalHosted ?? false,
                 TicketPhaseStatistics = ticketPhaseStats,
-                TotalTicketsSold = totalTicketsSold,
-                TotalRevenue = totalRevenue
+
+                TotalTicketsSold = grandTotalSold,
+                TotalTicketRefunded = grandTotalRefundedCount,
+                TotalNotRefundedTicket = grandTotalNotRefundedCount,
+
+                // Map các field tổng theo yêu cầu
+                // TotalRefundedAmount: Tổng tiền trả khách (số âm)
+                TotalRefundedAmount = -grandTotalRefundedAmountToCustomer,
+
+                // TotalRevenueWithoutRefunded: Doanh thu từ vé active
+                TotalRevenueWithoutRefunded = grandTotalRevenueWithoutRefunded,
+
+                // TotalRevenue: Tổng doanh thu thực nhận (đã trừ tiền trả khách)
+                TotalRevenue = grandTotalRealRevenue
+            };
+        }
+
+        public static SessionCheckInDetail ToSessionCheckInDetail (this UserCheckIn uc)
+        {
+            return new SessionCheckInDetail
+            {
+                SessionId = uc.ConferenceSessionId,
+                SessionTitle = uc.ConferenceSession?.Title ?? "Unknown Session",
+                // Logic lấy tên phòng ưu tiên DisplayName -> Number -> N/A
+                RoomName = uc.ConferenceSession?.Room?.DisplayName
+                         ?? uc.ConferenceSession?.Room?.Number
+                         ?? "N/A",
+                StartTime = uc.ConferenceSession?.StartTime,
+                EndTime = uc.ConferenceSession?.EndTime,
+                CheckInStatus = uc.CheckinStatus?.CheckinStatusName ?? "Unknown",
+                CheckInTime = uc.CheckInTime
+            };
+        }
+
+        public static TicketHolderDetailResponse ToTicketHolderDetailResponse(this Ticket ticket)
+        {
+            // Logic tính toán Overall Status
+            string overallStatus = "Chưa tham gia";
+            if (ticket.IsRefunded == true) overallStatus = "Đã hoàn tiền";
+            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == "CheckedIn")) overallStatus = "Đã tham gia";
+            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == "Expired")) overallStatus = "Vắng mặt (Hết hạn)";
+
+            return new TicketHolderDetailResponse
+            {
+                TicketId = ticket.TicketId,
+                CustomerId = ticket.UserId,
+                CustomerName = ticket.User?.FullName ?? "Unknown",
+                CustomerEmail = ticket.User?.Email ?? "N/A",
+                CustomerPhone = ticket.User?.PhoneNumber ?? "N/A",
+
+                TicketTypeName = ticket.PricePhase?.ConferencePrice?.TicketName ?? "Unknown",
+                PhaseName = ticket.PricePhase?.PhaseName ?? "N/A",
+                ActualPrice = ticket.ActualPrice ?? 0,
+                PurchaseDate = ticket.RegisteredDate ?? DateOnly.MinValue,
+                IsRefunded = ticket.IsRefunded ?? false,
+
+                OverallStatus = overallStatus,
+
+                // Gọi lại hàm map nhỏ ở trên
+                SessionCheckIns = ticket.UserCheckIns
+                                    .Select(uc => uc.ToSessionCheckInDetail())
+                                    .OrderBy(s => s.StartTime)
+                                    .ToList()
             };
         }
     }

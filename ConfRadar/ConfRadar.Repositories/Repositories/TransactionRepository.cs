@@ -10,6 +10,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateTransactionAsync(Transaction transaction);
         Task<List<Transaction>> GetOwnTransactionByUserId(string userId);
         Task<int> CreateTransactionListAsync(List<Transaction> transactions);
+        Task<Transaction> GetRefundTransactionByTicket(string ticketId);
+        Task<Transaction> GetNotRefundTransactionBytTicket(string ticketId);
     }
     public class TransactionRepository : GenericRepository<Transaction>, ITransactionRepository
     {
@@ -31,6 +33,18 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Transactions
                 .Include(x => x.PaymentMethod).
                 Where(x => x.UserId == userId).ToListAsync();
+        }
+
+        public async Task<Transaction> GetRefundTransactionByTicket(string ticketId)
+        {
+            return await _context.Transactions.Include(t => t.Ticket)
+                .FirstOrDefaultAsync(t => t.TicketId == ticketId && t.IsRefunded == true);
+        }
+
+        public async Task<Transaction> GetNotRefundTransactionBytTicket(string ticketId)
+        {
+            return await _context.Transactions.Include(t => t.Ticket)
+                .FirstOrDefaultAsync(t => t.TicketId == ticketId && t.IsRefunded == false);
         }
     }
 }

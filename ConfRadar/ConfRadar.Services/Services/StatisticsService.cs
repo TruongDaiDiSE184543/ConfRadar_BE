@@ -1,10 +1,15 @@
 using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Statistics;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using ConfRadar.Shared.DTO.General;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OfficeOpenXml;
+using Org.BouncyCastle.Asn1.Ocsp;
+using System.Net.WebSockets;
 
 namespace ConfRadar.Services.Services
 {
@@ -12,15 +17,15 @@ namespace ConfRadar.Services.Services
     {
         //Task<ExportStatisticsResponse> ExportConferenceStatisticsAsync(string conferenceId, string exportFormat);
         #region getForJson
-        Task<ConferenceStatisticsResponse> GetConferenceStatisticsAsync(string conferenceId);
-        Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId);
+        Task<ConferenceStatisticsResponse> GetSoldTicketStatisticsAsync(string conferenceId);
+        Task<PagedResultResponseDto<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(TicketHolderSearchParam request);
 
         Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.ReviewerAssignmentResponse>> GetReviewersByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.SessionWithPresentersResponse>> GetSessionsWithPresentersByConferenceIdAsync(string conferenceId);
         #endregion
         #region export to excel
-        Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
+        //Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
         Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId);
         #endregion
     }
@@ -43,7 +48,7 @@ namespace ConfRadar.Services.Services
         }
 
         #region get for json
-        public async Task<ConferenceStatisticsResponse> GetConferenceStatisticsAsync(string conferenceId)
+        public async Task<ConferenceStatisticsResponse> GetSoldTicketStatisticsAsync(string conferenceId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null)
@@ -52,104 +57,281 @@ namespace ConfRadar.Services.Services
             }
 
             // Get all tickets for the conference that have been paid
-            var paidTickets = await _unitOfWork.TicketRepository.GetPaidTicketsByConferenceIdAsync(conferenceId);
+            var allTickets = await _unitOfWork.TicketRepository.GetPaidTicketIncludeRefunded(conferenceId);
 
             // Get conference prices and phases with details
             var conferencePrices = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conferenceId);
+            int commissionRate = 0;
 
-            // Calculate statistics for each ticket type and phase
+            //Get commission if the conference is contracted with collaborator
+            if (conference.IsInternalHosted != true)
+            {
+                var contract = await _unitOfWork.CollaboratorContractRepository.GetCollaboratorContractByConferenceId(conferenceId);
+                if (contract == null)
+                    throw new Exception($"Không tìm thấy hợp đồng cho conference được hợp đống với đối tác (không phải hội nghị nội bộ) với ID {conferenceId}");
+                if (contract.IsTicketSelling == true)
+                {
+                    if (!contract.Commission.HasValue)
+                    {
+                        throw new Exception($"Không tìm thấy khoản hoa hồng trong hợp đồng của hội nghị với ID {conferenceId}");
+                    }
+                        
+                    if (contract.Commission.Value <= 0)
+                    {
+                        throw new Exception("Khoản hoa hồng của hội nghị không thể bé hơn hoặc bằng 0");
+                    }
+                    commissionRate = contract.Commission.Value;
+
+                }
+                else
+                {
+                    throw new Exception($"Hội nghị với ID {conferenceId} không được kí bán vé hộ trong hợp đồng với ID {contract.CollaboratorContractId}");
+                }
+            }
+
+
             var ticketPhaseStats = new List<TicketPhaseStatisticsResponse>();
-            int totalTicketsSold = 0;
-            decimal totalRevenue = 0;
+
+            int grandTotalSold = 0;
+            int grandTotalRefundedCount = 0;
+            int grandTotalNotRefundedCount = 0;
+
+            decimal grandTotalRevenueWithoutRefunded = 0; // Doanh thu từ vé chưa hoàn
+            decimal grandTotalRefundedAmountToCustomer = 0; // Tiền đã trả lại khách (số âm hoặc dương tùy DB, ở đây lấy Abs)
+            decimal grandTotalRetainedFromRefund = 0; // Tiền giữ lại từ vé hoàn (phí phạt)
 
             foreach (var price in conferencePrices)
             {
                 foreach (var phase in price.PricePhases)
                 {
-                    // Filter tickets for this specific price and phase
-                    var ticketsForPhase = paidTickets
-                        .Where(t => t.PricePhaseId == phase.PricePhaseId)
-                        .ToList();
+                    // Lọc vé thuộc phase này
+                    var phaseTickets = allTickets.Where(t => t.PricePhaseId == phase.PricePhaseId).ToList();
 
-                    var totalSold = ticketsForPhase.Count;
-                    var totalAmount = ticketsForPhase.Sum(t => ((t.PricePhase.ConferencePrice?.TicketPrice ?? 0)) * (t.PricePhase.ApplyPercent / 100m));
+                    // --- Counters cho Phase này ---
+                    int phaseSold = phaseTickets.Count;
+                    int phaseRefundedCount = 0;
+                    int phaseNotRefundedCount = 0;
 
-                    var ticketPhaseStat = new TicketPhaseStatisticsResponse
+                    decimal phaseRevenueWithoutRefunded = 0;
+                    decimal phaseRefundedAmountToCustomer = 0;
+                    decimal phaseRetainedFromRefund = 0;
+
+                    // Checkin Counters
+                    int countCheckedIn = 0;
+                    int countPending = 0;
+                    int countExpired = 0;
+
+                    foreach (var ticket in phaseTickets)
+                    {
+                        // A. Tính toán tài chính
+                        if (ticket.IsRefunded == true)
+                        {
+                            phaseRefundedCount++;
+
+                            // Lấy giao dịch hoàn tiền từ list đã Include (không query DB)
+                            var refundTx = ticket.Transactions.FirstOrDefault(tx => tx.IsRefunded == true);
+                            decimal refundAmt = refundTx?.Amount ?? 0; // Số tiền trả khách
+
+                            // Lấy giao dịch mua ban đầu (để biết giá mua thực tế)
+                            // Hoặc dùng ticket.ActualPrice nếu nó lưu giá lúc mua
+                            decimal originalPaid = ticket.ActualPrice ?? 0;
+
+                            phaseRefundedAmountToCustomer += refundAmt;
+
+                            // Doanh thu giữ lại = Giá mua - Tiền trả khách
+                            // Lưu ý: refundAmt trong DB có thể là số âm. Nếu là số âm, hãy dùng Math.Abs().
+                            // Giả sử refundAmt trong DB là số dương:
+                            phaseRetainedFromRefund += (originalPaid - refundAmt);
+                        }
+                        else
+                        {
+                            phaseNotRefundedCount++;
+                            phaseRevenueWithoutRefunded += ticket.ActualPrice ?? 0;
+                        }
+
+                        // B. Tính toán Check-in
+                        // Mỗi vé có thể có nhiều UserCheckIn (ví dụ checkin nhiều session), hoặc 1 checkin tổng.
+                        // Logic dưới đây giả định đếm trạng thái check-in mới nhất hoặc check-in quan trọng nhất.
+                        // Nếu 1 vé checkin nhiều lần, cần logic cụ thể. Ở đây đếm theo UserCheckIn entity.
+                        //foreach (var checkin in ticket.UserCheckIns)
+                        //{
+                        //    if (checkin.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription()) countCheckedIn++;
+                        //    else if (checkin.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.Pending.GetDescription()) countPending++;
+                        //    else if (checkin.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.Expired.GetDescription()) countExpired++;
+                        //}
+
+
+                        // B. Tính toán Check-in (Logic 1 vé chỉ tính 1 trạng thái)
+                        // Định nghĩa độ ưu tiên: CheckedIn > Expired > Pending
+                        bool isTicketCheckedIn = false;
+                        bool isTicketExpired = false;
+
+                        if (ticket.UserCheckIns != null && ticket.UserCheckIns.Any())
+                        {
+                            // Kiểm tra xem có bất kỳ session nào đã check-in chưa
+                            if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription()))
+                            {
+                                isTicketCheckedIn = true;
+                            }
+                            // Nếu chưa check-in cái nào, xem có cái nào bị expired không
+                            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.Expired.GetDescription()))
+                            {
+                                isTicketExpired = true;
+                            }
+                            // Nếu không thì mặc định là Pending (đã mua vé nhưng chưa làm gì)
+                        }
+                        else
+                        {
+                            // Trường hợp vé chưa có record checkin nào (thường mặc định là Pending hoặc New)
+                            // Tùy logic tạo data của bạn, nếu tạo vé là tạo luôn checkin record status Pending thì code trên đã cover.
+                        }
+
+                        // Cộng vào biến tổng của Phase
+                        if (isTicketCheckedIn) countCheckedIn++;
+                        else if (isTicketExpired) countExpired++;
+                        else countPending++; // Bao gồm cả Pending và trường hợp chưa có record nào
+                    }
+
+                    // Tổng doanh thu thực tế của Phase = (Tiền vé chưa hoàn) + (Tiền giữ lại từ vé hoàn)
+                    decimal phaseTotalRealRevenue = phaseRevenueWithoutRefunded + phaseRetainedFromRefund;
+
+                    // C. Tạo DTO chi tiết
+                    var stat = new TicketPhaseStatisticsResponse
                     {
                         ConferencePriceId = price.ConferencePriceId,
                         TicketName = price.TicketName,
-                        OriginalPrice = price.TicketPrice.Value,
                         PhaseName = phase.PhaseName,
-                        ApplyPhasePercent = phase.ApplyPercent.Value,
-                        TotalSold = totalSold,
-                        TotalAmount = totalAmount.Value
+                        OriginalPrice = price.TicketPrice ?? 0,
+                        ApplyPhasePercent = phase.ApplyPercent ?? 0,
+
+                        // Checkin
+                        HasCheckin = countCheckedIn,
+                        Pending = countPending,
+                        ExpireCheckin = countExpired,
+
+                        // Ticket Counts
+                        TotalSold = phaseSold,
+                        TotalRefunded = phaseRefundedCount,
+                        TotalNotRefuned = phaseNotRefundedCount,
+
+                        // Financials
+                        // TotalAmountNotRefunded: Doanh thu từ vé active
+                        TotalAmountNotRefunded = phaseRevenueWithoutRefunded,
+
+                        // TotalAmountRefunded: Ở đây hiểu là TIỀN TRẢ KHÁCH (hiển thị số âm để clear?)
+                        // Hoặc bạn muốn hiển thị Doanh thu giữ lại từ vé hoàn?
+                        // Theo yêu cầu: "tổng tiền bị hoàn, hiện số âm" -> Hiển thị số tiền trả khách
+                        TotalAmountRefunded = -phaseRefundedAmountToCustomer,
+
+                        // TotalAmount: Tổng doanh thu thực tế của BTC
+                        TotalAmount = phaseTotalRealRevenue
                     };
 
-                    // If conference is not internal hosted, calculate commission
-                    if (!conference.IsInternalHosted.Value)
+                    // D. Tính hoa hồng
+                    if (!conference.IsInternalHosted.Value && commissionRate > 0)
                     {
-                        var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
-                        if (technicalDetail != null /*&& technicalDetail.Commission.HasValue*/)
-                        {
-                            var commissionPercentage = /*technicalDetail.Commission.Value;*/  1;
-                            var commissionAmount = totalAmount * (commissionPercentage / 100m);
-                            var amountToConfRadar = commissionAmount;
-                            var amountToCollaborator = totalAmount - commissionAmount;
-
-                            ticketPhaseStat.CommissionPercentage = commissionPercentage;
-
-                            ticketPhaseStat.AmountToConfRadar = amountToConfRadar;
-                            ticketPhaseStat.AmountToCollaborator = amountToCollaborator;
-                        }
+                        decimal commissionAmt = phaseTotalRealRevenue * (commissionRate / 100m);
+                        stat.CommissionPercentage = commissionRate;
+                        stat.AmountToConfRadar = commissionAmt;
+                        stat.AmountToCollaborator = phaseTotalRealRevenue - commissionAmt;
                     }
 
-                    ticketPhaseStats.Add(ticketPhaseStat);
-                    totalTicketsSold += totalSold;
-                    totalRevenue += totalAmount.Value;
+                    ticketPhaseStats.Add(stat);
+
+                    // E. Cộng dồn tổng
+                    grandTotalSold += phaseSold;
+                    grandTotalRefundedCount += phaseRefundedCount;
+                    grandTotalNotRefundedCount += phaseNotRefundedCount;
+
+                    grandTotalRevenueWithoutRefunded += phaseRevenueWithoutRefunded;
+                    grandTotalRefundedAmountToCustomer += phaseRefundedAmountToCustomer;
+                    grandTotalRetainedFromRefund += phaseRetainedFromRefund;
                 }
             }
 
+            // 5. Final Response
+            // Tổng doanh thu toàn hội nghị
+            decimal grandTotalRealRevenue = grandTotalRevenueWithoutRefunded + grandTotalRetainedFromRefund;
+
             // Create response
-            var response = conference.ToConferenceStatisticsResponse(ticketPhaseStats, totalTicketsSold, totalRevenue);
+            var response = conference.ToConferenceStatisticsResponse(ticketPhaseStats, grandTotalSold, grandTotalRefundedCount, grandTotalNotRefundedCount,grandTotalRefundedAmountToCustomer,grandTotalRevenueWithoutRefunded,grandTotalRealRevenue);
             return response;
         }
 
 
-        public async Task<List<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(string conferenceId)
+        public async Task<PagedResultResponseDto<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(TicketHolderSearchParam request)
         {
             // Get all tickets associated with the conference, including related entities
-            var tickets = await _unitOfWork.TicketRepository.GetTicketsWithDetailsByConferenceIdAsync(conferenceId);
+            var query =  _unitOfWork.TicketRepository.GetTicketHolderInfo(request.ConferenceId);
 
-            var ticketHolders = new List<TicketHolderDetailResponse>();
+            var responses = new List<TicketHolderDetailResponse>();
 
-            foreach (var ticket in tickets)
+            // Filter: Refund Status
+            if (request.IsRefunded.HasValue)
             {
-                // Get the associated user who purchased the ticket
-                var user = await _unitOfWork.UserRepository.GetUserByUserId(ticket.UserId);
-
-                // Get the conference price details for the ticket
-                var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(ticket.PricePhase.ConferencePrice.ConferencePriceId);
-
-                // Get the price phase for the ticket
-                var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(ticket.PricePhaseId);
-
-
-                var ticketHolder = new TicketHolderDetailResponse
-                {
-                    TicketId = ticket.TicketId,
-                    CustomerName = user?.FullName ?? "Unknown Customer", // Use user's full name
-                    TicketTypeName = conferencePrice?.TicketName ?? "Unknown Ticket Type", // Use conference price name as ticket type
-                    PhaseName = pricePhase?.PhaseName ?? "N/A", // Get the phase name
-                    ActualPrice = (conferencePrice?.TicketPrice * pricePhase.ApplyPercent / 100) ?? 0, // Price based on the phase
-                    PurchaseDate = ticket.RegisteredDate.Value, // Register date from ticket
-                    Status = ticket.IsRefunded == true ? "Đã hoàn tiền" : "Đã thanh toán", // Status based on IsRefunded flag
-                    isRefunded = ticket.IsRefunded.Value
-                };
-
-                ticketHolders.Add(ticketHolder);
+                query = query.Where(t => t.IsRefunded == request.IsRefunded.Value);
             }
 
-            return ticketHolders;
+            // Filter: Date Range (Ngày mua)
+            if (request.FromDate.HasValue)
+            {
+                query = query.Where(t => t.RegisteredDate >= request.FromDate.Value);
+            }
+            if (request.ToDate.HasValue)
+            {
+                query = query.Where(t => t.RegisteredDate <= request.ToDate.Value);
+            }
+
+            // Filter: Keyword (Tên, Email, TicketId)
+            if (!string.IsNullOrEmpty(request.SearchKeyword))
+            {
+                var keyword = request.SearchKeyword.ToLower();
+                query = query.Where(t =>
+                    t.TicketId.ToLower().Contains(keyword) ||
+                    (t.User != null && (t.User.FullName.ToLower().Contains(keyword) || t.User.Email.ToLower().Contains(keyword)))
+                );
+            }
+
+            // Filter: Loại vé
+            if (!string.IsNullOrEmpty(request.TicketType))
+            {
+                query = query.Where(t => t.PricePhase.ConferencePrice.TicketName.Contains(request.TicketType));
+            }
+
+            // Filter: Check-in Status (Phức tạp hơn xíu)
+            // Nếu muốn tìm ai "Đã check-in" (bất kể session nào)
+            if (!string.IsNullOrEmpty(request.CheckInStatus))
+            {
+                if (request.CheckInStatus == "CheckedIn")
+                {
+                    query = query.Where(t => t.UserCheckIns.Any(uc => uc.CheckinStatus.CheckinStatusName == "Checked In"));
+                }
+                else if (request.CheckInStatus == "Not Checked In")
+                {
+                    // Pending nghĩa là chưa check-in cái nào và chưa hết hạn
+                    query = query.Where(t => !t.UserCheckIns.Any() || t.UserCheckIns.All(uc => uc.CheckinStatus.CheckinStatusName == "Not Checked In"));
+                }
+            }
+
+            // 3. Pagination Execution
+            var totalCount = await query.CountAsync();
+
+            var data = await query
+                .OrderByDescending(t => t.RegisteredDate) // Mặc định sắp xếp người mua mới nhất lên đầu
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            // 4. Mapping Data to DTO (In-memory)
+            var items = data.Select(ticket => ticket.ToTicketHolderDetailResponse()).ToList();
+
+            return new PagedResultResponseDto<TicketHolderDetailResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
         }
         public async Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId)
         {
@@ -347,7 +529,7 @@ namespace ConfRadar.Services.Services
         public async Task<ExportStatisticsResponse> ExportConferenceStatisticsAsync(string conferenceId, string exportFormat)
         {
             // Get the conference statistics data
-            var statistics = await GetConferenceStatisticsAsync(conferenceId);
+            var statistics = await GetSoldTicketStatisticsAsync(conferenceId);
 
             // Validate export format
             var validFormats = new[] { "pdf", "excel", "csv" };
@@ -505,7 +687,7 @@ namespace ConfRadar.Services.Services
         public async Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId)
         {
             // Bước 1: Lấy dữ liệu thống kê đầy đủ
-            var statistics = await GetConferenceStatisticsAsync(conferenceId);
+            var statistics = await GetSoldTicketStatisticsAsync(conferenceId);
 
             ExcelPackage.License.SetNonCommercialPersonal("<My Name>");
             using (var package = new ExcelPackage())
@@ -601,26 +783,26 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        public async Task<byte[]> ExportTicketHoldersListAsync(string conferenceId)
-        {
-            // Get the list of ticket holders for the conference
-            var ticketHolders = await GetTicketHoldersByConferenceIdAsync(conferenceId);
+        //public async Task<byte[]> ExportTicketHoldersListAsync(string conferenceId)
+        //{
+        //    // Get the list of ticket holders for the conference
+        //    var ticketHolders = await GetTicketHoldersByConferenceIdAsync(conferenceId);
 
-            // Prepare the data for export - flatten it appropriately
-            var exportData = ticketHolders.Select(holder => new
-            {
-                TicketId = holder.TicketId,
-                CustomerName = holder.CustomerName,
-                TicketTypeName = holder.TicketTypeName,
-                PhaseName = holder.PhaseName,
-                ActualPrice = holder.ActualPrice,
-                PurchaseDate = holder.PurchaseDate.ToString("yyyy-MM-dd HH:mm:ss"),
-                Status = holder.Status // Already in Vietnamese text format
-            }).ToList();
+        //    // Prepare the data for export - flatten it appropriately
+        //    var exportData = ticketHolders.Select(holder => new
+        //    {
+        //        TicketId = holder.TicketId,
+        //        CustomerName = holder.CustomerName,
+        //        TicketTypeName = holder.TicketTypeName,
+        //        PhaseName = holder.PhaseName,
+        //        ActualPrice = holder.ActualPrice,
+        //        PurchaseDate = holder.PurchaseDate.ToString("yyyy-MM-dd HH:mm:ss"),
+        //        Status = holder.Status // Already in Vietnamese text format
+        //    }).ToList();
 
-            // Call the Excel export service
-            return await _excelExportService.ExportToExcelAsync(exportData, "Danh Sách Người Mua Vé");
-        }
+        //    // Call the Excel export service
+        //    return await _excelExportService.ExportToExcelAsync(exportData, "Danh Sách Người Mua Vé");
+        //}
 
         #endregion
     }

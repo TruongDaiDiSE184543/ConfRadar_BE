@@ -32,6 +32,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Ticket>> GetTicketsWithDetailsByConferenceIdAsync(string conferenceId);
 
         Task<List<Ticket>> GetRefundedNonAuthorTicketsByConferenceIdAsync(string conferenceId);
+        Task<List<Ticket>> GetPaidTicketIncludeRefunded(string conferenceId);
 
 
 
@@ -39,6 +40,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Ticket>> GetNotRefundResearchTicketListByTicketIdsForCancel(List<string> ticketIds);
         Task<int> UpdateTicketListAsync(List<Ticket> tickets);
         IQueryable<Ticket> GetIncludedQueryable();
+        IQueryable<Ticket> GetTicketHolderInfo(string conferenceId);
     }
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
     {
@@ -743,24 +745,43 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Ticket>> GetPaidTicketsByConferenceIdAsync(string conferenceId)
         {
             return await _context.Tickets
-       .AsNoTracking() // Thêm AsNoTracking vì đây là query chỉ đọc, giúp tăng hiệu năng
-       .Include(t => t.PricePhase) // Tải kèm bảng PricePhase
-           .ThenInclude(pp => pp.ConferencePrice) // Từ PricePhase, tải tiếp bảng ConferencePrice
-       .Where(t =>
-           t.IsRefunded == false &&
-           t.PricePhase != null && // Thêm kiểm tra null để an toàn
-           t.PricePhase.ConferencePrice != null && // Thêm kiểm tra null để an toàn
-           t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
-       .ToListAsync();
+            .AsNoTracking() // Thêm AsNoTracking vì đây là query chỉ đọc, giúp tăng hiệu năng
+            .Include(t => t.PricePhase) // Tải kèm bảng PricePhase
+                .ThenInclude(pp => pp.ConferencePrice) // Từ PricePhase, tải tiếp bảng ConferencePrice
+            .Where(t =>
+                t.IsRefunded == false &&
+                t.PricePhase != null && // Thêm kiểm tra null để an toàn
+                t.PricePhase.ConferencePrice != null && // Thêm kiểm tra null để an toàn
+                t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
+            .ToListAsync();
+        }
+
+        public async Task<List<Ticket>> GetPaidTicketIncludeRefunded(string conferenceId)
+        {
+            return await _context.Tickets
+            .AsNoTracking() 
+            .Include(t => t.Transactions)
+            .Include(t => t.UserCheckIns)
+                .ThenInclude(uc => uc.CheckinStatus)
+            .Include(t => t.PricePhase) 
+                .ThenInclude(pp => pp.ConferencePrice) 
+            .Include(t => t.PricePhase)
+                .ThenInclude(pp => pp.RefundPolicies)
+            .Where(t =>
+                t.PricePhase != null && 
+                t.PricePhase.ConferencePrice != null &&
+                t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
+            .ToListAsync();
         }
 
         public async Task<List<Ticket>> GetTicketsWithDetailsByConferenceIdAsync(string conferenceId)
         {
             return await _context.Tickets
                 .Include(t => t.User)
+                .Include(t => t.UserCheckIns)
+                    .ThenInclude(uc => uc.ConferenceSession)
                 .Include(t => t.PricePhase)
-                .ThenInclude(pp => pp.ConferencePrice)
-                .ThenInclude(cp => cp.Conference)
+                    .ThenInclude(pp => pp.ConferencePrice)
                 .Where(t => t.PricePhase != null &&
                            t.PricePhase.ConferencePrice != null &&
                            t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
@@ -872,6 +893,18 @@ namespace ConfRadar.Repositories.Repositories
         //      t.IsRefunded == true &&
         //      t.PricePhase.ConferencePrice.ConferenceId == conferenceId).ToListAsync();
         //}
+
+        public IQueryable<Ticket> GetTicketHolderInfo(string conferenceId)
+        {
+            return  _context.Tickets
+                  .AsNoTracking()
+                  .Include(t => t.User)
+                  .Include(t => t.PricePhase).ThenInclude(pp => pp.ConferencePrice)
+                  .Include(t => t.UserCheckIns).ThenInclude(uc => uc.CheckinStatus)
+                  .Include(t => t.UserCheckIns).ThenInclude(uc => uc.ConferenceSession).ThenInclude(s => s.Room) // Để lấy tên phòng
+                  .Where(t => t.PricePhase.ConferencePrice.ConferenceId == conferenceId) 
+                  .AsSplitQuery(); 
+        }
 
     }
 }
