@@ -41,10 +41,6 @@ public partial class ResearchConferencePhase
 
     public DateOnly? FullPaperDecideStatusEnd { get; set; }
 
-    public DateOnly? RevisionPaperReviewStart { get; set; }
-
-    public DateOnly? RevisionPaperReviewEnd { get; set; }
-
     public DateOnly? RevisionPaperDecideStatusStart { get; set; }
 
     public DateOnly? RevisionPaperDecideStatusEnd { get; set; }

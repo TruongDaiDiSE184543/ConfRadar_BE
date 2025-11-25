@@ -10,6 +10,29 @@
 
         public decimal? ActualPrice { get; set; }
 
+        public string? ConferenceId { get; set; }
+        public string? ConferenceName { get; set; }
+        public string? ConferenceDescription { get; set; }
+        public DateOnly? ConferenceStartDate { get; set; }
+        public DateOnly? ConferenceEndDate { get; set; }
+        public int? ConferenceTotalSlot { get; set; }
+        public int? ConferenceAvailableSlot { get; set; }
+        public string? ConferenceAddress { get; set; }
+        public string? BannerImageUrl { get; set; }
+        public DateTime? ConferenceCreatedAt { get; set; }
+        public DateOnly? ConferenceTicketSaleStart { get; set; }
+        public DateOnly? ConferenceTicketSaleEnd { get; set; }
+        public bool? IsInternalHosted { get; set; }
+        public bool? IsResearchConference { get; set; }
+        public string? CityId { get; set; }
+        public string? CityName { get; set; }
+        public string? ConferenceCategoryId { get; set; }
+        public string? ConferenceCategoryName { get; set; }
+        public string? ConferenceStatusId { get; set; }
+        public string? ConferenceStatusName { get; set; }
+
+
+
         public List<CustomerTransactionDetailRespone> Transactions { get; set; }
 
         public List<CustomerCheckInDetailResponse> UserCheckIns { get; set; }

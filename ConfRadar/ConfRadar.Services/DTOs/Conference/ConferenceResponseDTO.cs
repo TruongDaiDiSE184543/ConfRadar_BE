@@ -405,8 +405,8 @@ namespace ConfRadar.Services.DTOs.Conference
         public DateOnly? ReviseStartDate { get; set; }
         public DateOnly? ReviseEndDate { get; set; }
         // Revision paper review dates (normal reviewers)
-        public DateOnly? RevisionPaperReviewStart { get; set; }
-        public DateOnly? RevisionPaperReviewEnd { get; set; }
+        //public DateOnly? RevisionPaperReviewStart { get; set; }
+        //public DateOnly? RevisionPaperReviewEnd { get; set; }
         // Revision paper decide status dates (head reviewer)
         public DateOnly? RevisionPaperDecideStatusStart { get; set; }
         public DateOnly? RevisionPaperDecideStatusEnd { get; set; }

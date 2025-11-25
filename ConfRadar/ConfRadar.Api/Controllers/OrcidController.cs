@@ -59,12 +59,13 @@ namespace ConfRadar.Api.Controllers
 
                 string URL = $"https://confradar.vercel.app/{redirectType}/success";
                 return Redirect(URL);
-            }catch (Exception e)
+            }
+            catch (Exception e)
             {
                 string URL = $"https://confradar.vercel.app/{redirectType}/fail";
                 return Redirect(URL);
             }
-            
+
         }
 
         [HttpGet("Get-works-from-orcid")]
@@ -92,7 +93,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("Get-section-from-db")]
-        public async Task<IActionResult> getSectionByUserId([FromQuery]string section  /*,[FromQuery] string userId */)
+        public async Task<IActionResult> getSectionByUserId([FromQuery] string section  /*,[FromQuery] string userId */)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.OrcidService.GetSectionByUserIdFromDb(userId, section);

@@ -43,7 +43,7 @@ public partial class Conference
 
     public virtual City? City { get; set; }
 
-    public virtual ICollection<CollaboratorContract> CollaboratorContracts { get; set; } = new List<CollaboratorContract>();
+    public virtual CollaboratorContract? CollaboratorContract { get; set; }
 
     public virtual ConferenceCategory? ConferenceCategory { get; set; }
 

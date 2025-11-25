@@ -151,14 +151,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.CreateRevisionSubmissionResponse(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision response"));
         }
-        [Authorize]
-        [HttpPost("submit-paper-revision-review")]
-        public async Task<IActionResult> SubmitPaperRevisionReview([FromForm] CreateRevisionPaperReviewRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.CreateRevisionReview(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision review"));
-        }
+        //[Authorize]
+        //[HttpPost("submit-paper-revision-review")]
+        //public async Task<IActionResult> SubmitPaperRevisionReview([FromForm] CreateRevisionPaperReviewRequest request)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var result = await _serviceManager.PaperService.CreateRevisionReview(request, userId);
+        //    return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision review"));
+        //}
         [Authorize]
         [HttpPut("decide-revise-status")]
         public async Task<IActionResult> DecideReviseStatus([FromBody] UpdateRevisionStatusRequest request)

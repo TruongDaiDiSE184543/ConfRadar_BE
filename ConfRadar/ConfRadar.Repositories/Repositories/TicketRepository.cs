@@ -107,6 +107,91 @@ namespace ConfRadar.Repositories.Repositories
             RegisteredDate = t.RegisteredDate,
             IsRefunded = t.IsRefunded,
             ActualPrice = t.ActualPrice,
+
+            ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null
+    ? t.PricePhase.ConferencePrice.ConferenceId
+    : null,
+
+            ConferenceName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceName
+    : null,
+
+            ConferenceDescription = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.Description
+    : null,
+
+            ConferenceStartDate = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.StartDate
+    : null,
+
+            ConferenceEndDate = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.EndDate
+    : null,
+
+            ConferenceTotalSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.TotalSlot
+    : null,
+
+            ConferenceAvailableSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.AvailableSlot
+    : null,
+
+            ConferenceAddress = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.Address
+    : null,
+
+            BannerImageUrl = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.BannerImageUrl
+    : null,
+
+            ConferenceCreatedAt = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.CreatedAt
+    : null,
+
+            ConferenceTicketSaleStart = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.TicketSaleStart
+    : null,
+
+            ConferenceTicketSaleEnd = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.TicketSaleEnd
+    : null,
+
+            IsInternalHosted = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.IsInternalHosted
+    : null,
+
+            IsResearchConference = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.IsResearchConference
+    : null,
+
+            CityId = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.CityId
+    : null,
+
+            CityName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null && t.PricePhase.ConferencePrice.Conference.City != null
+    ? t.PricePhase.ConferencePrice.Conference.City.CityName
+    : null,
+
+            ConferenceCategoryId = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceCategoryId
+    : null,
+
+            ConferenceCategoryName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null && t.PricePhase.ConferencePrice.Conference.ConferenceCategory != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceCategory.ConferenceCategoryName
+    : null,
+
+            ConferenceStatusId = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceStatusId
+    : null,
+
+            ConferenceStatusName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null && t.PricePhase.ConferencePrice.Conference.ConferenceStatus != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceStatus.ConferenceStatusName
+    : null,
+
+
+
+
+
             HasRefundPolicy = t.PricePhase != null && t.PricePhase.RefundPolicies.Any() ? true : false,
             TicketPricePhase = t.PricePhase != null ? new CustomerTicketPricePhaseDetailResponse()
             {
@@ -293,6 +378,91 @@ namespace ConfRadar.Repositories.Repositories
             RegisteredDate = t.RegisteredDate,
             IsRefunded = t.IsRefunded,
             ActualPrice = t.ActualPrice,
+
+            ConferenceId = t.PricePhase != null && t.PricePhase.ConferencePrice != null
+    ? t.PricePhase.ConferencePrice.ConferenceId
+    : null,
+
+            ConferenceName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceName
+    : null,
+
+            ConferenceDescription = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.Description
+    : null,
+
+            ConferenceStartDate = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.StartDate
+    : null,
+
+            ConferenceEndDate = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.EndDate
+    : null,
+
+            ConferenceTotalSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.TotalSlot
+    : null,
+
+            ConferenceAvailableSlot = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.AvailableSlot
+    : null,
+
+            ConferenceAddress = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.Address
+    : null,
+
+            BannerImageUrl = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.BannerImageUrl
+    : null,
+
+            ConferenceCreatedAt = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.CreatedAt
+    : null,
+
+            ConferenceTicketSaleStart = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.TicketSaleStart
+    : null,
+
+            ConferenceTicketSaleEnd = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.TicketSaleEnd
+    : null,
+
+            IsInternalHosted = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.IsInternalHosted
+    : null,
+
+            IsResearchConference = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.IsResearchConference
+    : null,
+
+            CityId = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.CityId
+    : null,
+
+            CityName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null && t.PricePhase.ConferencePrice.Conference.City != null
+    ? t.PricePhase.ConferencePrice.Conference.City.CityName
+    : null,
+
+            ConferenceCategoryId = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceCategoryId
+    : null,
+
+            ConferenceCategoryName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null && t.PricePhase.ConferencePrice.Conference.ConferenceCategory != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceCategory.ConferenceCategoryName
+    : null,
+
+            ConferenceStatusId = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceStatusId
+    : null,
+
+            ConferenceStatusName = t.PricePhase != null && t.PricePhase.ConferencePrice != null && t.PricePhase.ConferencePrice.Conference != null && t.PricePhase.ConferencePrice.Conference.ConferenceStatus != null
+    ? t.PricePhase.ConferencePrice.Conference.ConferenceStatus.ConferenceStatusName
+    : null,
+
+
+
+
+
             HasRefundPolicy = t.PricePhase != null && t.PricePhase.RefundPolicies.Any() ? true : false,
             TicketPricePhase = t.PricePhase != null ? new CustomerTicketPricePhaseDetailResponse()
             {

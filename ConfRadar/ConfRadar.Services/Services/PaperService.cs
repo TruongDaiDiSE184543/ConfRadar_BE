@@ -927,10 +927,10 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.RevisionPaperReviewStart || dateNow > activeCurrentPhase.RevisionPaperReviewEnd)
-            {
-                throw new BadRequestException($"Giai đoạn gửi review revise diễn ra từ {activeCurrentPhase.RevisionPaperReviewStart} đến {activeCurrentPhase.RevisionPaperReviewEnd}");
-            }
+            //if (dateNow < activeCurrentPhase.RevisionPaperReviewStart || dateNow > activeCurrentPhase.RevisionPaperReviewEnd)
+            //{
+            //    throw new BadRequestException($"Giai đoạn gửi review revise diễn ra từ {activeCurrentPhase.RevisionPaperReviewStart} đến {activeCurrentPhase.RevisionPaperReviewEnd}");
+            //}
 
 
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
@@ -1847,8 +1847,8 @@ namespace ConfRadar.Services.Services
                     ReviseEndDate = paper.ResearchConferencePhase.ReviseEndDate,
 
                     // 7. Revision Review
-                    RevisionPaperReviewStart = paper.ResearchConferencePhase.RevisionPaperReviewStart,
-                    RevisionPaperReviewEnd = paper.ResearchConferencePhase.RevisionPaperReviewEnd,
+                    //RevisionPaperReviewStart = paper.ResearchConferencePhase.RevisionPaperReviewStart,
+                    //RevisionPaperReviewEnd = paper.ResearchConferencePhase.RevisionPaperReviewEnd,
 
                     // 8. Revision Decide
                     RevisionPaperDecideStatusStart = paper.ResearchConferencePhase.RevisionPaperDecideStatusStart,

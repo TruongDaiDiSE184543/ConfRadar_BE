@@ -164,7 +164,7 @@ namespace ConfRadar.Services.Services
         #endregion
 
 
-        public string GenerateAuthorizationLink(string userId) 
+        public string GenerateAuthorizationLink(string userId)
         {
             // Dấu cách phải được encode thành %20 trong URL.
             string fullAccessScope = "/read-limited /activities/update /person/update";
@@ -255,7 +255,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<OrcidStatusResponse> CheckOrcidStatusAsync(string userId)
         {
- 
+
             var userProfile = await _unitOfWork.AcademicProfileRepository.GetAcademicProfileByUserIdAsync(userId);
 
             if (userProfile == null)
@@ -266,7 +266,7 @@ namespace ConfRadar.Services.Services
 
             var grantedScopes = new List<string>();
 
-           
+
 
 
             if (!string.IsNullOrWhiteSpace(userProfile.Scope))

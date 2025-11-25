@@ -210,8 +210,8 @@ namespace ConfRadar.Repositories.Repositories
 
                     ReviseStartDate = currentActivePhase.ReviseStartDate,
                     ReviseEndDate = currentActivePhase.ReviseEndDate,
-                    RevisionPaperReviewStart = currentActivePhase.RevisionPaperReviewStart,
-                    RevisionPaperReviewEnd = currentActivePhase.RevisionPaperReviewEnd,
+                    //RevisionPaperReviewStart = currentActivePhase.RevisionPaperReviewStart,
+                    //RevisionPaperReviewEnd = currentActivePhase.RevisionPaperReviewEnd,
                     RevisionPaperDecideStatusStart = currentActivePhase.RevisionPaperDecideStatusStart,
                     RevisionPaperDecideStatusEnd = currentActivePhase.RevisionPaperDecideStatusEnd,
 
@@ -304,8 +304,8 @@ namespace ConfRadar.Repositories.Repositories
 
                     ReviseStartDate = currentActivePhase?.ReviseStartDate,
                     ReviseEndDate = currentActivePhase?.ReviseEndDate,
-                    RevisionPaperReviewStart = currentActivePhase?.RevisionPaperReviewStart,
-                    RevisionPaperReviewEnd = currentActivePhase?.RevisionPaperReviewEnd,
+                    //RevisionPaperReviewStart = currentActivePhase?.RevisionPaperReviewStart,
+                    //RevisionPaperReviewEnd = currentActivePhase?.RevisionPaperReviewEnd,
                     RevisionPaperDecideStatusStart = currentActivePhase?.RevisionPaperDecideStatusStart,
                     RevisionPaperDecideStatusEnd = currentActivePhase?.RevisionPaperDecideStatusEnd,
 

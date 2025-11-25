@@ -79,8 +79,8 @@ namespace ConfRadar.Services.Common
         revisionpaperreviewfile,
         reviewercontractfile,
         qrcodefile,
-        report
-
+        report,
+        collaboratorcontract
     }
 
     //public enum ConferenceStatus
