@@ -1,10 +1,14 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
+using ConfRadar.Services.DTOs.General;
+using ConfRadar.Services.DTOs.Orcid;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.Contract;
+using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.ReviewContract;
 using Microsoft.Extensions.Options;
+using System.Drawing.Printing;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -21,6 +25,7 @@ namespace ConfRadar.Services.Services
         Task<int> GetOwnContractCount(string userId);
         Task<OwnActiveContractDetailResponse> GetUserActiveExternalContract(string userId);
         Task<int> CreateCollaboratorContract(CollaboratorContractRequest request);
+        Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContract(CollaboratorContractSearchParam request);
     }
     public class ContractService : IContractService
     {
@@ -177,7 +182,7 @@ namespace ConfRadar.Services.Services
                 contractFileUrl = baseUri + objectStorageFileUrl;
             }
 
-            var hashedPassword = _passwordHasher.Hash(request.Password);
+            //var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
             string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
             var userCreated = new User()
@@ -189,7 +194,7 @@ namespace ConfRadar.Services.Services
                 IsEmailConfirmed = false,
                 CreatedAt = timeNow,
             };
-            userCreated.PasswordHash = hashedPassword;
+            userCreated.PasswordHash = null;
             userCreated.VerificationToken = verificationToken;
             userCreated.LoginProvider = LoginProviderEnum.Local.ToString();
             userCreated.VerificationTokenExpiry = timeNow.AddDays(1);
@@ -239,7 +244,7 @@ namespace ConfRadar.Services.Services
             result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
             if (result > 0)
             {
-                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho reviewer outsourced", "EmailChangePassword.html");
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho reviewer outsourced", "EmailChangePassword.html");
             }
             return result;
         }
@@ -423,6 +428,13 @@ namespace ConfRadar.Services.Services
             return await _unitOfWork.CollaboratorContractRepository.CreateCollaboratorContractAsync(collabContractObj);
             
 
+        }
+
+       
+        public async Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContract(CollaboratorContractSearchParam request)
+        {
+            return await _unitOfWork.CollaboratorContractRepository.GetListCollaboratorContractWithFilter(request);
+           
         }
     }
 }

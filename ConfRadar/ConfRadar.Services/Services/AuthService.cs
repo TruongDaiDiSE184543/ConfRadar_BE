@@ -245,6 +245,10 @@ namespace ConfRadar.Services.Services
             user.PasswordHash = _passwordHasher.Hash(newPassword);
             user.PasswordResetToken = null;
             user.PasswordResetTokenExpiry = null;
+            if (user.IsEmailConfirmed == false)
+            {
+                user.IsEmailConfirmed = true;
+            }
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
 
         }
@@ -550,7 +554,6 @@ namespace ConfRadar.Services.Services
                 throw new ConfRadarAuthenticationException("Người dùng với tên đã tồn tại");
             }
 
-            var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
@@ -561,9 +564,9 @@ namespace ConfRadar.Services.Services
                 UserId = userId,
                 Email = request.Email,
                 FullName = request.FullName,
-                PasswordHash = hashedPassword,
+                PasswordHash = null,
                 IsActive = true,
-                IsEmailConfirmed = true,
+                IsEmailConfirmed = false,
                 LoginProvider = LoginProviderEnum.Local.ToString(),
                 CreatedAt = timeNow,
                 UserRoles = new List<UserRole>(),
@@ -590,12 +593,20 @@ namespace ConfRadar.Services.Services
                 UserId = userCreated.UserId,
                 IsActive = true
             };
+            var organizationObj = new Organization()
+            {
+                OrganizationId = Guid.NewGuid().ToString(),
+                OrganizationName = request.OrganizationName,
+                OrganizationDescription = request.OrganizationDescription,
+                UserId = userCreated.UserId,
+            };
             userCreated.UserRoles.Add(userRoleObj);
+            userCreated.Organization = organizationObj;
             int result = 0;
             result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
             if (result > 0)
             {
-                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePassword.html");
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePassword.html");
             }
             return result;
         }
@@ -728,7 +739,7 @@ namespace ConfRadar.Services.Services
                 throw new ConfRadarAuthenticationException("Người dùng với tên đã tồn tại");
             }
 
-            var hashedPassword = _passwordHasher.Hash(request.Password);
+            //var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
@@ -739,9 +750,9 @@ namespace ConfRadar.Services.Services
                 UserId = userId,
                 Email = request.Email,
                 FullName = request.FullName,
-                PasswordHash = hashedPassword,
+                PasswordHash = null,
                 IsActive = true,
-                IsEmailConfirmed = true,
+                IsEmailConfirmed = false,
                 LoginProvider = LoginProviderEnum.Local.ToString(),
                 CreatedAt = timeNow,
                 UserRoles = new List<UserRole>(),
@@ -773,7 +784,7 @@ namespace ConfRadar.Services.Services
             result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
             if (result > 0)
             {
-                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, request.Password, confirmationLink, "Tạo tài khoản cho local reviewer", "EmailChangePassword.html");
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho local reviewer", "EmailChangePassword.html");
             }
             return result;
         }
