@@ -217,7 +217,8 @@ namespace ConfRadar.Repositories.Repositories
         public IQueryable<Conference> GetAllTechnicalIncludedConference()
         {
             return _context.Conferences
-              .Include(c => c.CreatedByNavigation)
+                    .Include(c => c.CollaboratorContract)
+                    .Include(c => c.CreatedByNavigation)
                         .ThenInclude(u => u.Organization)
                     .Include(c => c.ConferenceCategory)
                     .Include(c => c.ConferenceMedia)
@@ -243,6 +244,8 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Conferences
                 .Include(c => c.CreatedByNavigation)
+                    .ThenInclude(u => u.Organization)
+                .Include(c => c.CollaboratorContract)
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
                 .Include(c => c.Policies)
@@ -264,6 +267,8 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(c => c.ConferenceTimelines)
                     .ThenInclude(ct => ct.AfterwardStatus)
                 .Include(c => c.RefundPolicies)
+                .AsNoTracking()
+                .AsSplitQuery()
                .FirstOrDefaultAsync(c => c.ConferenceId == technicalId);
         }
 

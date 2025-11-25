@@ -13,7 +13,9 @@ namespace ConfRadar.Repositories.Repositories
         Task<UserCheckIn?> GetUserCheckInByIdAsync(string userCheckInId);
         Task<List<UserCheckIn>> GetAllUserCheckInsAsync();
         Task<UserCheckIn?> GetUserCheckInByUserAndSessionAsync(string userId, string sessionId);
+        Task<List<UserCheckIn>> GetUserCheckinByPhaseId(string phaseId);
         Task<UserCheckIn> GetPresenterByTicket(string ticketId);
+        Task<List<UserCheckIn>> GetUserCheckinsByTicketIdsAsync(List<string> allTicketIds);
     }
 
     public class UserCheckInRepository : GenericRepository<UserCheckIn>, IUserCheckInRepository
@@ -69,6 +71,20 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<UserCheckIn> GetPresenterByTicket(string ticketId)
         {
             return await _context.UserCheckIns.FirstOrDefaultAsync(usc => usc.TicketId == ticketId && usc.IsPresenter == true);
+        }
+
+        public async Task<List<UserCheckIn>> GetUserCheckinByPhaseId(string phaseId)
+        {
+            return await _context.UserCheckIns
+                .Include(uc => uc.Ticket)
+                    .ThenInclude(t => t.PricePhase)
+                .Include(uc => uc.CheckinStatus)
+                .Where(uc => uc.Ticket.PricePhaseId == phaseId).ToListAsync();
+        }
+
+        public async Task<List<UserCheckIn>> GetUserCheckinsByTicketIdsAsync(List<string> allTicketIds)
+        {
+            return await _context.UserCheckIns.Where(uc => uc.TicketId != null && allTicketIds.Contains(uc.TicketId)).ToListAsync();
         }
     }
 }

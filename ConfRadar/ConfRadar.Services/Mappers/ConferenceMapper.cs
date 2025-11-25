@@ -264,6 +264,23 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        
+        public static CollaboratorContractResponseForConferenceDetail toCollaboratorContractResponseForConferenceDetail (this CollaboratorContract model)
+        {
+            return new CollaboratorContractResponseForConferenceDetail
+            {
+                CollaboratorContractId = model.CollaboratorContractId,
+                Commission = model.Commission,
+                ContractUrl = model.ContractUrl,
+                FinalizePaymentDate = model.FinalizePaymentDate,
+                IsClosed = model.IsClosed,
+                IsMediaStep = model.IsMediaStep,
+                IsPolicyStep = model.IsPolicyStep,
+                IsPriceStep = model.IsPriceStep,
+                IsSessionStep = model.IsSessionStep,
+                IsSponsorStep = model.IsSponsorStep,
+                IsTicketSelling = model.IsTicketSelling,
+                SignDay = model.SignDay
+            };
+        }
     }
 }

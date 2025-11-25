@@ -1088,13 +1088,16 @@ namespace ConfRadar.Services.Services
         public async Task<DTOs.Conference.TechnicalConferenceDetailResponse> GetDetailTechnicalAsync(string conferenceId, string? userId, bool isOrganizer = false)
         {
             // Check if the user is authorized to access this conference
-            var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
-                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
-
+            var conference = await _unitOfWork.ConferenceRepository.GetTechnicalIncludedById(conferenceId);
             if (conference == null)
             {
                 throw new NotFoundException($"Conference with ID {conferenceId} not found");
             }
+
+            if (conference.IsResearchConference == true)
+                throw new Exception("Chức năng chỉ dành cho tech");
+
+           
 
             // If the user is not an organizer, verify that they created the conference
             if (!isOrganizer)
@@ -1105,74 +1108,39 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-            // Now get the complete conference data with timeline
-            var fullConference = await _unitOfWork.ConferenceRepository.GetAllConferences()
-                .Include(c => c.ConferenceCategory)
-                .Include(c => c.ConferenceMedia)
-                .Include(c => c.Policies)
-                .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhases)
-                        .ThenInclude(pp => pp.RefundPolicies)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Speakers)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.ConferenceSessionMedia)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Room) // Include room information
-                         .ThenInclude(r => r.Destination)
-                            .ThenInclude(d => d.City)
-                .Include(c => c.Sponsors)
-                .Include(c => c.TechnicalConferenceDetail)
-                .Include(c => c.ConferenceTimelines) // Include timeline
-                    .ThenInclude(ct => ct.PreviousStatus)
-                .Include(c => c.ConferenceTimelines)
-                    .ThenInclude(ct => ct.AfterwardStatus)
-                .Include(c => c.RefundPolicies)
-                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
-
-            if (fullConference == null)
-            {
-                throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
-            }
-
-            if (conference.IsResearchConference == true)
-                throw new Exception("chức năng chỉ dành cho tech");
-
-            // Get technical conference detail if it exists (for technical conferences)
-            var technicalDetail = fullConference.TechnicalConferenceDetail;
-
+        
             return new DTOs.Conference.TechnicalConferenceDetailResponse
             {
-                ConferenceId = fullConference.ConferenceId,
-                ConferenceName = fullConference.ConferenceName,
-                Description = fullConference.Description,
-                StartDate = fullConference.StartDate,
-                EndDate = fullConference.EndDate,
-                TotalSlot = fullConference.TotalSlot,
-                AvailableSlot = fullConference.AvailableSlot,
-                Address = fullConference.Address,
-                BannerImageUrl = fullConference.BannerImageUrl,
-                CreatedAt = fullConference.CreatedAt,
-                TicketSaleStart = fullConference.TicketSaleStart,
-                TicketSaleEnd = fullConference.TicketSaleEnd,
-                IsInternalHosted = fullConference.IsInternalHosted,
-                IsResearchConference = fullConference.IsResearchConference,
-                CityId = fullConference.CityId,
-                ConferenceCategoryId = fullConference.ConferenceCategoryId,
-                ConferenceStatusId = fullConference.ConferenceStatusId,
-                TargetAudience = technicalDetail?.TargetAudience, // Set to null if it's a research conference
-                //commission = technicalDetail?.Commission,
-                //contractURL = technicalDetail?.ContractUrl,
-                createdBy = fullConference.CreatedBy,
-
-                Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
-                Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
-                Sessions = fullConference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
-                ConferenceMedia = fullConference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
-                ConferencePrices = fullConference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
+                ConferenceId = conference.ConferenceId,
+                ConferenceName = conference.ConferenceName,
+                Description = conference.Description,
+                StartDate = conference.StartDate,
+                EndDate = conference.EndDate,
+                TotalSlot = conference.TotalSlot,
+                AvailableSlot = conference.AvailableSlot,
+                Address = conference.Address,
+                BannerImageUrl = conference.BannerImageUrl,
+                CreatedAt = conference.CreatedAt,
+                TicketSaleStart = conference.TicketSaleStart,
+                TicketSaleEnd = conference.TicketSaleEnd,
+                IsInternalHosted = conference.IsInternalHosted,
+                IsResearchConference = conference.IsResearchConference,
+                CityId = conference.CityId,
+                ConferenceCategoryId = conference.ConferenceCategoryId,
+                ConferenceStatusId = conference.ConferenceStatusId,
+                TargetAudience = conference.TechnicalConferenceDetail?.TargetAudience, 
+                createdBy = conference.CreatedBy,
+                UserNameCreator = conference.CreatedByNavigation?.FullName,
+                Organization = conference.CreatedByNavigation?.Organization?.OrganizationName,
+                Contract = conference.CollaboratorContract != null ? conference.CollaboratorContract.toCollaboratorContractResponseForConferenceDetail() : null,
+                Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
+                Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
+                Sessions = conference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
+                ConferenceMedia = conference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
+                ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
 
                 // Include conference timeline data
-                ConferenceTimelines = fullConference.ConferenceTimelines?.Select(ct => ct.ToConferenceTimelineResponse()).ToList(),
+                ConferenceTimelines = conference.ConferenceTimelines?.Select(ct => ct.ToConferenceTimelineResponse()).ToList(),
 
             };
         }
@@ -1748,6 +1716,8 @@ namespace ConfRadar.Services.Services
             {
                 query = query.Where(c => c.EndDate <= endDate);
             }
+
+            query = query.Where(c => c.CollaboratorContract != null);
 
             var totalCount = await query.CountAsync();
 
