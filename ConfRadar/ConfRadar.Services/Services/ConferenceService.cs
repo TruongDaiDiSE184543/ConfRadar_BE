@@ -2,7 +2,6 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Conference;
-using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.DTOs.General;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
@@ -456,7 +455,7 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
-                TargetAudience = technicalDetail?.TargetAudience, 
+                TargetAudience = technicalDetail?.TargetAudience,
                 //contractURL = technicalDetail?.ContractUrl,
                 //commission = technicalDetail?.Commission,
                 Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
@@ -963,7 +962,7 @@ namespace ConfRadar.Services.Services
 
                 Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                 Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
-                
+
                 ConferenceMedia = conference.ConferenceMedia?.Select(cm => cm.ToConferenceMediaResponse()).ToList(),
                 ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
                 purchasedInfo = new PurchasedInfo
@@ -1152,7 +1151,7 @@ namespace ConfRadar.Services.Services
                 //commission = technicalDetail?.Commission,
                 //contractURL = technicalDetail?.ContractUrl,
                 createdBy = fullConference.CreatedBy,
-             
+
                 Policies = fullConference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                 Sponsors = fullConference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
                 Sessions = fullConference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),

@@ -2276,8 +2276,8 @@ namespace ConfRadar.Services.Services
             var finalReviseEnd = request.ReviseEndDate ?? phaseToUpdate.ReviseEndDate;
 
             // Giai đoạn 7: Review lại bài đã sửa (Revision Review)
-            var finalReviseReviewStart = request.RevisionPaperReviewStart ?? phaseToUpdate.RevisionPaperReviewStart;
-            var finalReviseReviewEnd = request.RevisionPaperReviewEnd ?? phaseToUpdate.RevisionPaperReviewEnd;
+            //var finalReviseReviewStart = request.RevisionPaperReviewStart ?? phaseToUpdate.RevisionPaperReviewStart;
+            //var finalReviseReviewEnd = request.RevisionPaperReviewEnd ?? phaseToUpdate.RevisionPaperReviewEnd;
 
             // Giai đoạn 8: Quyết định bài sửa (Revision Decide)
             var finalReviseDecideStart = request.RevisionPaperDecideStatusStart ?? phaseToUpdate.RevisionPaperDecideStatusStart;
@@ -2317,11 +2317,11 @@ namespace ConfRadar.Services.Services
 
                 // 6. Revise
                 finalReviseStart > finalReviseEnd ||
-                finalReviseEnd > finalReviseReviewStart ||
+               /* finalReviseEnd > finalReviseReviewStart ||
 
                 // 7. Revision Review
                 finalReviseReviewStart > finalReviseReviewEnd ||
-                finalReviseReviewEnd > finalReviseDecideStart ||
+                finalReviseReviewEnd > finalReviseDecideStart || */
 
                 // 8. Revision Decide
                 finalReviseDecideStart > finalReviseDecideEnd ||
@@ -2393,8 +2393,8 @@ namespace ConfRadar.Services.Services
                 phaseToUpdate.ReviseEndDate = finalReviseEnd;
 
                 // 7. Revision Review (Thêm mới)
-                phaseToUpdate.RevisionPaperReviewStart = finalReviseReviewStart;
-                phaseToUpdate.RevisionPaperReviewEnd = finalReviseReviewEnd;
+                //phaseToUpdate.RevisionPaperReviewStart = finalReviseReviewStart;
+                //phaseToUpdate.RevisionPaperReviewEnd = finalReviseReviewEnd;
 
                 // 8. Revision Decide (Thêm mới)
                 phaseToUpdate.RevisionPaperDecideStatusStart = finalReviseDecideStart;
