@@ -475,6 +475,7 @@ namespace ConfRadar.Services.DTOs.Conference
     {
         public string? ConferenceId { get; set; }
         public string? Name { get; set; }
+        public DateTime? createdAt {  get; set; }
     }
 
   

@@ -58,7 +58,7 @@ namespace ConfRadar.Services.Services
         Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorAsync(
           int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
           string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
-          string? userId = null, bool isOrganizer = false, string collboratorId = null, string organization = null);
+          string? userId = null, bool isOrganizer = false, string collboratorId = null, string organization = null, bool excludeDraft = false);
 
         Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByOrganizerAsync(
          int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
@@ -85,6 +85,8 @@ namespace ConfRadar.Services.Services
         Task ValidateForReadyStateAsync(Conference conf);
         Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId);
         Task<List<SkeletonTechConfResponse>> getSkeletonTechConf(string collaboratorId);
+        Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(int page, int pageSize, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName);
+        Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorNoDraftAsync(int page, int pageSize, string? conferenceStatusId, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName);
     }
 
     public class ConferenceService : IConferenceService
@@ -1647,7 +1649,7 @@ namespace ConfRadar.Services.Services
         public async Task<PagedResult<DTOs.Conference.TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorAsync(
           int page, int pageSize, string? conferenceStatusId = null, string? searchKeyword = null,
           string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,
-          string? userId = null, bool isOrganizer = false, string collboratorId = null, string? organization = null)
+          string? userId = null, bool isOrganizer = false, string collboratorId = null, string? organization = null, bool excludeDraft = false)
         {
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
@@ -1686,6 +1688,11 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException("Collaborator không được phép xem chọn lọc theo trạng thái 'Deleted'.");
                 // Collaborators can only see technical conferences they created
                 query = query.Where(c => c.CreatedBy == userId && c.ConferenceStatusId != deleteStatus.ConferenceStatusId);
+            }
+
+            if (excludeDraft)
+            {
+                query = query.Where(c => c.ConferenceStatusId != draftStatus.ConferenceStatusId);
             }
 
             // Apply status filter if provided
@@ -2128,11 +2135,30 @@ namespace ConfRadar.Services.Services
         {
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
             var conferencesCreatedForCollaborator = await _unitOfWork.ConferenceRepository.GetConferencesByUserIdAndStatusAsync(collaboratorId, draftStatus.ConferenceStatusId);
+            conferencesCreatedForCollaborator = conferencesCreatedForCollaborator.Where(c => c.CollaboratorContract == null && c.IsInternalHosted != true).ToList();
             return conferencesCreatedForCollaborator.Select(c => new SkeletonTechConfResponse
             {
                 ConferenceId = c.ConferenceId,
-                Name = c.ConferenceName
+                Name = c.ConferenceName,
+                createdAt = c.CreatedAt
             }).ToList();
+        }
+
+        public async Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(int page, int pageSize, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName)
+        {
+            var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
+            return await GetTechnicalConferencesListByCollaboratorAsync(page, pageSize, draftStatus.ConferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);    
+        }
+
+        public async Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorNoDraftAsync(int page, int pageSize, string? conferenceStatusId, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName)
+        {
+             if(!string.IsNullOrEmpty(conferenceStatusId)){
+                var checkStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
+                if (checkStatus.ConferenceStatusName == ConferenceStatusEnum.Draft.GetDescription())
+                    throw new Exception("Không thể lọc theo draft ở endpoint này");
+            }
+           
+            return await GetTechnicalConferencesListByCollaboratorAsync(page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName,true);
         }
     }
 }

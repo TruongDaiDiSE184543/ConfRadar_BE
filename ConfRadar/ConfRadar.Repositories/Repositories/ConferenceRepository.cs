@@ -95,6 +95,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId)
         {
             var query = _context.Conferences
+        .Include(c => c.CollaboratorContract)
         .Include(c => c.ConferenceStatus)    // Lấy tên trạng thái
         .Include(c => c.ConferenceCategory)  // Lấy tên loại (Type)
         .AsQueryable();
@@ -114,6 +115,7 @@ namespace ConfRadar.Repositories.Repositories
 
             return await query.ToListAsync();
         }
+        
         public async Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId)
         {
             var conferenceList = await _context.Tickets
