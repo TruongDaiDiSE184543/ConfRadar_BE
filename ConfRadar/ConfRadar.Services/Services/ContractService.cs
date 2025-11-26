@@ -387,7 +387,11 @@ namespace ConfRadar.Services.Services
             if (conference == null)
                 throw new NotFoundException($"Không tìm thấy hội nghị với mã {request.ConferenceId}");
 
+            if (request.UserId != conference.CreatedBy)
+            {
+                throw new BadRequestException($"User với id {request.UserId} không khớp với conference được tạo ra bởi ${conference.CreatedBy}");
 
+            }
 
             var collabContract = await _unitOfWork.CollaboratorContractRepository.GetListCollaboratorContractByUserIdAsync(request.UserId);
             var currentCollabContract = collabContract.FirstOrDefault(cc => cc.ConferenceId == request.ConferenceId && cc.UserId == request.UserId);

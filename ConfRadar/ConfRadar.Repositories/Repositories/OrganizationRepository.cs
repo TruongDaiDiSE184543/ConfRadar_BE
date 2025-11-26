@@ -27,7 +27,15 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Organization>> GetAllOrganizationsAsync()
         {
             return await _context.Organizations
+                 .Include(o => o.User) 
+                    .ThenInclude(u => u.CollaboratorContracts) 
+                        .ThenInclude(cc => cc.Conference)      
+                            .ThenInclude(c => c.ConferenceCategory) 
                 .Include(o => o.User)
+                    .ThenInclude(u => u.CollaboratorContracts)
+                        .ThenInclude(cc => cc.Conference)
+                            .ThenInclude(c => c.ConferenceStatus)
+                .AsSplitQuery()
                 .ToListAsync();
         }
 

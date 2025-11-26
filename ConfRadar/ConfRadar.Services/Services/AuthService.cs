@@ -805,6 +805,50 @@ namespace ConfRadar.Services.Services
                 FullName = o.User?.FullName,
                 AvatarUrl = o.User?.AvatarUrl,
                 PhoneNumber = o.User?.PhoneNumber,
+                IsActive = o.User?.IsActive,
+                ContractDetail = o.User?.CollaboratorContracts.Select(cc => new Shared.DTO.Contract.CollaboratorContractResponse()
+                {
+                    CollaboratorContractId = cc.CollaboratorContractId,
+                    CollaboratorContractUserId = cc.UserId,
+
+                    OrganizationId = o.OrganizationId,
+                    OrganizationName = o.OrganizationName,
+                    OrganizationDescription = o.OrganizationDescription,
+
+                    IsSponsorStep = cc.IsSponsorStep,
+                    IsMediaStep = cc.IsMediaStep,
+                    IsPolicyStep = cc.IsPolicyStep,
+                    IsSessionStep = cc.IsSessionStep,
+                    IsPriceStep = cc.IsPriceStep,
+                    IsTicketSelling = cc.IsTicketSelling,
+                    IsClosed = cc.IsClosed,
+                    SignDay = cc.SignDay,
+                    FinalizePaymentDate = cc.FinalizePaymentDate,
+                    Commission = cc.Commission,
+                    ContractUrl = cc.ContractUrl,
+
+                    ConferenceId = cc.Conference?.ConferenceId,
+                    ConferenceName = cc.Conference?.ConferenceName,
+                    ConferenceDescription = cc.Conference?.Description,
+                    ConferenceStartDate = cc.Conference?.StartDate,
+                    ConferenceEndDate = cc.Conference?.EndDate,
+                    ConferenceTotalSlot = cc.Conference?.TotalSlot,
+                    ConferenceAvailableSlot = cc.Conference?.AvailableSlot,
+                    ConferenceAddress = cc.Conference?.Address,
+                    ConferenceBannerImageUrl = cc.Conference?.BannerImageUrl,
+                    ConferenceCreatedAt = cc.Conference?.CreatedAt,
+                    ConferenceTicketSaleStart = cc.Conference?.TicketSaleStart,
+                    ConferenceTicketSaleEnd = cc.Conference?.TicketSaleEnd,
+                    IsInternalHosted = cc.Conference?.IsInternalHosted,
+                    IsResearchConference = cc.Conference?.IsResearchConference,
+                    CityId = cc.Conference?.CityId,
+                    ConferenceCreatedBy = cc.Conference?.CreatedBy,
+                    ConferenceCategoryId = cc.Conference?.ConferenceCategoryId,
+                    ConferenceCategoryName = cc.Conference?.ConferenceCategory?.ConferenceCategoryName,
+                    ConferenceStatusId = cc.Conference?.ConferenceStatusId,
+                    ConferenceStatusName = cc.Conference?.ConferenceStatus?.ConferenceStatusName
+                }).ToList() ?? new List<Shared.DTO.Contract.CollaboratorContractResponse>()
+
             }).ToList();
             return result;
         }
@@ -841,6 +885,48 @@ namespace ConfRadar.Services.Services
                 FullName = u.FullName,
                 AvatarUrl = u.AvatarUrl,
                 BioDescription = u.BioDescription,
+                IsActive = u.IsActive,
+                ContractDetail = u.CollaboratorContracts.Select(cc=> new Shared.DTO.Contract.CollaboratorContractResponse()
+                {
+                    CollaboratorContractId = cc.CollaboratorContractId,
+                    CollaboratorContractUserId = cc.UserId,
+                    OrganizationId = u.Organization?.OrganizationId,
+                    OrganizationName = u.Organization?.OrganizationName,
+                    OrganizationDescription = u.Organization?.OrganizationDescription,
+
+                    IsSponsorStep = cc.IsSponsorStep,
+                    IsMediaStep = cc.IsMediaStep,
+                    IsPolicyStep = cc.IsPolicyStep,
+                    IsSessionStep = cc.IsSessionStep,
+                    IsPriceStep = cc.IsPriceStep,
+                    IsTicketSelling = cc.IsTicketSelling,
+                    IsClosed = cc.IsClosed,
+                    SignDay = cc.SignDay,
+                    FinalizePaymentDate = cc.FinalizePaymentDate,
+                    Commission = cc.Commission,
+                    ContractUrl = cc.ContractUrl,
+
+                    ConferenceId = cc.Conference?.ConferenceId,
+                    ConferenceName = cc.Conference?.ConferenceName,
+                    ConferenceDescription = cc.Conference?.Description,
+                    ConferenceStartDate = cc.Conference?.StartDate,
+                    ConferenceEndDate = cc.Conference?.EndDate,
+                    ConferenceTotalSlot = cc.Conference?.TotalSlot,
+                    ConferenceAvailableSlot = cc.Conference?.AvailableSlot,
+                    ConferenceAddress = cc.Conference?.Address,
+                    ConferenceBannerImageUrl = cc.Conference?.BannerImageUrl,
+                    ConferenceCreatedAt = cc.Conference?.CreatedAt,
+                    ConferenceTicketSaleStart = cc.Conference?.TicketSaleStart,
+                    ConferenceTicketSaleEnd = cc.Conference?.TicketSaleEnd,
+                    IsInternalHosted = cc.Conference?.IsInternalHosted,
+                    IsResearchConference = cc.Conference?.IsResearchConference,
+                    CityId = cc.Conference?.CityId,
+                    ConferenceCreatedBy = cc.Conference?.CreatedBy,
+                    ConferenceCategoryId = cc.Conference?.ConferenceCategoryId,
+                    ConferenceCategoryName = cc.Conference?.ConferenceCategory?.ConferenceCategoryName,
+                    ConferenceStatusId = cc.Conference?.ConferenceStatusId,
+                    ConferenceStatusName = cc.Conference?.ConferenceStatus?.ConferenceStatusName
+                }).ToList()
             }).ToList();
         }
     }

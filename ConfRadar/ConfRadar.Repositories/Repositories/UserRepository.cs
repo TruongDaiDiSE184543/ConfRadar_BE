@@ -114,8 +114,18 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<User>> GetUserByRole(Role role)
         {
             return await _context.Users
-                .Include(u => u.Organization)
+                 .Include(u => u.CollaboratorContracts)
+                    .ThenInclude(cc => cc.Conference)
+                        .ThenInclude(c => c.ConferenceCategory)  
+                 .Include(u => u.CollaboratorContracts)
+                    .ThenInclude(cc => cc.Conference)
+                        .ThenInclude(c => c.ConferenceStatus)
+
+
+
+                 .Include(u => u.Organization)
                  .Where(u => u.UserRoles.Any(ur => ur.RoleId == role.RoleId))
+                 .AsSplitQuery()
                  .ToListAsync();
         }
     }
