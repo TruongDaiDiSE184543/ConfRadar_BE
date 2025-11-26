@@ -625,9 +625,11 @@ namespace ConfRadar.Services.Services
                     TargetAudience = ""
                 };
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
+                await _unitOfWork.CommitAsync();
                 return techConference.ConferenceId;
             }catch(Exception ex)
             {
+                await _unitOfWork.RollbackAsync();
                 throw ex;
             }
          
