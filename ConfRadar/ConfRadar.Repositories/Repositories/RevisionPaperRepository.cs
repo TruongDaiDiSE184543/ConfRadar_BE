@@ -52,12 +52,15 @@ public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisi
         return await GetAllAsync();
     }
 
-    public async Task<RevisionPaper> GetDetailRevisionPaper(string revisionPaperId)
+    public async Task<RevisionPaper?> GetDetailRevisionPaper(string revisionPaperId)
     {
-        return await _context.RevisionPapers.Where(rvp => rvp.RevisionPaperId == revisionPaperId)
-            .Include(rvp => rvp.RevisionPaperSubmissions).ThenInclude(rps => rps.RevisionDeadlineRound)
-            .Include(rvp => rvp.RevisionPaperSubmissions).ThenInclude(rps => rps.RevisionSubmissionFeedbacks)
+        return await _context.RevisionPapers
+            .Include(rvp => rvp.RevisionPaperSubmissions)
+                .ThenInclude(rps => rps.RevisionDeadlineRound)
+            .Include(rvp => rvp.RevisionPaperSubmissions)
+                .ThenInclude(rps => rps.RevisionSubmissionFeedbacks)
             .Include(rvp => rvp.RevisionPaperReviews)
-            .FirstOrDefaultAsync();
+            .Include(rp=>rp.GlobalStatus)
+            .FirstOrDefaultAsync(rvp => rvp.RevisionPaperId == revisionPaperId);
     }
 }
