@@ -1,4 +1,6 @@
-﻿namespace ConfRadar.Shared.DTO.Organization
+﻿using ConfRadar.Shared.DTO.Contract;
+
+namespace ConfRadar.Shared.DTO.Organization
 {
     public class OrganizationDetailResponse
     {
@@ -10,5 +12,8 @@
         public string? FullName { get; set; }
         public string? PhoneNumber { get; set; }
         public string? AvatarUrl { get; set; }
+        public bool? IsActive { get; set; }
+        public List<CollaboratorContractResponse> ContractDetail { get; set; } = new List<CollaboratorContractResponse>();
+
     }
 }
