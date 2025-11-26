@@ -31,7 +31,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [Authorize(Roles = "Conference Organizer")]
-        [HttpPost("create-basic-name-for-conference-in-contract-with-collaborator")]
+        [HttpPost("create-skeleton-name-for-conference-in-contract-with-collaborator")]
         public async Task<IActionResult> CreateSkeletonConferenceBasicForCollaboratorToBuildOn([FromQuery] string name, [FromQuery]string collabId)
         {
 

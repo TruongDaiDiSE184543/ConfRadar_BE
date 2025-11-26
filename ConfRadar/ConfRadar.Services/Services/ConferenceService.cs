@@ -2022,9 +2022,9 @@ namespace ConfRadar.Services.Services
             // --- BƯỚC A: KIỂM TRA SỰ ĐẦY ĐỦ THÔNG TIN ---
             // Đây là phần validation riêng của trạng thái Ready
 
-            var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
-            if (price == null)
-                invalidMessages.Add("Hội nghị phải có ít nhất một loại vé, trong đó có ít nhất một phase.");
+            //var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
+            //if (price == null)
+            //    invalidMessages.Add("Hội nghị phải có ít nhất một loại vé, trong đó có ít nhất một phase.");
             var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
             if (!sessions.Any())
                 invalidMessages.Add("Hội nghị phải có ít nhất một phiên.");
@@ -2032,11 +2032,11 @@ namespace ConfRadar.Services.Services
             // Kiểm tra nếu là hội nghị kỹ thuật, phiên phải có ít nhất một diễn giả
             if (conf.IsResearchConference == false)
             {
-                var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conf.ConferenceId);
-                if (technicalDetail == null)
-                {
-                    invalidMessages.Add("Hội nghị kỹ thuật phải có thông tin chi tiết kỹ thuật.");
-                }
+                //var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conf.ConferenceId);
+                //if (technicalDetail == null)
+                //{
+                //    invalidMessages.Add("Hội nghị kỹ thuật phải có thông tin chi tiết kỹ thuật.");
+                //}
 
                 // Kiểm tra các phiên trong hội nghị kỹ thuật có ít nhất một diễn giả
                 //foreach (var session in sessions)

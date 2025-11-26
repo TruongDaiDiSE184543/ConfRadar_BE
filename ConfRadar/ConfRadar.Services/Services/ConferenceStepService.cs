@@ -615,8 +615,22 @@ namespace ConfRadar.Services.Services
                 CreatedBy = collabId,
                 ConferenceStatusId = draftStatus.ConferenceStatusId
             };
-            await _unitOfWork.ConferenceRepository.CreateConferenceAsync(techConference);
-            return techConference.ConferenceId;
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _unitOfWork.ConferenceRepository.CreateConferenceAsync(techConference);
+                TechnicalConferenceDetail technicalConferenceDetail = new TechnicalConferenceDetail()
+                {
+                    ConferenceId = techConference.ConferenceId,
+                    TargetAudience = ""
+                };
+                await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
+                return techConference.ConferenceId;
+            }catch(Exception ex)
+            {
+                throw ex;
+            }
+         
         }
 
         public async Task<TechnicalConferenceBasicStepResponse> GetConferenceBasicAsync(string conferenceId)
