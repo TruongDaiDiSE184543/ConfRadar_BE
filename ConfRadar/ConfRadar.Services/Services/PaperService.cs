@@ -1050,11 +1050,11 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Bạn không phải head reviewer");
             }
 
-            var revisionPaperReviews = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperIdAsync(paper.RevisionPaperId);
-            if (!revisionPaperReviews.Any())
-            {
-                throw new BadRequestException("Cần ít nhất 1 review để quyết định trạng thái");
-            }
+            //var revisionPaperReviews = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperIdAsync(paper.RevisionPaperId);
+            //if (!revisionPaperReviews.Any())
+            //{
+            //    throw new BadRequestException("Cần ít nhất 1 review để quyết định trạng thái");
+            //}
             bool byPassDecideRevise = false;
             var revisionPaperSubmissionCount = revisionPaper.RevisionPaperSubmissions.Count();
             var revisionSubmissionRule = paper.Conference.ResearchConferenceDetail.RevisionAttemptAllowed;
@@ -2562,7 +2562,7 @@ namespace ConfRadar.Services.Services
             }
             if (revisionPaperFound.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
-                throw new BadRequestException($"Revision paper phải trong trạng thái pending");
+                throw new BadRequestException($"Revision paper phải trong trạng thái pending để update");
             }
             var revisionPaperSubmissionsList = revisionPaperFound.RevisionPaperSubmissions;
             if (revisionPaperSubmissionsList == null || !revisionPaperSubmissionsList.Any())
