@@ -186,9 +186,9 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
         }
 
-        [HttpGet("technical-conferences-by-Collaborator")]
+        [HttpGet("technical-conferences-by-collaborator-no-draft")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
-        public async Task<IActionResult> GetTechnicalConferencesByCollaboratorList(
+        public async Task<IActionResult> GetTechnicalConferencesByCollaboratorListNoDraft(
          [FromQuery] int page = 1,
          [FromQuery] int pageSize = 10,
          [FromQuery] string? conferenceStatusId = null,
@@ -202,10 +202,31 @@ namespace ConfRadar.Api.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var isOrganizer = User.IsInRole("Conference Organizer");
 
-            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListByCollaboratorAsync(
+            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListByCollaboratorNoDraftAsync(
                 page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);
             return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
         }
+
+        [HttpGet("technical-conferences-by-collaborator-only-draft")]
+        [Authorize(Roles = " Collaborator")]
+        public async Task<IActionResult> GetTechnicalConferencesByCollaboratorListOnlyDraft(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? searchKeyword = null,
+        [FromQuery] string? cityId = null,
+        [FromQuery] DateOnly? startDate = null,
+        [FromQuery] DateOnly? endDate = null,
+        [FromQuery] string? collaboratorId = null, // Đã sửa tên
+        [FromQuery] string? organizationName = null) // Đã sửa tên
+        {
+              var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+              var isOrganizer = User.IsInRole("Conference Organizer");
+       
+              var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(
+                  page, pageSize, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);
+              return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
+        }
+       
 
 
         // NEW ENDPOINT 14: Get detailed research conference data for organizer with timeline
@@ -229,7 +250,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<TechnicalConferenceDetailResponse>.SuccessResponse(conferenceDetail, "Technical conference detail retrieved successfully with timeline"));
         }
 
-        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        [Authorize(Roles = "Conference Organizer")]
         [HttpGet("get-skeleton-tech-conf-created-for-collaborator")]
         public async Task<IActionResult> GetSkeletonConferenceBasicForCollaboratorToBuildOn([FromQuery] string collaboratorId)
         {
