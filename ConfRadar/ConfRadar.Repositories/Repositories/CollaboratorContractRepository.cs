@@ -105,7 +105,14 @@ namespace ConfRadar.Repositories.Repositories
             var items = data.Select(cc => new CollaboratorContractResponse
             {
                 CollaboratorContractId = cc.CollaboratorContractId,
+
                 CollaboratorContractUserId = cc.UserId,
+                CollaboratorContractFullName = cc.User?.FullName,
+                CollaboratorContractEmail = cc.User?.Email,
+                CollaboratorContractAvatarUrl = cc.User?.AvatarUrl,
+                
+
+
                 OrganizationId = cc.User?.Organization?.OrganizationId,
                 OrganizationDescription = cc.User?.Organization?.OrganizationDescription,
                 OrganizationName = cc.User?.Organization?.OrganizationName,
@@ -137,8 +144,16 @@ namespace ConfRadar.Repositories.Repositories
                 ConferenceTicketSaleEnd = cc.Conference?.TicketSaleEnd,
                 IsInternalHosted = cc.Conference?.IsInternalHosted,
                 IsResearchConference = cc.Conference?.IsResearchConference,
+
                 CityId = cc.Conference?.CityId,
+                CityName = cc.Conference?.City?.CityName,
+
                 ConferenceCreatedBy = cc.Conference?.CreatedBy,
+                ConferenceCreatedByName = cc.Conference?.CreatedByNavigation?.FullName,
+                ConferenceCreatedByEmail = cc.Conference?.CreatedByNavigation?.Email,
+                ConferenceCreatedByAvatarUrl =  cc.Conference?.CreatedByNavigation?.AvatarUrl,
+
+
                 ConferenceCategoryId = cc.Conference?.ConferenceCategoryId,
                 ConferenceCategoryName = cc.Conference?.ConferenceCategory?.ConferenceCategoryName,
                 ConferenceStatusId = cc.Conference?.ConferenceStatusId,

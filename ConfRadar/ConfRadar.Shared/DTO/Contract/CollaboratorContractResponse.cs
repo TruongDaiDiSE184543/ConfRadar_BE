@@ -5,6 +5,16 @@
         public string CollaboratorContractId { get; set; } = null!;
 
         public string? CollaboratorContractUserId { get; set; }
+        public string? CollaboratorContractEmail { get; set; }
+        public string? CollaboratorContractFullName { get; set; }
+        public string? CollaboratorContractAvatarUrl { get; set; }
+
+
+
+
+
+
+
         public string? OrganizationId { get; set; } = null!;
         public string? OrganizationDescription { get; set; }
         public string? OrganizationName { get; set; }
@@ -43,8 +53,18 @@
         public DateOnly? ConferenceTicketSaleEnd { get; set; }
         public bool? IsInternalHosted { get; set; }
         public bool? IsResearchConference { get; set; }
+
+
         public string? CityId { get; set; }
+        public string? CityName { get; set; }
+
+
         public string? ConferenceCreatedBy { get; set; }
+        public string? ConferenceCreatedByName { get; set; }
+        public string? ConferenceCreatedByEmail { get; set; }
+        public string? ConferenceCreatedByAvatarUrl { get; set; }
+
+
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceCategoryName { get; set; }
         public string? ConferenceStatusId { get; set; }
@@ -92,10 +112,20 @@
         public bool? IsInternalHosted { get; set; }
 
         public bool? IsResearchConference { get; set; }
+
+
         public string? CityId { get; set; }
         public string? CityName { get; set; }
-        public string? ConferenceCreatedById { get; set; }
+
+
+        public string? ConferenceCreatedBy { get; set; }
         public string? ConferenceCreatedByName { get; set; }
+        public string? ConferenceCreatedByEmail { get; set; }
+
+        public string? ConferenceCreatedByAvatarUrl { get; set; }
+
+
+
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceCategoryName { get; set; }
 
