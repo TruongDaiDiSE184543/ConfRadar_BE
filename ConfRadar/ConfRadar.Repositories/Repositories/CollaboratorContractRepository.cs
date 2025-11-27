@@ -14,8 +14,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<CollaboratorContract?> GetCollaboratorContractByIdAsync(string collaboratorContractId);
         Task<List<CollaboratorContract>> GetListCollaboratorContractByUserIdAsync(string userId);
 
-        Task<CollaboratorContract> GetCollaboratorContractByConferenceId (string conferenceId);
-       
+        Task<CollaboratorContract> GetCollaboratorContractByConferenceId(string conferenceId);
+
 
         Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContractWithFilter(CollaboratorContractSearchParam request);
     }
@@ -41,7 +41,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(cc => cc.User)
 
                 .Include(cc => cc.Conference)
-                    .ThenInclude(c=>c.City)
+                    .ThenInclude(c => c.City)
                 .Include(cc => cc.Conference)
                     .ThenInclude(c => c.ConferenceStatus)
                 .Include(cc => cc.Conference)
@@ -117,7 +117,7 @@ namespace ConfRadar.Repositories.Repositories
                 CollaboratorContractFullName = cc.User?.FullName,
                 CollaboratorContractEmail = cc.User?.Email,
                 CollaboratorContractAvatarUrl = cc.User?.AvatarUrl,
-                
+
 
 
                 OrganizationId = cc.User?.Organization?.OrganizationId,
@@ -158,7 +158,7 @@ namespace ConfRadar.Repositories.Repositories
                 ConferenceCreatedBy = cc.Conference?.CreatedBy,
                 ConferenceCreatedByName = cc.Conference?.CreatedByNavigation?.FullName,
                 ConferenceCreatedByEmail = cc.Conference?.CreatedByNavigation?.Email,
-                ConferenceCreatedByAvatarUrl =  cc.Conference?.CreatedByNavigation?.AvatarUrl,
+                ConferenceCreatedByAvatarUrl = cc.Conference?.CreatedByNavigation?.AvatarUrl,
 
 
                 ConferenceCategoryId = cc.Conference?.ConferenceCategoryId,

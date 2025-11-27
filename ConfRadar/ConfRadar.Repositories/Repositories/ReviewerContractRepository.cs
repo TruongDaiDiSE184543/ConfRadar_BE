@@ -159,10 +159,14 @@ namespace ConfRadar.Repositories.Repositories
             var user = await _context.Users
                 .AsNoTracking()
                 .Where(u =>
-            !_context.Papers.Any(p => p.ConferenceId == conferenceId
-            && p.PaperAuthors.Any(pa => pa.UserId == u.UserId))
+                //chưa nộp báo + coauthor => cook
+            !_context.Papers.Any(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId== u.UserId))
+
+            //chưa reviewer cntract
             && !_context.ReviewerContracts.Any(rc => rc.ConferenceId == conferenceId && rc.UserId == u.UserId)
-            && u.IsActive == true && u.IsEmailConfirmed == true && u.UserRoles.All(ur => !systemRoles.Contains(ur.RoleId)))
+
+            //user active và ko thuộc role hệ thống
+            && u.IsActive == true && !u.UserRoles.Any(ur => systemRoles.Contains(ur.RoleId)))
                 .Select(u => new GetUsersForReviewerContractResponse()
                 {
                     UserId = u.UserId,

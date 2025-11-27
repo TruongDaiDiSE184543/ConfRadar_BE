@@ -53,7 +53,7 @@ namespace ConfRadar.Services.Mappers
             int grandTotalSold,
             int grandTotalRefundedCount,
             int grandTotalNotRefundedCount,
-            decimal grandTotalRefundedAmountToCustomer, 
+            decimal grandTotalRefundedAmountToCustomer,
             decimal grandTotalRevenueWithoutRefunded,
             decimal grandTotalRealRevenue)
         {
@@ -80,7 +80,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static SessionCheckInDetail ToSessionCheckInDetail (this UserCheckIn uc)
+        public static SessionCheckInDetail ToSessionCheckInDetail(this UserCheckIn uc)
         {
             return new SessionCheckInDetail
             {

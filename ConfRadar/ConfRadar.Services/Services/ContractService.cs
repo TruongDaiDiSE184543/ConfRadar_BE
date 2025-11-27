@@ -183,7 +183,7 @@ namespace ConfRadar.Services.Services
 
             //var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
-            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
             var userCreated = new User()
             {
                 UserId = Guid.NewGuid().ToString(),
@@ -273,13 +273,15 @@ namespace ConfRadar.Services.Services
         {
             var conferenceOrganizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
             var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
-            if (conferenceOrganizerRole == null || adminRole == null)
+            var internalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
+            if (conferenceOrganizerRole == null || adminRole == null || internalReviewerRole==null)
             {
                 throw new NotFoundException("Không tìm thấy các role tương ứng trong hệ thống");
             }
             List<string> roleIds = new List<string>();
             roleIds.Add(conferenceOrganizerRole.RoleId);
             roleIds.Add(adminRole.RoleId);
+            roleIds.Add(internalReviewerRole.RoleId);
             return await _unitOfWork.ReviewerContractRepository.GetUsersForReviewerContract(request.ConferenceId, roleIds);
         }
         public async Task<List<OwnContractDetailResponse>> GetListOwnContract(string userId)
@@ -327,7 +329,7 @@ namespace ConfRadar.Services.Services
 
         public async Task<UserExternalContractCount> GetOwnContractCount(string userId)
         {
-            var contracts =  await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+            var contracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
             return new UserExternalContractCount()
             {
                 ContractCount = contracts.Count(),
@@ -343,7 +345,7 @@ namespace ConfRadar.Services.Services
                     ConferenceName = rc.Conference?.ConferenceName,
                     ConferenceDescription = rc.Conference?.Description,
                     ConferenceBannerImageUrl = rc.Conference?.BannerImageUrl,
-                    
+
                 }).ToList()
             };
         }
@@ -477,7 +479,7 @@ namespace ConfRadar.Services.Services
                     ConferenceName = rc.Conference?.ConferenceName,
                     ConferenceDescription = rc.Conference?.Description,
                     ConferenceBannerImageUrl = rc.Conference?.BannerImageUrl,
-                    
+
                 }).ToList()
             };
         }
@@ -502,7 +504,7 @@ namespace ConfRadar.Services.Services
                 FinalizePaymentDate = rc.FinalizePaymentDate,
                 Commission = rc.Commission,
                 ContractUrl = rc.ContractUrl,
-                
+
 
                 ConferenceId = rc.ConferenceId,
                 ConferenceName = rc.Conference?.ConferenceName,
@@ -536,8 +538,8 @@ namespace ConfRadar.Services.Services
                 ConferenceCreatedByName = rc.Conference?.CreatedByNavigation?.FullName,
                 ConferenceCreatedByEmail = rc.Conference?.CreatedByNavigation?.Email,
                 ConferenceCreatedByAvatarUrl = rc.Conference?.CreatedByNavigation?.AvatarUrl,
-                
-                
+
+
 
 
 

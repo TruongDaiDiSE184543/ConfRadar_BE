@@ -463,7 +463,7 @@ namespace ConfRadar.Services.Services
                 TicketSaleStart = conference.TicketSaleStart,
                 createdBy = conference.CreatedBy,
                 UserNameCreator = conference.CreatedByNavigation.FullName,
-                
+
                 TicketSaleEnd = conference.TicketSaleEnd,
                 IsInternalHosted = conference.IsInternalHosted,
                 IsResearchConference = conference.IsResearchConference,
@@ -1099,7 +1099,7 @@ namespace ConfRadar.Services.Services
             if (conference.IsResearchConference == true)
                 throw new Exception("Chức năng chỉ dành cho tech");
 
-           
+
 
             // If the user is not an organizer, verify that they created the conference
             if (!isOrganizer)
@@ -1110,7 +1110,7 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-        
+
             return new DTOs.Conference.TechnicalConferenceDetailResponse
             {
                 ConferenceId = conference.ConferenceId,
@@ -1130,7 +1130,7 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
-                TargetAudience = conference.TechnicalConferenceDetail?.TargetAudience, 
+                TargetAudience = conference.TechnicalConferenceDetail?.TargetAudience,
                 createdBy = conference.CreatedBy,
                 UserNameCreator = conference.CreatedByNavigation?.FullName,
                 Organization = conference.CreatedByNavigation?.Organization?.OrganizationName,
@@ -1622,7 +1622,7 @@ namespace ConfRadar.Services.Services
                 CityId = fullConference.CityId,
                 ConferenceCategoryId = fullConference.ConferenceCategoryId,
                 ConferenceStatusId = fullConference.ConferenceStatusId,
-                
+
                 // Dữ liệu này đã được Include sẵn, không cần query lại
                 TargetAudience = fullConference.TechnicalConferenceDetail?.TargetAudience,
                 createdBy = fullConference.CreatedBy,
@@ -1666,7 +1666,7 @@ namespace ConfRadar.Services.Services
             if (isOrganizer)
             {
                 // Organizers can see all technical conferences
-                query =query
+                query = query
                     .Where(c => c.ConferenceStatusId != draftStatus.ConferenceStatusId &&
                     c.ConferenceStatusId != deleteStatus.ConferenceStatusId &&
                     c.CreatedBy != userId);
@@ -1701,7 +1701,7 @@ namespace ConfRadar.Services.Services
                 query = query.Where(c => c.ConferenceStatusId == conferenceStatusId);
             }
 
-            
+
             // Apply other filters
             if (!string.IsNullOrEmpty(searchKeyword))
             {
@@ -2147,18 +2147,19 @@ namespace ConfRadar.Services.Services
         public async Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(int page, int pageSize, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName)
         {
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
-            return await GetTechnicalConferencesListByCollaboratorAsync(page, pageSize, draftStatus.ConferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);    
+            return await GetTechnicalConferencesListByCollaboratorAsync(page, pageSize, draftStatus.ConferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);
         }
 
         public async Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorNoDraftAsync(int page, int pageSize, string? conferenceStatusId, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName)
         {
-             if(!string.IsNullOrEmpty(conferenceStatusId)){
+            if (!string.IsNullOrEmpty(conferenceStatusId))
+            {
                 var checkStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
                 if (checkStatus.ConferenceStatusName == ConferenceStatusEnum.Draft.GetDescription())
                     throw new Exception("Không thể lọc theo draft ở endpoint này");
             }
-           
-            return await GetTechnicalConferencesListByCollaboratorAsync(page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName,true);
+
+            return await GetTechnicalConferencesListByCollaboratorAsync(page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName, true);
         }
     }
 }

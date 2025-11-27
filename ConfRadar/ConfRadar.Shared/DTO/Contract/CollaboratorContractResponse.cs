@@ -73,7 +73,7 @@
     }
     public class OwnCollaboratorContractDetailResponse
     {
-        public string? CollaboratorContractId { get; set; } 
+        public string? CollaboratorContractId { get; set; }
         public string? UserId { get; set; }
         public bool? IsSponsorStep { get; set; }
         public bool? IsMediaStep { get; set; }

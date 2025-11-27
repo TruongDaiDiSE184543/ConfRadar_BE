@@ -33,7 +33,7 @@
         public int TotalNotRefundedTicket { get; set; }
         public int TotalTicketsSold { get; set; }
         public decimal? TotalRefundedAmount { get; set; }
-        public decimal? TotalRevenueWithoutRefunded {  get; set; }
+        public decimal? TotalRevenueWithoutRefunded { get; set; }
         public decimal? TotalRevenue { get; set; }
     }
 

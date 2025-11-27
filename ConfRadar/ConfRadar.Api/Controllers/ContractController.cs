@@ -65,7 +65,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ContractDetailResponseForOrganizer>>.SuccessResponse(result, "Danh sách review contract"));
         }
 
-
+        //[Authorize(Roles ="Conference Organizer")]
         [HttpGet("users-for-reviewer-contract")]
         public async Task<IActionResult> GetUsersForReviewerContract([FromQuery] GetUsersForReviewerContractRequest request)
         {

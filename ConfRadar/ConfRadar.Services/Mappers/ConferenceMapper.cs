@@ -264,7 +264,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static CollaboratorContractResponseForConferenceDetail toCollaboratorContractResponseForConferenceDetail (this CollaboratorContract model)
+        public static CollaboratorContractResponseForConferenceDetail toCollaboratorContractResponseForConferenceDetail(this CollaboratorContract model)
         {
             return new CollaboratorContractResponseForConferenceDetail
             {

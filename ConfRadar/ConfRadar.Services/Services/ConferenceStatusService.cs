@@ -80,7 +80,9 @@ namespace ConfRadar.Services.Services
                     conferenceStatus.Remove(pendingStatus);
                     conferenceStatus.Remove(preparingStatus);
                     conferenceStatus.Remove(rejectedStatus);
-                } else if (roleOfUser.Contains(SystemRoleEnum.Collaborator.ToString())){
+                }
+                else if (roleOfUser.Contains(SystemRoleEnum.Collaborator.ToString()))
+                {
                     conferenceStatus.Remove(deletedStatus);
                 }
             }

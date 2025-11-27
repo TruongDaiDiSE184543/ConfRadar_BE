@@ -60,7 +60,7 @@ public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisi
             .Include(rvp => rvp.RevisionPaperSubmissions)
                 .ThenInclude(rps => rps.RevisionSubmissionFeedbacks)
             .Include(rvp => rvp.RevisionPaperReviews)
-            .Include(rp=>rp.GlobalStatus)
+            .Include(rp => rp.GlobalStatus)
             .FirstOrDefaultAsync(rvp => rvp.RevisionPaperId == revisionPaperId);
     }
 }

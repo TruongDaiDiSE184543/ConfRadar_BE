@@ -263,13 +263,13 @@ namespace ConfRadar.Api.Controllers
         }
 
 
-
+        [Authorize]
         [HttpGet("get-all-submitted-papers-for-customer")]
         public async Task<IActionResult> getSubmittedPapers([FromQuery] string? confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.GetSubmittedPaper(userId, confId);
-            return Ok(ApiResponse<List<Paper>>.SuccessResponse(result, "Lấy thành công paper mà user đã nộp"));
+            return Ok(ApiResponse<List<UserSubmittedPaperDetailResponse>>.SuccessResponse(result, "Lấy thành công paper mà user đã nộp"));
         }
 
         [HttpGet("get-paper-detail-customer")]
