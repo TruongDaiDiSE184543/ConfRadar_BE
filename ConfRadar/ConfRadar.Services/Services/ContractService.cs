@@ -488,6 +488,9 @@ namespace ConfRadar.Services.Services
             {
                 CollaboratorContractId = rc.CollaboratorContractId,
                 UserId = rc.UserId,
+
+
+
                 IsSponsorStep = rc.IsSponsorStep,
                 IsMediaStep = rc.IsMediaStep,
                 IsPolicyStep = rc.IsPolicyStep,
@@ -529,9 +532,14 @@ namespace ConfRadar.Services.Services
 
 
                 //conference created by
-                ConferenceCreatedById = rc.Conference?.CreatedBy,
-                ConferenceCreatedByName = rc.Conference?.CreatedByNavigation?.FullName
+                ConferenceCreatedBy = rc.Conference?.CreatedBy,
+                ConferenceCreatedByName = rc.Conference?.CreatedByNavigation?.FullName,
+                ConferenceCreatedByEmail = rc.Conference?.CreatedByNavigation?.Email,
+                ConferenceCreatedByAvatarUrl = rc.Conference?.CreatedByNavigation?.AvatarUrl,
                 
+                
+
+
 
             }).ToList();
             return result;
