@@ -42,7 +42,7 @@
 
     public class UserExternalWageTotal
     {
-        public decimal ? Wage { get; set; }
+        public decimal? Wage { get; set; }
         public List<OwnContractDetailResponse> ContractDetail { get; set; } = new List<OwnContractDetailResponse>();
     }
     public class UserExternalContractCount

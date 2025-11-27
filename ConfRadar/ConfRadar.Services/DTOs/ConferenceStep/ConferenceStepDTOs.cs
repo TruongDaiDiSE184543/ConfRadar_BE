@@ -619,7 +619,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class CreateResearchConferenceDetailRequest
     {
-     
+
         [Required(ErrorMessage = "Định dạng bài báo là bắt buộc.")]
         [MaxLength(255, ErrorMessage = "Định dạng bài báo không được vượt quá 255 ký tự.")]
         public string PaperFormat { get; set; }
@@ -735,7 +735,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? ReviseStartDate { get; set; }
         [Required]
         public DateOnly? ReviseEndDate { get; set; }
-        [Required]  
+        [Required]
         public DateOnly? RevisionPaperDecideStatusStart { get; set; }
         [Required]
         public DateOnly? RevisionPaperDecideStatusEnd { get; set; }

@@ -7,7 +7,7 @@
     }
     public static class FrontEndDomain
     {
-        public const string Url = "";
+        public const string Url = "https://confradar.vercel.app/";
 
     }
 }

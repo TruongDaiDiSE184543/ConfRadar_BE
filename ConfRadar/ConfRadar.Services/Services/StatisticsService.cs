@@ -1,5 +1,4 @@
 using ConfRadar.Repositories;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Statistics;
 using ConfRadar.Services.Exceptions;
@@ -8,8 +7,6 @@ using ConfRadar.Shared.DTO.General;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OfficeOpenXml;
-using Org.BouncyCastle.Asn1.Ocsp;
-using System.Net.WebSockets;
 
 namespace ConfRadar.Services.Services
 {
@@ -75,7 +72,7 @@ namespace ConfRadar.Services.Services
                     {
                         throw new Exception($"Không tìm thấy khoản hoa hồng trong hợp đồng của hội nghị với ID {conferenceId}");
                     }
-                        
+
                     if (contract.Commission.Value <= 0)
                     {
                         throw new Exception("Khoản hoa hồng của hội nghị không thể bé hơn hoặc bằng 0");
@@ -254,7 +251,7 @@ namespace ConfRadar.Services.Services
             decimal grandTotalRealRevenue = grandTotalRevenueWithoutRefunded + grandTotalRetainedFromRefund;
 
             // Create response
-            var response = conference.ToConferenceStatisticsResponse(ticketPhaseStats, grandTotalSold, grandTotalRefundedCount, grandTotalNotRefundedCount,grandTotalRefundedAmountToCustomer,grandTotalRevenueWithoutRefunded,grandTotalRealRevenue);
+            var response = conference.ToConferenceStatisticsResponse(ticketPhaseStats, grandTotalSold, grandTotalRefundedCount, grandTotalNotRefundedCount, grandTotalRefundedAmountToCustomer, grandTotalRevenueWithoutRefunded, grandTotalRealRevenue);
             return response;
         }
 
@@ -262,7 +259,7 @@ namespace ConfRadar.Services.Services
         public async Task<PagedResultResponseDto<TicketHolderDetailResponse>> GetTicketHoldersByConferenceIdAsync(TicketHolderSearchParam request)
         {
             // Get all tickets associated with the conference, including related entities
-            var query =  _unitOfWork.TicketRepository.GetTicketHolderInfo(request.ConferenceId);
+            var query = _unitOfWork.TicketRepository.GetTicketHolderInfo(request.ConferenceId);
 
             var responses = new List<TicketHolderDetailResponse>();
 

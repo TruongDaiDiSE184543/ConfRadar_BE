@@ -111,7 +111,7 @@ namespace ConfRadar.Api.Controllers
         }
 
 
-       
+
 
         // NEW ENDPOINT 8: Get research conferences with step completion status
         [HttpGet("research-step-completion-status")]
@@ -219,14 +219,14 @@ namespace ConfRadar.Api.Controllers
         [FromQuery] string? collaboratorId = null, // Đã sửa tên
         [FromQuery] string? organizationName = null) // Đã sửa tên
         {
-              var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-              var isOrganizer = User.IsInRole("Conference Organizer");
-       
-              var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(
-                  page, pageSize, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);
-              return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isOrganizer = User.IsInRole("Conference Organizer");
+
+            var conferences = await _serviceManager.ConferenceService.GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(
+                page, pageSize, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName);
+            return Ok(ApiResponse<PagedResult<Services.DTOs.Conference.TechnicalConferenceDetailResponse>>.SuccessResponse(conferences, "Technical conferences retrieved successfully"));
         }
-       
+
 
 
         // NEW ENDPOINT 14: Get detailed research conference data for organizer with timeline
