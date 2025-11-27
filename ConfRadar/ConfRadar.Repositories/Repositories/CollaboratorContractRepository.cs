@@ -64,13 +64,20 @@ namespace ConfRadar.Repositories.Repositories
             var query = _context.CollaboratorContracts
                 .Include(cc => cc.User)
                     .ThenInclude(u => u.Organization)
+
                 .Include(cc => cc.Conference)
                     .ThenInclude(c => c.ConferenceStatus)
 
                 .Include(cc => cc.Conference)
-                .ThenInclude(c => c.ConferenceCategory)
+                    .ThenInclude(c => c.ConferenceCategory)
 
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.CreatedByNavigation)
 
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.City)
+
+                    .AsSplitQuery()
                 .AsQueryable();
 
 
