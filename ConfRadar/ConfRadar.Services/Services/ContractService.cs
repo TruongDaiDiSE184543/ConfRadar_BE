@@ -24,6 +24,7 @@ namespace ConfRadar.Services.Services
         Task<int> CreateCollaboratorContract(CollaboratorContractRequest request);
         Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContract(CollaboratorContractSearchParam request);
         Task<UserExternalWageTotal> GetUserExternalWageTotal(string userId);
+        Task<List<OwnCollaboratorContractDetailResponse>> GetListOwnCollaboratorContract(string userId);
     }
     public class ContractService : IContractService
     {
@@ -480,5 +481,61 @@ namespace ConfRadar.Services.Services
                 }).ToList()
             };
         }
+        public async Task<List<OwnCollaboratorContractDetailResponse>> GetListOwnCollaboratorContract(string userId)
+        {
+            var ownCollaboratorContract = await _unitOfWork.CollaboratorContractRepository.GetListCollaboratorContractByUserIdAsync(userId);
+            var result = ownCollaboratorContract.Select(rc => new OwnCollaboratorContractDetailResponse()
+            {
+                CollaboratorContractId = rc.CollaboratorContractId,
+                UserId = rc.UserId,
+                IsSponsorStep = rc.IsSponsorStep,
+                IsMediaStep = rc.IsMediaStep,
+                IsPolicyStep = rc.IsPolicyStep,
+                IsSessionStep = rc.IsSessionStep,
+                IsPriceStep = rc.IsPriceStep,
+                IsTicketSelling = rc.IsTicketSelling,
+                IsClosed = rc.IsClosed,
+                SignDay = rc.SignDay,
+                FinalizePaymentDate = rc.FinalizePaymentDate,
+                Commission = rc.Commission,
+                ContractUrl = rc.ContractUrl,
+                
+
+                ConferenceId = rc.ConferenceId,
+                ConferenceName = rc.Conference?.ConferenceName,
+                ConferenceDescription = rc.Conference?.Description,
+                ConferenceStartDate = rc.Conference?.StartDate,
+                ConferenceEndDate = rc.Conference?.EndDate,
+                TotalSlot = rc.Conference?.TotalSlot,
+                AvailableSlot = rc.Conference?.AvailableSlot,
+                Address = rc.Conference?.Address,
+                BannerImageUrl = rc.Conference?.BannerImageUrl,
+                CreatedAt = rc.Conference?.CreatedAt,
+                TicketSaleStart = rc.Conference?.TicketSaleStart,
+                TicketSaleEnd = rc.Conference?.TicketSaleEnd,
+                IsInternalHosted = rc.Conference?.IsInternalHosted,
+                IsResearchConference = rc.Conference?.IsResearchConference,
+
+                CityId = rc.Conference?.CityId,
+                CityName = rc.Conference?.City?.CityName,
+
+                //category
+                ConferenceCategoryId = rc.Conference?.ConferenceCategoryId,
+                ConferenceCategoryName = rc.Conference?.ConferenceCategory?.ConferenceCategoryName,
+
+                //conference status
+                ConferenceStatusId = rc.Conference?.ConferenceStatusId,
+                ConferenceStatusName = rc.Conference?.ConferenceStatus?.ConferenceStatusName,
+
+
+                //conference created by
+                ConferenceCreatedById = rc.Conference?.CreatedBy,
+                ConferenceCreatedByName = rc.Conference?.CreatedByNavigation?.FullName
+                
+
+            }).ToList();
+            return result;
+        }
+
     }
 }

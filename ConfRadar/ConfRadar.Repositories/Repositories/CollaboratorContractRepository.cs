@@ -39,7 +39,16 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.CollaboratorContracts
                 .Include(cc => cc.User)
+
                 .Include(cc => cc.Conference)
+                    .ThenInclude(c=>c.City)
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.ConferenceStatus)
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.ConferenceCategory)
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.CreatedByNavigation)
+                .AsSplitQuery()
                 .Where(cc => cc.UserId == userId).ToListAsync();
         }
 

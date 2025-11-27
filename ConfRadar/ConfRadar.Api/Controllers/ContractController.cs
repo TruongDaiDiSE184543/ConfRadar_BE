@@ -117,5 +117,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<PagedResultResponseDto<CollaboratorContractResponse>>.SuccessResponse(result, ""));
 
         }
+        [HttpGet("own-collaborator-contract")]
+        [Authorize(Roles = "Collaborator")]
+        public async Task<IActionResult> GetListOwnCollaboratorContract()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ContractService.GetListOwnCollaboratorContract(userId);
+            return Ok(ApiResponse<List<OwnCollaboratorContractDetailResponse>>.SuccessResponse(result, "Danh sách hợp đồng collaborator"));
+
+        }
     }
 }
