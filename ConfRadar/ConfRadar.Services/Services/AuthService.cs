@@ -650,11 +650,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
             }
-            var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
-            if (!reviewContracts.Any())
-            {
-                throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
-            }
+            //var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+            //if (!reviewContracts.Any())
+            //{
+            //    throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
+            //}
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
             if (userRole == null)
             {
@@ -679,11 +679,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
             }
-            var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
-            if (!reviewContracts.Any())
-            {
-                throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên {user.FullName}");
-            }
+            //var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+            //if (!reviewContracts.Any())
+            //{
+            //    throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên {user.FullName}");
+            //}
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
             if (userRole == null)
             {
