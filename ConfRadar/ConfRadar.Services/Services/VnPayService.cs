@@ -34,7 +34,8 @@ namespace ConfRadar.Services.Services
             string vnp_IpAddr = "127.0.0.1";
             string vnp_Locale = "vn";
             // order info của vnpay ko có khoảng trắng=> có gây lỗi 
-            string orderInfo = "ThanhToanHang";
+            //order info quá 10 kí tự gây lỗi 72 website not found
+            string orderInfo = "giaodich";
             string vnp_OrderInfo = Uri.EscapeDataString(orderInfo);
             string vnp_OrderType = "other";
             string vnp_ReturnUrl = Uri.EscapeDataString(_vnPaySettings.Value.ReturnUrl);
