@@ -116,7 +116,7 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Users
                  .Include(u => u.CollaboratorContracts)
                     .ThenInclude(cc => cc.Conference)
-                        .ThenInclude(c => c.ConferenceCategory)  
+                        .ThenInclude(c => c.ConferenceCategory)
                  .Include(u => u.CollaboratorContracts)
                     .ThenInclude(cc => cc.Conference)
                         .ThenInclude(c => c.ConferenceStatus)

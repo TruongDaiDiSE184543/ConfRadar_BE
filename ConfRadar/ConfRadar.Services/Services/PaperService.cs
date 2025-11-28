@@ -69,7 +69,7 @@ namespace ConfRadar.Services.Services
         Task<List<RevisionPaperReviewResponse>> ListRevisionPaperReview(ListRevisionPaperReviewRequest request, string userId);
         Task<List<PapersAssignedToReviewerResponse>> GetAllAssignedPapersToAReviewer(string userId, string conferenceId);
 
-        Task<List<Paper>> GetSubmittedPaper(string userId, string? confId);
+        Task<List<UserSubmittedPaperDetailResponse>> GetSubmittedPaper(string userId, string? confId);
         Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId);
 
         Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases();
@@ -1050,11 +1050,11 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Bạn không phải head reviewer");
             }
 
-            var revisionPaperReviews = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperIdAsync(paper.RevisionPaperId);
-            if (!revisionPaperReviews.Any())
-            {
-                throw new BadRequestException("Cần ít nhất 1 review để quyết định trạng thái");
-            }
+            //var revisionPaperReviews = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperIdAsync(paper.RevisionPaperId);
+            //if (!revisionPaperReviews.Any())
+            //{
+            //    throw new BadRequestException("Cần ít nhất 1 review để quyết định trạng thái");
+            //}
             bool byPassDecideRevise = false;
             var revisionPaperSubmissionCount = revisionPaper.RevisionPaperSubmissions.Count();
             var revisionSubmissionRule = paper.Conference.ResearchConferenceDetail.RevisionAttemptAllowed;
@@ -1732,13 +1732,117 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<List<Paper>> GetSubmittedPaper(string userId, string? confId)
+        public async Task<List<UserSubmittedPaperDetailResponse>> GetSubmittedPaper(string userId, string? confId)
         {
             // Use the new repository method to get papers by user ID in a single query
             var submittedPapers = await _unitOfWork.PaperAuthorRepository.GetPapersByUserIdAsync(userId);
-            if (confId != null) submittedPapers.Where(p => p.ConferenceId == confId).ToList();
+            if (confId != null)
+                submittedPapers = submittedPapers.Where(p => p.ConferenceId == confId).ToList();
 
-            return submittedPapers;
+            return submittedPapers.Select(p => new UserSubmittedPaperDetailResponse
+            {
+                PaperId = p.PaperId,
+                AbstractId = p.AbstractId,
+                FullPaperId = p.FullPaperId,
+                RevisionPaperId = p.RevisionPaperId,
+                CameraReadyId = p.CameraReadyId,
+
+
+                ConferenceId = p.ConferenceId,
+                ConferenceName = p.Conference?.ConferenceName,
+                ConferenceDescription = p.Conference?.Description,
+                ConferenceStartDate = p.Conference?.StartDate,
+                ConferenceEndDate = p.Conference?.EndDate,
+                ConferenceTotalSlot = p.Conference?.TotalSlot,
+                ConferenceAvailableSlot = p.Conference?.AvailableSlot,
+                Address = p.Conference?.Address,
+                BannerImageUrl = p.Conference?.BannerImageUrl,
+                ConferenceCreatedAt = p.Conference?.CreatedAt,
+                TicketSaleStart = p.Conference?.TicketSaleStart,
+                TicketSaleEnd = p.Conference?.TicketSaleEnd,
+                IsInternalHosted = p.Conference?.IsInternalHosted,
+                IsResearchConference = p.Conference?.IsResearchConference,
+                CityId = p.Conference?.CityId,
+                CityName = p.Conference?.City?.CityName,
+
+                ConferenceCreatedBy = p.Conference?.CreatedBy,
+                ConferenceCreatedByEmail = p.Conference?.CreatedByNavigation?.Email,
+                ConferenceCreatedByFullName = p.Conference?.CreatedByNavigation?.FullName,
+                ConferenceCreatedByAvatarUrl = p.Conference?.CreatedByNavigation?.AvatarUrl,
+
+                ConferenceCategoryId = p.Conference?.ConferenceCategoryId,
+                ConferenceStatusId = p.Conference?.ConferenceCategory?.ConferenceCategoryName,
+
+                PaperPhaseId = p.PaperPhaseId,
+                PhaseName = p.PaperPhase?.PhaseName,
+                ResearchConferencePhaseId = p.ResearchConferencePhaseId,
+
+                TicketId = p.TicketId,
+
+                PaperCreatedAt = p.CreatedAt,
+                PaperTitle = p.Title,
+                PaperDescription = p.Description,
+                
+
+                Abstract = p.Abstract == null ? null : new UserSubmittedAbstract
+                {
+                    AbstractId = p.Abstract.AbstractId,
+                    AbstractUrl = p.Abstract.AbstractUrl,
+                    Title = p.Abstract.Title,
+                    Description = p.Abstract.Description,
+                    CreatedAt = p.Abstract.CreatedAt,
+                    ReviewAt = p.Abstract.ReviewAt,
+                    GlobalStatusId = p.Abstract.GlobalStatusId,
+                    GlobalStatusName = p.Abstract.GlobalStatus?.Name
+
+                },
+
+                FullPaper = p.FullPaper == null ? null : new UserSubmittedFullPaper
+                {
+                    FullPaperId = p.FullPaper.FullPaperId,
+                    FullPaperUrl = p.FullPaper.FullPaperUrl,
+                    Title = p.FullPaper.Title,
+                    Description = p.FullPaper.Description,
+                    CreatedAt = p.FullPaper.CreatedAt,
+                    ReviewAt = p.FullPaper.ReviewAt,
+                    ReviewStatusId = p.FullPaper.ReviewStatusId,
+                    ReviewStatusName = p.FullPaper.ReviewStatus?.Name,
+
+                },
+
+               
+                RevisionPaper = p.RevisionPaper == null ? null : new UserSubmittedRevisionPaper
+                {
+                    RevisionPaperId = p.RevisionPaper.RevisionPaperId,
+                    RevisionRound = p.RevisionPaper.RevisionRound,
+                    GlobalStatusId = p.RevisionPaper.GlobalStatusId,
+                    GlobalStatusName = p.RevisionPaper.GlobalStatus?.Name,
+                    CreatedAt = p.RevisionPaper.CreatedAt,
+                    ReviewAt = p.RevisionPaper.ReviewAt,
+
+                    RevisionRoundDeadlineId = p.RevisionPaper.RevisionRoundDeadlineId,
+                    RevisionRoundDeadlineStartSubmissionDate =
+               p.RevisionPaper.RevisionRoundDeadline?.StartSubmissionDate,
+                    RevisionRoundDeadlineEndSubmissionDate =
+               p.RevisionPaper.RevisionRoundDeadline?.EndSubmissionDate,
+                    RevisionRoundDeadlineRoundNumber =
+               p.RevisionPaper.RevisionRoundDeadline?.RoundNumber
+                },
+
+                CameraReady = p.CameraReady == null ? null : new UserSubmittedCameraReady
+                {
+                    CameraReadyId = p.CameraReady.CameraReadyId,
+                    CameraReadyUrl = p.CameraReady.CameraReadyUrl,
+                    Title = p.CameraReady.Title,
+                    Description = p.CameraReady.Description,
+                    CreatedAt = p.CameraReady.CreatedAt,
+                    ReviewAt = p.CameraReady.ReviewAt,
+                    GlobalStatusId = p.CameraReady.GlobalStatusId,
+                    GlobalStatusName = p.CameraReady.GlobalStatus?.Name,
+
+                }
+
+            }).ToList();
         }
 
         public async Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId)
@@ -2562,7 +2666,7 @@ namespace ConfRadar.Services.Services
             }
             if (revisionPaperFound.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
             {
-                throw new BadRequestException($"Revision paper phải trong trạng thái pending");
+                throw new BadRequestException($"Revision paper phải trong trạng thái pending để update");
             }
             var revisionPaperSubmissionsList = revisionPaperFound.RevisionPaperSubmissions;
             if (revisionPaperSubmissionsList == null || !revisionPaperSubmissionsList.Any())

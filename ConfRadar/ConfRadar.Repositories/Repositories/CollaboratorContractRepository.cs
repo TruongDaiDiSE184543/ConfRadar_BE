@@ -14,8 +14,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<CollaboratorContract?> GetCollaboratorContractByIdAsync(string collaboratorContractId);
         Task<List<CollaboratorContract>> GetListCollaboratorContractByUserIdAsync(string userId);
 
-        Task<CollaboratorContract> GetCollaboratorContractByConferenceId (string conferenceId);
-       
+        Task<CollaboratorContract> GetCollaboratorContractByConferenceId(string conferenceId);
+
 
         Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContractWithFilter(CollaboratorContractSearchParam request);
     }
@@ -39,7 +39,16 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.CollaboratorContracts
                 .Include(cc => cc.User)
+
                 .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.City)
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.ConferenceStatus)
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.ConferenceCategory)
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.CreatedByNavigation)
+                .AsSplitQuery()
                 .Where(cc => cc.UserId == userId).ToListAsync();
         }
 
@@ -55,13 +64,20 @@ namespace ConfRadar.Repositories.Repositories
             var query = _context.CollaboratorContracts
                 .Include(cc => cc.User)
                     .ThenInclude(u => u.Organization)
+
                 .Include(cc => cc.Conference)
                     .ThenInclude(c => c.ConferenceStatus)
 
                 .Include(cc => cc.Conference)
-                .ThenInclude(c => c.ConferenceCategory)
+                    .ThenInclude(c => c.ConferenceCategory)
 
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.CreatedByNavigation)
 
+                .Include(cc => cc.Conference)
+                    .ThenInclude(c => c.City)
+
+                    .AsSplitQuery()
                 .AsQueryable();
 
 
@@ -96,7 +112,14 @@ namespace ConfRadar.Repositories.Repositories
             var items = data.Select(cc => new CollaboratorContractResponse
             {
                 CollaboratorContractId = cc.CollaboratorContractId,
+
                 CollaboratorContractUserId = cc.UserId,
+                CollaboratorContractFullName = cc.User?.FullName,
+                CollaboratorContractEmail = cc.User?.Email,
+                CollaboratorContractAvatarUrl = cc.User?.AvatarUrl,
+
+
+
                 OrganizationId = cc.User?.Organization?.OrganizationId,
                 OrganizationDescription = cc.User?.Organization?.OrganizationDescription,
                 OrganizationName = cc.User?.Organization?.OrganizationName,
@@ -128,8 +151,16 @@ namespace ConfRadar.Repositories.Repositories
                 ConferenceTicketSaleEnd = cc.Conference?.TicketSaleEnd,
                 IsInternalHosted = cc.Conference?.IsInternalHosted,
                 IsResearchConference = cc.Conference?.IsResearchConference,
+
                 CityId = cc.Conference?.CityId,
+                CityName = cc.Conference?.City?.CityName,
+
                 ConferenceCreatedBy = cc.Conference?.CreatedBy,
+                ConferenceCreatedByName = cc.Conference?.CreatedByNavigation?.FullName,
+                ConferenceCreatedByEmail = cc.Conference?.CreatedByNavigation?.Email,
+                ConferenceCreatedByAvatarUrl = cc.Conference?.CreatedByNavigation?.AvatarUrl,
+
+
                 ConferenceCategoryId = cc.Conference?.ConferenceCategoryId,
                 ConferenceCategoryName = cc.Conference?.ConferenceCategory?.ConferenceCategoryName,
                 ConferenceStatusId = cc.Conference?.ConferenceStatusId,

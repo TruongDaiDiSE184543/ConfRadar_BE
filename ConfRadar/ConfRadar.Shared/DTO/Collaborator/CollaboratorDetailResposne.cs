@@ -18,7 +18,7 @@ namespace ConfRadar.Shared.DTO.Collaborator
 
         //contract
         public List<CollaboratorContractResponse> ContractDetail { get; set; } = new List<CollaboratorContractResponse>();
-       
+
 
 
     }

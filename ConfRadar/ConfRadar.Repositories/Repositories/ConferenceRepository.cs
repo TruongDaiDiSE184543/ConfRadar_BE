@@ -115,7 +115,7 @@ namespace ConfRadar.Repositories.Repositories
 
             return await query.ToListAsync();
         }
-        
+
         public async Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId)
         {
             var conferenceList = await _context.Tickets

@@ -226,7 +226,7 @@ namespace ConfRadar.Services.Services
             //    throw new ConfRadarAuthenticationException("Email is not confirmed");
             //}
             var resetToken = _tokenService.GenerateSecureRandomToken();
-            var resetLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={resetToken}";
+            var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
             user.PasswordResetTokenExpiry = await _timeProviderService.GetVietnamTime();
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
@@ -560,7 +560,7 @@ namespace ConfRadar.Services.Services
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
-            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
             string userId = Guid.NewGuid().ToString();
             var userCreated = new User()
             {
@@ -650,11 +650,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
             }
-            var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
-            if (!reviewContracts.Any())
-            {
-                throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
-            }
+            //var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+            //if (!reviewContracts.Any())
+            //{
+            //    throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
+            //}
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
             if (userRole == null)
             {
@@ -679,11 +679,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
             }
-            var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
-            if (!reviewContracts.Any())
-            {
-                throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên {user.FullName}");
-            }
+            //var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
+            //if (!reviewContracts.Any())
+            //{
+            //    throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên {user.FullName}");
+            //}
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
             if (userRole == null)
             {
@@ -746,7 +746,7 @@ namespace ConfRadar.Services.Services
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
-            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
             string userId = Guid.NewGuid().ToString();
             var userCreated = new User()
             {
@@ -886,7 +886,7 @@ namespace ConfRadar.Services.Services
                 AvatarUrl = u.AvatarUrl,
                 BioDescription = u.BioDescription,
                 IsActive = u.IsActive,
-                ContractDetail = u.CollaboratorContracts.Select(cc=> new Shared.DTO.Contract.CollaboratorContractResponse()
+                ContractDetail = u.CollaboratorContracts.Select(cc => new Shared.DTO.Contract.CollaboratorContractResponse()
                 {
                     CollaboratorContractId = cc.CollaboratorContractId,
                     CollaboratorContractUserId = cc.UserId,

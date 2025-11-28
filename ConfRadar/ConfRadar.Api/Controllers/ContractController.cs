@@ -65,7 +65,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ContractDetailResponseForOrganizer>>.SuccessResponse(result, "Danh sách review contract"));
         }
 
-
+        //[Authorize(Roles ="Conference Organizer")]
         [HttpGet("users-for-reviewer-contract")]
         public async Task<IActionResult> GetUsersForReviewerContract([FromQuery] GetUsersForReviewerContractRequest request)
         {
@@ -115,6 +115,15 @@ namespace ConfRadar.Api.Controllers
         {
             var result = await _serviceManager.ContractService.GetListCollaboratorContract(request);
             return Ok(ApiResponse<PagedResultResponseDto<CollaboratorContractResponse>>.SuccessResponse(result, ""));
+
+        }
+        [HttpGet("own-collaborator-contract")]
+        [Authorize(Roles = "Collaborator")]
+        public async Task<IActionResult> GetListOwnCollaboratorContract()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ContractService.GetListOwnCollaboratorContract(userId);
+            return Ok(ApiResponse<List<OwnCollaboratorContractDetailResponse>>.SuccessResponse(result, "Danh sách hợp đồng collaborator"));
 
         }
     }

@@ -471,9 +471,9 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> GetPaperCountByConference(string conferenceId)
         {
             return await _context.Papers
-                .Where(p=> p.Ticket !=null 
-                && p.Ticket.IsRefunded ==false 
-                && p.ConferenceId == conferenceId )
+                .Where(p => p.Ticket != null
+                && p.Ticket.IsRefunded == false
+                && p.ConferenceId == conferenceId)
                 .CountAsync();
         }
     }

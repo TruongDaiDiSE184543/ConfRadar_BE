@@ -759,16 +759,16 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Ticket>> GetPaidTicketIncludeRefunded(string conferenceId)
         {
             return await _context.Tickets
-            .AsNoTracking() 
+            .AsNoTracking()
             .Include(t => t.Transactions)
             .Include(t => t.UserCheckIns)
                 .ThenInclude(uc => uc.CheckinStatus)
-            .Include(t => t.PricePhase) 
-                .ThenInclude(pp => pp.ConferencePrice) 
+            .Include(t => t.PricePhase)
+                .ThenInclude(pp => pp.ConferencePrice)
             .Include(t => t.PricePhase)
                 .ThenInclude(pp => pp.RefundPolicies)
             .Where(t =>
-                t.PricePhase != null && 
+                t.PricePhase != null &&
                 t.PricePhase.ConferencePrice != null &&
                 t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
             .ToListAsync();
@@ -896,14 +896,14 @@ namespace ConfRadar.Repositories.Repositories
 
         public IQueryable<Ticket> GetTicketHolderInfo(string conferenceId)
         {
-            return  _context.Tickets
+            return _context.Tickets
                   .AsNoTracking()
                   .Include(t => t.User)
                   .Include(t => t.PricePhase).ThenInclude(pp => pp.ConferencePrice)
                   .Include(t => t.UserCheckIns).ThenInclude(uc => uc.CheckinStatus)
                   .Include(t => t.UserCheckIns).ThenInclude(uc => uc.ConferenceSession).ThenInclude(s => s.Room) // Để lấy tên phòng
-                  .Where(t => t.PricePhase.ConferencePrice.ConferenceId == conferenceId) 
-                  .AsSplitQuery(); 
+                  .Where(t => t.PricePhase.ConferencePrice.ConferenceId == conferenceId)
+                  .AsSplitQuery();
         }
 
     }

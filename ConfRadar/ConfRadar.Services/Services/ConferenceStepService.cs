@@ -13,7 +13,7 @@ namespace ConfRadar.Services.Services
     {
         // Step 1: Basic Conference Creation
         Task<TechnicalConferenceBasicStepResponse> CreateTechnicalConferenceBasicAsync(CreateTechnicalConferenceBasicRequest request, string userid);
-        Task<string> CreateSkeletonTechnicalConferenceBasicForCollaboratorAsync(string name,string collabId);
+        Task<string> CreateSkeletonTechnicalConferenceBasicForCollaboratorAsync(string name, string collabId);
         Task<TechnicalConferenceBasicStepResponse> GetConferenceBasicAsync(string conferenceId);
         Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request, string userId);
 
@@ -599,9 +599,9 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        public async Task<string> CreateSkeletonTechnicalConferenceBasicForCollaboratorAsync(string name,string collabId)
+        public async Task<string> CreateSkeletonTechnicalConferenceBasicForCollaboratorAsync(string name, string collabId)
         {
-           if (string.IsNullOrEmpty(name)) 
+            if (string.IsNullOrEmpty(name))
                 throw new Exception("Phải có tên của hội nghị để có thể tạo một hội nghị cho collab");
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
             var now = await _timeProviderService.GetVietnamTime();
@@ -627,12 +627,13 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.TechnicalConferenceDetailRepository.CreateTechnicalAsync(technicalConferenceDetail);
                 await _unitOfWork.CommitAsync();
                 return techConference.ConferenceId;
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
                 throw ex;
             }
-         
+
         }
 
         public async Task<TechnicalConferenceBasicStepResponse> GetConferenceBasicAsync(string conferenceId)
@@ -787,7 +788,7 @@ namespace ConfRadar.Services.Services
 
             if (conference.CreatedBy != userId)
                 throw new ForbiddenException("B?n không có quy?n thêm giá vé cho h?i ngh? này.");
-            
+
             if (request.TypeOfTicket == null || !request.TypeOfTicket.Any())
                 throw new BadRequestException("Yêu c?u ph?i ch?a ít nh?t m?t lo?i vé.");
             ConferencePriceListWithPhasesResponse result = new ConferencePriceListWithPhasesResponse
@@ -1141,14 +1142,14 @@ namespace ConfRadar.Services.Services
                             if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
                                 throw new NotFoundException($"Phòng với ID {session.RoomId} không tồn tại.");
                         }
-                        
+
 
                         if (session.Date.Value < conference.StartDate || session.Date.Value > conference.EndDate)
                         {
                             throw new BadRequestException($"Ngày c?a phiên '{session.Title}' ({session.Date.Value:dd/MM/yyyy}) n?m ngoài kho?ng th?i gian di?n ra h?i ngh? ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
                         }
 
-                       
+
 
 
                         // Step 2: Validate using these direct, local time values.

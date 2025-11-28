@@ -1,4 +1,3 @@
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Mappers;
 using System.ComponentModel.DataAnnotations;
 
@@ -171,8 +170,8 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? ConferenceStatusId { get; set; }
         public string? TargetAudience { get; set; } // Technical conference detail
         public string? createdBy { get; set; }
-        public string? UserNameCreator {  get; set; }
-        public string? Organization {  get; set; }
+        public string? UserNameCreator { get; set; }
+        public string? Organization { get; set; }
         public CollaboratorContractResponseForConferenceDetail Contract { get; set; }
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
@@ -186,7 +185,7 @@ namespace ConfRadar.Services.DTOs.Conference
 
     public class CollaboratorContractResponseForConferenceDetail
     {
-        public string CollaboratorContractId { get; set; } 
+        public string CollaboratorContractId { get; set; }
         public bool? IsSponsorStep { get; set; }
 
         public bool? IsMediaStep { get; set; }
@@ -475,8 +474,8 @@ namespace ConfRadar.Services.DTOs.Conference
     {
         public string? ConferenceId { get; set; }
         public string? Name { get; set; }
-        public DateTime? createdAt {  get; set; }
+        public DateTime? createdAt { get; set; }
     }
 
-  
+
 }
