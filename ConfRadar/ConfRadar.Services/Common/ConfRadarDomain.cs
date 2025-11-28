@@ -10,4 +10,5 @@
         public const string Url = "https://confradar.vercel.app/";
 
     }
+
 }

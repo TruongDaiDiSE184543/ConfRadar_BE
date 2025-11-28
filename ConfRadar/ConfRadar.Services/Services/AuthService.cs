@@ -18,7 +18,7 @@ namespace ConfRadar.Services.Services
     {
 
         Task<int> RegisterAccount(CreateUserRequest request);
-        Task VerifyRegistration(string token);
+        Task<RegistrationVerificationResult> VerifyRegistration(string token);
         Task<LoginUserResponse> LocalLogin(LocalLoginUserRequest request);
         Task<LoginUserResponse> FirebaseLogin(FirebaseLoginRequest request);
         Task ForgetPassword(string email);
@@ -109,7 +109,7 @@ namespace ConfRadar.Services.Services
 
             var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
-            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.ConfirmRegistrationEmail + $"?token={verificationToken}";
+            string confirmationLink = ConfRadarDomain.Url + ConfRadarApiEndPoint.ConfirmRegistrationEmail_BE + $"?token={verificationToken}";
             var userCreated = UserMapper.FromCreateUserRequestToUser(request, timeNow);
             userCreated.PasswordHash = hashedPassword;
             userCreated.VerificationToken = verificationToken;
@@ -137,38 +137,56 @@ namespace ConfRadar.Services.Services
             await _emailService.SendAuthenticationTemplateEmailAsync(request.Email, request.FullName, confirmationLink, "Confirm Email Registration", "EmailRegistrationConfirmation.html");
             return await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
         }
-        public async Task VerifyRegistration(string token)
+        public async Task<RegistrationVerificationResult> VerifyRegistration(string token)
         {
+           
             var user = await _unitOfWork.UserRepository.GetUserByRegistrationConfirmationToken(token);
             if (user == null)
             {
-                throw new ConfRadarAuthenticationException("Token not found");
+                return new RegistrationVerificationResult()
+                {
+                    Result = -1,
+                    ErrorCode = RegistrationVerificationMessage.TokenNotFound,
+                };
             }
             if (user.IsEmailConfirmed == true)
             {
-                throw new ConfRadarAuthenticationException("User is already confirmed");
+                return new RegistrationVerificationResult()
+                {
+                    Result = -1,
+                    ErrorCode = RegistrationVerificationMessage.EmailAlreadyConfirmed,
+                };
             }
             var timeNow = await _timeProviderService.GetVietnamTime();
             if (user.VerificationTokenExpiry <= timeNow)
             {
-                throw new ConfRadarAuthenticationException("Token is expired");
+                return new RegistrationVerificationResult() 
+                { 
+                    Result = -1,
+                    ErrorCode = RegistrationVerificationMessage.TokenExpired
+                };
             }
             //user.IsActive = true;
             user.IsEmailConfirmed = true;
             user.VerificationToken = null;
             user.VerificationTokenExpiry = null;
-            await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            var result = await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            return new RegistrationVerificationResult
+            {
+                Result = result,
+                ErrorCode = RegistrationVerificationMessage.Success
+            };
         }
         public async Task<LoginUserResponse> LocalLogin(LocalLoginUserRequest request)
         {
             var user = await _unitOfWork.UserRepository.GetUserByEmail(request.Email);
             if (user == null)
             {
-                throw new ConfRadarAuthenticationException("User not found");
+                throw new ConfRadarAuthenticationException("Người dùng không tìm thấy");
             }
             if (user.IsEmailConfirmed == false)
             {
-                throw new ConfRadarAuthenticationException("Email is not confirmed");
+                throw new ConfRadarAuthenticationException("Email chưa được xác nhận");
             }
             //if (user.IsActive == false)
             //{
@@ -176,7 +194,7 @@ namespace ConfRadar.Services.Services
             //}
             if (!string.Equals(user.LoginProvider, LoginProviderEnum.Local.ToString(), StringComparison.OrdinalIgnoreCase))
             {
-                throw new ConfRadarAuthenticationException($"This account is registered with provider '{user.LoginProvider}'.");
+                throw new ConfRadarAuthenticationException($"Tài khoản này đã liên kết với phương thức đăng nhập '{user.LoginProvider}'.");
             }
             if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
             {
@@ -226,7 +244,7 @@ namespace ConfRadar.Services.Services
             //    throw new ConfRadarAuthenticationException("Email is not confirmed");
             //}
             var resetToken = _tokenService.GenerateSecureRandomToken();
-            var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={resetToken}";
+            var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE+ $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
             user.PasswordResetTokenExpiry = await _timeProviderService.GetVietnamTime();
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
@@ -560,7 +578,7 @@ namespace ConfRadar.Services.Services
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
-            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE + $"?token={verificationToken}";
             string userId = Guid.NewGuid().ToString();
             var userCreated = new User()
             {
@@ -746,7 +764,7 @@ namespace ConfRadar.Services.Services
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
-            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE + $"?token={verificationToken}";
             string userId = Guid.NewGuid().ToString();
             var userCreated = new User()
             {
