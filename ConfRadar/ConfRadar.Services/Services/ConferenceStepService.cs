@@ -532,31 +532,31 @@ namespace ConfRadar.Services.Services
         {
 
             if (string.IsNullOrWhiteSpace(request.ConferenceName))
-                throw new BadRequestException("Tên h?i ngh? là b?t bu?c.");
+                throw new BadRequestException("Tên hội nghị là bắt buộc.");
 
             if (request.IsResearchConference == true)
-                throw new BadRequestException("Ch?c nang này dùng d? t?o h?i ngh? k? thu?t, 'IsResearchConference' ph?i là false.");
+                throw new BadRequestException("Chức năng này dùng để tạo hội nghị kỹ thuật, 'IsResearchConference' phải là false.");
             if (request.TotalSlot <= 0)
-                throw new BadRequestException("T?ng s? vé ph?i là m?t s? duong.");
+                throw new BadRequestException("Tổng số vé phải là một số dương.");
 
 
             if (!IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd).Result)
-                throw new BadRequestException("Ngày tháng cung c?p không h?p l?. Vui lòng d?m b?o các ngày không n?m trong quá kh?, ngày b?t d?u/k?t thúc theo dúng th? t?, và ngày bán vé ph?i k?t thúc tru?c khi h?i ngh? b?t d?u.");
+                throw new BadRequestException("Ngày tháng cung cấp không hợp lệ. Vui lòng d?m b?o các ngày không n?m trong quá kh?, ngày b?t d?u/k?t thúc theo dúng th? t?, và ngày bán vé ph?i k?t thúc tru?c khi h?i ngh? b?t d?u.");
 
 
             if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
-                throw new NotFoundException($"Danh m?c h?i ngh? v?i ID '{request.ConferenceCategoryId}' không t?n t?i.");
+                throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
             if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
-                throw new NotFoundException($"Thành ph? v?i ID '{request.CityId}' không t?n t?i.");
+                throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
 
             // 1.5. Validation file banner
             if (request.BannerImageFile == null)
-                throw new BadRequestException("?nh bìa (banner) là b?t bu?c.");
+                throw new BadRequestException("Ảnh bìa (banner) là bắt buộc.");
             if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
-                throw new BadRequestException($"Lo?i ?nh bìa không du?c h? tr?: '{request.BannerImageFile.ContentType}'.");
+                throw new BadRequestException($"Loại ảnh bìa không được hỗ trợ: '{request.BannerImageFile.ContentType}'.");
             const long maxBannerSize = 5 * 1024 * 1024; // 5 MB
             if (request.BannerImageFile.Length > maxBannerSize)
-                throw new BadRequestException("Kích thu?c t?p ?nh bìa không du?c vu?t quá 5 MB.");
+                throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
 
 
             await _unitOfWork.BeginTransactionAsync();
