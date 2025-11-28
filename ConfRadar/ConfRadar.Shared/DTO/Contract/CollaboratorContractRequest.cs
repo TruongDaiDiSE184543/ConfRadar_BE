@@ -27,7 +27,7 @@ namespace ConfRadar.Shared.DTO.Contract
         [Required(ErrorMessage = "Ngày kí hợp đồng là bắt buộc")]
 
         public DateOnly? SignDay { get; set; }
-        [Required(ErrorMessage = "Ngày giải ngân là bắt buộc")]
+        //[Required(ErrorMessage = "Ngày giải ngân là bắt buộc")]
 
         public DateOnly? FinalizePaymentDate { get; set; }
 
