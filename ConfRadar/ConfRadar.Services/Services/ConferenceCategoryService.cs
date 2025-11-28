@@ -73,7 +73,7 @@ namespace ConfRadar.Services.Services
 
             // Get conference counts for each category
             var conferences = await _unitOfWork.ConferenceRepository.GetAllConferencesAsync();
-            var categoryCounts = conferences
+            var categoryCounts = conferences.Where(c => c.ConferenceCategoryId != null)
                 .GroupBy(c => c.ConferenceCategoryId)
                 .ToDictionary(g => g.Key, g => g.Count());
 
