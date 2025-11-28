@@ -61,6 +61,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<ConferenceSession>> GetSessionsByConferenceIdAsync(string conferenceId)
         {
             return await _context.ConferenceSessions
+                .Include(cs => cs.ConferenceSessionMedia)
                 .Where(cs => cs.ConferenceId == conferenceId)
                 .ToListAsync();
         }
@@ -76,6 +77,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<ConferenceSession?> GetSessionWithDetailsAsync(string sessionId)
         {
             return await _context.ConferenceSessions
+                .Include(cs => cs.ConferenceSessionMedia)
                 .Include(cs => cs.Conference)
                 .Include(cs => cs.Room)
                     .ThenInclude(r => r.Destination)
