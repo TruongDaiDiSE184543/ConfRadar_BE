@@ -1782,7 +1782,7 @@ namespace ConfRadar.Services.Services
                 PaperCreatedAt = p.CreatedAt,
                 PaperTitle = p.Title,
                 PaperDescription = p.Description,
-                
+
 
                 Abstract = p.Abstract == null ? null : new UserSubmittedAbstract
                 {
@@ -1810,7 +1810,7 @@ namespace ConfRadar.Services.Services
 
                 },
 
-               
+
                 RevisionPaper = p.RevisionPaper == null ? null : new UserSubmittedRevisionPaper
                 {
                     RevisionPaperId = p.RevisionPaper.RevisionPaperId,
@@ -1822,11 +1822,11 @@ namespace ConfRadar.Services.Services
 
                     RevisionRoundDeadlineId = p.RevisionPaper.RevisionRoundDeadlineId,
                     RevisionRoundDeadlineStartSubmissionDate =
-               p.RevisionPaper.RevisionRoundDeadline?.StartSubmissionDate,
+              p.RevisionPaper.RevisionRoundDeadline?.StartSubmissionDate,
                     RevisionRoundDeadlineEndSubmissionDate =
-               p.RevisionPaper.RevisionRoundDeadline?.EndSubmissionDate,
+              p.RevisionPaper.RevisionRoundDeadline?.EndSubmissionDate,
                     RevisionRoundDeadlineRoundNumber =
-               p.RevisionPaper.RevisionRoundDeadline?.RoundNumber
+              p.RevisionPaper.RevisionRoundDeadline?.RoundNumber
                 },
 
                 CameraReady = p.CameraReady == null ? null : new UserSubmittedCameraReady

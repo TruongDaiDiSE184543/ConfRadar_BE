@@ -183,7 +183,7 @@ namespace ConfRadar.Services.Services
 
             //var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
-            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.VerifyForgetPassword + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE + $"?token={verificationToken}";
             var userCreated = new User()
             {
                 UserId = Guid.NewGuid().ToString(),

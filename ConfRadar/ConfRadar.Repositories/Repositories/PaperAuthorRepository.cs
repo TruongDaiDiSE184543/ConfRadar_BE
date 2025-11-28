@@ -74,55 +74,55 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Paper>> GetPapersByUserIdAsync(string userId)
         {
             return await _context.PaperAuthors
-                .Where(pa => pa.IsRootAuthor == true && pa.UserId == userId)
-                .Include(pa => pa.Paper)
+               .Where(pa => pa.IsRootAuthor == true && pa.UserId == userId)
+               .Include(pa => pa.Paper)
 
-            .ThenInclude(p => p.Conference)
-                .ThenInclude(c => c.City)
+           .ThenInclude(p => p.Conference)
+               .ThenInclude(c => c.City)
 
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.Conference)
-                .ThenInclude(c => c.CreatedByNavigation)
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.Conference)
+               .ThenInclude(c => c.CreatedByNavigation)
 
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.Conference)
-                .ThenInclude(c => c.ConferenceCategory)
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.Conference)
+               .ThenInclude(c => c.ConferenceCategory)
 
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.Conference)
-                .ThenInclude(c => c.ConferenceStatus)
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.Conference)
+               .ThenInclude(c => c.ConferenceStatus)
 
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.Abstract)
-                .ThenInclude(a=>a.GlobalStatus)
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.Abstract)
+               .ThenInclude(a => a.GlobalStatus)
 
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.FullPaper)
-                .ThenInclude(fp => fp.ReviewStatus)
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.FullPaper)
+               .ThenInclude(fp => fp.ReviewStatus)
 
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.RevisionPaper)
-                .ThenInclude(rp => rp.RevisionRoundDeadline)
-
-
-                .Include(pa => pa.Paper)
-            .ThenInclude(p => p.RevisionPaper)
-                .ThenInclude(rp => rp.GlobalStatus)
-
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.CameraReady)
-                .ThenInclude(c=>c.GlobalStatus)
-
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.PaperPhase)
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.RevisionPaper)
+               .ThenInclude(rp => rp.RevisionRoundDeadline)
 
 
-        .Include(pa => pa.Paper)
-            .ThenInclude(p => p.Ticket)
+               .Include(pa => pa.Paper)
+           .ThenInclude(p => p.RevisionPaper)
+               .ThenInclude(rp => rp.GlobalStatus)
 
-                 .Select(pa => pa.Paper)
-                 .AsSplitQuery()
-                 .ToListAsync();
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.CameraReady)
+               .ThenInclude(c => c.GlobalStatus)
+
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.PaperPhase)
+
+
+       .Include(pa => pa.Paper)
+           .ThenInclude(p => p.Ticket)
+
+                .Select(pa => pa.Paper)
+                .AsSplitQuery()
+                .ToListAsync();
         }
 
         public async Task<int> DeleteMutiplePaperAuthorAsync(List<PaperAuthor> paperAuthors)

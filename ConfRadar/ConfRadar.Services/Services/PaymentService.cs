@@ -593,11 +593,15 @@ namespace ConfRadar.Services.Services
             }
             if (conferencePrice.Conference!.IsResearchConference == false)
             {
-                throw new BadRequestException($"Bạn chỉ có thể mua vé cho hội ngh? nghiên cứu");
+                throw new BadRequestException($"Bạn chỉ có thể mua vé cho hội nghị nghiên cứu");
             }
             if (conferencePrice.IsAuthor == true)
             {
                 throw new BadRequestException($"Giá vé hiện tại chỉ dành cho nguời dự thính trong hội nghị");
+            }
+            if (conferencePrice.Conference!.ResearchConferenceDetail?.AllowListener != true)
+            {
+                throw new BadRequestException($"Hội nghị không cho phép mua vé dự thính");
             }
             if (conferencePrice.Conference.IsInternalHosted == false)
             {

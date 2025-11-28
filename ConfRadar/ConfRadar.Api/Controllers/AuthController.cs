@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
+using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.User;
 using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.Organization;
@@ -24,8 +25,11 @@ namespace ConfRadar.Api.Controllers
         [HttpGet("confirm-registration-email")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
         {
-            await _serviceManager.AuthService.VerifyRegistration(token);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "Email confirmed successfully"));
+            var result = await _serviceManager.AuthService.VerifyRegistration(token);
+            var redirectUrl = result.Success
+                ? $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.EmailConfirmSuccess_FE}?code={result.ErrorCode}"
+                : $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.EmailConfirmFail_FE}?code={result.ErrorCode}";
+            return Redirect(redirectUrl);
         }
 
 

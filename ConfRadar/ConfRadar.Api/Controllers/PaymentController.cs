@@ -8,6 +8,7 @@ using ConfRadar.Shared.DTO.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -16,15 +17,20 @@ namespace ConfRadar.Api.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
+
+
+
         private readonly IZaloPayService _zaloPayService;
         private readonly ITokenService _tokenService;
         private readonly IPayOsService _payOsService;
-        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService, ITokenService tokenService, IPayOsService payOsService)
+        private readonly IVnPayService _vnPayService;
+        public PaymentController(IServiceManager serviceManager, IZaloPayService zaloPayService, ITokenService tokenService, IPayOsService payOsService, IVnPayService vnPayService)
         {
             _serviceManager = serviceManager;
             _zaloPayService = zaloPayService;
             _tokenService = tokenService;
             _payOsService = payOsService;
+            _vnPayService = vnPayService;
         }
 
 
@@ -91,8 +97,8 @@ namespace ConfRadar.Api.Controllers
         [HttpGet("success-payos")]
         public IActionResult SuccessPayOs()
         {
-            string message = "Đã thanh toán thành công payos";
-            return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
+            var redirectUrl = $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.PaymentSuccess_FE}?code={PaymentMessageResult.PayOsSuccess}";
+            return Redirect(redirectUrl);
         }
         [HttpGet("cancel-payos")]
         public async Task<IActionResult> CancelPayOs([FromQuery] CancelPayOsRequest request)
@@ -106,13 +112,24 @@ namespace ConfRadar.Api.Controllers
         {
             //method post trên deploy k call đc
             await _serviceManager.PaymentService.VerifyMomoDataForConference(data);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "Đã thanh toán thành công"));
+            var redirectUrl = $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.PaymentSuccess_FE}?code={PaymentMessageResult.MoMoSuccess}";
+            return Redirect(redirectUrl);
         }
         [HttpGet("success-vnpay")]
-        public IActionResult SuccessVnPay()
+        public async Task<IActionResult> SuccessVnPay([FromQuery] VnPayResponse data)
         {
-            string message = "Đã thanh toán thành công vnpay";
-            return Ok(ApiResponse<object>.SuccessResponse(message, "Đã thanh toán thành công"));
+            var result =  _vnPayService.VerifyVnPayPayment(data);
+            var successRedirectUrl = $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.PaymentSuccess_FE}?code={PaymentMessageResult.VnPaySuccess}";
+            var failRedirectUrl = $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.PaymentSuccess_FE}?code={PaymentMessageResult.VnPayFail}";
+            if (!result)
+            {
+                return Redirect(failRedirectUrl);
+            }
+            if (data.Vnp_ResponseCode != "00")
+            {
+                return Redirect(failRedirectUrl);
+            }
+            return Redirect(successRedirectUrl);
         }
         [HttpGet("verify-vnpay")]
         public async Task<IActionResult> VerifyVnPay([FromQuery] VnPayResponse data)
