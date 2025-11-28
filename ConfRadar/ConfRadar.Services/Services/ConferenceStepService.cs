@@ -367,7 +367,7 @@ namespace ConfRadar.Services.Services
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
             var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.OnHold.GetDescription());
-            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId || (conference.IsInternalHosted == false && conference.ConferenceStatus.ConferenceStatusId == Preparing.ConferenceStatusId))
+            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId )
             {
                 throw new BadRequestException($"Thao tác không du?c phép. H?i ngh? dang ? tr?ng thái '{currentStatus.ConferenceStatusName}' và không th? ch?nh s?a.");
             }

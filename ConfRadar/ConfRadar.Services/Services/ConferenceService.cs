@@ -417,6 +417,7 @@ namespace ConfRadar.Services.Services
 
 
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.CollaboratorContract)
                 .Include(c => c.CreatedByNavigation)
                     .ThenInclude(u => u.Organization)
                 .Include(c => c.ConferenceCategory)
@@ -463,7 +464,7 @@ namespace ConfRadar.Services.Services
                 TicketSaleStart = conference.TicketSaleStart,
                 createdBy = conference.CreatedBy,
                 UserNameCreator = conference.CreatedByNavigation.FullName,
-
+                Contract = conference.CollaboratorContract != null ? conference.CollaboratorContract.toCollaboratorContractResponseForConferenceDetail() : null,
                 TicketSaleEnd = conference.TicketSaleEnd,
                 IsInternalHosted = conference.IsInternalHosted,
                 IsResearchConference = conference.IsResearchConference,
