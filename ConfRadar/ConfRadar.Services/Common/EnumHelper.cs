@@ -246,6 +246,6 @@ namespace ConfRadar.Services.Common
         //[Description("Notified")]
         //Notified,           
     }
-
+   
 
 }
