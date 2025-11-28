@@ -22,6 +22,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferenceSession>> GetSessionsByRoomIdAtTimeAsync(string roomId, DateOnly date, DateTime checkTime);
         Task<List<ConferenceSession>> GetSessionsByRoomIdOnDateAsync(string roomId, DateOnly date);
         Task<List<ConferenceSession>> GetSessionsByRoomIdsAndDateAsync(List<string> roomIds, DateOnly date);
+        Task<List<ConferenceSession>> GetSessionsInDateRangeAsync(List<string> roomIds, DateOnly startDate, DateOnly endDate);
         bool AnyTechSessionWithSpeaker(string techConfId);
         Task<List<ConferenceSession>> GetSessionWithoutRoom(string conferenceId);
     }
@@ -169,6 +170,7 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
+
         public async Task<List<ConferenceSession>> GetSessionsByRoomIdsAndDateAsync(List<string> roomIds, DateOnly date)
         {
             // Get sessions for multiple rooms on a specific date
@@ -198,6 +200,17 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(cs => cs.ConferenceId);
             query = query.Where(cs => cs.ConferenceId == conferenceId && cs.RoomId == null);
             return query.ToListAsync();
+        }
+
+        public async Task<List<ConferenceSession>> GetSessionsInDateRangeAsync(List<string> roomIds, DateOnly startDate, DateOnly endDate)
+        {
+            return await _context.ConferenceSessions
+                .AsNoTracking()
+                .Where(s => s.RoomId != null &&
+                            roomIds.Contains(s.RoomId) &&
+                            s.SessionDate >= startDate &&
+                            s.SessionDate <= endDate)
+                .ToListAsync();
         }
     }
 }

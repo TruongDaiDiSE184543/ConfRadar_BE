@@ -23,7 +23,7 @@ namespace ConfRadar.Services.Services
         Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
         Task<List<RoomAvailablity>> RoomAvailableBetweenDate(string roomId, DateOnly startDate, DateOnly endDate);
-        Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate);
+        Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate, string cityId = null);
     }
 
     public class RoomService : IRoomService
@@ -598,40 +598,38 @@ namespace ConfRadar.Services.Services
             return response;
         }
 
-        public async Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate)
+        public async Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate, string? cityId = null)
         {
-            // Validate date range
-            if (endDate < startDate)
-            {
-                throw new BadRequestException("End date không thể trước start date");
-            }
-
-            // Days interval must be less than or equal to 7
+            // 1. Validate (Giữ nguyên)
+            if (endDate < startDate) throw new BadRequestException("End date không thể trước start date");
             int daysBetween = endDate.DayNumber - startDate.DayNumber;
-            if (daysBetween > 7)
-            {
-                throw new BadRequestException($"Khoảng cách start date và end date không thể vượt 7 ngày. {startDate:dd/MM/yyyy} đến {endDate:dd/MM/yyyy} là {daysBetween} ngày");
-            }
+            if (daysBetween > 7) throw new BadRequestException("Khoảng cách không thể vượt quá 7 ngày.");
 
-            // Get all rooms in the system
-            var allRooms = await _unitOfWork.RoomRepository.GetAllRoomsAsync();
-            if (!allRooms.Any())
-            {
-                return new List<AvailableRoomResponse>();
-            }
+            // 2. Lấy phòng đã lọc theo City ngay từ DB (Tối ưu 1)
+            var rooms = await _unitOfWork.RoomRepository.GetAllRoomsAsync(cityId);
+            if (!rooms.Any()) return new List<AvailableRoomResponse>();
+
+            // 3. Lấy tất cả Session đã chiếm chỗ trong khoảng thời gian đó (Tối ưu 2)
+            var roomIds = rooms.Select(r => r.RoomId).ToList();
+            var allOccupiedSessions = await _unitOfWork.ConferenceSessionRepository
+                                            .GetSessionsInDateRangeAsync(roomIds, startDate, endDate);
 
             List<AvailableRoomResponse> response = new();
 
-            // Check each room for each date
-            foreach (var room in allRooms)
+            // 4. Xử lý Logic tìm giờ trống (Hoàn toàn trên RAM)
+            foreach (var room in rooms)
             {
                 for (var date = startDate; date <= endDate; date = date.AddDays(1))
                 {
-                    // Get all sessions for this room on this specific date
-                    var occupiedSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(room.RoomId, date);
+                    // Lọc từ list đã lấy về, không gọi DB nữa
+                    var occupiedSessionsInDay = allOccupiedSessions
+                        .Where(s => s.RoomId == room.RoomId && s.SessionDate == date)
+                        .ToList();
 
-                    // If no sessions exist for the day, the entire day is available
-                    if (!occupiedSessions.Any())
+                    // --- Logic tính toán giờ trống (Giữ nguyên logic của bạn, chỉ copy lại) ---
+
+                    // Case 1: Trống cả ngày
+                    if (!occupiedSessionsInDay.Any())
                     {
                         response.Add(new AvailableRoomResponse
                         {
@@ -639,28 +637,25 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
-                            CityId = room?.Destination?.CityId,
-                            Cityname = room?.Destination.City?.CityName,
-                            DestinationId = room?.Destination?.DestinationId,
-                            DestinationName = room?.Destination?.Name,
+                            CityId = room.Destination?.CityId,
+                            Cityname = room.Destination?.City?.CityName,
+                            DestinationId = room.Destination?.DestinationId,
+                            DestinationName = room.Destination?.Name,
                             AvailableTimeSpans = new List<TimeSpanResponse>
-                            {
-                                new TimeSpanResponse
-                                {
-                                    StartTime = new TimeOnly(6, 0, 0),
-                                    EndTime = new TimeOnly(23, 59, 59)
-                                }
-                            },
+                    {
+                        new TimeSpanResponse { StartTime = new TimeOnly(6, 0), EndTime = new TimeOnly(23, 59, 59) }
+                    },
                             IsAvailableWholeday = true
                         });
                         continue;
                     }
 
-                    // Process occupied sessions and calculate available time spans
-                    var occupiedTimeSlots = occupiedSessions
+                    // Case 2: Có session, tính khoảng hở
+                    var occupiedTimeSlots = occupiedSessionsInDay
                         .Where(os => os.StartTime.HasValue && os.EndTime.HasValue)
                         .Select(os => new
                         {
+                            // Lưu ý: Cần chắc chắn StartTime trong DB là Local hoặc UTC đồng nhất
                             startTime = TimeOnly.FromDateTime(os.StartTime.Value),
                             endTime = TimeOnly.FromDateTime(os.EndTime.Value)
                         })
@@ -668,46 +663,28 @@ namespace ConfRadar.Services.Services
                         .ToList();
 
                     List<TimeSpanResponse> availableTimeSpans = new();
-                    var dayStart = new TimeOnly(6, 0, 0);
+                    var dayStart = new TimeOnly(6, 0);
                     var dayEnd = new TimeOnly(23, 59, 59);
 
-                    // Check for available time before the first session
-                    if (occupiedTimeSlots.Any() && dayStart < occupiedTimeSlots.First().startTime)
+                    // Logic tìm khoảng trống (Gap finding algorithm) - Code bạn viết đã chuẩn
+                    if (dayStart < occupiedTimeSlots.First().startTime)
                     {
-                        availableTimeSpans.Add(new TimeSpanResponse
-                        {
-                            StartTime = dayStart,
-                            EndTime = occupiedTimeSlots.First().startTime
-                        });
+                        availableTimeSpans.Add(new TimeSpanResponse { StartTime = dayStart, EndTime = occupiedTimeSlots.First().startTime });
                     }
 
-                    // Check for available time between sessions
-                    for (int i = 0; i < occupiedTimeSlots.Count - 1; i++)
+                    for (int i = 0; i < occupiedTimeSlots.Count() - 1; i++)
                     {
-                        TimeOnly currentEnd = occupiedTimeSlots[i].endTime;
-                        TimeOnly nextStart = occupiedTimeSlots[i + 1].startTime;
-
-                        if (currentEnd < nextStart)
+                        if (occupiedTimeSlots[i].endTime < occupiedTimeSlots[i + 1].startTime)
                         {
-                            availableTimeSpans.Add(new TimeSpanResponse
-                            {
-                                StartTime = currentEnd,
-                                EndTime = nextStart
-                            });
+                            availableTimeSpans.Add(new TimeSpanResponse { StartTime = occupiedTimeSlots[i].endTime, EndTime = occupiedTimeSlots[i + 1].startTime });
                         }
                     }
 
-                    // Check for available time after the last session
-                    if (occupiedTimeSlots.Any() && occupiedTimeSlots.Last().endTime < dayEnd)
+                    if (occupiedTimeSlots.Last().endTime < dayEnd)
                     {
-                        availableTimeSpans.Add(new TimeSpanResponse
-                        {
-                            StartTime = occupiedTimeSlots.Last().endTime,
-                            EndTime = dayEnd
-                        });
+                        availableTimeSpans.Add(new TimeSpanResponse { StartTime = occupiedTimeSlots.Last().endTime, EndTime = dayEnd });
                     }
 
-                    // Only add to response if there are available time spans
                     if (availableTimeSpans.Any())
                     {
                         response.Add(new AvailableRoomResponse
@@ -716,10 +693,10 @@ namespace ConfRadar.Services.Services
                             RoomNumber = room.Number,
                             RoomDisplayName = room.DisplayName,
                             Date = date,
-                            CityId = room?.Destination?.CityId,
-                            Cityname = room?.Destination?.City?.CityName,
-                            DestinationId = room?.Destination?.DestinationId,
-                            DestinationName = room?.Destination?.Name,
+                            CityId = room.Destination?.CityId,
+                            Cityname = room.Destination?.City?.CityName,
+                            DestinationId = room.Destination?.DestinationId,
+                            DestinationName = room.Destination?.Name,
                             AvailableTimeSpans = availableTimeSpans,
                             IsAvailableWholeday = false
                         });
@@ -727,7 +704,6 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-            // Sort the response by date then by room number for consistent output
             return response.OrderBy(r => r.Date).ThenBy(r => r.RoomNumber).ToList();
         }
 
