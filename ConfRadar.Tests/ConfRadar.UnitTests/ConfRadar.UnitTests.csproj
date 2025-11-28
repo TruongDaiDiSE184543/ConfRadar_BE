@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\ConfRadar\ConfRadar.Services\ConfRadar.Services.csproj" />
     <ProjectReference Include="..\..\ConfRadar\ConfRadar.Shared\ConfRadar.Shared.csproj" />
+  <ProjectReference Include="..\..\ConfRadar\ConfRadar.Repositories\ConfRadar.Repositories.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -541,8 +541,7 @@ namespace ConfRadar.Services.Services
 
 
             if (!IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd).Result)
-                throw new BadRequestException("Ngày tháng cung cấp không hợp lệ. Vui lòng d?m b?o các ngày không n?m trong quá kh?, ngày b?t d?u/k?t thúc theo dúng th? t?, và ngày bán vé ph?i k?t thúc tru?c khi h?i ngh? b?t d?u.");
-
+                throw new BadRequestException("Ngày tháng cung cấp không hợp lệ. Vui lòng đảm bảo các ngày không nằm trong quá khứ, ngày bắt đầu/kết thúc theo đúng thứ tự, và ngày bán vé phải kết thúc trước khi hội nghị bắt đầu.");
 
             if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
                 throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
