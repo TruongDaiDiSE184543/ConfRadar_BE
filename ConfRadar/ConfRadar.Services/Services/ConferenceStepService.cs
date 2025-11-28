@@ -2605,7 +2605,7 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Hội nghị với ID {conferenceId} không tìm thấy");
 
-            if (conference.IsResearchConference != false)
+            if (conference.IsResearchConference != true)
                 throw new Exception("Chức năng chỉ có thể cho hội nghị nghiên cứu");
 
             var researchSessionWithoutRoom = await _unitOfWork.ConferenceSessionRepository.GetSessionWithoutRoom(conferenceId);

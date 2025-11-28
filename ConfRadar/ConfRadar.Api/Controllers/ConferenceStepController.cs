@@ -520,6 +520,14 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ResearchSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị nghiên cứu được lấy thành công"));
         }
 
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpGet("{conferenceId}/research/get-sessions-without-roomId")]
+        public async Task<IActionResult> GetResearchSessionWithoutRoomId(string conferenceId)
+        {
+            var sessions = await _serviceManager.ConferenceStepService.GetResearchSessionsWithoutRoomAsync(conferenceId);
+            return Ok(ApiResponse<List<ResearchSessionWithMediaResponse>>.SuccessResponse(sessions, "Phiên hội nghị nghiên cứu không có phòng được lấy thành công"));
+        }
+
         [HttpPut("research/sessions/{sessionId}")]
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> UpdateResearchSession(string sessionId, [FromBody] UpdateConferenceSessionRequest request)

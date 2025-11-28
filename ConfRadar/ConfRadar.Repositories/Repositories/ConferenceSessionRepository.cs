@@ -194,7 +194,8 @@ namespace ConfRadar.Repositories.Repositories
         {
             IQueryable<ConferenceSession> query = _context.ConferenceSessions
                 .AsNoTracking()
-                .Include(cs => cs.ConferenceId == conferenceId);
+                 .Include(cs => cs.ConferenceSessionMedia)
+                .Include(cs => cs.ConferenceId);
             query = query.Where(cs => cs.ConferenceId == conferenceId && cs.RoomId == null);
             return query.ToListAsync();
         }
