@@ -409,10 +409,12 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException("price step và session step là bắt buộc cho hội nghị bán vé");
                 if (request.Commission == null || request.Commission <= 0)
                     throw new BadRequestException("commission không được bỏ trống hoặc có giá trị <=0");
+                if (!request.FinalizePaymentDate.HasValue)
+                    throw new BadRequestException("Ngày giải ngân là bắt buộc nếu isticketselling là true");
+                if (request.FinalizePaymentDate.HasValue && request.SignDay.HasValue && request.SignDay > request.FinalizePaymentDate)
+                    throw new BadRequestException("Ngày kí hợp đồng phải trước ngày giải ngân");
 
             }
-            if (request.SignDay > request.FinalizePaymentDate)
-                throw new BadRequestException("Ngày kí hợp đồng phải trước ngày giải ngân");
 
 
 
