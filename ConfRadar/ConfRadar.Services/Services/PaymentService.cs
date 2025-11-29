@@ -827,6 +827,10 @@ namespace ConfRadar.Services.Services
             //    throw new BadRequestException("data is not valid");
             //}
             var transac = await _redisService.GetStringAsync(orderId);
+            if (string.IsNullOrEmpty(transac))
+            {
+                throw new BadRequestException("Dữ liệu không hợp lệ");
+            }
             var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,
@@ -950,6 +954,10 @@ namespace ConfRadar.Services.Services
             var dateNow = await _timeProviderService.GetVietnamDate();
             var timeNow = await _timeProviderService.GetVietnamTime();
             var transac = await _redisService.GetStringAsync(orderId);
+            if (string.IsNullOrEmpty(transac))
+            {
+                throw new BadRequestException("Dữ liệu không hợp lệ");
+            }
             var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,
@@ -1099,6 +1107,10 @@ namespace ConfRadar.Services.Services
             var dateNow = await _timeProviderService.GetVietnamDate();
             var timeNow = await _timeProviderService.GetVietnamTime();
             var transac = await _redisService.GetStringAsync(orderId);
+            if (string.IsNullOrEmpty(transac))
+            {
+                throw new BadRequestException("Dữ liệu không hợp lệ");
+            }
             var transacDataHolder = JsonSerializer.Deserialize<TransactionDataHolder>(transac, new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true,
