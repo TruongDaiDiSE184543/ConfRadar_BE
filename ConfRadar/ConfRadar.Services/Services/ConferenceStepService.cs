@@ -1563,7 +1563,8 @@ namespace ConfRadar.Services.Services
                 {
                     foreach (var sponsor in request.Sponsors)
                     {
-                        if (!_objectStorageFileService.IsValidImageFile(sponsor.ImageFile)) throw new BadRequestException($"Không hỗ trợ {sponsor.ImageFile.ContentType}");
+                        if (!_objectStorageFileService.IsValidImageFile(sponsor.ImageFile))
+                            throw new BadRequestException($"Không hỗ trợ {sponsor.ImageFile.ContentType}");
                         string? imageUrl = sponsor.ImageUrl;
                         if (sponsor.ImageFile != null)
                         {
