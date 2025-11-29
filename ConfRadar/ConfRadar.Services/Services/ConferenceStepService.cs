@@ -369,7 +369,7 @@ namespace ConfRadar.Services.Services
             var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.OnHold.GetDescription());
             if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId )
             {
-                throw new BadRequestException($"Thao tác không du?c phép. H?i ngh? dang ? tr?ng thái '{currentStatus.ConferenceStatusName}' và không th? ch?nh s?a.");
+                throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
         }
 
@@ -804,13 +804,14 @@ namespace ConfRadar.Services.Services
         public async Task<ConferencePriceListWithPhasesResponse> AddConferencePricesAsync(string conferenceId, AddConferencePricesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"H?i ngh? v?i ID {conferenceId} không th?y");
+            if (conference == null)
+                throw new NotFoundException($"Hội nghị với ID {conferenceId} không thấy");
 
             if (conference.CreatedBy != userId)
-                throw new BadRequestException("B?n không có quy?n thêm giá vé cho h?i ngh? này.");
+                throw new BadRequestException("Bạn không có quyền thêm giá vé cho hội nghị này.");
 
             if (request.TypeOfTicket == null || !request.TypeOfTicket.Any())
-                throw new BadRequestException("Yêu c?u ph?i ch?a ít nh?t m?t lo?i vé.");
+                throw new BadRequestException("Yêu cầu phải chứa ít nhất một loại vé.");
             ConferencePriceListWithPhasesResponse result = new ConferencePriceListWithPhasesResponse
             {
                 conferencePriceWithPhasesResponses = new List<ConferencePriceWithPhasesResponse>()
@@ -838,7 +839,8 @@ namespace ConfRadar.Services.Services
                 // Create the conference price
                 var conferencePriceRequest = request.TypeOfTicket;
                 int? totalSlotFromToBeTickets = request.TypeOfTicket.Sum(ts => ts.TotalSlot);
-                if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot) throw new BadRequestException($"S? lu?ng totalSlot c?a t?ng lo?i vé t?ng ph?i nh? hon ho?c b?ng capicity c?a conference: {existingTotalSlot}+ {totalSlotFromToBeTickets} > {conference.TotalSlot} ");
+                if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot) 
+                    throw new BadRequestException($"Số lượng totalSlot của từng loại vé tổng phải nhỏ hơn hoặc bằng capacity của conference: {existingTotalSlot} + {totalSlotFromToBeTickets} > {conference.TotalSlot}");
                 foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest)
                 {
 
@@ -852,7 +854,7 @@ namespace ConfRadar.Services.Services
                     if (toBeConferencePrice.Phases == null || !toBeConferencePrice.Phases.Any()) throw new BadRequestException($"Loại vé '{toBeConferencePrice.TicketName}' phải có ít nhất một giai đoạn bán vé.");
                     var totalSlotFromPhases = toBeConferencePrice.Phases.Sum(phase => phase.Totalslot);
                     if (toBeConferencePrice.TotalSlot != totalSlotFromPhases)
-                        throw new BadRequestException($"V?i vé '{toBeConferencePrice.TicketName}', tổng số vé trong các giai đoạn ({totalSlotFromPhases}) không khớp với tổng số vé củaa loại vé đó ({toBeConferencePrice.TotalSlot}).");
+                        throw new BadRequestException($"Với vé '{toBeConferencePrice.TicketName}', tổng số vé trong các giai đoạn ({totalSlotFromPhases}) không khớp với tổng số vé của loại vé đó ({toBeConferencePrice.TotalSlot}).");
 
 
 
@@ -862,7 +864,7 @@ namespace ConfRadar.Services.Services
                     {
                         if (sortedPhases[i].EndDate >= sortedPhases[i + 1].StartDate)
                         {
-                            throw new BadRequestException($"Trong vé '{toBeConferencePrice.TicketName}', giai do?n '{sortedPhases[i].PhaseName}' (k?t thúc vào {sortedPhases[i].EndDate:dd/MM/yyyy}) b? ch?ng chéo ho?c quá sát v?i giai do?n '{sortedPhases[i + 1].PhaseName}' (b?t d?u vào {sortedPhases[i + 1].StartDate:dd/MM/yyyy}).");
+                            throw new BadRequestException($"Trong vé '{toBeConferencePrice.TicketName}', giai đoạn '{sortedPhases[i].PhaseName}' (kết thúc vào {sortedPhases[i].EndDate:dd/MM/yyyy}) bị chồng chéo hoặc quá sát với giai đoạn '{sortedPhases[i + 1].PhaseName}' (bắt đầu vào {sortedPhases[i + 1].StartDate:dd/MM/yyyy}).");
                         }
                     }
                     var CreatedConferencePrice = toBeConferencePrice.ToModel(conferenceId);
@@ -875,16 +877,16 @@ namespace ConfRadar.Services.Services
                         if (string.IsNullOrWhiteSpace(createPricePhaseRequest.PhaseName))
                             throw new BadRequestException($"Tên giai đoạnn trong vé '{createPricePhaseRequest.PhaseName}' không được để trùng.");
                         if (createPricePhaseRequest.ApplyPercent < 0 || createPricePhaseRequest.ApplyPercent > 1000)
-                            throw new BadRequestException($"T? l? áp d?ng cho giai do?n '{createPricePhaseRequest.ApplyPercent}' ph?i t? 0 d?n 1000.");
+                            throw new BadRequestException($"Tỷ lệ áp dụng cho giai đoạn '{createPricePhaseRequest.ApplyPercent}' phải từ 0 đến 1000.");
                         //check if each phase request is in valid date
                         //createPricePhaseRequest start must < end, 
-                        if (createPricePhaseRequest.StartDate > createPricePhaseRequest.EndDate) throw new BadRequestException("Start phase ph?i l?n hon end phase");
+                        if (createPricePhaseRequest.StartDate > createPricePhaseRequest.EndDate) throw new BadRequestException("Start phase phải lớn hơn end phase");
                         if (toBeConferencePrice.isAuthor == true)
                         {
                             //each phase of author ticket types must be in registation start/end interval
                             if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate || createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
                             {
-                                throw new BadRequestException("Vé bán cho authors ph?i trong kho?ng registration start và end");
+                                throw new BadRequestException("Vé bán cho authors phải trong khoảng registration start và end");
                             }
 
                         }
@@ -912,12 +914,12 @@ namespace ConfRadar.Services.Services
                                 // 1. Ph?i sau ngày b?t d?u c?a phase
                                 if (refundRequest.RefundDeadline.Value <= createPricePhaseRequest.StartDate)
                                 {
-                                    throw new BadRequestException($"Trong giai do?n '{createPricePhaseRequest.PhaseName}', hạn chót hoàn tiền ({refundRequest.RefundDeadline.Value:dd/MM/yyyy}) ph?i sau ngày bắt đầu giai đoạn ({createPricePhaseRequest.StartDate:dd/MM/yyyy}).");
+                                    throw new BadRequestException($"Trong giai đoạn '{createPricePhaseRequest.PhaseName}', hạn chót hoàn tiền ({refundRequest.RefundDeadline.Value:dd/MM/yyyy}) phải sau ngày bắt đầu giai đoạn ({createPricePhaseRequest.StartDate:dd/MM/yyyy}).");
                                 }
                                 // 2. Ph?i tru?c ngày b?t d?u bán vé c?a c? h?i ngh?
                                 if (refundRequest.RefundDeadline.Value >= conference.TicketSaleEnd)
                                 {
-                                    throw new BadRequestException($"Trong giai do?n '{createPricePhaseRequest.PhaseName}',  hạn chót hoàn tiền ({refundRequest.RefundDeadline.Value:dd/MM/yyyy}) phải trước ngày kết thúc bán vé của hội nghị ({conference.TicketSaleEnd:dd/MM/yyyy}).");
+                                    throw new BadRequestException($"Trong giai đoạn '{createPricePhaseRequest.PhaseName}',  hạn chót hoàn tiền ({refundRequest.RefundDeadline.Value:dd/MM/yyyy}) phải trước ngày kết thúc bán vé của hội nghị ({conference.TicketSaleEnd:dd/MM/yyyy}).");
                                 }
 
 
