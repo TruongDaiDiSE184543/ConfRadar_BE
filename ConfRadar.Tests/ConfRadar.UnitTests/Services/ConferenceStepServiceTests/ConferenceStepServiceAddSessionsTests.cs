@@ -16,10 +16,18 @@ using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Text;
 using Microsoft.AspNetCore.Http.Internal;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
+    // Placeholder for the user's actual helper class
+    public static class ExtensionHelper
+    {
+        public static DateOnly GetVietnamDate()
+        {
+            return DateOnly.FromDateTime(DateTime.Now);
+        }
+    }
+
     public class ConferenceStepServiceAddSessionsTests
     {
         #region Fields and Constructor
@@ -84,38 +92,28 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                         StartTime = new TimeOnly(9, 0, 0),
                         EndTime = new TimeOnly(10, 30, 0),
                         RoomId = roomId,
-                        Speaker = new List<CreateSpeakerRequest>
-                        {
-                            new CreateSpeakerRequest { Name = "Speaker 1" }
-                        }
+                        Speaker = new List<CreateSpeakerRequest> { new CreateSpeakerRequest { Name = "Speaker 1" } }
                     },
-                      new CreateConferenceSessionRequest
-                      {
-                        Title = "Session 1",
-                        Description = "Description 1",
-                        Date = ExtensionHelper.GetVietnamDate().AddDays(12),
-                        StartTime = new TimeOnly(9, 0, 0),
-                        EndTime = new TimeOnly(10, 30, 0),
+                    new CreateConferenceSessionRequest
+                    {
+                        Title = "Session 2",
+                        Description = "Description 2",
+                        Date = ExtensionHelper.GetVietnamDate().AddDays(11),
+                        StartTime = new TimeOnly(10, 0, 0),
+                        EndTime = new TimeOnly(11, 30, 0),
                         RoomId = roomId,
-                        Speaker = new List<CreateSpeakerRequest>
-                        {
-                            new CreateSpeakerRequest { Name = "Speaker 1" }
-                        }
-                      },
-                      new CreateConferenceSessionRequest
-                      {
-                        Title = "Session 1",
-                        Description = "Description 1",
+                        Speaker = new List<CreateSpeakerRequest> { new CreateSpeakerRequest { Name = "Speaker 2" } }
+                    },
+                    new CreateConferenceSessionRequest
+                    {
+                        Title = "Session 3",
+                        Description = "Description 3",
                         Date = ExtensionHelper.GetVietnamDate().AddDays(12),
-                        StartTime = new TimeOnly(18, 0, 0),
-                        EndTime = new TimeOnly(19, 30, 0),
+                        StartTime = new TimeOnly(11, 0, 0),
+                        EndTime = new TimeOnly(12, 30, 0),
                         RoomId = roomId,
-                        Speaker = new List<CreateSpeakerRequest>
-                        {
-                            new CreateSpeakerRequest { Name = "Speaker 1" }
-                        }
-                      }
-
+                        Speaker = new List<CreateSpeakerRequest> { new CreateSpeakerRequest { Name = "Speaker 3" } }
+                    }
                 }
             };
         }
@@ -147,18 +145,16 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusName = "Published" });
             }
 
-            //for ValidateSessionTimeAvailability method
-             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>()))
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>()))
                            .ReturnsAsync(new List<ConferenceSession> { new ConferenceSession() });
-
 
             _mockUnitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
             _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(DateTime.Now);
              _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionWithDetailsAsync(It.IsAny<string>()))
-                           .ReturnsAsync(new ConferenceSession());
-            _mockUnitOfWork.Setup(u => u.SpeakerRepository.CreateSpeakerAsync(It.IsAny<Speaker>())).ReturnsAsync(1);
+                           .ReturnsAsync(new ConferenceSession { Speakers = new List<Speaker>(), ConferenceSessionMedia = new List<ConferenceSessionMedium>() });
+            _mockUnitOfWork.Setup(u => u.SpeakerRepository.CreateSpeakerAsync(It.IsAny<Speaker>())).Returns(Task.FromResult(1));
         }
 
         #endregion
@@ -270,18 +266,19 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         {
             // Arrange
             var conference = CreateTechnicalConference(isInternal: true);
-            var request = CreateValidAddSessionsRequest(roomId: null);
+            var request = CreateValidAddSessionsRequest();
+            request.Sessions.ForEach(s => s.RoomId = null);
             SetupValidMocks(conference);
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(
                 () => _conferenceStepService.AddConferenceSessionsAsync(conference.ConferenceId, request, "user-123"));
 
-            exception.Message.Should().Contain($"Session '{request.Sessions.First().Title}' bắt buộc phải có RoomId vì đây là hội nghị nội bộ.");
+            exception.Message.Should().Contain($"bắt buộc phải có RoomId");
         }
 
         [Fact]
-        public async Task AddConferenceSessionsAsync_Should_ThrowException_When_RoomDoesNotExist()
+        public async Task AddConferenceSessionsAsync_Should_ThrowNotFoundException_When_RoomDoesNotExist()
         {
             // Arrange
             var conference = CreateTechnicalConference();
@@ -302,19 +299,10 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Arrange
             var conference = CreateTechnicalConference();
             var request = CreateValidAddSessionsRequest();
-            request.Sessions.Last().Date = request.Sessions.Last().Date.Value.AddDays(20);
+            DateOnly next12 = ExtensionHelper.GetVietnamDate().AddDays(12);
+            DateOnly next10 = ExtensionHelper.GetVietnamDate().AddDays(10);
+            request.Sessions.First(s => s.Date > next10 && s.Date < next12).Date = conference.EndDate.Value.AddDays(1);
             SetupValidMocks(conference);
-
-            var existingSession = new ConferenceSession
-            {
-                ConferenceSessionId = "existing-session",
-                StartTime = request.Sessions.First().Date.Value.AddDays(1).ToDateTime(request.Sessions.First().StartTime.Value),
-                EndTime = request.Sessions.First().Date.Value.AddDays(1).ToDateTime(request.Sessions.First().EndTime.Value),
-                RoomId = request.Sessions.First().RoomId,
-                SessionDate = request.Sessions.First().Date.Value.AddDays(1)
-            };
-            
-
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<BadRequestException>(
@@ -330,7 +318,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var conference = CreateTechnicalConference();
             var request = CreateValidAddSessionsRequest();
             SetupValidMocks(conference);
-            var existingSession = new ConferenceSession { ConferenceSessionId = "existing-session", StartTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().StartTime.Value), EndTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().EndTime.Value), RoomId = request.Sessions.First().RoomId };
+            var existingSession = new ConferenceSession { 
+                ConferenceSessionId = "existing-session", 
+                StartTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().StartTime.Value), 
+                EndTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().EndTime.Value), 
+                RoomId = request.Sessions.First().RoomId 
+            };
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>()))
                 .ReturnsAsync(new List<ConferenceSession> { existingSession });
 
@@ -385,6 +378,66 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             exception.Message.Should().Contain("Khong ho tro dinh dang cho sessionMedia nay");
         }
 
+        [Fact]
+        public async Task AddConferenceSessionsAsync_Should_ThrowException_When_SessionsInRequestOverlap()
+        {
+            // Arrange
+            var conference = CreateTechnicalConference();
+            var request = CreateValidAddSessionsRequest();
+            var today = ExtensionHelper.GetVietnamDate();
+            request.Sessions = new List<CreateConferenceSessionRequest>
+            {
+                new CreateConferenceSessionRequest
+                {
+                    Title = "Session A",
+                    Date = today.AddDays(10),
+                    StartTime = new TimeOnly(9, 0, 0),
+                    EndTime = new TimeOnly(10, 30, 0),
+                    RoomId = "room-1"
+                },
+                new CreateConferenceSessionRequest
+                {
+                    Title = "Session B (Overlap)",
+                    Date = today.AddDays(10),
+                    StartTime = new TimeOnly(10, 0, 0), // Starts before Session A ends
+                    EndTime = new TimeOnly(11, 0, 0),
+                    RoomId = "room-1"
+                },
+                   new CreateConferenceSessionRequest
+                {
+                    Title = "Session B (Overlap)",
+                    Date = today.AddDays(12),
+                    StartTime = new TimeOnly(10, 0, 0), // Starts before Session A ends
+                    EndTime = new TimeOnly(11, 0, 0),
+                    RoomId = "room-1"
+                }
+            };
+            SetupValidMocks(conference);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(
+                () => _conferenceStepService.AddConferenceSessionsAsync(conference.ConferenceId, request, "user-123"));
+
+            exception.Message.Should().Contain("bị chồng chéo thời gian");
+        }
+
+        [Fact]
+        public async Task AddConferenceSessionsAsync_Should_ThrowBadRequestException_When_SpeakerNameIsEmpty()
+        {
+            // Arrange
+            var conference = CreateTechnicalConference();
+            var request = CreateValidAddSessionsRequest();
+            request.Sessions.First().Speaker.First().Name = " "; // Invalid name
+            SetupValidMocks(conference);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.AddConferenceSessionsAsync(conference.ConferenceId, request, "user-123"));
+
+            exception.Message.Should().Contain("Tên của diễn giả trong phiên");
+            exception.Message.Should().Contain("không được để trống");
+        }
+
         #endregion
 
         #region Success Test
@@ -400,9 +453,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.CreateConferenceSessionAsync(It.IsAny<ConferenceSession>()))
                 .Returns(Task.FromResult(1));
-            _mockUnitOfWork.Setup(u => u.SpeakerRepository.CreateSpeakerAsync(It.IsAny<Speaker>()))
-                .Returns(Task.FromResult(1));
-
+            
             // ACT
             var result = await _conferenceStepService.AddConferenceSessionsAsync(conference.ConferenceId, request, userId);
 

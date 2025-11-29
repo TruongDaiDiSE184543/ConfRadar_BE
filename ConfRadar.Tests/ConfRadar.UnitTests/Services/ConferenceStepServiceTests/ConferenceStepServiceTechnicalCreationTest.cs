@@ -138,7 +138,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Mock TimeProviderService
             _mockTimeProviderService
                 .Setup(t => t.GetVietnamTime())
-                .ReturnsAsync(ExtensionHelper.GetVietnamTime());
+                .ReturnsAsync(DateTime.Now);
 
             // Mock Repository Create methods
             _mockUnitOfWork

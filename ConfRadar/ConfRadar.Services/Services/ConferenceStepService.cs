@@ -847,7 +847,7 @@ namespace ConfRadar.Services.Services
                     //Phase for each ticket type
                     List<PricePhaseResponse> pricePhaseResponses = new();
                     if (existingConferencePrice.Any(p => p.TicketName.Equals(toBeConferencePrice.TicketName, StringComparison.OrdinalIgnoreCase)))
-                        throw new BadRequestException($"Tên vé '{toBeConferencePrice.TicketName}' đã tồn tại trong hội nghih này.");
+                        throw new BadRequestException($"Tên vé '{toBeConferencePrice.TicketName}' đã tồn tại trong hội nghị này.");
                     if (toBeConferencePrice.TicketPrice < 0) throw new BadRequestException($"Giá vé cho '{toBeConferencePrice.TicketName}' không được là số âm.");
                     if (toBeConferencePrice.TotalSlot <= 0) throw new BadRequestException($"Số lượng vé cho '{toBeConferencePrice.TicketName}' phải lớn hơn 0.");
                     //check if totalslot of phases in a ticket type is larger than the totalslot of the ticket itself
@@ -891,7 +891,8 @@ namespace ConfRadar.Services.Services
 
                         }
                         //each phase of technical and non author must be in conference's ticket sale start and end
-                        else if (createPricePhaseRequest.StartDate < conference.TicketSaleStart || createPricePhaseRequest.EndDate > conference.TicketSaleEnd) throw new BadRequestException("Start phase ph?i và endphase ph?i n?m trong ticket sale start và ticket sale end c?a conference");
+                        else if (createPricePhaseRequest.StartDate < conference.TicketSaleStart || createPricePhaseRequest.EndDate > conference.TicketSaleEnd)
+                            throw new BadRequestException("Start phase phải và end phase phải nằm trong ticket sale start và ticket sale end của conference");
                         var CreatedPricePhase = createPricePhaseRequest.ToModel(CreatedConferencePrice.ConferencePriceId, researchPhase.ResearchConferencePhaseId);
                         await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(CreatedPricePhase);
 
