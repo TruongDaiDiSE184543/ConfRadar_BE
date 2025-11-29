@@ -908,9 +908,16 @@ namespace ConfRadar.Services.Services
                 {
                     CollaboratorContractId = cc.CollaboratorContractId,
                     CollaboratorContractUserId = cc.UserId,
+
                     OrganizationId = u.Organization?.OrganizationId,
                     OrganizationName = u.Organization?.OrganizationName,
                     OrganizationDescription = u.Organization?.OrganizationDescription,
+
+                    CollaboratorContractEmail = u.Email,
+                    CollaboratorContractFullName = u.FullName,
+                    CollaboratorContractAvatarUrl = u.AvatarUrl,
+                    
+
 
                     IsSponsorStep = cc.IsSponsorStep,
                     IsMediaStep = cc.IsMediaStep,
@@ -938,12 +945,25 @@ namespace ConfRadar.Services.Services
                     ConferenceTicketSaleEnd = cc.Conference?.TicketSaleEnd,
                     IsInternalHosted = cc.Conference?.IsInternalHosted,
                     IsResearchConference = cc.Conference?.IsResearchConference,
+
                     CityId = cc.Conference?.CityId,
-                    ConferenceCreatedBy = cc.Conference?.CreatedBy,
+                    CityName = cc.Conference?.City?.CityName,
+
+
                     ConferenceCategoryId = cc.Conference?.ConferenceCategoryId,
                     ConferenceCategoryName = cc.Conference?.ConferenceCategory?.ConferenceCategoryName,
                     ConferenceStatusId = cc.Conference?.ConferenceStatusId,
-                    ConferenceStatusName = cc.Conference?.ConferenceStatus?.ConferenceStatusName
+                    ConferenceStatusName = cc.Conference?.ConferenceStatus?.ConferenceStatusName,
+
+                    ConferenceCreatedBy = cc.Conference?.CreatedBy,
+                    ConferenceCreatedByEmail = cc.Conference?.CreatedByNavigation?.Email,
+                    ConferenceCreatedByAvatarUrl =  cc.Conference?.CreatedByNavigation?.AvatarUrl,
+                    ConferenceCreatedByName = cc.Conference?.CreatedByNavigation?.FullName,
+
+                   
+
+
+
                 }).ToList()
             }).ToList();
         }
