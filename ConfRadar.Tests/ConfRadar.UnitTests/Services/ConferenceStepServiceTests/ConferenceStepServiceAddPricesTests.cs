@@ -255,7 +255,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 () => _conferenceStepService.AddConferencePricesAsync(conference.ConferenceId, request, "user-123")
             );
 
-            exception.Message.Should().Contain("Tên vé 'Existing Ticket' đã tồn tại trong hội nghị này.");
+            exception.Message.Should().Contain("Tên vé 'Existing Ticket' đã tồn tại trong hội ngh này.");
         }
 
         [Fact]

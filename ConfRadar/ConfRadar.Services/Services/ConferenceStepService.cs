@@ -1162,13 +1162,13 @@ namespace ConfRadar.Services.Services
                             if (session.RoomId == null)
                                 throw new Exception($"Session '{session.Title}' bắt buộc phải có RoomId vì đây là hội nghị nội bộ.");
                             if (await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId) == null)
-                                throw new NotFoundException($"Phòng với ID {session.RoomId} không tồn tại.");
+                                throw new Exception($"Phòng với ID {session.RoomId} không tồn tại.");
                         }
 
 
                         if (session.Date.Value < conference.StartDate || session.Date.Value > conference.EndDate)
                         {
-                            throw new BadRequestException($"Ngày c?a phiên '{session.Title}' ({session.Date.Value:dd/MM/yyyy}) n?m ngoài kho?ng th?i gian di?n ra h?i ngh? ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
+                            throw new BadRequestException($"Ngày của phiên '{session.Title}' ({session.Date.Value:dd/MM/yyyy}) nằm ngoài khoảng thời gian diễn ra hội nghị ({conference.StartDate:dd/MM/yyyy} - {conference.EndDate:dd/MM/yyyy}).");
                         }
 
 
