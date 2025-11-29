@@ -277,7 +277,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateConferenceSessionRequest
     {
-        [MaxLength(50)]
+        [MaxLength(250)]
         public string? Title { get; set; }
 
         [MaxLength(500)]

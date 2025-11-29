@@ -452,7 +452,7 @@ namespace ConfRadar.Services.Services
             #region === 1. VALIDATION ===
             // 1.1. Phân quyền và trạng thái
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("Bạn không có quyền cập nhật phiên này.");
+                throw new Exception("Bạn không có quyền cập nhật phiên này.");
             await EnsureConferenceIsEditable(conference);
 
             // 1.2. VALIDATION NGHIỆP VỤ QUAN TRỌNG: Kiểm tra dữ liệu phụ thuộc
@@ -477,7 +477,16 @@ namespace ConfRadar.Services.Services
             {
                 // 1. Research: Linh hoạt (Optional)
                 // Lấy cái mới nếu có, không thì giữ cái cũ. Cho phép null.
-                finalRoomId = request.RoomId ?? session.RoomId;
+                if (request.RoomId != null) // Có gửi field roomId trong JSON
+                {
+                    // Nếu gửi "" -> gán null. Nếu gửi "ID" -> gán "ID".
+                    finalRoomId = string.IsNullOrWhiteSpace(request.RoomId) ? null : request.RoomId;
+                }
+                else
+                {
+                    // Không gửi field roomId -> Giữ nguyên cũ
+                    finalRoomId = session.RoomId;
+                }
             }
             else if (conference.IsInternalHosted == true)
             {
