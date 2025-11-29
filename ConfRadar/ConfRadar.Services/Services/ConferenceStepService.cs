@@ -1950,7 +1950,7 @@ namespace ConfRadar.Services.Services
             var Waitlist = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(conferenceId);
             if (Waitlist != null && Waitlist.CameraReadyEndDate > finalTicketSaleStart)
             {
-                hrow new BadRequestException("TicketSaleStart phải diễn ra sau Waitlist của hội nghị");
+                throw new BadRequestException("TicketSaleStart phải diễn ra sau Waitlist của hội nghị");
             }
 
             conference.ConferenceName = request.ConferenceName ?? conference.ConferenceName;
