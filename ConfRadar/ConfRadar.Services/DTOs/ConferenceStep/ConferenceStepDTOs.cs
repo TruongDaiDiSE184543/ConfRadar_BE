@@ -559,7 +559,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Ngày diễn ra phiên là bắt buộc")]
         public DateOnly? Date { get; set; }
 
-        [Required(ErrorMessage = "ID phòng là bắt buộc cho phiên")]
 
         public string? RoomId { get; set; }
         // Note: No speakers for research conference sessions
