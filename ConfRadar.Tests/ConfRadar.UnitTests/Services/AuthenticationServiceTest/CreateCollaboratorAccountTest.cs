@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
-namespace ConfRadar.UnitTests.Services.AuthenticationService
+namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 {
     public class CreateCollaboratorAccountTest
     {

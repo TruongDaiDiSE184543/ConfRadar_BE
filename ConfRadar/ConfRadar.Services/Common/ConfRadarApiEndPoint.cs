@@ -7,7 +7,7 @@
 
 
 
-    
+        //public static string 
         public static string ForgetPassword_FE => "auth/reset-password";
         public static string EmailConfirmSuccess_FE => "email-confirm/success";
         public static string EmailConfirmFail_FE => "email-confirm/fail";
