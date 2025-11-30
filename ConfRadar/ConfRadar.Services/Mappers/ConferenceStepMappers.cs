@@ -422,13 +422,13 @@ namespace ConfRadar.Services.Mappers
             return new ResearchSessionWithMediaResponse
             {
                 ConferenceSessionId = model.ConferenceSessionId,
-                Title = model.Title,
-                Description = model.Description,
+                Title = model?.Title,
+                Description = model?.Description,
                 StartTime = startTime,
                 EndTime = endTime,
                 Date = date,
-                ConferenceId = model.ConferenceId,
-                RoomId = model.RoomId,
+                ConferenceId = model?.ConferenceId,
+                RoomId = model?.RoomId,
                 SessionMedia = model.ConferenceSessionMedia?.Select(m => m.ToResponse()).ToList()
             };
         }

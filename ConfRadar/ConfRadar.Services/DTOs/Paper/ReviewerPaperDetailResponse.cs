@@ -32,6 +32,7 @@ namespace ConfRadar.Services.DTOs.Paper
     {
         public string RevisionPaperId { get; set; } = null!;
         public int RevisionRound { get; set; }
+        public bool IsFeedbackSubmitted { get; set; } // True nếu Head Reviewer đã gửi feedback cho file này
         public string? LatestFileUrl { get; set; }
         public string? StatusName { get; set; }
 
