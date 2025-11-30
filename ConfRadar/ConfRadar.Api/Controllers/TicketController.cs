@@ -42,7 +42,7 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.TicketService.CreateRefundTicketRequest(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Hãy check yêu cầu lịch sử refund để biết thêm thông tin chi tiết"));
         }
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer,Collaborator")]
         [HttpGet("conferences/{conferenceId}/refunds-request")]
         public async Task<IActionResult> GetRefundRequestByConferenceId([FromRoute] string conferenceId)
         {

@@ -244,7 +244,7 @@ namespace ConfRadar.Services.Services
             //    throw new ConfRadarAuthenticationException("Email is not confirmed");
             //}
             var resetToken = _tokenService.GenerateSecureRandomToken();
-            var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE+ $"?token={resetToken}";
+            var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailResetPassword_FE+ $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
             user.PasswordResetTokenExpiry = await _timeProviderService.GetVietnamTime();
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
@@ -578,7 +578,7 @@ namespace ConfRadar.Services.Services
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
-            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailCreatePassword_FE + $"?token={verificationToken}";
             string userId = Guid.NewGuid().ToString();
             var userCreated = new User()
             {
@@ -627,7 +627,7 @@ namespace ConfRadar.Services.Services
             result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
             if (result > 0)
             {
-                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho collaborator", "EmailChangePassword.html");
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho collaborator", "EmailCreateAccount.html");
             }
             return result;
         }
@@ -764,7 +764,7 @@ namespace ConfRadar.Services.Services
             var verificationToken = _tokenService.GenerateSecureRandomToken();
 
 
-            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailCreatePassword_FE + $"?token={verificationToken}";
             string userId = Guid.NewGuid().ToString();
             var userCreated = new User()
             {
@@ -805,7 +805,7 @@ namespace ConfRadar.Services.Services
             result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
             if (result > 0)
             {
-                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho local reviewer", "EmailChangePassword.html");
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho local reviewer", "EmailCreateAccount.html");
             }
             return result;
         }

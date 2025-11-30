@@ -7,11 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Templates\EmailCreateAccount.html" />
     <None Remove="Templates\EmailSuspendAccount.html" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="Templates\EmailChangePassword.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Templates\EmailCreateAccount.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Templates\EmailForgetPassword.html">
