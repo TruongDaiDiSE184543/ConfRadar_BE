@@ -2870,10 +2870,19 @@ namespace ConfRadar.Services.Services
                     var endReviseDate = roundDeadline?.EndSubmissionDate ?? phaseConfig?.ReviseEndDate;
 
                     // --- FIX QUAN TRỌNG: Lấy submission MỚI NHẤT ---
-                    // Phải order by CreatedAt giảm dần để lấy file nộp sau cùng
+                    // Phải order by roundnumber giảm dần để lấy file nộp sau cùng
                     var latestSub = paper.RevisionPaper.RevisionPaperSubmissions?
-                        .OrderByDescending(s => s.RevisionDeadlineRound?.RoundNumber ?? 0)
-                        .FirstOrDefault();
+                        .OrderByDescending(s => s.RevisionDeadlineRound?.RoundNumber ?? 1)
+                        .FirstOrDefault(); 
+
+                    // ---  Check xem user đã feedback cho submission này chưa ---
+                    bool hasGivenFeedback = false;
+                    if (latestSub != null && latestSub.RevisionSubmissionFeedbacks != null)
+                    {
+                        // Kiểm tra xem có feedback nào được tạo bởi userId hiện tại không
+                        hasGivenFeedback = latestSub.RevisionSubmissionFeedbacks
+                            .Any(fb => fb.UserId == userId);
+                    }
 
                     var myRevReview = myRevisionReviews.FirstOrDefault(r => r.RevisionPaperId == paper.RevisionPaperId);
                     bool isRevPending = paper.RevisionPaper.GlobalStatus?.Name == PendingStatus;
@@ -2884,6 +2893,8 @@ namespace ConfRadar.Services.Services
                         RevisionRound = currentRound,
                         StatusName = paper.RevisionPaper.GlobalStatus?.Name,
                         LatestFileUrl = latestSub?.RevisionPaperUrl,
+
+                        IsFeedbackSubmitted = hasGivenFeedback,
 
                         IsMyReviewSubmitted = myRevReview != null,
 

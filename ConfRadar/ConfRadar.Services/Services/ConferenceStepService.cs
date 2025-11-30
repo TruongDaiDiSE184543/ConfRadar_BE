@@ -2518,12 +2518,13 @@ namespace ConfRadar.Services.Services
         public async Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
+            if (conference == null) 
+                throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
 
             #region Xác th?c
             // 1. Phân quy?n và tr?ng thái
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("Bạn không có quyền thêm session cho hội nghị này.");
+                throw new BadRequestException("Bạn không có quyền thêm session cho hội nghị này.");
             await EnsureConferenceIsEditable(conference);
 
             // 2. Ð?m b?o dây là h?i ngh? nghiên c?u
@@ -2599,7 +2600,11 @@ namespace ConfRadar.Services.Services
                     {
                         foreach (var mediaRequest in sessionRequest.SessionMedias)
                         {
-                            if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile)) throw new BadRequestException($"Không h? tr? d?nh d?ng {mediaRequest.MediaFile.ContentType}");
+                            if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile)) 
+                                throw new BadRequestException($"Không h? tr? d?nh d?ng {mediaRequest.MediaFile.ContentType}");
+                            const long maxSize = 5 * 1024 * 1024; // 5 MB
+                            if (mediaRequest.MediaFile.Length > maxSize)
+                                throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
                             if (mediaRequest.MediaFile == null && string.IsNullOrWhiteSpace(mediaRequest.MediaUrl))
                                 continue;
 
