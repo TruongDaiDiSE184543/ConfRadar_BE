@@ -2152,7 +2152,7 @@ namespace ConfRadar.Services.Services
 
             // 1. Phân quy?n, tr?ng thái, và lo?i h?i ngh?
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
+                throw new BadRequestException("Bạn không có quyền thực hiện thao tác này.");
             await EnsureConferenceIsEditable(conference);
             if (conference.IsResearchConference != true)
                 throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
@@ -2161,6 +2161,9 @@ namespace ConfRadar.Services.Services
             var existingPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
             if (existingPhases.Any())
                 throw new BadRequestException("Hội nghị này đã có các giai đoạn (phase). Vui lòng sử dụng chức năng cập nhật.");
+
+            if (request.Phases == null)
+                throw new BadRequestException("Phải có phase để thực hiện ");
 
             // 3. Validation logic cho danh sách các phase t? request
             var newPhases = request.Phases.OrderBy(p => p.RegistrationStartDate).ToList();
