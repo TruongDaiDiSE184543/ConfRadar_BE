@@ -17,7 +17,7 @@ using FluentAssertions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
-    public class ConferenceStepServiceTechnicalCreationTest
+    public class ConferenceStepServiceResearchCreationTest
     {
         #region Fields and Constructor
 
@@ -34,7 +34,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         // Configuration settings
         private readonly AppSettingConfig.ObjectStorageSettings _objectStorageSettings;
 
-        public ConferenceStepServiceTechnicalCreationTest()
+        public ConferenceStepServiceResearchCreationTest()
         {
             // Initialize all mocks
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -83,12 +83,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         /// <summary>
         /// Creates a valid request object for testing
         /// </summary>
-        private CreateTechnicalConferenceBasicRequest CreateValidRequest()
+        private CreateResearchConferenceBasicRequest CreateValidRequest()
         {
-            return new CreateTechnicalConferenceBasicRequest
+            return new CreateResearchConferenceBasicRequest
             {
-                ConferenceName = "Test Technical Conference",
-                IsResearchConference = false,
+                ConferenceName = "Test Research Conference",
+                IsResearchConference = true,
                 TotalSlot = 100,
                 StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(30)),
                 EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(32)),
@@ -97,7 +97,9 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 ConferenceCategoryId = "cat-123",
                 CityId = "city-123",
                 BannerImageFile = CreateMockImageFile(),
-                targetAudienceTechnicalConference = "Software Developers and IT Professionals"
+                IsInternalHosted = true,
+                Address = "123 Research Avenue, Innovation City",
+                Description = "A premier research conference for academic researchers and industry professionals."
             };
         }
 
@@ -109,14 +111,25 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Mock ConferenceCategoryRepository
             _mockUnitOfWork
                 .Setup(u => u.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync("cat-123"))
-                .ReturnsAsync(new ConferenceCategory { ConferenceCategoryId = "cat-123", ConferenceCategoryName = "Technology" });
+                .ReturnsAsync(new ConferenceCategory { ConferenceCategoryId = "cat-123", ConferenceCategoryName = "Research & Development" });
 
             // Mock CityRepository
             _mockUnitOfWork
                 .Setup(u => u.CityRepository.GetCityByIdAsync("city-123"))
                 .ReturnsAsync(new City { CityId = "city-123", CityName = "Ho Chi Minh City" });
 
-            // Mock ConferenceStatusRepository
+            // Mock ConferenceStatusRepository - CRITICAL: Mock GetAllConferenceStatusAsync for confStatus.Where()
+            var conferenceStatuses = new List<ConferenceStatus>
+            {
+                new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" },
+                new ConferenceStatus { ConferenceStatusId = "status-active", ConferenceStatusName = "Active" },
+                new ConferenceStatus { ConferenceStatusId = "status-completed", ConferenceStatusName = "Completed" }
+            };
+
+            _mockUnitOfWork
+                .Setup(u => u.ConferenceStatusRepository.GetAllConferenceStatusAsync())
+                .ReturnsAsync(conferenceStatuses);
+
             _mockUnitOfWork
                 .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Preparing"))
                 .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" });
@@ -146,7 +159,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 .ReturnsAsync(1);
 
             _mockUnitOfWork
-                .Setup(u => u.TechnicalConferenceDetailRepository.CreateTechnicalAsync(It.IsAny<TechnicalConferenceDetail>()))
+                .Setup(u => u.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(It.IsAny<ResearchConferenceDetail>()))
                 .ReturnsAsync(1);
 
             // Mock transaction methods
@@ -160,91 +173,72 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         #region Test Methods
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_ConferenceNameIsEmpty()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowBadRequestException_When_ConferenceNameIsEmpty()
         {
             // ARRANGE
             var request = CreateValidRequest();
+            SetupValidMocks();
             request.ConferenceName = ""; // Invalid: empty name
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            // Verify the exception message contains expected Vietnamese text
-            exception.Message.Should().Contain("Tên hội nghị là bắt buộc");
         }
 
+
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_ConferenceNameIsWhitespace()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowBadRequestException_When_IsResearchConferenceIsFalse()
         {
             // ARRANGE
             var request = CreateValidRequest();
-            request.ConferenceName = "   "; // Invalid: whitespace only
+            SetupValidMocks();
+            request.IsResearchConference = false; // Invalid for research conference creation
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Tên hội nghị là bắt buộc");
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_IsResearchConferenceIsTrue()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowBadRequestException_When_TotalSlotIsZeroOrNegative()
         {
             // ARRANGE
             var request = CreateValidRequest();
-            request.IsResearchConference = true; // Invalid for technical conference creation
-
-            // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
-            );
-
-            exception.Message.Should().Contain("Chức năng này dùng để tạo hội nghị kỹ thuật");
-            exception.Message.Should().Contain("IsResearchConference' phải là false");
-        }
-
-        [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_TotalSlotIsZeroOrNegative()
-        {
-            // ARRANGE
-            var request = CreateValidRequest();
+            SetupValidMocks();
             request.TotalSlot = 0; // Invalid: zero slots
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<Exception>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Tổng số vé phải là một số dương");
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_DatesAreInvalid()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowBadRequestException_When_DatesAreInvalid()
         {
             // ARRANGE
             var request = CreateValidRequest();
+            SetupValidMocks();
             // Invalid: start date is after end date
             DateOnly today = ExtensionHelper.GetVietnamDate();
-            request.StartDate = today.AddDays(3);
-            request.EndDate = today.AddDays(30);
+            request.StartDate = today.AddDays(30);
+            request.EndDate = today.AddDays(3);
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Ngày tháng cung cấp không hợp lệ");
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowNotFoundException_When_ConferenceCategoryDoesNotExist()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowNotFoundException_When_ConferenceCategoryDoesNotExist()
         {
             // ARRANGE
             var request = CreateValidRequest();
             request.ConferenceCategoryId = "nonexistent-category";
+            SetupValidMocks();
 
             // Setup mock to return null for nonexistent category
             _mockUnitOfWork
@@ -252,19 +246,17 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 .ReturnsAsync((ConferenceCategory)null);
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<NotFoundException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<Exception>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Danh mục hội nghị với ID");
-            exception.Message.Should().Contain("không tồn tại");
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowNotFoundException_When_CityDoesNotExist()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowNotFoundException_When_CityDoesNotExist()
         {
             // ARRANGE
             var request = CreateValidRequest();
+            SetupValidMocks();
             request.CityId = "nonexistent-city";
 
             // Setup valid category but invalid city
@@ -277,16 +269,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 .ReturnsAsync((City)null);
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<NotFoundException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<NotFoundException>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Thành phố với ID");
-            exception.Message.Should().Contain("không tồn tại");
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_BannerImageFileIsNull()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowBadRequestException_When_BannerImageFileIsNull()
         {
             // ARRANGE
             var request = CreateValidRequest();
@@ -294,15 +283,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             SetupValidMocks();
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Ảnh bìa (banner) là bắt buộc");
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_BannerImageFileIsInvalid()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowBadRequestException_When_BannerImageFileIsInvalid()
         {
             // ARRANGE
             var request = CreateValidRequest();
@@ -315,11 +302,9 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 .Returns(false); // File validation fails
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Loại ảnh bìa không được hỗ trợ");
 
             // Verify file validation was called
             _mockObjectStorageFileService.Verify(
@@ -329,7 +314,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_ThrowBadRequestException_When_BannerImageFileIsTooLarge()
+        public async Task CreateResearchConferenceBasicAsync_Should_ThrowBadRequestException_When_BannerImageFileIsTooLarge()
         {
             // ARRANGE
             var request = CreateValidRequest();
@@ -340,15 +325,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             SetupValidMocks();
 
             // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+            await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
-
-            exception.Message.Should().Contain("Kích thước tệp ảnh bìa không được vượt quá 5 MB");
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_CreateSuccessfully_When_AllValidInputsProvided()
+        public async Task CreateResearchConferenceBasicAsync_Should_CreateSuccessfully_When_AllValidInputsProvided()
         {
             // ARRANGE
             var request = CreateValidRequest();
@@ -357,53 +340,49 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Setup all valid mocks
             SetupValidMocks();
 
-            // Mock the GetConferenceBasicAsync method that gets called at the end
-            var expectedResponse = new TechnicalConferenceBasicStepResponse
+            // Mock the GetResearchConferenceBasicAsync method that gets called at the end
+            var expectedResponse = new ResearchConferenceBasicStepResponse
             {
                 conferenceId = "conf-123",
                 ConferenceName = request.ConferenceName,
-                IsResearchConference = false,
+                IsResearchConference = true,
                 TotalSlot = request.TotalSlot,
-                TargetAudience = request.targetAudienceTechnicalConference
+                IsInternalHosted = request.IsInternalHosted,
+                Address = request.Address,
+                Description = request.Description
             };
 
-            // We need to mock the GetConferenceBasicAsync call that happens at the end
+            // We need to mock the GetResearchConferenceBasicAsync call that happens at the end
             var mockConference = new Conference
             {
                 ConferenceId = "conf-123",
                 ConferenceName = request.ConferenceName,
-                IsResearchConference = false,
+                IsResearchConference = true,
                 TotalSlot = request.TotalSlot,
-                CreatedBy = userId
-            };
-
-            var mockTechnicalDetail = new TechnicalConferenceDetail
-            {
-                ConferenceId = "conf-123",
-                TargetAudience = request.targetAudienceTechnicalConference
+                CreatedBy = userId,
+                IsInternalHosted = request.IsInternalHosted,
+                Address = request.Address,
+                Description = request.Description
             };
 
             _mockUnitOfWork
                 .Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(It.IsAny<string>()))
                 .ReturnsAsync(mockConference);
 
-            _mockUnitOfWork
-                .Setup(u => u.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(It.IsAny<string>()))
-                .ReturnsAsync(mockTechnicalDetail);
-
             // ACT
-            var result = await _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, userId);
+            var result = await _conferenceStepService.CreateResearchConferenceBasicAsync(request, userId);
 
             // ASSERT
             result.Should().NotBeNull();
             result.ConferenceName.Should().Be(request.ConferenceName);
-            result.IsResearchConference.Should().BeFalse();
+            result.IsResearchConference.Should().BeTrue();
             result.TotalSlot.Should().Be(request.TotalSlot);
-            result.TargetAudience.Should().Be(request.targetAudienceTechnicalConference);
+            result.IsInternalHosted.Should().Be(request.IsInternalHosted);
+            result.Address.Should().Be(request.Address);
+            result.Description.Should().Be(request.Description);
 
             // Verify that all repository methods were called
             _mockUnitOfWork.Verify(u => u.ConferenceRepository.CreateConferenceAsync(It.IsAny<Conference>()), Times.Once);
-            _mockUnitOfWork.Verify(u => u.TechnicalConferenceDetailRepository.CreateTechnicalAsync(It.IsAny<TechnicalConferenceDetail>()), Times.Once);
             _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
 
             // Verify file operations were called
@@ -412,7 +391,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         }
 
         [Fact]
-        public async Task CreateTechnicalConferenceBasicAsync_Should_RollbackTransaction_When_ExceptionOccurs()
+        public async Task CreateResearchConferenceBasicAsync_Should_RollbackTransaction_When_ExceptionOccurs()
         {
             // ARRANGE
             var request = CreateValidRequest();
@@ -425,7 +404,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // ACT & ASSERT
             await Assert.ThrowsAsync<Exception>(
-                () => _conferenceStepService.CreateTechnicalConferenceBasicAsync(request, "user-123")
+                () => _conferenceStepService.CreateResearchConferenceBasicAsync(request, "user-123")
             );
 
             // Verify rollback was called

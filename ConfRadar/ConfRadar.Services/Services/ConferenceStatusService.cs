@@ -28,7 +28,8 @@ namespace ConfRadar.Services.Services
             var validTransitions = new Dictionary<string, List<string>>
             {
                 { "Draft", new List<string>{ "Pending" , "Deleted"} },
-                { "Pending", new List<string> { "Preparing", "Rejected" , "Deleted" } },
+                { "Pending", new List<string> { "Preparing", "Rejected" , "Deleted" , "Draft" } },
+                //{ "Rejected", new List<string> { "Draft", "Deleted" } },
                 { "Preparing", new List<string> { "Ready",  "Deleted" } },
                 { "Ready", new List<string> { "OnHold", "Completed" } },
                 { "OnHold", new List<string> { "Ready", "Cancelled" } },
