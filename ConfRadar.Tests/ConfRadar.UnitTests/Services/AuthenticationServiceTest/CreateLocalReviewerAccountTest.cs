@@ -89,7 +89,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
                 req.FullName,
                 It.IsAny<string>(),
                 "Tạo tài khoản cho local reviewer",
-                "EmailChangePassword.html"
+                "EmailCreateAccount.html"
             ), Times.Once);
         }
 
