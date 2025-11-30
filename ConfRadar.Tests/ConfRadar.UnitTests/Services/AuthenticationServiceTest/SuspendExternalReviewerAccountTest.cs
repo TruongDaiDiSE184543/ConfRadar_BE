@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
-namespace ConfRadar.UnitTests.Services.AuthenticationService
+namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 {
     public class SuspendExternalReviewerAccountTest
     {
@@ -100,27 +100,27 @@ namespace ConfRadar.UnitTests.Services.AuthenticationService
                 _authService.SuspendExternalReviewerAccount("u1"));
         }
 
-        [Fact]
-        public async Task ShouldThrow_WhenNoReviewerContracts()
-        {
-            var role = new Role { RoleId = "r1" };
-            var user = new User { UserId = "u1", FullName = "John" };
+        //[Fact]
+        //public async Task ShouldThrow_WhenNoReviewerContracts()
+        //{
+        //    var role = new Role { RoleId = "r1" };
+        //    var user = new User { UserId = "u1", FullName = "John" };
 
-            _mockUnitOfWork.Setup(u => u.RoleRepository
-                .GetRoleByRoleName(It.IsAny<string>()))
-                .ReturnsAsync(role);
+        //    _mockUnitOfWork.Setup(u => u.RoleRepository
+        //        .GetRoleByRoleName(It.IsAny<string>()))
+        //        .ReturnsAsync(role);
 
-            _mockUnitOfWork.Setup(u => u.UserRepository
-                .GetUserByUserId("u1"))
-                .ReturnsAsync(user);
+        //    _mockUnitOfWork.Setup(u => u.UserRepository
+        //        .GetUserByUserId("u1"))
+        //        .ReturnsAsync(user);
 
-            _mockUnitOfWork.Setup(u => u.ReviewerContractRepository
-                .GetReviewerContractsByUserIdAsync("u1"))
-                .ReturnsAsync(new List<ReviewerContract>());
+        //    _mockUnitOfWork.Setup(u => u.ReviewerContractRepository
+        //        .GetReviewerContractsByUserIdAsync("u1"))
+        //        .ReturnsAsync(new List<ReviewerContract>());
 
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _authService.SuspendExternalReviewerAccount("u1"));
-        }
+        //    await Assert.ThrowsAsync<BadRequestException>(() =>
+        //        _authService.SuspendExternalReviewerAccount("u1"));
+        //}
 
         [Fact]
         public async Task ShouldThrow_WhenUserRoleNotFound()

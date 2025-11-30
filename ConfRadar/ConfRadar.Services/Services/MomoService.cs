@@ -58,7 +58,7 @@ namespace ConfRadar.Services.Services
             });
             if (momoResponse.resultCode != 0)
             {
-                throw new BadRequestException($"Error {momoResponse.message} with status code ${momoResponse.resultCode}");
+                throw new BadRequestException($"Lỗi {momoResponse.message} với code ${momoResponse.resultCode}");
             }
             return momoResponse;
 
