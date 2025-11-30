@@ -10,6 +10,7 @@ namespace ConfRadar.Repositories.Repositories
     {
         Task<int> CreateMultipleRevisionPaperReviewsAsync(List<RevisionPaperReview> revisionPaperReviews);
         Task<int> CreateRevisionPaperReviewAsync(RevisionPaperReview revisionPaperReview);
+        Task<List<RevisionPaperReview>> GetReviewsByUserAndPaperIdsAsync(string userId, List<string> paperIds);
         Task<RevisionPaperReview?> GetRevisionPaperReviewByIdAsync(string revisionPaperReviewId);
         Task<RevisionPaperReview?> GetRevisionPaperReviewByRevisionPaperAndUserAsync(string revisionPaperId, string userId);
         Task<List<RevisionPaperReview>> GetRevisionPaperReviewByRevisionPaperIdAsync(string revisionPaperId);
@@ -30,6 +31,20 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<int> CreateRevisionPaperReviewAsync(RevisionPaperReview revisionPaperReview)
         {
             return await CreateAsync(revisionPaperReview);
+        }
+
+        public async Task<List<RevisionPaperReview>> GetReviewsByUserAndPaperIdsAsync(string userId, List<string> paperIds)
+        {
+            if (paperIds == null || !paperIds.Any())
+                return new List<RevisionPaperReview>();
+
+            return await _context.RevisionPaperReviews.AsNoTracking()
+                // Include GlobalStatus để lấy tên trạng thái
+                .Include(r => r.GlobalStatus)
+                // Filter: Của user này VÀ Thuộc RevisionPaper của những PaperId kia
+                .Where(r => r.ReviewerId == userId &&
+                            r.RevisionPaper.Papers.Any(p => paperIds.Contains(p.PaperId)))
+                .ToListAsync();
         }
 
         public async Task<RevisionPaperReview?> GetRevisionPaperReviewByIdAsync(string revisionPaperReviewId)

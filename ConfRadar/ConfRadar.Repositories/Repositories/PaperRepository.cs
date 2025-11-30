@@ -28,6 +28,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
         Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus, ReviewStatus rejectedFullPaperStatus, string confId);
         Task<int> GetPaperCountByConference(string conferenceId);
+        Task<List<Paper>> GetDetailPaperFromListId(List<string> paperIds);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -475,6 +476,30 @@ namespace ConfRadar.Repositories.Repositories
                 && p.Ticket.IsRefunded == false
                 && p.ConferenceId == conferenceId)
                 .CountAsync();
+        }
+
+        public async Task<List<Paper>> GetDetailPaperFromListId(List<string> paperIds)
+        {
+            var query = _context.Papers.AsNoTracking()
+                .Include(p => p.ResearchConferencePhase)
+                    .ThenInclude(rvp => rvp.RevisionRoundDeadlines)
+                .Include(p => p.PaperPhase)
+                .Include(p => p.Conference)
+                .Include(p => p.FullPaper)
+                    .ThenInclude(fp => fp.ReviewStatus)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rvp => rvp.RevisionPaperSubmissions)
+                        .ThenInclude(sub => sub.RevisionDeadlineRound)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rvp => rvp.RevisionPaperReviews)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rvp => rvp.GlobalStatus)
+                .Include(p => p.CameraReady)
+                    .ThenInclude(c => c.GlobalStatus)
+                .Where(p => paperIds.Contains(p.PaperId));
+            List<Paper> response = await query.ToListAsync();
+
+            return response;
         }
     }
 

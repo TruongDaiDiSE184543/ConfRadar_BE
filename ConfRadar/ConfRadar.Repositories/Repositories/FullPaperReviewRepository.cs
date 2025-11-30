@@ -1,4 +1,4 @@
-using ConfRadar.Repositories.Base;
+﻿using ConfRadar.Repositories.Base;
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +15,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<FullPaperReview>> GetFullPaperReviewsByFullPaperIdAsync(string fullPaperId);
         Task<List<FullPaperReview>> GetFullPaperReviewsByReviewerIdAsync(string reviewerId);
         Task<FullPaperReview?> GetFullPaperReviewByFullPaperIdAndReviewerIdAsync(string fullPaperId, string reviewerId);
+        Task<List<FullPaperReview>> GetReviewsByUserAndPaperIdsAsync(string userId, List<string> paperIds);
     }
     public class FullPaperReviewRepository : GenericRepository<FullPaperReview>, IFullPaperReviewRepository
     {
@@ -71,6 +72,20 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(fpr => fpr.ReviewStatus)
                 .Include(fpr => fpr.FullPaper)
                 .FirstOrDefaultAsync(fpr => fpr.FullPaperId == fullPaperId && fpr.ReviewerId == reviewerId);
+        }
+
+        public async Task<List<FullPaperReview>> GetReviewsByUserAndPaperIdsAsync(string userId, List<string> paperIds)
+        {
+            if (paperIds == null || !paperIds.Any())
+                return new List<FullPaperReview>();
+
+            return await _context.FullPaperReviews.AsNoTracking()
+
+                .Include(r => r.ReviewStatus)
+
+                .Where(r => r.ReviewerId == userId &&
+                            r.FullPaper.Papers.Any(p => paperIds.Contains(p.PaperId)))
+                .ToListAsync();
         }
     }
 }

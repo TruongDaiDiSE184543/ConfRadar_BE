@@ -86,6 +86,7 @@ namespace ConfRadar.Services.Services
         Task<List<CustomerWaitListResponse>> GetCustomerWaitList(string userId);
         Task<LeaveWaitListResponse> LeaveWaitList(string userId, string conferenceId);
         Task<AddWaitListResponse> AddWaitList(string userId, string conferenceId);
+        Task<List<ReviewerWorkItemResponse>> GetAssignedPapersDetailedAsync(string userId, string? confId);
         #endregion
 
 
@@ -2785,6 +2786,142 @@ namespace ConfRadar.Services.Services
             }
             revisionPaper.RevisionRoundDeadline = roundDeadline;
             return await _unitOfWork.RevisionPaperRepository.UpdateRevisionPaperAsync(revisionPaper);
+        }
+
+        public async Task<List<ReviewerWorkItemResponse>> GetAssignedPapersDetailedAsync(string userId, string? confId)
+        {
+            // BƯỚC 1: Lấy assignments
+            var assignments = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAndConferenceIdAsync(userId, confId);
+            if (!assignments.Any()) return new List<ReviewerWorkItemResponse>();
+
+            var paperIds = assignments.Select(x => x.PaperId).Distinct().ToList();
+
+            // BƯỚC 2: Get Details (Query tối ưu)
+            var papers = await _unitOfWork.PaperRepository.GetDetailPaperFromListId(paperIds);
+
+            // BƯỚC 3: Pre-load Reviews
+            var myFullPaperReviews = await _unitOfWork.FullPaperReviewRepository
+                .GetReviewsByUserAndPaperIdsAsync(userId, paperIds);
+
+            var myRevisionReviews = await _unitOfWork.RevisionPaperReviewRepository
+                .GetReviewsByUserAndPaperIdsAsync(userId, paperIds);
+
+            var dateNow = await _timeProviderService.GetVietnamDate();
+            var responseList = new List<ReviewerWorkItemResponse>();
+            const string PendingStatus = "Pending";
+
+            // BƯỚC 4: Loop & Map
+            foreach (var assign in assignments)
+            {
+                var paper = papers.FirstOrDefault(p => p.PaperId == assign.PaperId);
+                if (paper == null) continue;
+
+                var phaseConfig = paper.ResearchConferencePhase;
+                bool isHead = assign.IsHeadReviewer ?? false;
+
+                var dto = new ReviewerWorkItemResponse
+                {
+                    PaperId = paper.PaperId,
+                    Title = paper.Title,
+                    ConferenceName = paper.Conference?.ConferenceName,
+                    CurrentPhaseName = paper.PaperPhase?.PhaseName,
+                    IsHeadReviewer = isHead
+                };
+
+                // --- A. FULL PAPER ---
+                if (paper.FullPaper != null)
+                {
+                    var myReview = myFullPaperReviews.FirstOrDefault(r => r.FullPaperId == paper.FullPaperId);
+                    bool isFpPending = paper.FullPaper.ReviewStatus?.Name == PendingStatus;
+
+                    dto.FullPaperWork = new FullPaperWorkItem
+                    {
+                        FullPaperId = paper.FullPaper.FullPaperId,
+                        FileUrl = paper.FullPaper.FullPaperUrl,
+                        StatusName = paper.FullPaper.ReviewStatus?.Name,
+
+                        IsMyReviewSubmitted = myReview != null,
+                        MyReviewResult = myReview?.ReviewStatus?.Name,
+
+                        CanReview = phaseConfig != null
+                                    && dateNow >= phaseConfig.ReviewStartDate
+                                    && dateNow <= phaseConfig.ReviewEndDate
+                                    && myReview == null,
+
+                        CanDecide = isHead
+                                    && phaseConfig != null
+                                    && dateNow >= phaseConfig.FullPaperDecideStatusStart
+                                    && dateNow <= phaseConfig.FullPaperDecideStatusEnd
+                                    && isFpPending
+                    };
+                }
+
+                // --- B. REVISION ---
+                if (paper.RevisionPaper != null)
+                {
+                    var currentRound = paper.RevisionPaper.RevisionRound ?? 1;
+
+                    // Tìm Deadline của Round hiện tại
+                    var roundDeadline = paper.ResearchConferencePhase?.RevisionRoundDeadlines
+                        .FirstOrDefault(d => d.RoundNumber == currentRound);
+
+                    // Ưu tiên ngày của Round, nếu null thì lấy ngày của Phase
+                    var startReviseDate = roundDeadline?.StartSubmissionDate ?? phaseConfig?.ReviseStartDate;
+                    var endReviseDate = roundDeadline?.EndSubmissionDate ?? phaseConfig?.ReviseEndDate;
+
+                    // --- FIX QUAN TRỌNG: Lấy submission MỚI NHẤT ---
+                    // Phải order by CreatedAt giảm dần để lấy file nộp sau cùng
+                    var latestSub = paper.RevisionPaper.RevisionPaperSubmissions?
+                        .OrderByDescending(s => s.RevisionDeadlineRound?.RoundNumber ?? 0)
+                        .FirstOrDefault();
+
+                    var myRevReview = myRevisionReviews.FirstOrDefault(r => r.RevisionPaperId == paper.RevisionPaperId);
+                    bool isRevPending = paper.RevisionPaper.GlobalStatus?.Name == PendingStatus;
+
+                    dto.RevisionWork = new RevisionWorkItem
+                    {
+                        RevisionPaperId = paper.RevisionPaper.RevisionPaperId,
+                        RevisionRound = currentRound,
+                        StatusName = paper.RevisionPaper.GlobalStatus?.Name,
+                        LatestFileUrl = latestSub?.RevisionPaperUrl,
+
+                        IsMyReviewSubmitted = myRevReview != null,
+
+                        CanGiveFeedback = isHead
+                                          && dateNow >= startReviseDate
+                                          && dateNow <= endReviseDate,
+
+                        CanDecide = isHead
+                                    && isRevPending
+                                    && phaseConfig != null
+                                    && dateNow >= phaseConfig.RevisionPaperDecideStatusStart
+                                    && dateNow <= phaseConfig.RevisionPaperDecideStatusEnd
+                    };
+                }
+
+                // --- C. CAMERA READY ---
+                if (paper.CameraReady != null)
+                {
+                    bool isCrPending = paper.CameraReady.GlobalStatus?.Name == PendingStatus;
+
+                    dto.CameraReadyWork = new CameraReadyWorkItem
+                    {
+                        CameraReadyId = paper.CameraReady.CameraReadyId,
+                        FileUrl = paper.CameraReady.CameraReadyUrl,
+                        StatusName = paper.CameraReady.GlobalStatus?.Name,
+
+                        CanDecide = isHead
+                                    && phaseConfig != null
+                                    && dateNow >= phaseConfig.CameraReadyDecideStatusStart
+                                    && dateNow <= phaseConfig.CameraReadyDecideStatusEnd
+                                    && isCrPending
+                    };
+                }
+
+                responseList.Add(dto);
+            }
+
+            return responseList;
         }
     }
 }

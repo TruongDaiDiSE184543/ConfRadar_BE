@@ -2160,19 +2160,22 @@ namespace ConfRadar.Services.Services
             // 2. Ki?m tra xem h?i ngh? dã có phase nào chua (ch? cho phép t?o m?t l?n)
             var existingPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
             if (existingPhases.Any())
-                throw new BadRequestException("H?i ngh? này dã có các giai do?n (phase). Vui lòng s? d?ng ch?c nang c?p nh?t.");
+                throw new BadRequestException("Hội nghị này đã có các giai đoạn (phase). Vui lòng sử dụng chức năng cập nhật.");
 
             // 3. Validation logic cho danh sách các phase t? request
             var newPhases = request.Phases.OrderBy(p => p.RegistrationStartDate).ToList();
             // 3a. Ph?i có dúng M?T phase chính (IsWaitlist = false) 
-            if (newPhases.Count(p => p.IsWaitlist == false) != 1) throw new BadRequestException("Yêu c?u ph?i có chính xác m?t phase chính (IsWaitlist = false).");
+            if (newPhases.Count(p => p.IsWaitlist == false) != 1)
+                throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
 
             // 3b. Phase d?u tiên ph?i là phase chính
-            if (newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase d?u tiên (d?a theo ngày b?t d?u) ph?i là phase chính.");
+            if (newPhases.First().IsWaitlist == true)
+                throw new BadRequestException("Phase đầu tiên (địa theo ngày bắt đầu) phải là phase chính.");
 
 
             // 3c. Ph?i có ít nh?t M?T phase waitlist
-            if (!newPhases.Any(p => p.IsWaitlist == true)) throw new BadRequestException("Yêu c?u ph?i có ít nh?t m?t phase d? phòng (IsWaitlist = true).");
+            if (!newPhases.Any(p => p.IsWaitlist == true))
+                throw new BadRequestException("Yêu cầu phải có ít nhất một phase dự phòng (IsWaitlist = true).");
 
             var requestWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == true);
             var requestNotWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == false);
@@ -2184,18 +2187,6 @@ namespace ConfRadar.Services.Services
             foreach (var phase in newPhases)
             {
                 //// 4a. Các m?c th?i gian trong cùng m?t phase ph?i tu?n t?
-                //if (phase.RegistrationStartDate > phase.RegistrationEndDate ||
-                //    phase.RegistrationEndDate > phase.FullPaperStartDate ||
-                //    phase.FullPaperStartDate > phase.FullPaperEndDate ||
-                //    phase.FullPaperEndDate > phase.ReviewStartDate ||
-                //    phase.ReviewStartDate > phase.ReviewEndDate ||
-                //    phase.ReviewEndDate > phase.ReviseStartDate ||
-                //    phase.ReviseStartDate > phase.ReviseEndDate ||
-                //    phase.ReviseEndDate > phase.CameraReadyStartDate ||
-                //    phase.CameraReadyStartDate > phase.CameraReadyEndDate)
-                //{
-                //    throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
-                //}
                 if (phase.RegistrationStartDate > phase.RegistrationEndDate ||
                     phase.RegistrationEndDate > phase.AbstractDecideStatusStart ||
                     phase.AbstractDecideStatusStart > phase.AbstractDecideStatusEnd ||
@@ -2221,7 +2212,7 @@ namespace ConfRadar.Services.Services
                 // 4b. Các phase ph?i di?n ra n?i ti?p nhau, không du?c g?i lên nhau
                 if (lastPhaseEndDate.HasValue && phase.RegistrationStartDate <= lastPhaseEndDate)
                 {
-                    throw new BadRequestException($"Ngày b?t d?u c?a m?t phase ph?i sau ngày k?t thúc c?a phase tru?c dó. C? th? ngày k?t thúc phase li?n tru?c{lastPhaseEndDate.Value} > {phase.RegistrationStartDate.Value} ngày b?t d?u phase li?n sau là sai");
+                    throw new BadRequestException($"Ngày bắt đầu của một phase phải sau ngày kết thúc của phase trước đó. Cụ thể ngày kết thúc phase liền trước {lastPhaseEndDate.Value} > {phase.RegistrationStartDate.Value} ngày bắt đầu phase liền sau là sai");
                 }
                 lastPhaseEndDate = phase.CameraReadyEndDate;
             }
@@ -2245,7 +2236,7 @@ namespace ConfRadar.Services.Services
                         // 2a. S? lu?ng deadline ph?i kh?p chính xác v?i s? l?n cho phép
                         if (deadlines == null || deadlines.Count != allowedAttempts)
                         {
-                            throw new BadRequestException($"Phase chính ph?i có chính xác {allowedAttempts} Revision Deadline(s), nhung nh?n du?c {deadlines?.Count ?? 0}.");
+                            throw new BadRequestException($"Phase chính phải có chính xác {allowedAttempts} Revision Deadline(s), nhưng nhận được {deadlines?.Count ?? 0}.");
                         }
 
                         // 2b. S?p x?p và ki?m tra tu?n t?, ch?ng chéo cho các deadline
@@ -2254,14 +2245,14 @@ namespace ConfRadar.Services.Services
                         foreach (var deadline in sortedDeadlines)
                         {
                             if (deadline.StartSubmissionDate >= deadline.EndSubmissionDate)
-                                throw new BadRequestException($"Trong Revision Deadline, ngày b?t d?u ({deadline.StartSubmissionDate:dd/MM/yyyy}) ph?i tru?c ngày k?t thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
+                                throw new BadRequestException($"Trong Revision Deadline, ngày bắt đầu ({deadline.StartSubmissionDate:dd/MM/yyyy}) phải trước ngày kết thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
 
                             // Kho?ng th?i gian c?a deadline ph?i n?m trong kho?ng Revise c?a Phase
                             if (deadline.StartSubmissionDate < phaseRequest.ReviseStartDate || deadline.EndSubmissionDate > phaseRequest.ReviseEndDate)
-                                throw new BadRequestException($"Revision Deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) ph?i n?m trong giai do?n s?a d?i c?a phase ({phaseRequest.ReviseStartDate:dd/MM/yyyy} - {phaseRequest.ReviseEndDate:dd/MM/yyyy}).");
+                                throw new BadRequestException($"Revision Deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) phải nằm trong giai đoạn sửa đổi của phase ({phaseRequest.ReviseStartDate:dd/MM/yyyy} - {phaseRequest.ReviseEndDate:dd/MM/yyyy}).");
 
                             if (lastEndDate.HasValue && deadline.StartSubmissionDate <= lastEndDate)
-                                throw new BadRequestException("Các Revision Deadline không du?c ch?ng chéo lên nhau.");
+                                throw new BadRequestException("Các Revision Deadline không được chồng chéo lên nhau.");
 
                             lastEndDate = deadline.EndSubmissionDate;
                         }
@@ -2298,7 +2289,7 @@ namespace ConfRadar.Services.Services
                 return new CreatePhasesResponse
                 {
                     CreatedPhaseIds = createdPhaseIds,
-                    Message = "T?o các giai do?n cho h?i ngh? thành công.",
+                    Message = "T?o các giai đoạn cho hội nghị thành công.",
                 };
             }
             catch (Exception ex)
