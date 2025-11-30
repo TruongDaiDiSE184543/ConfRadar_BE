@@ -358,16 +358,22 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        private async Task EnsureConferenceIsEditable(Conference conference)
+        private async Task EnsureConferenceIsEditable(Conference conference,bool restrictExternalHostedAtPreaparingStatus = false)
         {
             var conferenceStatusId = conference.ConferenceStatusId;
-            var allstatus = await _unitOfWork.ConferenceStatusRepository.GetAllConferenceStatusesAsync();
+
             var pending = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
-            var Preparing = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
+            var preparing = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conferenceStatusId);
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription());
             var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.OnHold.GetDescription());
-            if (conferenceStatusId != pending.ConferenceStatusId && conferenceStatusId != Preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId )
+
+            if (restrictExternalHostedAtPreaparingStatus)
+            {
+                if (conference.IsInternalHosted != true && conference.ConferenceStatusId == preparing.ConferenceStatusId)
+                    throw new BadRequestException("Bạn không thể cập nhật các thông tin cốt lõi (Tên, Vé, Phiên) sau khi hội nghị đã được duyệt lên trạng thái Preparing. Vui lòng liên hệ Organizer nếu cần thay đổi lớn.");
+            }
+            if (conferenceStatusId != preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId )
             {
                 throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
@@ -375,11 +381,6 @@ namespace ConfRadar.Services.Services
 
         private Task ValidatePaperFormat(string paperFormat)
         {
-            // Phuong th?c này hi?n tr? v? Task d? có th? "await"
-            if (string.IsNullOrWhiteSpace(paperFormat))
-            {
-                return Task.CompletedTask; // B? qua n?u không có giá tr?
-            }
 
             if (!AllowedPaperFormats.Contains(paperFormat.Trim().ToLower()))
             {
@@ -1858,38 +1859,58 @@ namespace ConfRadar.Services.Services
 
         public async Task<ResearchConferenceBasicStepResponse> CreateResearchConferenceBasicAsync(CreateResearchConferenceBasicRequest request, string userid)
         {
+            if (!request.IsResearchConference.HasValue || !request.IsResearchConference.Value)
+                throw new BadRequestException("Phải là hội nghị học thuật và giá trị IsResearchConference phải bằng true");
+            var category = await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId);
+            if (category == null)
+            {
+                throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
+            }
+
+            if (string.IsNullOrEmpty(request.ConferenceName))
+                throw new BadRequestException("Tên không thể để trống");
+
+            if (request.BannerImageFile == null)
+                throw new BadRequestException("Cần phải có banner ảnh");
+
+            if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile)) 
+                throw new BadRequestException($"Banner ?nh không h? tr? extension{request.BannerImageFile.ContentType}");
+
+            if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
+                throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
+            if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
+                throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
+
+            
+
+            //Must be research conference
+
+
+            //Must be internally hosted
+            if (!request.IsInternalHosted.HasValue || !request.IsInternalHosted.Value)
+                throw new BadRequestException("Hội nghị nghiên cứu phải được tổ chức bởi người thuộc ConfRadar");
+
+            const long maxBannerSize = 5 * 1024 * 1024; // 5 MB
+            if (request.BannerImageFile.Length > maxBannerSize)
+                throw new BadRequestException("Kích thước tệp ảnh bìa không được vượt quá 5 MB.");
+
+            var isValidDateValues = IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
+            if (!isValidDateValues.Result)
+                throw new BadRequestException("Ngày mở bán vé phải trước ngày conference diễn ra và tất cả phải trước hôm nay");
+
+            if (request.TotalSlot <= 0)
+                throw new Exception("Total slot must be positive");
+
+            using var stream = request.BannerImageFile.OpenReadStream();
+            var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
+            request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
+            request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
+
+           
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var category = await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId);
-                if (category == null)
-                {
-                    throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
-                }
-
-                if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile)) throw new BadRequestException($"Banner ?nh không h? tr? extension{request.BannerImageFile.ContentType}");
-                request.createdby = userid;
-
-                //Must be research conference
-                if (!request.IsResearchConference.HasValue || !request.IsResearchConference.Value) throw new BadRequestException("Ph?i là h?i ngh? h?c thu?t và giá tr? IsResearchConference ph?i b?ng true");
-
-
-                //Must be internally hosted
-                if (!request.IsInternalHosted.HasValue || !request.IsInternalHosted.Value) throw new BadRequestException("H?i ngh? nghiên c?u ph?i du?c t? ch?c b?i ngu?i thu?c ConfRadar");
-
-                if (request.BannerImageFile != null)
-                {
-                    using var stream = request.BannerImageFile.OpenReadStream();
-                    var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.BannerImageFile.FileName);
-                    request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
-                    request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
-                }
-
-                var isValidDateValues = IsValidConferenceAndTicketSaleDates(request.StartDate, request.EndDate, request.TicketSaleStart, request.TicketSaleEnd);
-                if (!isValidDateValues.Result) throw new BadRequestException("Ngày m? bán vé ph?i tru?c ngày conference di?n và t?t c? ph?i tru?c hôm nay");
-
-                if (request.TotalSlot < 0)
-                    throw new Exception("Total slot must be positive");
+               
 
 
 
@@ -2004,8 +2025,19 @@ namespace ConfRadar.Services.Services
             // 1. Phân quy?n
             if (conference.CreatedBy != userId)
             {
-                throw new ForbiddenException("B?n không có quy?n thêm chi ti?t cho h?i ngh? này.");
+                throw new BadRequestException("B?n không có quy?n thêm chi ti?t cho h?i ngh? này.");
             }
+
+            if (request.NumberPaperAccept <= 0)
+                throw new BadRequestException("Số lượng bài báo nhận vào phải lớn hơn 0");
+
+            if (request.RevisionAttemptAllowed == null || request.RevisionAttemptAllowed <= 0)
+                throw new BadRequestException("Số vòng revision phải lớn hơn 0");
+
+
+            if (request.ReviewFee < 0)
+                throw new BadRequestException("Review fee phải là số dương");
+
 
             // 4. Ð?m b?o chi ti?t này chua du?c t?o tru?c dó (m?i h?i ngh? ch? có 1)
             var existingDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
@@ -2013,6 +2045,14 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Chi ti?t nghiên c?u cho h?i ngh? này dã t?n t?i.");
             }
+
+            if (conference.IsResearchConference != true)
+            {
+                throw new BadRequestException("Ch? có th? thêm chi ti?t nghiên c?u cho m?t h?i ngh? lo?i 'nghiên c?u'.");
+            }
+
+         
+
 
 
             // 6. Xác th?c s? t?n t?i c?a RankingCategoryId (d?a trên hình ?nh b?n cung c?p)
@@ -2035,10 +2075,7 @@ namespace ConfRadar.Services.Services
             await EnsureConferenceIsEditable(conference);
 
             // 3. Ð?m b?o dây là m?t h?i ngh? nghiên c?u
-            if (conference.IsResearchConference != true)
-            {
-                throw new BadRequestException("Ch? có th? thêm chi ti?t nghiên c?u cho m?t h?i ngh? lo?i 'nghiên c?u'.");
-            }
+
             var researchDetail = request.ToModel(conferenceId);
 
             await _unitOfWork.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(researchDetail);

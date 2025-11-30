@@ -639,16 +639,17 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Vui lòng cho biết hội nghị có cho phép người nghe tham dự hay không.")]
         public bool? AllowListener { get; set; }
 
-
-        public string? RankValue { get; set; }
+        [Required]
+        public string RankValue { get; set; }
 
         // Có thể không bắt buộc, nhưng nếu có thì phải hợp lệ.
         [Range(2000, 2050, ErrorMessage = "Năm xếp hạng không hợp lệ.")]
         public int? RankYear { get; set; }
 
         // Có thể không bắt buộc (nếu miễn phí), nhưng nếu có thì không được âm.
+        [Required]
         [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí review không được là số âm.")]
-        public decimal? ReviewFee { get; set; }
+        public decimal ReviewFee { get; set; }
 
         [Required(ErrorMessage = "Loại xếp hạng (Ranking Category) là bắt buộc.")]
         [MaxLength(50)]
