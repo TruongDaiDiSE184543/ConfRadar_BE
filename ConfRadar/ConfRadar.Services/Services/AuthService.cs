@@ -670,8 +670,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("Local reviewer role không tìm thấy trong hệ thống");
             }
-            var localReviewerList = await _unitOfWork.UserRepository.GetReviewerList(localReviewerRole.RoleId);
-            var result = localReviewerList.Select(x => new ReviewerDetailResponse()
+            var reviewerList = await _unitOfWork.UserRepository.GetReviewerList(localReviewerRole.RoleId);
+            reviewerList = reviewerList.Where(u => u.IsActive == true && u.IsEmailConfirmed == true && u.UserRoles.All(ur => ur.IsActive == true)).ToList();
+            var result = reviewerList.Select(x => new ReviewerDetailResponse()
             {
                 UserId = x.UserId,
                 Email = x.Email,
