@@ -183,7 +183,7 @@ namespace ConfRadar.Services.Services
 
             //var hashedPassword = _passwordHasher.Hash(request.Password);
             var verificationToken = _tokenService.GenerateSecureRandomToken();
-            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.ForgetPassword_FE + $"?token={verificationToken}";
+            string confirmationLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailCreatePassword_FE + $"?token={verificationToken}";
             var userCreated = new User()
             {
                 UserId = Guid.NewGuid().ToString(),
@@ -243,7 +243,7 @@ namespace ConfRadar.Services.Services
             result += await _unitOfWork.UserRepository.CreateUserAsync(userCreated);
             if (result > 0)
             {
-                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho reviewer outsourced", "EmailChangePassword.html");
+                await _emailService.SendCreateAccountEmail(request.Email, request.FullName, confirmationLink, "Tạo tài khoản cho reviewer outsourced", "EmailCreateAccount.html");
             }
             return result;
         }

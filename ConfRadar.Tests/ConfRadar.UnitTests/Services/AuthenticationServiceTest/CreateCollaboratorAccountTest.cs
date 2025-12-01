@@ -81,7 +81,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
                     request.FullName,
                     It.IsAny<string>(),
                     "Tạo tài khoản cho collaborator",
-                    "EmailChangePassword.html"),
+                    "EmailCreateAccount.html"),
                 Times.Once);
         }
 
