@@ -903,6 +903,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateRankingReferenceUrlRequest
     {
         [MaxLength(1000)]
+        [Url]
         [Required(ErrorMessage = "URL tham khảo là bắt buộc")]
         public string? ReferenceUrl { get; set; }
     }
