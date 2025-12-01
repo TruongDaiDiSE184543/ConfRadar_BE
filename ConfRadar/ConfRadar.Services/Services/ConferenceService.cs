@@ -795,9 +795,20 @@ namespace ConfRadar.Services.Services
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Conference cần Organizer approve lên preparing trước để có thể thay đổi trạng thái");
-            if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete. Conference cần request lên pending để Organizer approve lên preparing trước khi có thể thay đổi trạng thái khác");
+            var rejectStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Rejected.GetDescription());
 
+
+            //from pending can only go delete or back to draft
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId || newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)) 
+                throw new Exception("Conference cần Organizer approve lên preparing trước để có thể thay đổi trạng thái hoặc về draft để tiếp tục chỉnh sửa");
+
+            //from draft the collaborator can only be transitioned to delete on this method, need to go the request to be approve to go to the pending
+            if (conference.ConferenceStatusId == draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId) 
+                throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete. Conference cần request lên pending để Organizer approve lên preparing trước khi có thể thay đổi trạng thái khác");
+
+            //from reject can only transitioned to draft
+            if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)
+                throw new Exception("Trạng thái hiện tại của hội nghị là rejected chỉ có thể đổi lên draft để tiếp tục sửa đổi");
 
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
