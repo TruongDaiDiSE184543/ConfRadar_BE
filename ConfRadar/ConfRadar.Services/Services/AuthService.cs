@@ -634,7 +634,33 @@ namespace ConfRadar.Services.Services
 
         public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
         {
-            return await _unitOfWork.UserRepository.GetAvailableCustomer();
+            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
+            var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
+
+            var preparingConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
+            var pendingConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
+            var readyConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            var onHoldConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
+
+            if (adminRole == null || organizerRole == null)
+                throw new NotFoundException("Không tìm thấy các role trong hệ thống");
+            if (preparingConferenceStatus ==null || pendingConferenceStatus == null|| readyConferenceStatus ==null || onHoldConferenceStatus==null)
+                throw new NotFoundException("Không tìm thấy các trạng thái trong hệ thống");
+
+            List<string> systemRoles = new List<string>()
+            {
+                adminRole.RoleId,
+                organizerRole.RoleId
+            };
+           
+            List<string> conferenceStatuses = new List<string>()
+            {
+                preparingConferenceStatus.ConferenceStatusId,
+                pendingConferenceStatus.ConferenceStatusId,
+                readyConferenceStatus.ConferenceStatusId,
+                onHoldConferenceStatus.ConferenceStatusId,
+            };
+            return await _unitOfWork.UserRepository.GetAvailableCustomer(systemRoles,conferenceStatuses);
         }
 
         public async Task<List<ReviewerDetailResponse>> ListAllReviewer()
@@ -730,7 +756,9 @@ namespace ConfRadar.Services.Services
             var userList = await _unitOfWork.UserRepository.GetListUser();
 
             var filteredUsers = userList
-                .Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId || ur.RoleId == collabRole.RoleId))
+                .Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId || ur.RoleId == collabRole.RoleId) 
+                && u.IsActive==true && u.IsEmailConfirmed==true 
+                && u.UserRoles.All(ur=>ur.IsActive==true))
                 .ToList();
             var result = filteredUsers.Select(u => new GetUsersForCollaboratorCreateResponse()
             {
