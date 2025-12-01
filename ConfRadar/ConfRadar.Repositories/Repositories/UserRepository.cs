@@ -76,7 +76,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(u => u.ReviewerContracts)
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
-                .Where(u => u.UserRoles.Any(ur => ur.RoleId == localReviewerRoleId) /*|| u.ReviewerContracts.Any(rc => rc.IsActive == true)*/)
+                .Where(u => u.UserRoles.Any(ur => ur.RoleId == localReviewerRoleId) || u.ReviewerContracts.Any(rc => rc.IsActive == true))
                 .ToListAsync();
         }
 
