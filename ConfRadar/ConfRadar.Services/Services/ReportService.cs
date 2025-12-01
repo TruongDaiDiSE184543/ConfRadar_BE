@@ -11,6 +11,7 @@ namespace ConfRadar.Services.Services
         Task<List<UnresolvedReportResponse>> GetUnresolvedReportsAsync();
         Task<ReportFeedbackResponse> CreateReportFeedbackAsync(string reportId, string adminId, CreateReportFeedbackRequest request);
         Task<ReportFeedbackResponse> GetReportFeedBackByReportId(string reportId);
+        Task<List<ReportResponse>> GetReportsByUserIdAsync(string userId);
     }
 
     public class ReportService : IReportService
@@ -152,6 +153,12 @@ namespace ConfRadar.Services.Services
                     FullName = feedback.Admin.FullName
                 } : null
             };
+        }
+
+        public async Task<List<ReportResponse>> GetReportsByUserIdAsync(string userId)
+        {
+            var reports = await _unitOfWork.ReportRepository.GetReportsByUserIdAsync(userId);
+            return reports.Select(report => MapToReportResponse(report)).ToList();
         }
     }
 }
