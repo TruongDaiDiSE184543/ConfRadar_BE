@@ -1906,6 +1906,8 @@ namespace ConfRadar.Services.Services
             request.bannerImageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.conferencebanner.ToString(), uniqueFileName, stream, request.BannerImageFile.ContentType);
             request.bannerImageFileUrl = _objectStorageSettings.EndPoint + request.bannerImageFileUrl;
 
+            //assign this userId to createdBy
+            request.createdby = userid;
            
             await _unitOfWork.BeginTransactionAsync();
             try
