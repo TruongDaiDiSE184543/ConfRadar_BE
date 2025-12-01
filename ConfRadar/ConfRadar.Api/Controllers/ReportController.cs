@@ -64,5 +64,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ReportService.GetReportFeedBackByReportId(reportId);
             return Ok(ApiResponse<ReportFeedbackResponse>.SuccessResponse(result, "Lấy report feedback thành công"));
         }
+
+        [Authorize]
+        [HttpGet("get-own-reports")]
+        public async Task <IActionResult> GetMyReports()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ReportService.GetReportsByUserIdAsync(userId);
+            return Ok(ApiResponse<List<ReportResponse>>.SuccessResponse(result, "Lấy thành công các report của người dùng"));
+        }
     }
 }

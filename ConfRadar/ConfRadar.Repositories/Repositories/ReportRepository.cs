@@ -72,8 +72,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<Report>> GetReportsByUserIdAsync(string userId)
         {
             return await _context.Reports
+                .Include(r => r.ReportFeedback)
+                    .ThenInclude(rf => rf.Admin)
                 .Include(r => r.User)
                 .Where(r => r.UserId == userId)
+                .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
         }
     }
