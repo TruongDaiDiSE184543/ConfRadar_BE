@@ -3,6 +3,7 @@ using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Shared.DTO.Conference;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -26,6 +27,8 @@ namespace ConfRadar.Repositories.Repositories
         //Task<List<Conference>> GetConferencesByUserId(string userId);
         Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId, bool isResearchConference);
         IQueryable<Conference> GetConferencesWithPrice(string readyStatusId);
+        Task<List<Conference>> GetConferenceByStatus(ConferenceStatus conferenceStaus);
+        Task<int> UpdateMutipleConferenceAsync(List<Conference> conferences);
     }
 
     public class ConferenceRepository : GenericRepository<Conference>, IConferenceRepository
@@ -41,7 +44,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await UpdateAsync(conference);
         }
-
+        public async Task<int> UpdateMutipleConferenceAsync(List<Conference> conferences)
+        {
+            _context.Conferences.UpdateRange(conferences);
+            return await _context.SaveChangesAsync();
+        }
         public async Task<int> DeleteConferenceAsync(Conference conference)
         {
             _context.Conferences.Remove(conference);
@@ -304,5 +311,11 @@ namespace ConfRadar.Repositories.Repositories
         //{
         //    throw new NotImplementedException();
         //}
+        public async Task<List<Conference>> GetConferenceByStatus(ConferenceStatus conferenceStaus)
+        {
+            return await _context.Conferences
+                .Where(c => c.ConferenceStatusId == conferenceStaus.ConferenceStatusId)
+                .ToListAsync();
+        }
     }
 }
