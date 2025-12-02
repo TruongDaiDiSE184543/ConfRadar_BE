@@ -4,7 +4,6 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Minio.Exceptions;
 
@@ -58,7 +57,7 @@ namespace ConfRadar.Services.Services
         // Research Conference Step 1: Basic Research Conference Creation
         Task<ResearchConferenceBasicStepResponse> CreateResearchConferenceBasicAsync(CreateResearchConferenceBasicRequest request, string userid);
         Task<ResearchConferenceBasicStepResponse> GetResearchConferenceBasicAsync(string conferenceId);
-        Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateResearchConferenceBasicRequest request,string userId);
+        Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateResearchConferenceBasicRequest request, string userId);
 
         // Research Conference Step 2: Research Conference Detail
         Task<ResearchConferenceDetailResponse> CreateResearchConferenceDetailAsync(string conferenceId, CreateResearchConferenceDetailRequest request, string userId);
@@ -113,7 +112,7 @@ namespace ConfRadar.Services.Services
         Task<List<RevisionRoundDeadlineResponse>> GetRevisionRoundDeadlinesByResearchPhaseIdAsync(string researchConferencePhaseId);
         Task<RevisionRoundDeadlineResponse> UpdateRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, UpdateRevisionRoundDeadlineRequest request, string userId);
         Task<bool> DeleteRevisionRoundDeadlineAsync(string revisionRoundDeadlineId, string userId);
-        
+
     }
 
     public class ConferenceStepService : IConferenceStepService
@@ -358,7 +357,7 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        private async Task EnsureConferenceIsEditable(Conference conference,bool restrictExternalHostedAtPreaparingStatus = false)
+        private async Task EnsureConferenceIsEditable(Conference conference, bool restrictExternalHostedAtPreaparingStatus = false)
         {
             var conferenceStatusId = conference.ConferenceStatusId;
 
@@ -373,7 +372,7 @@ namespace ConfRadar.Services.Services
                 if (conference.IsInternalHosted != true && conference.ConferenceStatusId == preparing.ConferenceStatusId)
                     throw new BadRequestException("Bạn không thể cập nhật các thông tin cốt lõi (Tên, Vé, Phiên) sau khi hội nghị đã được duyệt lên trạng thái Preparing. Vui lòng liên hệ Organizer nếu cần thay đổi lớn.");
             }
-            if (conferenceStatusId != preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId )
+            if (conferenceStatusId != preparing.ConferenceStatusId && conferenceStatusId != draftStatus.ConferenceStatusId && conferenceStatusId != onHoldStatus.ConferenceStatusId)
             {
                 throw new BadRequestException($"Thao tác không được phép. Hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}' và không thể chỉnh sửa.");
             }
@@ -840,7 +839,7 @@ namespace ConfRadar.Services.Services
                 // Create the conference price
                 var conferencePriceRequest = request.TypeOfTicket;
                 int? totalSlotFromToBeTickets = request.TypeOfTicket.Sum(ts => ts.TotalSlot);
-                if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot) 
+                if (totalSlotFromToBeTickets + existingTotalSlot > conference.TotalSlot)
                     throw new BadRequestException($"Số lượng totalSlot của từng loại vé tổng phải nhỏ hơn hoặc bằng capacity của conference: {existingTotalSlot} + {totalSlotFromToBeTickets} > {conference.TotalSlot}");
                 foreach (CreateConferencePriceRequest toBeConferencePrice in conferencePriceRequest)
                 {
@@ -1873,7 +1872,7 @@ namespace ConfRadar.Services.Services
             if (request.BannerImageFile == null)
                 throw new BadRequestException("Cần phải có banner ảnh");
 
-            if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile)) 
+            if (!_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
                 throw new BadRequestException($"Banner ?nh không h? tr? extension{request.BannerImageFile.ContentType}");
 
             if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
@@ -1881,7 +1880,7 @@ namespace ConfRadar.Services.Services
             if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
                 throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
 
-            
+
 
             //Must be research conference
 
@@ -1908,11 +1907,11 @@ namespace ConfRadar.Services.Services
 
             //assign this userId to createdBy
             request.createdby = userid;
-           
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-               
+
 
 
 
@@ -1941,7 +1940,7 @@ namespace ConfRadar.Services.Services
             return conference.ToResearchResponse();
         }
 
-        public async Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateResearchConferenceBasicRequest request,string userId)
+        public async Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateResearchConferenceBasicRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
@@ -1994,7 +1993,7 @@ namespace ConfRadar.Services.Services
             conference.StartDate = request.StartDate;  // Fixed nullable DateOnly
             conference.EndDate = request.EndDate;         // Fixed nullable DateOnly
             conference.TotalSlot = request.TotalSlot ?? conference.TotalSlot;
-            conference.AvailableSlot = request.TotalSlot ?? conference.AvailableSlot; 
+            conference.AvailableSlot = request.TotalSlot ?? conference.AvailableSlot;
             conference.Address = request.Address ?? conference.Address;
             conference.ConferenceCategoryId = request.ConferenceCategoryId ?? conference.ConferenceCategoryId;
             conference.CityId = request.CityId ?? conference.CityId;
@@ -2053,7 +2052,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("Ch? có th? thêm chi ti?t nghiên c?u cho m?t h?i ngh? lo?i 'nghiên c?u'.");
             }
 
-         
+
 
 
 
@@ -2520,7 +2519,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ResearchSessionWithMediaResponse>> AddResearchSessionsAsync(string conferenceId, AddResearchSessionsRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) 
+            if (conference == null)
                 throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
 
             #region Xác th?c
@@ -2602,7 +2601,7 @@ namespace ConfRadar.Services.Services
                     {
                         foreach (var mediaRequest in sessionRequest.SessionMedias)
                         {
-                            if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile)) 
+                            if (!_objectStorageFileService.IsValidVideoFile(mediaRequest.MediaFile) && !_objectStorageFileService.IsValidImageFile(mediaRequest.MediaFile))
                                 throw new BadRequestException($"Không h? tr? d?nh d?ng {mediaRequest.MediaFile.ContentType}");
                             const long maxSize = 5 * 1024 * 1024; // 5 MB
                             if (mediaRequest.MediaFile.Length > maxSize)

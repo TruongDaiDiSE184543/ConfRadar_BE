@@ -2,9 +2,6 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Services;
 using Moq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.TicketTest
 {
 

@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
+using ConfRadar.Services.Exceptions;
 using ConfRadar.Shared.DTO.Notification;
 using FirebaseAdmin;
 using Microsoft.Extensions.Options;
@@ -18,6 +19,7 @@ namespace ConfRadar.Services.Services
         Task<bool> SendMobilePushAsync(string deviceToken, string title, string body);
         Task<bool> SendWebPushAsync(string fcmToken, string title, string body);
         Task<List<UserNotificationDetailResponse>> GetOwnNotification(string userId);
+        Task<int> UpdateReadStatus(List<UpdateReadStatusRequest> request, string userId);
     }
     public class NotificationService : INotificationService
     {
@@ -181,7 +183,29 @@ namespace ConfRadar.Services.Services
             return userNotification;
         }
 
+        public async Task<int> UpdateReadStatus(List<UpdateReadStatusRequest> request, string userId)
+        {
+            if (!request.Any())
+            {
+                throw new BadRequestException("Danh sách update không được rỗng");
+            }
+            var ownNotifications = await _unitOfWork.NotificationRepository.GetNotificationsByUserIdAsync(userId);
+            var ownNotificationDict = ownNotifications.ToDictionary(n => n.NotificationId, n => n);
+            var notificationList = new List<Notification>();
+            foreach (var updateReq in request)
+            {
+
+                if (!ownNotificationDict.ContainsKey(updateReq.NotificationId))
+                {
+                    throw new BadRequestException("Bạn chỉ có thể update thông báo của chính mình");
+                }
+                var currentNoti = ownNotificationDict[updateReq.NotificationId];
+                currentNoti.ReadStatus = updateReq.ReadStatus;
+                notificationList.Add(currentNoti);
+            }
+            return await _unitOfWork.NotificationRepository.UpdateMutipleNotificationAsync(notificationList);
 
 
+        }
     }
 }

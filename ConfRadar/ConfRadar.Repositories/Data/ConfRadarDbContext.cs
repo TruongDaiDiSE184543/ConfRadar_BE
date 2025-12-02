@@ -1,5 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -19,6 +22,8 @@ public partial class ConfRadarDbContext : DbContext
     public virtual DbSet<AcademicProfile> AcademicProfiles { get; set; }
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
+    public virtual DbSet<AuditLogCategory> AuditLogCategories { get; set; }
 
     public virtual DbSet<CameraReady> CameraReadies { get; set; }
 
@@ -142,16 +147,26 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
+    public virtual DbSet<UserSuspendHistory> UserSuspendHistories { get; set; }
+
     public virtual DbSet<WaitListStatus> WaitListStatuses { get; set; }
 
     public virtual DbSet<Wallet> Wallets { get; set; }
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
+    public static string GetConnectionString(string connectionStringName)
+    {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
 
+        string connectionString = config.GetConnectionString(connectionStringName);
+        return connectionString;
+    }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Abstract>(entity =>
@@ -193,12 +208,26 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("AuditLog");
 
             entity.Property(e => e.AuditLogId).HasMaxLength(50);
-            entity.Property(e => e.EntityName).HasMaxLength(255);
+            entity.Property(e => e.CategoryId).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.UserId).HasMaxLength(50);
+
+            entity.HasOne(d => d.Category).WithMany(p => p.AuditLogs)
+                .HasForeignKey(d => d.CategoryId)
+                .HasConstraintName("FK_AuditLog_CategoryId");
 
             entity.HasOne(d => d.User).WithMany(p => p.AuditLogs)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_AuditLog_UserId");
+        });
+
+        modelBuilder.Entity<AuditLogCategory>(entity =>
+        {
+            entity.HasKey(e => e.CategoryId).HasName("AuditLogCategory_pkey");
+
+            entity.ToTable("AuditLogCategory");
+
+            entity.Property(e => e.CategoryId).HasMaxLength(50);
         });
 
         modelBuilder.Entity<CameraReady>(entity =>
@@ -1251,6 +1280,7 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.UserId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.CurrentSuspendedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.FullName).HasMaxLength(50);
             entity.Property(e => e.Gender).HasMaxLength(50);
@@ -1332,6 +1362,22 @@ public partial class ConfRadarDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRole_UserId");
+        });
+
+        modelBuilder.Entity<UserSuspendHistory>(entity =>
+        {
+            entity.HasKey(e => e.SuspendId).HasName("UserSuspendHistory_pkey");
+
+            entity.ToTable("UserSuspendHistory");
+
+            entity.Property(e => e.SuspendId).HasMaxLength(50);
+            entity.Property(e => e.ResumedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.SuspendedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.UserId).HasMaxLength(50);
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserSuspendHistories)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<WaitListStatus>(entity =>

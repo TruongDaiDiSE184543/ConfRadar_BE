@@ -1,6 +1,5 @@
 ﻿using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.Services;
-using ConfRadar.Shared.DTO.Payment;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
@@ -60,7 +59,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 message = "Successful.",
                 resultCode = 0,
                 payUrl = "https://test-payment.momo.vn/pay/12345",
-                
+
             };
 
             var mockHttpMessageHandler = new Mock<HttpMessageHandler>();

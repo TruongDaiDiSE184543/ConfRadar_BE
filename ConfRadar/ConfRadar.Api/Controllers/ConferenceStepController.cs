@@ -351,7 +351,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> UpdateResearchConferenceBasic(string conferenceId, [FromForm] UpdateResearchConferenceBasicRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var conference = await _serviceManager.ConferenceStepService.UpdateResearchConferenceBasicAsync(conferenceId, request,userId);
+            var conference = await _serviceManager.ConferenceStepService.UpdateResearchConferenceBasicAsync(conferenceId, request, userId);
             return Ok(ApiResponse<ResearchConferenceBasicStepResponse>.SuccessResponse(conference, "Thông tin hội nghị nghiên cứu được cập nhật thành công"));
         }
 

@@ -1,18 +1,13 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Repositories.Repositories;
-using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using ConfRadar.Shared.DTO.QrCode;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Xunit;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.RegistrationTest

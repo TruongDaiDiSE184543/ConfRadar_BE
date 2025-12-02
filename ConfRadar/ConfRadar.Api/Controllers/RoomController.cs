@@ -227,7 +227,7 @@ namespace ConfRadar.Api.Controllers
         [HttpGet("available-rooms-between-dates")]
         public async Task<IActionResult> RoomsAvailableBetweenDate([FromQuery] DateOnly startdate, [FromQuery] DateOnly endate, [FromQuery] string cityId = null)
         {
-            var result = await _serviceManager.RoomService.GetAvailableRoomsBetweenDates(startdate, endate,cityId);
+            var result = await _serviceManager.RoomService.GetAvailableRoomsBetweenDates(startdate, endate, cityId);
             return Ok(ApiResponse<List<AvailableRoomResponse>>.SuccessResponse(result, "Lấy thành công danh sách phòng trống"));
         }
     }

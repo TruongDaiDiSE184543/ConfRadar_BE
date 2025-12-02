@@ -2873,7 +2873,7 @@ namespace ConfRadar.Services.Services
                     // Phải order by roundnumber giảm dần để lấy file nộp sau cùng
                     var latestSub = paper.RevisionPaper.RevisionPaperSubmissions?
                         .OrderByDescending(s => s.RevisionDeadlineRound?.RoundNumber ?? 1)
-                        .FirstOrDefault(); 
+                        .FirstOrDefault();
 
                     // ---  Check xem user đã feedback cho submission này chưa ---
                     bool hasGivenFeedback = false;

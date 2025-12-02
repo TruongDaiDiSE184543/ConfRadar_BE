@@ -26,7 +26,7 @@ namespace ConfRadar.Services.Services
         Task ChangePassword(string oldPassword, string newPassword, string userId);
         Task<LoginUserResponse> RefreshToken(string userId, string refreshToken);
         Task<int> ActivateAccount(string userId);
-        Task<int> SuspendAccount(string userId);
+        Task<int> SuspendAccount(UserSuspendRequest request);
 
         Task<int> UpdateProfile(ProfileUpdateRequest request, string userId);
         Task<UserDetailResponse> ViewUserDetail(string userId);
@@ -139,7 +139,7 @@ namespace ConfRadar.Services.Services
         }
         public async Task<RegistrationVerificationResult> VerifyRegistration(string token)
         {
-           
+
             var user = await _unitOfWork.UserRepository.GetUserByRegistrationConfirmationToken(token);
             if (user == null)
             {
@@ -160,8 +160,8 @@ namespace ConfRadar.Services.Services
             var timeNow = await _timeProviderService.GetVietnamTime();
             if (user.VerificationTokenExpiry <= timeNow)
             {
-                return new RegistrationVerificationResult() 
-                { 
+                return new RegistrationVerificationResult()
+                {
                     Result = -1,
                     ErrorCode = RegistrationVerificationMessage.TokenExpired
                 };
@@ -179,6 +179,7 @@ namespace ConfRadar.Services.Services
         }
         public async Task<LoginUserResponse> LocalLogin(LocalLoginUserRequest request)
         {
+
             var user = await _unitOfWork.UserRepository.GetUserByEmail(request.Email);
             if (user == null)
             {
@@ -213,6 +214,8 @@ namespace ConfRadar.Services.Services
             {
                 user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
             }
+            var auditLoginCategory = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(AuditLogActionNameEnum.User.GetDescription());
+
             UserRefreshToken userRefreshToken = new UserRefreshToken()
             {
                 CreatedAt = timeNow,
@@ -222,8 +225,31 @@ namespace ConfRadar.Services.Services
                 UserId = user.UserId,
                 TokenId = Guid.NewGuid().ToString(),
             };
-            await _unitOfWork.UserRepository.UpdateUserAsync(user);
-            await _unitOfWork.UserRefreshTokenRepository.CreateUserRefreshToken(userRefreshToken);
+
+            var auditLogObj = new AuditLog()
+            {
+                AuditLogId = Guid.NewGuid().ToString(),
+                UserId = user.UserId,
+                CategoryId = auditLoginCategory != null ? auditLoginCategory.CategoryId : null,
+                ActionDescription = $"Người dùng {user.FullName} đã {AuditLogDescriptionData.LOGIN.ToString()} lúc {timeNow}",
+                CreatedAt = timeNow,
+                
+            };
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _unitOfWork.UserRepository.UpdateUserAsync(user);
+                await _unitOfWork.UserRefreshTokenRepository.CreateUserRefreshToken(userRefreshToken);
+                await _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLogObj);
+                await _unitOfWork.CommitAsync();
+
+            }catch(Exception e)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
+
+
             return new LoginUserResponse()
             {
                 AccessToken = accessToken,
@@ -244,7 +270,7 @@ namespace ConfRadar.Services.Services
             //    throw new ConfRadarAuthenticationException("Email is not confirmed");
             //}
             var resetToken = _tokenService.GenerateSecureRandomToken();
-            var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailResetPassword_FE+ $"?token={resetToken}";
+            var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailResetPassword_FE + $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
             user.PasswordResetTokenExpiry = await _timeProviderService.GetVietnamTime();
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
@@ -360,8 +386,21 @@ namespace ConfRadar.Services.Services
                 {
                     user.FirebaseWebFcmToken = request.FirebaseWebFcmToken;
                 }
+                var auditLoginCategory = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(AuditLogActionNameEnum.User.GetDescription());
+
+                var auditLogObj = new AuditLog()
+                {
+                    AuditLogId = Guid.NewGuid().ToString(),
+                    UserId = user.UserId,
+                    CategoryId = auditLoginCategory != null ? auditLoginCategory.CategoryId : null,
+                    ActionDescription = $"Người dùng {user.FullName} đã {AuditLogDescriptionData.LOGIN.ToString()} bằng firebase lúc {timeNow}",
+                    CreatedAt = timeNow
+                };
+
+
                 user.LastLogin = timeNow;
                 await _unitOfWork.UserRepository.UpdateUserAsync(user);
+                await _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLogObj);
             }
             bool isUserActive = (bool)user.IsActive;
             var accessToken = await _tokenService.GenerateAccessToken(user.UserId, user.Email, isUserActive);
@@ -420,7 +459,7 @@ namespace ConfRadar.Services.Services
                 RefreshToken = newRefreshToken
             };
         }
-        public async Task<int> SuspendAccount(string userId)
+        public async Task<int> SuspendAccount(UserSuspendRequest request)
         {
 
             var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
@@ -435,7 +474,7 @@ namespace ConfRadar.Services.Services
                 organizerRole.RoleId,
             };
 
-            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(request.UserId);
             if (user == null)
             {
                 throw new BadRequestException("Người dùng không tìm thấy");
@@ -444,9 +483,35 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không thể suspend organizer hoặc admin");
             }
+            if (user.IsActive == false)
+            {
+                throw new BadRequestException($"Người dùng đã bị suspend rồi");
+            }
             int result = 0;
             user.IsActive = false;
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            user.CurrentSuspendReason = request.Reason;
+            user.CurrentSuspendedAt = timeNow;
+
+            //var userSuspendHistories = await _unitOfWork.UserSuspendHistoryRepository.GetUserSuspendHistoriesByUser(request.UserId);
+            //var currentUserSuspend = userSuspendHistories.FirstOrDefault(ush => ush.IsActiveSuspend == true);
+            //if (currentUserSuspend != null) 
+            //{
+            //    throw new BadRequestException($"Người dùng đã bị suspend rồi");
+
+            //}
+            var newUserSuspendObj = new UserSuspendHistory()
+            {
+                SuspendId = Guid.NewGuid().ToString(),
+                IsActiveSuspend = true,
+                Reason = request.Reason,
+                ResumedAt = null,
+                SuspendedAt = timeNow,
+                UserId = request.UserId,
+            };
+
             result += await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            result += await _unitOfWork.UserSuspendHistoryRepository.CreateSuspensionAsync(newUserSuspendObj);
             if (result > 0)
             {
                 await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName, "Account bạn đã bị ngừng", "EmailSuspendAccount.html");
@@ -461,8 +526,27 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Người dùng không tìm thấy");
             }
+            if (user.IsActive == true)
+            {
+                throw new BadRequestException("Người dùng này đã được active rồi");
+            }
+            int result = 0;
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            var currentSuspendHistory = await _unitOfWork.UserSuspendHistoryRepository.GetCurrentUserSuspendHistoryByUser(userId);
+            if (currentSuspendHistory != null)
+            {
+                currentSuspendHistory.IsActiveSuspend = false;
+                currentSuspendHistory.ResumedAt = timeNow;
+                result += await _unitOfWork.UserSuspendHistoryRepository.UpdateSuspensionAsync(currentSuspendHistory);
+            }
+
             user.IsActive = true;
-            return await _unitOfWork.UserRepository.UpdateUserAsync(user);
+            user.CurrentSuspendReason = null;
+            user.CurrentSuspendedAt = null;
+
+            result += await _unitOfWork.UserRepository.UpdateUserAsync(user);
+
+            return result;
         }
         public async Task<int> UpdateProfile(ProfileUpdateRequest request, string userId)
         {
@@ -644,7 +728,7 @@ namespace ConfRadar.Services.Services
 
             if (adminRole == null || organizerRole == null)
                 throw new NotFoundException("Không tìm thấy các role trong hệ thống");
-            if (preparingConferenceStatus ==null || pendingConferenceStatus == null|| readyConferenceStatus ==null || onHoldConferenceStatus==null)
+            if (preparingConferenceStatus == null || pendingConferenceStatus == null || readyConferenceStatus == null || onHoldConferenceStatus == null)
                 throw new NotFoundException("Không tìm thấy các trạng thái trong hệ thống");
 
             List<string> systemRoles = new List<string>()
@@ -652,7 +736,7 @@ namespace ConfRadar.Services.Services
                 adminRole.RoleId,
                 organizerRole.RoleId
             };
-           
+
             List<string> conferenceStatuses = new List<string>()
             {
                 preparingConferenceStatus.ConferenceStatusId,
@@ -660,7 +744,7 @@ namespace ConfRadar.Services.Services
                 readyConferenceStatus.ConferenceStatusId,
                 onHoldConferenceStatus.ConferenceStatusId,
             };
-            return await _unitOfWork.UserRepository.GetAvailableCustomer(systemRoles,conferenceStatuses);
+            return await _unitOfWork.UserRepository.GetAvailableCustomer(systemRoles, conferenceStatuses);
         }
 
         public async Task<List<ReviewerDetailResponse>> ListAllReviewer()
@@ -757,9 +841,9 @@ namespace ConfRadar.Services.Services
             var userList = await _unitOfWork.UserRepository.GetListUser();
 
             var filteredUsers = userList
-                .Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId || ur.RoleId == collabRole.RoleId) 
-                && u.IsActive==true && u.IsEmailConfirmed==true 
-                && u.UserRoles.All(ur=>ur.IsActive==true))
+                .Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRole.RoleId || ur.RoleId == organizerRole.RoleId || ur.RoleId == collabRole.RoleId)
+                && u.IsActive == true && u.IsEmailConfirmed == true
+                && u.UserRoles.All(ur => ur.IsActive == true))
                 .ToList();
             var result = filteredUsers.Select(u => new GetUsersForCollaboratorCreateResponse()
             {
@@ -945,7 +1029,7 @@ namespace ConfRadar.Services.Services
                     CollaboratorContractEmail = u.Email,
                     CollaboratorContractFullName = u.FullName,
                     CollaboratorContractAvatarUrl = u.AvatarUrl,
-                    
+
 
 
                     IsSponsorStep = cc.IsSponsorStep,
@@ -986,10 +1070,10 @@ namespace ConfRadar.Services.Services
 
                     ConferenceCreatedBy = cc.Conference?.CreatedBy,
                     ConferenceCreatedByEmail = cc.Conference?.CreatedByNavigation?.Email,
-                    ConferenceCreatedByAvatarUrl =  cc.Conference?.CreatedByNavigation?.AvatarUrl,
+                    ConferenceCreatedByAvatarUrl = cc.Conference?.CreatedByNavigation?.AvatarUrl,
                     ConferenceCreatedByName = cc.Conference?.CreatedByNavigation?.FullName,
 
-                   
+
 
 
 
