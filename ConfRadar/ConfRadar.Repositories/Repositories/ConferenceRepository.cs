@@ -26,6 +26,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId);
         //Task<List<Conference>> GetConferencesByUserId(string userId);
         Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId, bool isResearchConference);
+        IQueryable<Conference> GetConferencesWithPrice(string readyStatusId);
         Task<List<Conference>> GetConferenceByStatus(ConferenceStatus conferenceStaus);
         Task<int> UpdateMutipleConferenceAsync(List<Conference> conferences);
     }
@@ -70,6 +71,20 @@ namespace ConfRadar.Repositories.Repositories
         public IQueryable<Conference> GetAllConferences()
         {
             return _context.Conferences.Include(c => c.City).Include(c => c.ConferenceStatus).AsNoTracking(); ;
+        }
+
+        public IQueryable<Conference> GetConferencesWithPrice(string readyStatusId)
+        {
+            return _context.Conferences.AsNoTracking()
+                .Include(c => c.City)
+                .Include(c => c.ConferencePrices)
+                    .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
+                .Include(c => c.ConferenceStatus)
+                .Include(c => c.ResearchConferenceDetail)
+                    .ThenInclude(rcd => rcd.RankingCategory)
+                .Include(c => c.TechnicalConferenceDetail)
+                .Where(c => c.ConferenceStatusId == readyStatusId);
         }
 
         public async Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId)
