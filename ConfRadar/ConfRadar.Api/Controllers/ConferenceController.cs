@@ -316,7 +316,7 @@ namespace ConfRadar.Api.Controllers
 
 
         //NEW ENDPOINT 13: update conf status
-        [HttpPost("Update-own-conference-Status")]
+        [HttpPut("Update-own-conference-Status")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]
         public async Task<IActionResult> UpdateConferenceStatus(string confid, string newStatus, string? reason = null)
         {

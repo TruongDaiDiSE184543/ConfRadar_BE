@@ -834,7 +834,7 @@ namespace ConfRadar.Services.Services
 
 
             //from pending can only go delete or back to draft
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId || newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)) 
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)) 
                 throw new Exception("Conference cần Organizer approve lên preparing trước để có thể thay đổi trạng thái hoặc về draft để tiếp tục chỉnh sửa");
 
             //from draft the collaborator can only be transitioned to delete on this method, need to go the request to be approve to go to the pending
@@ -842,8 +842,8 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete. Conference cần request lên pending để Organizer approve lên preparing trước khi có thể thay đổi trạng thái khác");
 
             //from reject can only transitioned to draft
-            if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)
-                throw new Exception("Trạng thái hiện tại của hội nghị là rejected chỉ có thể đổi lên draft để tiếp tục sửa đổi");
+            if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && ( newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId))
+                throw new Exception("Trạng thái hiện tại của hội nghị là rejected chỉ có thể đổi lên draft để tiếp tục sửa đổi hoặc xoá thành delete");
 
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
@@ -1942,14 +1942,24 @@ namespace ConfRadar.Services.Services
 
         public async Task<bool> RequestOrganizerApproval(string confId, string userId)
         {
+            //find conf
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
             if (conference == null) throw new BadRequestException($"Không tìm thấy hội nghị với ID: {confId}");
+
+            //must be the creator to commit the act
             if (conference.CreatedBy != userId) throw new BadRequestException("Bạn không có quyền gởi yêu cầu  approve cho hội nghị này");
+
+            //get user
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+
+            //must be draft to submit the request
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             if (conference.ConferenceStatusId != draftStatus.ConferenceStatusId) throw new BadRequestException($" conference với ID {confId} phải dang là draft status mới có thể yêu cầu duyệt được");
+
+            //if you already submit one and is waiting you can must wait first although it will never reach here since the current need to be draft first so it can't be pending anywaya
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new BadRequestException("Hội nghị đã gửi yêu cầu được duyệt trước đó rồi xin chờ kết quả!");
-            return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với ID: {userId} dang request conference với ID: {confId} để được duyệt");
+            return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với tên: {user.FullName} dang request conference với tên: {conference.ConferenceName} để được duyệt");
         }
 
         // DÁN TOÀN B? PHIÊN B?N NÀY Ð? THAY TH? PHIÊN B?N CU
