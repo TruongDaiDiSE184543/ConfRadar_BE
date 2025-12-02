@@ -11,7 +11,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdateRoomAsync(Room room);
         Task<int> DeleteRoomAsync(Room room);
         Task<Room?> GetRoomByIdAsync(string roomId);
-        Task<List<Room>> GetAllRoomsAsync(string? cityId = null);
+        Task<List<Room>> GetAllRoomsAsync(string? cityId = null,string? destinationId = null);
         IQueryable<Room> GetAllRoomsWithoutTracking();
         Task<List<Room>> GetRoomsByDestinationIdAsync(string destinationId);
         Task<Room?> GetRoomWithDetailsAsync(string roomId);
@@ -43,7 +43,7 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync(c => c.RoomId == roomId);
         }
 
-        public async Task<List<Room>> GetAllRoomsAsync(string? cityId = null)
+        public async Task<List<Room>> GetAllRoomsAsync(string? cityId = null,string? destinationId = null)
         {
             var query = _context.Rooms
              .Include(r => r.Destination)
@@ -53,6 +53,11 @@ namespace ConfRadar.Repositories.Repositories
             if (!string.IsNullOrEmpty(cityId))
             {
                 query = query.Where(r => r.Destination.CityId == cityId);
+            }
+
+            if (!string.IsNullOrEmpty(destinationId))
+            {
+                query = query.Where(r => r.Destination.CityId == destinationId);
             }
 
             return await query.ToListAsync();

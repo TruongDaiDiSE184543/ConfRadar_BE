@@ -378,6 +378,17 @@ namespace ConfRadar.Services.Services
             }
         }
 
+
+        private async Task NotDeleteAndCancel(Conference conference)
+        {
+            var deleteStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Deleted.GetDescription());
+            var cancelStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Cancelled.GetDescription());
+
+            if (conference.ConferenceStatusId == deleteStatus.ConferenceStatusId || conference.ConferenceStatusId == cancelStatus.ConferenceStatusId)
+                throw new BadRequestException("Không thể thêm info cho những hội nghị đã bị delete hoặc cancelled");
+            return ;
+        }
+
         private Task ValidatePaperFormat(string paperFormat)
         {
 
@@ -2736,10 +2747,15 @@ namespace ConfRadar.Services.Services
             if (conference.CreatedBy != userId)
                 throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
 
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu");
+
             if (request.File == null)
                 throw new Exception("Cần phải có file");
             if (!_objectStorageFileService.IsValidDocumentFile(request.File))
                 throw new Exception($"Không hỗ trợ định dạng {request.File.ContentType}");
+
+            await NotDeleteAndCancel(conference);
             string fileName = "";
             // Handle file upload if provided
             using var stream = request.File.OpenReadStream();
@@ -2816,11 +2832,20 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
 
+            if (request.File == null)
+                throw new BadRequestException("Cần có file để upload");
+
             if (conference.CreatedBy != userId)
-                throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+                throw new BadRequestException("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ có tác dụng cho hội nghị nghiên cứu");
 
             if (!_objectStorageFileService.IsValidDocumentFile(request.File))
                 throw new Exception($"Không hỗ trợ định dạng {request.File.ContentType}");
+
+            await NotDeleteAndCancel(conference);
+
 
             var rankingFileUrl = request.ToModel(conferenceId);
 
@@ -2833,6 +2858,7 @@ namespace ConfRadar.Services.Services
             return rankingFileUrl.ToResponse();
         }
 
+       
         public async Task<List<RankingFileUrlResponse>> GetRankingFileUrlsByConferenceIdAsync(string conferenceId)
         {
             var fileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);
@@ -2892,13 +2918,23 @@ namespace ConfRadar.Services.Services
             if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
 
 
+            await NotDeleteAndCancel(conference);
 
             if (conference == null)
                 throw new Exception($"Không tìm được conference với ID {conferenceId}");
 
+            if (string.IsNullOrEmpty(request.ReferenceUrl) || string.IsNullOrEmpty(request.ReferenceUrl.Trim()))
+                throw new BadRequestException("Link tham khảo không thể để trống");
+
+            // Validate URL format and protocol
+            if (!request.ReferenceUrl.StartsWith("http://") && !request.ReferenceUrl.StartsWith("https://"))
+                throw new BadRequestException("Link tham khảo phải bắt đầu bằng http:// hoặc https://");
 
             if (conference.CreatedBy != userId)
                 throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ có tác dụng cho hội nghị nghiên cứu");
 
 
             var rankingReferenceUrl = request.ToModel(conferenceId);
