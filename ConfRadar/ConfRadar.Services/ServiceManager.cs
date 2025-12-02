@@ -79,7 +79,7 @@ namespace ConfRadar.Services
         private readonly INotificationService _notificationService;
         private readonly IDashboardService _dashboardService;
         private readonly IReviewerService _reviewerService;
-        private readonly IAuditLogService _auditLogService; 
+        private readonly IAuditLogService _auditLogService;
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
             ITicketService ticketService,
