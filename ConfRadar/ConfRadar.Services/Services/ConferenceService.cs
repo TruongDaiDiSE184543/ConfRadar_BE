@@ -19,7 +19,7 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS
         // Endpoint 1: Get all conferences with their price phases (with pagination/filtering)
-        Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null);
+        Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noReviewerFee = null, int? totalRevisionRound = 0, string? targetAudience = null);
 
         // Endpoint 2: Get detailed technical conference data
         Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId, string? userId);
@@ -306,36 +306,76 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS IMPLEMENTATION
 
-        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null)
+        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,bool? isResearch = null,string? rankingCategoryId = null,bool? allowListener = null, bool? noReviewerFee = null,int? totalRevisionRound = null,string? targetAudience = null)
         {
-            //only retrieve conference with status ready
-            var readyStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
-            IQueryable<Conference> query = _unitOfWork.ConferenceRepository.GetAllConferences()
-                .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhases).ThenInclude(pp => pp.RefundPolicies)
-                    .Where(c => c.ConferenceStatusId == readyStatus.ConferenceStatusId)
-                    .OrderByDescending(c => c.CreatedAt);
+            var readyStatus = await _unitOfWork.ConferenceStatusRepository
+       .GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
 
-            // Apply filters
+            // 1. Gọi Repo (đã thêm Include Technical)
+            IQueryable<Conference> query = _unitOfWork.ConferenceRepository
+                .GetConferencesWithPrice(readyStatus.ConferenceStatusId);
+
+            // 2. Filter Cơ bản
             if (!string.IsNullOrEmpty(searchKeyword))
             {
-                query = query.Where(c => c.ConferenceName.ToLower().Contains(searchKeyword.ToLower()) || c.Description.ToLower().Contains(searchKeyword.ToLower()));
+                var lowerKeyword = searchKeyword.ToLower(); // Tối ưu: lower 1 lần bên ngoài
+                query = query.Where(c => c.ConferenceName.ToLower().Contains(lowerKeyword) ||
+                                         c.Description.ToLower().Contains(lowerKeyword));
             }
 
             if (!string.IsNullOrEmpty(cityId))
-            {
                 query = query.Where(c => c.CityId == cityId);
-            }
 
             if (startDate.HasValue)
-            {
                 query = query.Where(c => c.StartDate >= startDate);
-            }
 
             if (endDate.HasValue)
-            {
                 query = query.Where(c => c.EndDate <= endDate);
+
+            // 3. Filter Loại Hội Nghị (Research vs Technical)
+            if (isResearch.HasValue)
+            {
+                query = query.Where(c => c.IsResearchConference == isResearch.Value);
             }
+
+            // 4. Filter Chi tiết Research (Chạy độc lập, tự động check null)
+            if (!string.IsNullOrEmpty(rankingCategoryId))
+            {
+                // Tự động lọc ra những cái có ResearchDetail và đúng Ranking
+                query = query.Where(c => c.ResearchConferenceDetail != null &&
+                                         c.ResearchConferenceDetail.RankingCategoryId == rankingCategoryId);
+            }
+
+            if (allowListener.HasValue)
+            {
+                query = query.Where(c => c.ResearchConferenceDetail != null &&
+                                         c.ResearchConferenceDetail.AllowListener == allowListener.Value);
+            }
+
+            if (totalRevisionRound.HasValue)
+            {
+                query = query.Where(c => c.ResearchConferenceDetail != null &&
+                                         c.ResearchConferenceDetail.RevisionAttemptAllowed == totalRevisionRound.Value);
+            }
+
+            if (noReviewerFee.HasValue)
+            {
+                if (noReviewerFee.Value) // Muốn tìm cái ReviewFee = 0
+                    query = query.Where(c => c.ResearchConferenceDetail != null &&
+                                             c.ResearchConferenceDetail.ReviewFee == 0);
+                else // Muốn tìm cái có phí
+                    query = query.Where(c => c.ResearchConferenceDetail != null &&
+                                             c.ResearchConferenceDetail.ReviewFee > 0);
+            }
+
+            // 5. Filter Chi tiết Technical
+            if (!string.IsNullOrEmpty(targetAudience))
+            {
+                var lowerAudience = targetAudience.ToLower();
+                query = query.Where(c => c.TechnicalConferenceDetail != null &&
+                                         c.TechnicalConferenceDetail.TargetAudience.ToLower().Contains(lowerAudience));
+            }
+
 
             var totalCount = await query.CountAsync();
 
@@ -364,6 +404,8 @@ namespace ConfRadar.Services.Services
                 CityId = conference.CityId,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
+                targetAudience = conference.TechnicalConferenceDetail != null ? conference.TechnicalConferenceDetail.TargetAudience : null,
+                ResearchConferenceDetailResponse = conference.ResearchConferenceDetail != null ? conference.ResearchConferenceDetail.ToResearchDetailForWithPriceEndpoint() : null,
                 ConferencePrices = conference.ConferencePrices?.Select(cp => new DTOs.Conference.ConferencePriceWithPhasesResponse
                 {
                     ConferencePriceId = cp.ConferencePriceId,
@@ -382,14 +424,7 @@ namespace ConfRadar.Services.Services
                         ApplyPercent = pp.ApplyPercent,
                         TotalSlot = pp.TotalSlot,
                         AvailableSlot = pp.AvailableSlot,
-                        RefundPolicies = pp?.RefundPolicies.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                        {
-                            RefundPolicyId = rp.RefundPolicyId,
-                            PercentRefund = rp.PercentRefund,
-                            PricePhaseID = rp.PricePhaseId,
-                            RefundDeadline = rp.RefundDeadline,
-                            RefundOrder = rp.RefundOrder
-                        }).OrderBy(rp => rp.RefundOrder).ToList()
+                        RefundPolicies = pp?.RefundPolicies.Select(rp => rp.ToRefundPolicyResponse()).OrderBy(rp => rp.RefundOrder).ToList()
                     }).ToList()
                 }).ToList()
             }).ToList();
@@ -799,7 +834,9 @@ namespace ConfRadar.Services.Services
 
 
             //from pending can only go delete or back to draft
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId || newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId))
+
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)) 
+
                 throw new Exception("Conference cần Organizer approve lên preparing trước để có thể thay đổi trạng thái hoặc về draft để tiếp tục chỉnh sửa");
 
             //from draft the collaborator can only be transitioned to delete on this method, need to go the request to be approve to go to the pending
@@ -807,8 +844,8 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete. Conference cần request lên pending để Organizer approve lên preparing trước khi có thể thay đổi trạng thái khác");
 
             //from reject can only transitioned to draft
-            if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)
-                throw new Exception("Trạng thái hiện tại của hội nghị là rejected chỉ có thể đổi lên draft để tiếp tục sửa đổi");
+            if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && ( newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId))
+                throw new Exception("Trạng thái hiện tại của hội nghị là rejected chỉ có thể đổi lên draft để tiếp tục sửa đổi hoặc xoá thành delete");
 
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
@@ -1907,14 +1944,24 @@ namespace ConfRadar.Services.Services
 
         public async Task<bool> RequestOrganizerApproval(string confId, string userId)
         {
+            //find conf
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
             if (conference == null) throw new BadRequestException($"Không tìm thấy hội nghị với ID: {confId}");
+
+            //must be the creator to commit the act
             if (conference.CreatedBy != userId) throw new BadRequestException("Bạn không có quyền gởi yêu cầu  approve cho hội nghị này");
+
+            //get user
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+
+            //must be draft to submit the request
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
             if (conference.ConferenceStatusId != draftStatus.ConferenceStatusId) throw new BadRequestException($" conference với ID {confId} phải dang là draft status mới có thể yêu cầu duyệt được");
+
+            //if you already submit one and is waiting you can must wait first although it will never reach here since the current need to be draft first so it can't be pending anywaya
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
             if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId) throw new BadRequestException("Hội nghị đã gửi yêu cầu được duyệt trước đó rồi xin chờ kết quả!");
-            return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với ID: {userId} dang request conference với ID: {confId} để được duyệt");
+            return await UpdateConferenceStatusAsync(confId, pendingStatus.ConferenceStatusName, $"Collborator với tên: {user.FullName} dang request conference với tên: {conference.ConferenceName} để được duyệt");
         }
 
         // DÁN TOÀN B? PHIÊN B?N NÀY Ð? THAY TH? PHIÊN B?N CU

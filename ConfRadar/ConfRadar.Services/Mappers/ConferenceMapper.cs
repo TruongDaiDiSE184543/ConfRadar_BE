@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Conference;
+using System.Runtime.CompilerServices;
 
 namespace ConfRadar.Services.Mappers
 {
@@ -280,6 +281,23 @@ namespace ConfRadar.Services.Mappers
                 IsSponsorStep = model.IsSponsorStep,
                 IsTicketSelling = model.IsTicketSelling,
                 SignDay = model.SignDay
+            };
+        }
+
+        public static ResearchDetailForWithPriceEndpoint ToResearchDetailForWithPriceEndpoint (this ResearchConferenceDetail model)
+        {
+            return new ResearchDetailForWithPriceEndpoint
+            {
+                AllowListener = model.AllowListener,
+                NumberPaperAccept = model.NumberPaperAccept,
+                PaperFormat = model.PaperFormat,
+                RankingCategoryId = model.RankingCategoryId,
+                RankingCategoryName = model.RankingCategory.RankName,
+                RankingDescription = model.RankingDescription,
+                RankValue = model.RankValue,
+                RankYear = model.RankYear,
+                ReviewFee = model.ReviewFee,
+                RevisionAttemptAllowed = model.RevisionAttemptAllowed
             };
         }
     }
