@@ -12,6 +12,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
     {
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly AuthService _authService;
+        private readonly Mock<ITimeProviderService> _mockTimeProviderService;
 
         public ActivateAccountTest()
         {
@@ -21,7 +22,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             var mockTokenService = new Mock<ITokenService>();
             var mockObjectStorageFileService = new Mock<IObjectStorageFileService>();
             var mockFirebaseAuthService = new Mock<IFirebaseAuthService>();
-            var mockTimeProviderService = new Mock<ITimeProviderService>();
+            _mockTimeProviderService = new Mock<ITimeProviderService>();
             var jwtSettings = Options.Create(new JwtSettings { SecretKey = "mock", ExpiresRefreshToken = 7 });
             var objectStorageSettings = Options.Create(new ObjectStorageSettings { EndPoint = "https://mockstorage.com" });
 
@@ -34,7 +35,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
                 mockObjectStorageFileService.Object,
                 objectStorageSettings,
                 mockFirebaseAuthService.Object,
-                mockTimeProviderService.Object
+                _mockTimeProviderService.Object
             );
         }
 
@@ -42,17 +43,22 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
         public async Task ShouldActivateAccount_WhenUserExists()
         {
             var user = new User { UserId = "user1", IsActive = false };
-
+            var now = DateTime.UtcNow;
             _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("user1"))
                 .ReturnsAsync(user);
 
             _mockUnitOfWork.Setup(u => u.UserRepository.UpdateUserAsync(user))
                 .ReturnsAsync(1);
-
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime())
+            .ReturnsAsync(now);
+            _mockUnitOfWork.Setup(u => u.UserSuspendHistoryRepository.GetCurrentUserSuspendHistoryByUser("user1"))
+        .ReturnsAsync((UserSuspendHistory)null); // trả null nếu không có lịch sử suspend
             var result = await _authService.ActivateAccount("user1");
 
             Assert.Equal(1, result);
             Assert.True(user.IsActive);
+            Assert.Null(user.CurrentSuspendReason);
+            Assert.Null(user.CurrentSuspendedAt);
             _mockUnitOfWork.Verify(u => u.UserRepository.UpdateUserAsync(user), Times.Once);
         }
 

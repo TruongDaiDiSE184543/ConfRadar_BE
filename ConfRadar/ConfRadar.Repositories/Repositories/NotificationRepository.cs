@@ -14,6 +14,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Notification?> GetNotificationByIdAsync(string notificationId);
         Task<int> UpdateNotificationAsync(Notification notification);
         Task<bool> DeleteNotificationAsync(Notification notification);
+        Task<int> UpdateMutipleNotificationAsync(List<Notification> notifications);
     }
     public class NotificationRepository : GenericRepository<Notification>, INotificationRepository
     {
@@ -45,7 +46,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await UpdateAsync(notification);
         }
-
+        public async Task<int> UpdateMutipleNotificationAsync(List<Notification> notifications)
+        {
+            _context.UpdateRange(notifications);
+            return await _context.SaveChangesAsync();
+        }
         public async Task<bool> DeleteNotificationAsync(Notification notification)
         {
             return await RemoveAsync(notification);

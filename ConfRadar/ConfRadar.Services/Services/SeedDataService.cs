@@ -19,6 +19,7 @@ namespace ConfRadar.Services.Services
         Task SeedCheckInStatusAsync();
         //Task SeedReviewStatusAsync();
         Task SeedWaitListStatusesAsync();
+        Task SeedAuditLogCategoriesAsync();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -228,6 +229,24 @@ namespace ConfRadar.Services.Services
                     Name = name,
                 });
         }
+
+        public async Task SeedAuditLogCategoriesAsync()
+        {
+            var categoryNames = Enum.GetValues<AuditLogActionNameEnum>()
+                .Select(c => c.GetDescription())
+                .ToList();
+
+            await SeedEntityAsync<AuditLogCategory>(
+                categoryNames,
+                _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync,
+                _unitOfWork.AuditLogCategoryRepository.CreateMultipleAuditLogCategoriesAsync,
+                name => new AuditLogCategory
+                {
+                    CategoryId = Guid.NewGuid().ToString(),
+                    Name = name
+                });
+        }
+
     }
 
 

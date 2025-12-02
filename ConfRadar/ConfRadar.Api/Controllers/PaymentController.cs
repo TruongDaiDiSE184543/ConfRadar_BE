@@ -8,7 +8,6 @@ using ConfRadar.Shared.DTO.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -118,7 +117,7 @@ namespace ConfRadar.Api.Controllers
         [HttpGet("success-vnpay")]
         public async Task<IActionResult> SuccessVnPay([FromQuery] VnPayResponse data)
         {
-            var result =  _vnPayService.VerifyVnPayPayment(data);
+            var result = _vnPayService.VerifyVnPayPayment(data);
             var successRedirectUrl = $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.PaymentSuccess_FE}?code={PaymentMessageResult.VnPaySuccess}";
             var failRedirectUrl = $"{FrontEndDomain.Url}{ConfRadarApiEndPoint.PaymentSuccess_FE}?code={PaymentMessageResult.VnPayFail}";
             if (!result)

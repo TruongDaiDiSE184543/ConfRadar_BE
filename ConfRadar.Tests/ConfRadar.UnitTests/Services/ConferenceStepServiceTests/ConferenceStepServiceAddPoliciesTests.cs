@@ -4,13 +4,9 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -118,7 +114,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
             _mockUnitOfWork.Verify(u => u.RollbackAsync(), Times.Never);
         }
-        
+
         [Fact]
         public async Task AddConferencePoliciesAsync_Should_ThrowNotFoundException_When_ConferenceDoesNotExist()
         {
@@ -126,7 +122,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var request = CreateValidAddPoliciesRequest();
             _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync("nonexistent-conf"))
                            .ReturnsAsync((Conference)null);
-            
+
             // ACT & ASSERT
             await Assert.ThrowsAsync<NotFoundException>(
                 () => _conferenceStepService.AddConferencePoliciesAsync("nonexistent-conf", request, "user-123")
@@ -140,7 +136,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var conference = CreateTechnicalConference(userId: "creator-id");
             var request = CreateValidAddPoliciesRequest();
             SetupValidMocks(conference);
-            
+
             // ACT & ASSERT
             await Assert.ThrowsAsync<Exception>(
                 () => _conferenceStepService.AddConferencePoliciesAsync(conference.ConferenceId, request, "other-user-id")
@@ -153,7 +149,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // ARRANGE
             var conference = CreateTechnicalConference();
             SetupValidMocks(conference);
-            
+
             // ACT & ASSERT
             await Assert.ThrowsAsync<NullReferenceException>(
                 () => _conferenceStepService.AddConferencePoliciesAsync(conference.ConferenceId, null, "user-123")

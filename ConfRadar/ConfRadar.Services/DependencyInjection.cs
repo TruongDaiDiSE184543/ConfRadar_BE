@@ -66,7 +66,7 @@ namespace ConfRadar.Services
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IServiceManager, ServiceManager>();
             services.AddScoped<IReviewerService, ReviewerService>();
-
+            services.AddScoped<IAuditLogService, AuditLogService>();
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>
             new Minio.MinioClient().WithEndpoint(objectStorageSettings!.EndPointAccess)
@@ -95,29 +95,44 @@ namespace ConfRadar.Services
 
             services.AddQuartz(q =>
             {
-                var jobKey = new JobKey("NotifyWaitListQuartzJob");
-                q.AddJob<NotifyWaitListQuartzJob>(opts => opts.WithIdentity(jobKey));
+                var notifyJobKey = new JobKey("NotifyWaitListQuartzJob");
+                q.AddJob<NotifyWaitListQuartzJob>(opts => opts.WithIdentity(notifyJobKey));
 
                 q.AddTrigger(opts => opts
-                    .ForJob(jobKey)
+                    .ForJob(notifyJobKey)
                     .WithIdentity("NotifyWaitListTrigger")
                     .WithSimpleSchedule(x => x.WithIntervalInHours(10).RepeatForever()));
-            });
 
-            services.AddQuartz(q =>
-            {
-                var jobKey = new JobKey("ResetNotifyWaitListQuartzJob");
-                q.AddJob<ResetNotifyWaitListQuartzJob>(opts => opts.WithIdentity(jobKey));
+
+
+                var resetWLJobKey = new JobKey("ResetNotifyWaitListQuartzJob");
+                q.AddJob<ResetNotifyWaitListQuartzJob>(opts => opts.WithIdentity(resetWLJobKey));
 
                 q.AddTrigger(opts => opts
-                    .ForJob(jobKey)
+                    .ForJob(resetWLJobKey)
                     .WithIdentity("ResetNotifyWaitListTrigger")
                     .WithSimpleSchedule(x => x.WithIntervalInHours(12).RepeatForever()));
+
+
+
+                var updateRVCJobKey = new JobKey("UpdateReviewerContractQuartzJob");
+                q.AddJob<UpdateReviewerContractQuartzJob>(opts => opts.WithIdentity(updateRVCJobKey));
+
+                q.AddTrigger(opts => opts
+                    .ForJob(updateRVCJobKey)
+                    .WithIdentity("UpdateReviewerContractQuartzJob")
+                    .WithSimpleSchedule(x => x.WithIntervalInHours(12).RepeatForever()));
+
+
+
+                var updateUCIJobKey = new JobKey("UpdateUserCheckInQuartzJob");
+                q.AddJob<UpdateUserCheckInQuartzJob>(opts => opts.WithIdentity(updateUCIJobKey));
+
+                q.AddTrigger(opts => opts
+                    .ForJob(updateUCIJobKey)
+                    .WithIdentity("UpdateUserCheckInQuartzJob")
+                    .WithSimpleSchedule(x => x.WithIntervalInHours(6).RepeatForever()));
             });
-
-
-
-
 
             return services;
         }

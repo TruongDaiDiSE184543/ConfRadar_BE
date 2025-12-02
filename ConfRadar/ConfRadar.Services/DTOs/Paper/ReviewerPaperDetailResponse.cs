@@ -1,6 +1,4 @@
-﻿using ConfRadar.Shared.DTO.Paper;
-
-namespace ConfRadar.Services.DTOs.Paper
+﻿namespace ConfRadar.Services.DTOs.Paper
 {
     public class ReviewerWorkItemResponse
     {

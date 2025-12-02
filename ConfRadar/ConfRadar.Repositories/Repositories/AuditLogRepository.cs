@@ -9,7 +9,7 @@ namespace ConfRadar.Repositories.Repositories
     {
         Task<int> CreateAuditLogAsync(AuditLog auditLog);
         Task<AuditLog?> GetAuditLogByIdAsync(string auditLogId);
-        Task<List<AuditLog>> GetAllAuditLogsAsync();
+        Task<List<AuditLog>> GetAllAuditLogsWithoutTrackingAsync();
         Task<List<AuditLog>> GetAuditLogsByUserIdAsync(string userId);
     }
     public class AuditLogRepository : GenericRepository<AuditLog>, IAuditLogRepository
@@ -34,9 +34,12 @@ namespace ConfRadar.Repositories.Repositories
                 .FirstOrDefaultAsync(a => a.AuditLogId == auditLogId);
         }
 
-        public async Task<List<AuditLog>> GetAllAuditLogsAsync()
+        public async Task<List<AuditLog>> GetAllAuditLogsWithoutTrackingAsync()
         {
             return await _context.AuditLogs
+                .Include(al=>al.Category)
+                .Include(al=>al.User)
+                .AsNoTracking()
                 .ToListAsync();
         }
 

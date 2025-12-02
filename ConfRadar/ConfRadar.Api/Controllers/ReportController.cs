@@ -67,7 +67,7 @@ namespace ConfRadar.Api.Controllers
 
         [Authorize]
         [HttpGet("get-own-reports")]
-        public async Task <IActionResult> GetMyReports()
+        public async Task<IActionResult> GetMyReports()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ReportService.GetReportsByUserIdAsync(userId);

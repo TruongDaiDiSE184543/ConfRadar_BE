@@ -141,7 +141,11 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
                 IsActive = true,
                 LoginProvider = "Local"
             };
-
+            var auditCategory = new AuditLogCategory
+            {
+                CategoryId = "c123",
+                Name = "User"
+            };
             var now = DateTime.UtcNow;
 
             _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByEmail(request.Email))
@@ -161,11 +165,19 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(u => u.UserRepository.UpdateUserAsync(It.IsAny<User>()))
             .ReturnsAsync(1);
+            _mockUnitOfWork.Setup(u => u.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(It.IsAny<string>()))
+    .ReturnsAsync(auditCategory);
+
+            // Mock AuditLogRepository
+            _mockUnitOfWork.Setup(u => u.AuditLogRepository.CreateAuditLogAsync(It.IsAny<AuditLog>()))
+                .ReturnsAsync(1);
 
 
             _mockUnitOfWork.Setup(u => u.UserRefreshTokenRepository.CreateUserRefreshToken(It.IsAny<UserRefreshToken>()))
                 .ReturnsAsync(1);
-
+            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
+            _mockUnitOfWork.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
+            _mockUnitOfWork.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
             var result = await _authService.LocalLogin(request);
 
             Assert.Equal("access123", result.AccessToken);
@@ -175,6 +187,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Verify(u => u.UserRepository.UpdateUserAsync(It.IsAny<User>()), Times.Once);
             _mockUnitOfWork.Verify(u => u.UserRefreshTokenRepository.CreateUserRefreshToken(It.IsAny<UserRefreshToken>()), Times.Once);
+            _mockUnitOfWork.Verify(u => u.AuditLogRepository.CreateAuditLogAsync(It.IsAny<AuditLog>()), Times.Once);
         }
     }
 

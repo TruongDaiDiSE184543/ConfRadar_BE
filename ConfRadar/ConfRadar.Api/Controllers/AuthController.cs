@@ -81,19 +81,19 @@ namespace ConfRadar.Api.Controllers
             var refreshTokenResponse = await _serviceManager.AuthService.RefreshToken(userId!, request.Token);
             return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(refreshTokenResponse, "Token refreshed successfully"));
         }
-        [Authorize]
+        [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("suspend-account")]
-        public async Task<IActionResult> SuspendAccount(string userId)
+        public async Task<IActionResult> SuspendAccount([FromBody] UserSuspendRequest request)
         {
-            var result = await _serviceManager.AuthService.SuspendAccount(userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã đình chỉ account này!"));
+            var result = await _serviceManager.AuthService.SuspendAccount(request);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã đình chỉ tài khoản này!"));
         }
-        [Authorize]
+        [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("activate-account")]
-        public async Task<IActionResult> ActivateAccount(string userId)
+        public async Task<IActionResult> ActivateAccount([FromBody] UserActiveAccountRequest request)
         {
-            var result = await _serviceManager.AuthService.ActivateAccount(userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Activated user!"));
+            var result = await _serviceManager.AuthService.ActivateAccount(request.UserId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã kích hoạt tài khoản của người dùng"));
         }
         [Authorize]
         [HttpPut("update-profile")]
@@ -139,14 +139,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.AuthService.ListAllReviewer();
             return Ok(ApiResponse<List<ReviewerDetailResponse>>.SuccessResponse(result, $"Danh sách reviewer"));
         }
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("suspend-external-reviewer/{userId}")]
         public async Task<IActionResult> SuspendExternalReviewer([FromRoute] string userId)
         {
             var result = await _serviceManager.AuthService.SuspendExternalReviewerAccount(userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã suspend người reviewer outsource với id {userId}"));
         }
-        [Authorize(Roles = "Conference Organizer")]
+        [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("activate-external-reviewer/{userId}")]
         public async Task<IActionResult> ActivateExternalReviewer([FromRoute] string userId)
         {

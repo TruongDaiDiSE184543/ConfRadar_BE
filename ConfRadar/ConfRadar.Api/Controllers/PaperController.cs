@@ -12,7 +12,6 @@ using ConfRadar.Shared.DTO.User;
 using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -353,11 +352,11 @@ namespace ConfRadar.Api.Controllers
 
         [Authorize(Roles = "Local Reviewer, External Reviewer")]
         [HttpGet("get-detail-assigned-list")]
-        public async Task<IActionResult> GetDetailAssignedList([FromQuery]string confId)
+        public async Task<IActionResult> GetDetailAssignedList([FromQuery] string confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.GetAssignedPapersDetailedAsync(userId,confId);
-            return Ok(ApiResponse <List<ReviewerWorkItemResponse>>.SuccessResponse(result, "Đã lấy chi tiết trạng thái và việc cần làm cho danh sách paper được phân công trong hội nghị"));
+            var result = await _serviceManager.PaperService.GetAssignedPapersDetailedAsync(userId, confId);
+            return Ok(ApiResponse<List<ReviewerWorkItemResponse>>.SuccessResponse(result, "Đã lấy chi tiết trạng thái và việc cần làm cho danh sách paper được phân công trong hội nghị"));
         }
 
 

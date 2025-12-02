@@ -3,7 +3,6 @@ using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Shared.DTO.User;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Primitives;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -24,7 +23,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<User>> GetListUser();
         Task<List<User>> GetReviewerList(string localReviewerRoleId);
 
-        Task<List<AvailableCustomerResponse>> GetAvailableCustomer(List<string> systemRoleIds,List<string> conferenceStatus);
+        Task<List<AvailableCustomerResponse>> GetAvailableCustomer(List<string> systemRoleIds, List<string> conferenceStatus);
         Task<List<User>> GetUserByRole(Role role);
 
 
@@ -42,16 +41,16 @@ namespace ConfRadar.Repositories.Repositories
             return await CreateAsync(user);
         }
 
-        public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer(List<string> systemRoleIds,List<string> conferenceStatusIds)
+        public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer(List<string> systemRoleIds, List<string> conferenceStatusIds)
         {
-           
+
             var listCustomer = await (from u in _context.Users
-                                      where !_context.PaperReviewers.Any(pr => pr.UserId == u.UserId 
-                                      && pr.Paper!=null && pr.Paper.Conference != null && pr.Paper.Conference.ConferenceStatus!=null &&
-                                      conferenceStatusIds.Contains(pr.Paper.Conference.ConferenceStatusId)) 
+                                      where !_context.PaperReviewers.Any(pr => pr.UserId == u.UserId
+                                      && pr.Paper != null && pr.Paper.Conference != null && pr.Paper.Conference.ConferenceStatus != null &&
+                                      conferenceStatusIds.Contains(pr.Paper.Conference.ConferenceStatusId))
                                       && u.IsActive == true && u.IsEmailConfirmed == true
-                                      && u.UserRoles.All(ur=>ur.IsActive==true)
-                                      && !u.UserRoles.Any(ur=> systemRoleIds.Contains(ur.RoleId))
+                                      && u.UserRoles.All(ur => ur.IsActive == true)
+                                      && !u.UserRoles.Any(ur => systemRoleIds.Contains(ur.RoleId))
                                       select new AvailableCustomerResponse()
                                       {
                                           UserId = u.UserId,
@@ -122,7 +121,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Users
 
-                 
+
 
                  .Include(u => u.CollaboratorContracts)
                     .ThenInclude(cc => cc.Conference)
