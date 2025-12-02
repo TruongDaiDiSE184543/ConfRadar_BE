@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.Shared.DTO.AuditLog
+﻿namespace ConfRadar.Shared.DTO.AuditLog
 {
     public class AuditLogDetailResponse
     {
@@ -15,7 +9,7 @@ namespace ConfRadar.Shared.DTO.AuditLog
         public string? UserAvatarUrl { get; set; }
 
         public string? CategoryId { get; set; }
-        public string? CategoryName { get; set; } 
+        public string? CategoryName { get; set; }
 
         public string? ActionDescription { get; set; }
         public DateTime? CreatedAt { get; set; }

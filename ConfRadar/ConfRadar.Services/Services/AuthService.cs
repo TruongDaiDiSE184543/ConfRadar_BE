@@ -33,7 +33,7 @@ namespace ConfRadar.Services.Services
         Task<List<ListUserDetailForAdminAndOrganizerResponse>> ListUserForAdminAndOrganizer();
         Task<int> CreateCollaboratorAccount(CreateCollaboratorAccountRequest request);
         Task<List<GetUsersForCollaboratorCreateResponse>> GetUsersForCollaboratorCreate();
-        Task<List<AvailableCustomerResponse>> GetAvailableCustomer();
+
         Task<List<ReviewerDetailResponse>> ListAllReviewer();
 
         Task<int> SuspendExternalReviewerAccount(string userId);
@@ -233,7 +233,7 @@ namespace ConfRadar.Services.Services
                 CategoryId = auditLoginCategory != null ? auditLoginCategory.CategoryId : null,
                 ActionDescription = $"Người dùng {user.FullName} đã {AuditLogDescriptionData.LOGIN.ToString()} lúc {timeNow}",
                 CreatedAt = timeNow,
-                
+
             };
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -243,7 +243,8 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLogObj);
                 await _unitOfWork.CommitAsync();
 
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 await _unitOfWork.RollbackAsync();
                 throw;
@@ -716,36 +717,7 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<List<AvailableCustomerResponse>> GetAvailableCustomer()
-        {
-            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
-            var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
 
-            var preparingConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription());
-            var pendingConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
-            var readyConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            var onHoldConferenceStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
-
-            if (adminRole == null || organizerRole == null)
-                throw new NotFoundException("Không tìm thấy các role trong hệ thống");
-            if (preparingConferenceStatus == null || pendingConferenceStatus == null || readyConferenceStatus == null || onHoldConferenceStatus == null)
-                throw new NotFoundException("Không tìm thấy các trạng thái trong hệ thống");
-
-            List<string> systemRoles = new List<string>()
-            {
-                adminRole.RoleId,
-                organizerRole.RoleId
-            };
-
-            List<string> conferenceStatuses = new List<string>()
-            {
-                preparingConferenceStatus.ConferenceStatusId,
-                pendingConferenceStatus.ConferenceStatusId,
-                readyConferenceStatus.ConferenceStatusId,
-                onHoldConferenceStatus.ConferenceStatusId,
-            };
-            return await _unitOfWork.UserRepository.GetAvailableCustomer(systemRoles, conferenceStatuses);
-        }
 
         public async Task<List<ReviewerDetailResponse>> ListAllReviewer()
         {

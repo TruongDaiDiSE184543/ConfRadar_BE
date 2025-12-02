@@ -1,7 +1,6 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Shared.DTO.AuditLog;
-using ConfRadar.Shared.DTO.Ticket;
 
 namespace ConfRadar.Services.Services
 {

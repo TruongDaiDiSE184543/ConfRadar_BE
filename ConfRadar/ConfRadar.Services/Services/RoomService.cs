@@ -23,7 +23,7 @@ namespace ConfRadar.Services.Services
         Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
         Task<List<RoomAvailablity>> RoomAvailableBetweenDate(string roomId, DateOnly startDate, DateOnly endDate);
-        Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate, string cityId = null,string destinationId = null);
+        Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate, string cityId = null, string destinationId = null);
     }
 
     public class RoomService : IRoomService
@@ -606,7 +606,7 @@ namespace ConfRadar.Services.Services
             if (daysBetween > 7) throw new BadRequestException("Khoảng cách không thể vượt quá 7 ngày.");
 
             // 2. Lấy phòng đã lọc theo City ngay từ DB (Tối ưu 1)
-            var rooms = await _unitOfWork.RoomRepository.GetAllRoomsAsync(cityId,destinationId);
+            var rooms = await _unitOfWork.RoomRepository.GetAllRoomsAsync(cityId, destinationId);
             if (!rooms.Any()) return new List<AvailableRoomResponse>();
 
             // 3. Lấy tất cả Session đã chiếm chỗ trong khoảng thời gian đó (Tối ưu 2)

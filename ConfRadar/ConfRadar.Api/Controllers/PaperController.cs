@@ -68,11 +68,13 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.GetListPendingAbstract(confId);
             return Ok(ApiResponse<List<PendingAbstractResponse>>.SuccessResponse(result, "danh sách pending abstract"));
         }
-        [HttpGet("list-available-customers")]
-        public async Task<IActionResult> ListAvailableCustomer()
+        [Authorize]
+        [HttpGet("coauthors/available")]
+        public async Task<IActionResult> ListAvailableCoAuthor([FromQuery]string conferenceId)
         {
-            var result = await _serviceManager.AuthService.GetAvailableCustomer();
-            return Ok(ApiResponse<List<AvailableCustomerResponse>>.SuccessResponse(result, "danh sách các người dùng"));
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.GetAvailableCoAuthorForInclude(conferenceId,userId);
+            return Ok(ApiResponse<List<AvailableCoAuthorResponse>>.SuccessResponse(result, "danh sách các người dùng coauthor"));
         }
 
 
