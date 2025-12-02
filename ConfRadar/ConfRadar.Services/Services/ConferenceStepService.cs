@@ -386,7 +386,7 @@ namespace ConfRadar.Services.Services
 
             if (conference.ConferenceStatusId == deleteStatus.ConferenceStatusId || conference.ConferenceStatusId == cancelStatus.ConferenceStatusId)
                 throw new BadRequestException("Không thể thêm info cho những hội nghị đã bị delete hoặc cancelled");
-            return ;
+            return;
         }
 
         private Task ValidatePaperFormat(string paperFormat)
@@ -2858,7 +2858,7 @@ namespace ConfRadar.Services.Services
             return rankingFileUrl.ToResponse();
         }
 
-       
+
         public async Task<List<RankingFileUrlResponse>> GetRankingFileUrlsByConferenceIdAsync(string conferenceId)
         {
             var fileUrls = await _unitOfWork.RankingFileUrlRepository.GetRankingFileUrlsByConferenceIdAsync(conferenceId);

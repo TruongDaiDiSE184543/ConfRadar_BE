@@ -29,6 +29,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus, ReviewStatus rejectedFullPaperStatus, string confId);
         Task<int> GetPaperCountByConference(string conferenceId);
         Task<List<Paper>> GetDetailPaperFromListId(List<string> paperIds);
+        Task<List<User>> GetAvailableCoAuthorForInclude(string conferenceId, List<string> systemRoleIds);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -503,6 +504,25 @@ namespace ConfRadar.Repositories.Repositories
             List<Paper> response = await query.ToListAsync();
 
             return response;
+        }
+
+        public async Task<List<User>> GetAvailableCoAuthorForInclude(string conferenceId, List<string> systemRoleIds)
+        {
+            var listCoAuthor = await (
+                                     from u in _context.Users
+                                     where
+
+                                     !_context.PaperReviewers.Any(pr => pr.UserId == u.UserId
+                                     && pr.Paper != null
+                                     && pr.Paper.ConferenceId == conferenceId)
+
+                                     && u.IsActive == true && u.IsEmailConfirmed == true
+                                     && u.UserRoles.All(ur => ur.IsActive == true)
+
+                                     && !u.UserRoles.Any(ur => systemRoleIds.Contains(ur.RoleId))
+                                     select u).ToListAsync();
+            return listCoAuthor;
+
         }
     }
 

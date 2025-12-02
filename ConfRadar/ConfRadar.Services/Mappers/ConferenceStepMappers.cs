@@ -377,7 +377,7 @@ namespace ConfRadar.Services.Mappers
                 TicketSaleEnd = model.TicketSaleEnd,
                 statusName = model.ConferenceStatus.ConferenceStatusName,
                 creatorUserName = model.CreatedByNavigation.FullName
-                
+
             };
         }
 

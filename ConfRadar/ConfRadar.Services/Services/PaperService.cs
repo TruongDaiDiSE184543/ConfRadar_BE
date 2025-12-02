@@ -10,6 +10,7 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using ConfRadar.Shared.DTO.Abstract;
 using ConfRadar.Shared.DTO.Paper;
+using ConfRadar.Shared.DTO.User;
 using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.Extensions.Options;
 using static ConfRadar.Services.Common.AppSettingConfig;
@@ -87,6 +88,7 @@ namespace ConfRadar.Services.Services
         Task<LeaveWaitListResponse> LeaveWaitList(string userId, string conferenceId);
         Task<AddWaitListResponse> AddWaitList(string userId, string conferenceId);
         Task<List<ReviewerWorkItemResponse>> GetAssignedPapersDetailedAsync(string userId, string? confId);
+        Task<List<AvailableCoAuthorResponse>> GetAvailableCoAuthorForInclude(string conferenceId, string userId);
         #endregion
 
 
@@ -1849,7 +1851,7 @@ namespace ConfRadar.Services.Services
             }).ToList();
         }
 
-        public async Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId,string userId)
+        public async Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId, string userId)
         {
             // Step 1: Fetch the main Paper entity. This is our starting point.
             // We get Phase and CameraReady here because they are included in the repo method.
@@ -2928,6 +2930,30 @@ namespace ConfRadar.Services.Services
             }
 
             return responseList;
+        }
+
+        public async Task<List<AvailableCoAuthorResponse>> GetAvailableCoAuthorForInclude(string conferenceId,string userId)
+        {
+            var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
+            var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
+            if (adminRole == null || organizerRole == null)
+                throw new NotFoundException("Không tìm thấy các role trong hệ thống");
+            List<string> systemRoles = new List<string>()
+            {
+                adminRole.RoleId,
+                organizerRole.RoleId
+            };
+            var availableUsers = await _unitOfWork.PaperRepository.GetAvailableCoAuthorForInclude(conferenceId,systemRoles);
+            availableUsers = availableUsers.Where(u => u.UserId != userId).ToList();
+            var result = availableUsers.Select(u => new AvailableCoAuthorResponse()
+            {
+                Email = u.Email,
+                AvatarUrl = u.AvatarUrl,
+                FullName = u.FullName,
+                UserId = u.UserId,
+                
+            }).ToList();
+            return result;
         }
     }
 }
