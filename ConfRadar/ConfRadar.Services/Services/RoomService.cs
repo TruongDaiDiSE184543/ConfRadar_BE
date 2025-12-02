@@ -23,7 +23,7 @@ namespace ConfRadar.Services.Services
         Task<List<TimeSpanResponse>> GetBusyTimeSpansInRoomOnDateAsync(string roomId, DateOnly date);
         Task<DTOs.General.PagedResult<DTOs.Room.RoomWithSessionsResponse>> GetRoomsWithSessionsAsync(int page, int pageSize, string? destinationId = null, string? searchKeyword = null, DateOnly? date = null);
         Task<List<RoomAvailablity>> RoomAvailableBetweenDate(string roomId, DateOnly startDate, DateOnly endDate);
-        Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate, string cityId = null,string destination = null);
+        Task<List<AvailableRoomResponse>> GetAvailableRoomsBetweenDates(DateOnly startDate, DateOnly endDate, string cityId = null,string destinationId = null);
     }
 
     public class RoomService : IRoomService
