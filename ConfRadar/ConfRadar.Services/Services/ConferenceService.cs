@@ -1875,7 +1875,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferenceResponseDTO>> GetConferenceByAssignedPapers(string? userId)
         {
             List<PaperReviewer> AssignPaper = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAsync(userId);
-            List<Conference> AssignedConference = AssignPaper.Select(ap => ap.Paper.Conference).OrderByDescending(c => c.CreatedAt).ToList();
+            List<Conference> AssignedConference = AssignPaper.Select(ap => ap.Paper.Conference).Distinct().OrderByDescending(c => c.CreatedAt).ToList();
             List<ConferenceResponseDTO> responses = new();
             foreach (var conference in AssignedConference)
             {

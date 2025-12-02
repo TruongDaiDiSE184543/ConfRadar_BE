@@ -1,4 +1,6 @@
 ﻿// Using statements should be minimal, only what is needed for property types.
+using ConfRadar.Services.DTOs.ConferenceStep;
+
 namespace ConfRadar.Services.DTOs.Paper
 {
     /// <summary>
@@ -10,8 +12,8 @@ namespace ConfRadar.Services.DTOs.Paper
         public string PaperId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+        public ResearchConferenceBasicStepResponse researchConferenceInfo { get; set; }
         public DateTime? Created { get; set; }
-        public DateTime? Updated { get; set; }
         public Author RootAuthor { get; set; }
         public List<Author> CoAuthors { get; set; }
         public PaperPhaseDtoDetail? CurrentPhase { get; set; }
