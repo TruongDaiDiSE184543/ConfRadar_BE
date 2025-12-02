@@ -11,6 +11,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateReviewerContractAsync(ReviewerContract contract);
         Task<int> CreateMultipleReviewerContractsAsync(List<ReviewerContract> contracts);
         Task<int> UpdateReviewerContractAsync(ReviewerContract contract);
+        Task<int> UpdateMutipleReviewerContractAsync(List<ReviewerContract> contracts);
         Task<bool> DeleteReviewerContractAsync(ReviewerContract contract);
         Task<ReviewerContract?> GetReviewerContractByIdAsync(string contractId);
         Task<List<ReviewerContract>> GetReviewerContractsByUserIdAsync(string userId);
@@ -21,6 +22,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<PaperDetailBelongToConferenceInReviewContractResposne>> GetPapersBelongToAConferenceByConferenceIdAndUserId(string conferenceId, string userId);
         Task<List<GetUsersForReviewerContractResponse>> GetUsersForReviewerContract(string conferenceId, List<string> systemRoles);
         Task<int> GetOwnContractCount(string userId);
+        Task<List<ReviewerContract>> GetActiveReviewerContract();
     }
     public class ReviewerContractRepository : GenericRepository<ReviewerContract>, IReviewerContractRepository
     {
@@ -160,16 +162,16 @@ namespace ConfRadar.Repositories.Repositories
                 .AsNoTracking()
                 .Where(u =>
                 //chưa nộp báo + coauthor => cook
-            !_context.Papers.Any(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId== u.UserId))
+            !_context.Papers.Any(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == u.UserId))
 
             //chưa reviewer contract
             && !_context.ReviewerContracts.Any(rc => rc.ConferenceId == conferenceId && rc.UserId == u.UserId)
 
             // user ko là paper reviewer cho hội nghị đó
-            && !_context.PaperReviewers.Any(pr=> pr.UserId==u.UserId && pr.Paper!=null && pr.Paper.ConferenceId == conferenceId)
+            && !_context.PaperReviewers.Any(pr => pr.UserId == u.UserId && pr.Paper != null && pr.Paper.ConferenceId == conferenceId)
 
             //user active, email confirm, user role active và ko thuộc role hệ thống
-            && u.IsActive == true && u.IsEmailConfirmed == true && u.UserRoles.All(ur=>ur.IsActive==true) &&
+            && u.IsActive == true && u.IsEmailConfirmed == true && u.UserRoles.All(ur => ur.IsActive == true) &&
             !u.UserRoles.Any(ur => systemRoles.Contains(ur.RoleId)))
                 .Select(u => new GetUsersForReviewerContractResponse()
                 {
@@ -180,6 +182,17 @@ namespace ConfRadar.Repositories.Repositories
                     BioDescription = u.BioDescription,
                 }).ToListAsync();
             return user;
+        }
+        public async Task<List<ReviewerContract>> GetActiveReviewerContract()
+        {
+            return await _context.ReviewerContracts.Where(rc => rc.IsActive == true).ToListAsync();
+
+        }
+
+        public async Task<int> UpdateMutipleReviewerContractAsync(List<ReviewerContract> contracts)
+        {
+            _context.ReviewerContracts.UpdateRange(contracts);
+            return await _context.SaveChangesAsync();
         }
     }
 }

@@ -4,14 +4,9 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -127,8 +122,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-pending", ConferenceStatusName = "Pending" });
                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Preparing"))
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" });
-                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("Draft"))
-                    .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-draft", ConferenceStatusName = "Draft" });
+                _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("Draft"))
+                   .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-draft", ConferenceStatusName = "Draft" });
                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("OnHold"))
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-onhold", ConferenceStatusName = "OnHold" });
                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(It.IsAny<string>()))
@@ -136,8 +131,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             }
             else
             {
-                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(It.IsAny<string>()))
-                    .ReturnsAsync(new ConferenceStatus { ConferenceStatusName = "Published" });
+                _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(It.IsAny<string>()))
+                   .ReturnsAsync(new ConferenceStatus { ConferenceStatusName = "Published" });
             }
 
             _mockUnitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
@@ -206,8 +201,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             conference.ConferenceStatusId = "status-published";
             var request = CreateValidAddPricesRequest();
             SetupValidMocks(conference, isEditable: false);
-             _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Preparing"))
-                    .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Preparing"))
+                   .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" });
             _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Pending"))
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-pending", ConferenceStatusName = "Pending" });
             _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("Draft"))
@@ -362,7 +357,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             exception.Message.Should().Contain("Tên giai đoạnn trong vé ' ' không được để trùng.");
         }
-        
+
         [Fact]
         public async Task AddConferencePricesAsync_Should_ThrowBadRequestException_When_PhaseApplyPercentIsInvalid()
         {
@@ -433,7 +428,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             //exception.Message.Should().Contain("hạn chót hoàn tiền");
             //exception.Message.Should().Contain("phải sau ngày bắt đầu giai đoạn");
         }
-        
+
         [Fact]
         public async Task AddConferencePricesAsync_Should_ThrowBadRequestException_When_RefundDeadlineIsAfterTicketSaleEnd()
         {
@@ -466,8 +461,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 .Returns(Task.FromResult(1));
             _mockUnitOfWork.Setup(u => u.PricePhaseRepository.CreatePricePhaseAsync(It.IsAny<PricePhase>()))
                 .Returns(Task.FromResult(1));
-             _mockUnitOfWork.Setup(u => u.ConferenceRefundPolicyRepository.CreateConferenceRefundPolicyAsync(It.IsAny<RefundPolicy>()))
-                .Returns(Task.FromResult(1));
+            _mockUnitOfWork.Setup(u => u.ConferenceRefundPolicyRepository.CreateConferenceRefundPolicyAsync(It.IsAny<RefundPolicy>()))
+               .Returns(Task.FromResult(1));
 
             // ACT
             var result = await _conferenceStepService.AddConferencePricesAsync(conference.ConferenceId, request, userId);
@@ -487,7 +482,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
             _mockUnitOfWork.Verify(u => u.RollbackAsync(), Times.Never);
         }
-        
+
         #endregion
     }
 }

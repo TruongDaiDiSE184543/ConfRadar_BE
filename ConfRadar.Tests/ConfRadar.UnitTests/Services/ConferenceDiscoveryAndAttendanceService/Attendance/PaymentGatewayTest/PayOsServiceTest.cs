@@ -1,14 +1,8 @@
 ﻿using ConfRadar.Services.Services;
-using ConfRadar.Shared.DTO.Payment;
 using Microsoft.Extensions.Options;
-using Moq;
-using Moq.Protected;
-using PayOS;
 using PayOS.Exceptions;
 using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
-using System.Net;
-using System.Text.Json;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.PaymentGatewayTest

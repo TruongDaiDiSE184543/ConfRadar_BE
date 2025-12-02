@@ -2,6 +2,7 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using ConfRadar.Shared.DTO.User;
 using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
@@ -48,8 +49,12 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
         {
             _mockUnitOfWork.Setup(x => x.RoleRepository.GetRoleByRoleName(It.IsAny<string>()))
                 .ReturnsAsync((Role?)null);
-
-            await Assert.ThrowsAsync<NotFoundException>(() => _authService.SuspendAccount("user1"));
+            UserSuspendRequest request = new UserSuspendRequest()
+            {
+                UserId = "user1",
+                Reason = "siu"
+            };
+            await Assert.ThrowsAsync<NotFoundException>(() => _authService.SuspendAccount(request));
         }
 
         // ========================================================
@@ -63,8 +68,12 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(x => x.UserRepository.GetUserByUserId("user1"))
                 .ReturnsAsync((User?)null);
-
-            await Assert.ThrowsAsync<BadRequestException>(() => _authService.SuspendAccount("user1"));
+            UserSuspendRequest request = new UserSuspendRequest()
+            {
+                UserId = "user1",
+                Reason = "siu"
+            };
+            await Assert.ThrowsAsync<BadRequestException>(() => _authService.SuspendAccount(request));
         }
 
         // ========================================================

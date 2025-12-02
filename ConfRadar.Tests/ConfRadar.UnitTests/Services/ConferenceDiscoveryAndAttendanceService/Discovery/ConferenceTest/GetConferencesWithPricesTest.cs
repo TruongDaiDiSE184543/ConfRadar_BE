@@ -3,16 +3,9 @@ using ConfRadar.Repositories.Models;
 using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Services;
-using ConfRadar.Shared.DTO.Conference;
 using Microsoft.Extensions.Options;
 using MockQueryable;
-using MockQueryable.Moq;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Discovery.ConferenceTest
 {

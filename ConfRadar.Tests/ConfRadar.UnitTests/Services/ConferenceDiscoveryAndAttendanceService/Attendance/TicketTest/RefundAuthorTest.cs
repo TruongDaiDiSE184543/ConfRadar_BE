@@ -4,11 +4,6 @@ using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.TicketTest
 {
@@ -196,7 +191,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
             // Assert
             Assert.Equal(5, result); // 5 repo actions: update wallet, create wallet tx, update pricePhase, create transaction, update ticket
-            Assert.Equal(ticket.Transactions.ToList()[0].Amount -ticket.PricePhase.ConferencePrice.Conference.ResearchConferenceDetail.ReviewFee,
+            Assert.Equal(ticket.Transactions.ToList()[0].Amount - ticket.PricePhase.ConferencePrice.Conference.ResearchConferenceDetail.ReviewFee,
                          wallet.Balance);
         }
     }

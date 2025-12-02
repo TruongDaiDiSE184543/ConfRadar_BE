@@ -4,15 +4,10 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -35,7 +30,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockConferenceService = new Mock<IConferenceService>();
             _mockTimeProviderService = new Mock<ITimeProviderService>();
 
-            var objectStorageSettings = new AppSettingConfig.ObjectStorageSettings(); 
+            var objectStorageSettings = new AppSettingConfig.ObjectStorageSettings();
 
             _conferenceStepService = new ConferenceStepService(
                 _mockUnitOfWork.Object,
@@ -85,7 +80,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 }
             };
         }
-        
+
         private void SetupValidMocks(Conference conference)
         {
             _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(conference.ConferenceId))
@@ -130,7 +125,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
             _mockUnitOfWork.Verify(u => u.RollbackAsync(), Times.Never);
         }
-        
+
         [Fact]
         public async Task AddConferenceMediaAsync_Should_ThrowNotFoundException_When_ConferenceDoesNotExist()
         {
@@ -165,7 +160,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // ARRANGE
             var conference = CreateTechnicalConference();
             SetupValidMocks(conference);
-            
+
             // ACT & ASSERT
             await Assert.ThrowsAsync<NullReferenceException>(
                 () => _conferenceStepService.AddConferenceMediaAsync(conference.ConferenceId, null, "user-123")
@@ -179,7 +174,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var conference = CreateTechnicalConference();
             var nullMediaRequest = new AddConferenceMediaRequest { Media = null };
             SetupValidMocks(conference);
-            
+
             // ACT & ASSERT
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _conferenceStepService.AddConferenceMediaAsync(conference.ConferenceId, nullMediaRequest, "user-123")
@@ -193,7 +188,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var conference = CreateTechnicalConference();
             var emptyMediaRequest = new AddConferenceMediaRequest { Media = new List<CreateConferenceMediaRequest>() };
             SetupValidMocks(conference);
-            
+
             // ACT & ASSERT
             await Assert.ThrowsAsync<Exception>(
                 () => _conferenceStepService.AddConferenceMediaAsync(conference.ConferenceId, emptyMediaRequest, "user-123")
@@ -207,13 +202,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var conference = CreateTechnicalConference();
             var requestWithNullFile = new AddConferenceMediaRequest { Media = new List<CreateConferenceMediaRequest> { } };
             SetupValidMocks(conference);
-            
+
             // ACT & ASSERT
             await Assert.ThrowsAsync<Exception>(
                 () => _conferenceStepService.AddConferenceMediaAsync(conference.ConferenceId, requestWithNullFile, "user-123")
             );
         }
-        
+
         [Fact]
         public async Task AddConferenceMediaAsync_Should_RollbackTransaction_When_FileTypeIsInvalid()
         {

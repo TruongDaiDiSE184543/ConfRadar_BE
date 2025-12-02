@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.RegistrationTest
+﻿namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.RegistrationTest
 {
     using ConfRadar.Repositories;
     using ConfRadar.Repositories.Models;
@@ -16,7 +10,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
     using Microsoft.Extensions.Options;
     using Moq;
     using System;
-    using System.Collections.Generic;
     using System.Text.Json;
     using System.Threading.Tasks;
     using Xunit;

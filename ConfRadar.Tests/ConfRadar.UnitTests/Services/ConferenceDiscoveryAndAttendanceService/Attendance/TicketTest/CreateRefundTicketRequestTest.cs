@@ -6,11 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using ConfRadar.Shared.DTO.Ticket;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.TicketTest
 {
@@ -67,7 +62,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             {
                 TicketId = ticketId,
                 TransactionId = transactionId,
-                
+
             };
         }
 
@@ -85,7 +80,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             return new PaymentMethod
             {
                 PaymentMethodId = id,
-                MethodName= name
+                MethodName = name
             };
         }
 
@@ -457,11 +452,11 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         }
     }
 
-   
 
-  
+
+
 
 }
-   
+
 
 

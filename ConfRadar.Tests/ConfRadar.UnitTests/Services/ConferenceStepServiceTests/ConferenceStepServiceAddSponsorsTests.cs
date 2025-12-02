@@ -4,15 +4,10 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -161,13 +156,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 () => _conferenceStepService.AddConferenceSponsorsAsync(conference.ConferenceId, request, "other-user-id")
             );
         }
-        
+
         [Fact]
         public async Task AddConferenceSponsorsAsync_Should_ThrowBadRequestException_When_ImageFileIsInvalid()
         {
             // ARRANGE
             var conference = CreateTechnicalConference();
-            
+
             var mockInvalidFile = new Mock<IFormFile>();
             mockInvalidFile.Setup(f => f.ContentType).Returns("application/pdf");
             var invalidRequest = new AddConferenceSponsorsRequest
@@ -181,7 +176,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                     }
                 }
             };
-            
+
             SetupValidMocks(conference);
             _mockObjectStorageFileService.Setup(s => s.IsValidImageFile(It.IsAny<IFormFile>())).Returns(false);
 

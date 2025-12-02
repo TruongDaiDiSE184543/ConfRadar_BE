@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Api.Responses;
 using ConfRadar.Services;
+using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.Contract;
 using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.ReviewContract;
@@ -126,5 +127,16 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<OwnCollaboratorContractDetailResponse>>.SuccessResponse(result, "Danh sách hợp đồng collaborator"));
 
         }
+
+        [HttpPut("collaborator-contract")]
+        [Authorize(Roles = "Conference Organizer")]
+
+        public async Task<IActionResult> UpdateCollabContract([FromBody] UpdateCollabContractRequest request)
+        {
+            var result = await _serviceManager.ContractService.UpdateCollabContract(request);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Danh sách hợp đồng collaborator update thành công"));
+
+        }
+
     }
 }

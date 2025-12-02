@@ -2,6 +2,7 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.Contract;
 using ConfRadar.Shared.DTO.General;
 using ConfRadar.Shared.DTO.ReviewContract;
@@ -25,6 +26,7 @@ namespace ConfRadar.Services.Services
         Task<PagedResultResponseDto<CollaboratorContractResponse>> GetListCollaboratorContract(CollaboratorContractSearchParam request);
         Task<UserExternalWageTotal> GetUserExternalWageTotal(string userId);
         Task<List<OwnCollaboratorContractDetailResponse>> GetListOwnCollaboratorContract(string userId);
+        Task<int> UpdateCollabContract(UpdateCollabContractRequest request);
     }
     public class ContractService : IContractService
     {
@@ -274,7 +276,7 @@ namespace ConfRadar.Services.Services
             var conferenceOrganizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
             var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
             var internalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
-            if (conferenceOrganizerRole == null || adminRole == null || internalReviewerRole==null)
+            if (conferenceOrganizerRole == null || adminRole == null || internalReviewerRole == null)
             {
                 throw new NotFoundException("Không tìm thấy các role tương ứng trong hệ thống");
             }
@@ -549,5 +551,21 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
+
+        public async Task<int> UpdateCollabContract(UpdateCollabContractRequest request)
+        {
+            var existingCollaboratorContract = await _unitOfWork.CollaboratorContractRepository.GetCollaboratorContractByIdAsync(request.CollaboratorContractId);
+            if (existingCollaboratorContract == null)
+            {
+                throw new BadRequestException("Không tìm thấy hợp đồng collaborator");
+            }
+            int result = 0;
+            if (request.IsClosed.HasValue)
+            {
+                existingCollaboratorContract.IsClosed = request.IsClosed;
+                result += await _unitOfWork.CollaboratorContractRepository.UpdateCollaboratorContractAsync(existingCollaboratorContract);
+            }
+            return result;
+        }
     }
 }

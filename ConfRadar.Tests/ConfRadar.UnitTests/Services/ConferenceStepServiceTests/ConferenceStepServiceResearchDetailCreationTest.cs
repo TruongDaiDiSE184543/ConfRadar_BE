@@ -4,17 +4,9 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Microsoft.AspNetCore.Http;
+using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
-using Microsoft.IdentityModel.Tokens;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -151,8 +143,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
         #region Test Methods
 
-      
-        
+
+
 
         [Fact]
         public async Task CreateResearchConferenceDetailAsync_Should_ThrowBadRequestException_When_NumberPaperAcceptIsZeroOrNegative()
@@ -196,7 +188,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             );
         }
 
-        
+
 
         [Fact]
         public async Task CreateResearchConferenceDetailAsync_Should_ThrowBadRequestException_When_RankYearIsInvalid()
@@ -226,7 +218,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             );
         }
 
-    
+
         [Fact]
         public async Task CreateResearchConferenceDetailAsync_Should_ThrowNotFoundException_When_ConferenceDoesNotExist()
         {
@@ -363,7 +355,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 }); // Second call for final response
 
             // ACT
-            var result = await _conferenceStepService.CreateResearchConferenceDetailAsync(conferenceId,request, userId);
+            var result = await _conferenceStepService.CreateResearchConferenceDetailAsync(conferenceId, request, userId);
 
             // ASSERT
             result.Should().NotBeNull();
@@ -382,7 +374,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Verify(u => u.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(It.IsAny<ResearchConferenceDetail>()), Times.Once);
         }
 
-   
+
         [Fact]
         public async Task CreateResearchConferenceDetailAsync_Should_ThrowBadRequestException_When_ConferenceDetailAlreadyExists()
         {
@@ -454,7 +446,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Verify(u => u.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(It.IsAny<ResearchConferenceDetail>()), Times.Once);
         }
 
-        
+
 
         #endregion
     }

@@ -4,18 +4,12 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Microsoft.Extensions.Options;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Text;
 using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.Extensions.Options;
+using Moq;
+using System.Text;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -132,8 +126,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-pending", ConferenceStatusName = "Pending" });
                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Preparing"))
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" });
-                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("Draft"))
-                    .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-draft", ConferenceStatusName = "Draft" });
+                _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("Draft"))
+                   .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-draft", ConferenceStatusName = "Draft" });
                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("OnHold"))
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-onhold", ConferenceStatusName = "OnHold" });
                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(It.IsAny<string>()))
@@ -141,8 +135,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             }
             else
             {
-                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(It.IsAny<string>()))
-                    .ReturnsAsync(new ConferenceStatus { ConferenceStatusName = "Published" });
+                _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(It.IsAny<string>()))
+                   .ReturnsAsync(new ConferenceStatus { ConferenceStatusName = "Published" });
             }
 
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>()))
@@ -152,8 +146,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
             _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(DateTime.Now);
-             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionWithDetailsAsync(It.IsAny<string>()))
-                           .ReturnsAsync(new ConferenceSession { Speakers = new List<Speaker>(), ConferenceSessionMedia = new List<ConferenceSessionMedium>() });
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionWithDetailsAsync(It.IsAny<string>()))
+                          .ReturnsAsync(new ConferenceSession { Speakers = new List<Speaker>(), ConferenceSessionMedia = new List<ConferenceSessionMedium>() });
             _mockUnitOfWork.Setup(u => u.SpeakerRepository.CreateSpeakerAsync(It.IsAny<Speaker>())).Returns(Task.FromResult(1));
         }
 
@@ -318,11 +312,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var conference = CreateTechnicalConference();
             var request = CreateValidAddSessionsRequest();
             SetupValidMocks(conference);
-            var existingSession = new ConferenceSession { 
-                ConferenceSessionId = "existing-session", 
-                StartTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().StartTime.Value), 
-                EndTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().EndTime.Value), 
-                RoomId = request.Sessions.First().RoomId 
+            var existingSession = new ConferenceSession
+            {
+                ConferenceSessionId = "existing-session",
+                StartTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().StartTime.Value),
+                EndTime = request.Sessions.First().Date.Value.ToDateTime(request.Sessions.First().EndTime.Value),
+                RoomId = request.Sessions.First().RoomId
             };
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>()))
                 .ReturnsAsync(new List<ConferenceSession> { existingSession });
@@ -334,20 +329,21 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             exception.Message.Should().Contain("conflicts with an existing session");
         }
-        
+
         [Fact]
         public async Task AddConferenceSessionsAsync_Should_ThrowBadRequestException_When_SpeakerImageIsInvalid()
         {
             // Arrange
             var conference = CreateTechnicalConference();
             var request = CreateValidAddSessionsRequest();
-            var invalidFile = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("this is a dummy file")), 0, 0, "Data", "dummy.txt") {
+            var invalidFile = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("this is a dummy file")), 0, 0, "Data", "dummy.txt")
+            {
                 Headers = new HeaderDictionary(),
                 ContentType = "text/plain"
             };
             request.Sessions.First().Speaker.First().Image = invalidFile;
             SetupValidMocks(conference);
-             _mockObjectStorageFileService.Setup(o => o.IsValidImageFile(invalidFile)).Returns(false);
+            _mockObjectStorageFileService.Setup(o => o.IsValidImageFile(invalidFile)).Returns(false);
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<BadRequestException>(
@@ -362,7 +358,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Arrange
             var conference = CreateTechnicalConference();
             var request = CreateValidAddSessionsRequest();
-            var invalidFile = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("this is a dummy file")), 0, 0, "Data", "dummy.txt") {
+            var invalidFile = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("this is a dummy file")), 0, 0, "Data", "dummy.txt")
+            {
                 Headers = new HeaderDictionary(),
                 ContentType = "text/plain"
             };
@@ -453,14 +450,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.CreateConferenceSessionAsync(It.IsAny<ConferenceSession>()))
                 .Returns(Task.FromResult(1));
-            
+
             // ACT
             var result = await _conferenceStepService.AddConferenceSessionsAsync(conference.ConferenceId, request, userId);
 
             // ASSERT
             result.Should().NotBeNull();
             result.Should().HaveCount(3);
-            
+
             _mockUnitOfWork.Verify(u => u.BeginTransactionAsync(), Times.Once);
             _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.CreateConferenceSessionAsync(It.IsAny<ConferenceSession>()), Times.Exactly(3));
             _mockUnitOfWork.Verify(u => u.SpeakerRepository.CreateSpeakerAsync(It.IsAny<Speaker>()), Times.Exactly(3));
