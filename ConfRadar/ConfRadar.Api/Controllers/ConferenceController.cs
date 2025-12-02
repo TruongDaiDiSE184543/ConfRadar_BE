@@ -46,9 +46,16 @@ namespace ConfRadar.Api.Controllers
             [FromQuery] string? searchKeyword = null,
             [FromQuery] string? cityId = null,
             [FromQuery] DateOnly? startDate = null,
-            [FromQuery] DateOnly? endDate = null)
+            [FromQuery] DateOnly? endDate = null,
+            [FromQuery] bool? isResearch = null,
+            [FromQuery] string? rankingCategoryId = null,
+            [FromQuery] bool? allowListener = null,
+            [FromQuery] bool? noReviewerfee = null,
+            [FromQuery] int? totalRevisionRound = null,
+            [FromQuery] string? containTargetAudience = null
+            )
         {
-            var conferences = await _serviceManager.ConferenceService.GetConferencesWithPricesAsync(page, pageSize, searchKeyword, cityId, startDate, endDate);
+            var conferences = await _serviceManager.ConferenceService.GetConferencesWithPricesAsync(page, pageSize, searchKeyword, cityId, startDate, endDate,isResearch,rankingCategoryId,allowListener,noReviewerfee,totalRevisionRound, containTargetAudience);
             return Ok(ApiResponse<PagedResult<ConferenceWithPricesResponse>>.SuccessResponse(conferences, "Conferences with prices retrieved successfully"));
         }
 
