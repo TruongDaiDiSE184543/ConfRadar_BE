@@ -57,7 +57,7 @@ namespace ConfRadar.Repositories.Repositories
 
             if (!string.IsNullOrEmpty(destinationId))
             {
-                query = query.Where(r => r.Destination.CityId == destinationId);
+                query = query.Where(r => r.DestinationId == destinationId);
             }
 
             return await query.ToListAsync();
