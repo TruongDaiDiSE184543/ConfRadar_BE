@@ -1,6 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -165,6 +167,7 @@ public partial class ConfRadarDbContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Abstract>(entity =>
@@ -1278,7 +1281,6 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.UserId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.CurrentSuspendedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.FullName).HasMaxLength(50);
             entity.Property(e => e.Gender).HasMaxLength(50);

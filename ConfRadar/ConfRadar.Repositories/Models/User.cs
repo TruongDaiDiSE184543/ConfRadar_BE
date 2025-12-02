@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class User
 {
@@ -41,10 +44,6 @@ public partial class User
     public string? FirebaseMobileFcmToken { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
-    public string? CurrentSuspendReason { get; set; }
-
-    public DateTime? CurrentSuspendedAt { get; set; }
 
     public virtual ICollection<AcademicProfile> AcademicProfiles { get; set; } = new List<AcademicProfile>();
 

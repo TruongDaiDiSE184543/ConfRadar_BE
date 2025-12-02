@@ -491,8 +491,7 @@ namespace ConfRadar.Services.Services
             int result = 0;
             user.IsActive = false;
             var timeNow = await _timeProviderService.GetVietnamTime();
-            user.CurrentSuspendReason = request.Reason;
-            user.CurrentSuspendedAt = timeNow;
+           
 
             //var userSuspendHistories = await _unitOfWork.UserSuspendHistoryRepository.GetUserSuspendHistoriesByUser(request.UserId);
             //var currentUserSuspend = userSuspendHistories.FirstOrDefault(ush => ush.IsActiveSuspend == true);
@@ -542,8 +541,7 @@ namespace ConfRadar.Services.Services
             }
 
             user.IsActive = true;
-            user.CurrentSuspendReason = null;
-            user.CurrentSuspendedAt = null;
+         
 
             result += await _unitOfWork.UserRepository.UpdateUserAsync(user);
 
@@ -621,26 +619,46 @@ namespace ConfRadar.Services.Services
             var userRolePais = userList.SelectMany(u => u.UserRoles, (user, userRole) => new { User = user, Role = userRole.Role }).ToList();
 
             var groupedByRole = userRolePais
-                .Where(x => x.Role != null)
-                .GroupBy(u => u.Role.RoleId)
-                .Select(g => new ListUserDetailForAdminAndOrganizerResponse
+    .Where(x => x.Role != null)
+    .GroupBy(u => u.Role.RoleId)
+    .Select(g => new ListUserDetailForAdminAndOrganizerResponse
+    {
+        RoleId = g.Key,
+        RoleName = g.First().Role!.RoleName,
+
+        Users = g.Select(x =>
+        {
+            var suspendHistories = x.User.UserSuspendHistories
+                .OrderByDescending(sh => sh.SuspendedAt) 
+                .Select(sh => new UserSuspendDetailForAdminAndOrganizerResponse
                 {
-                    RoleId = g.Key,
-                    RoleName = g.First().Role!.RoleName,
-                    Users = g.Select(x => new UserDetailForAdminAndOrganizerResponse
-                    {
-                        UserId = x.User.UserId,
-                        Email = x.User.Email,
-                        FullName = x.User.FullName,
-                        PhoneNumber = x.User.PhoneNumber,
-                        Gender = x.User.Gender,
-                        AvatarUrl = x.User.AvatarUrl,
-                        CreatedAt = x.User.CreatedAt,
-                        IsActive = x.User.IsActive,
-                        IsEmailConfirmed = x.User.IsEmailConfirmed
-                    }).ToList()
+                    SuspendId = sh.SuspendId,
+                    UserId = sh.UserId,
+                    Reason = sh.Reason,
+                    SuspendedAt = sh.SuspendedAt,
+                    ResumedAt = sh.ResumedAt,
+                    IsActiveSuspend = sh.IsActiveSuspend
                 }).ToList();
 
+            var currentSuspend = suspendHistories.FirstOrDefault();
+
+            return new UserDetailForAdminAndOrganizerResponse
+            {
+                UserId = x.User.UserId,
+                Email = x.User.Email,
+                FullName = x.User.FullName,
+                PhoneNumber = x.User.PhoneNumber,
+                Gender = x.User.Gender,
+                AvatarUrl = x.User.AvatarUrl,
+                CreatedAt = x.User.CreatedAt,
+                IsActive = x.User.IsActive,
+                IsEmailConfirmed = x.User.IsEmailConfirmed,
+
+                CurrentSuspend = currentSuspend,
+                SuspendHistories = suspendHistories
+            };}).ToList()
+
+            }).ToList();
             return groupedByRole;
         }
 

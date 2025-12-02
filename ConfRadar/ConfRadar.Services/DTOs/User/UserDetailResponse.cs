@@ -29,8 +29,23 @@
         public DateTime? CreatedAt { get; set; }
         public bool? IsActive { get; set; }
         public bool? IsEmailConfirmed { get; set; }
+        public UserSuspendDetailForAdminAndOrganizerResponse? CurrentSuspend { get; set; }
 
-        //public List<string> Roles { get; set; }
+
+
+        public List<UserSuspendDetailForAdminAndOrganizerResponse> SuspendHistories { get; set; } = new List<UserSuspendDetailForAdminAndOrganizerResponse>();
+    }
+
+
+    public class UserSuspendDetailForAdminAndOrganizerResponse
+    {
+            public string SuspendId { get; set; } = null!;
+            public string UserId { get; set; } = null!;
+            public string? Reason { get; set; }
+            public DateTime? SuspendedAt { get; set; }
+            public DateTime? ResumedAt { get; set; }
+            public bool? IsActiveSuspend { get; set; }
+        
     }
     public class ReviewerDetailResponse
     {
