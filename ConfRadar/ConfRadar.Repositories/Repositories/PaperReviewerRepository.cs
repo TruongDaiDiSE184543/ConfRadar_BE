@@ -102,8 +102,13 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<PaperReviewer>> GetPaperReviewersByConferenceIdAsync(string conferenceId)
         {
             return await _context.Set<PaperReviewer>()
+                .Include(pr => pr.User)
                 .Include(pr => pr.Paper)
                     .ThenInclude(p => p.PaperPhase)
+
+                 .Include(pr => pr.Paper)
+                .ThenInclude(p => p.Conference)
+
                 .Where(pr => pr.Paper.ConferenceId == conferenceId)
                 .ToListAsync();
         }

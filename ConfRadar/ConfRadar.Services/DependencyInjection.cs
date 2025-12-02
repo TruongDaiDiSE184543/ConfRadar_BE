@@ -132,6 +132,18 @@ namespace ConfRadar.Services
                     .ForJob(updateUCIJobKey)
                     .WithIdentity("UpdateUserCheckInQuartzJob")
                     .WithSimpleSchedule(x => x.WithIntervalInHours(6).RepeatForever()));
+
+
+
+                var updateConfCompletedJobKey = new JobKey("AutoUpdateConferenceStatusQuartzJob");
+                q.AddJob<AutoUpdateConferenceStatusQuartzJob>(opts => opts.WithIdentity(updateConfCompletedJobKey));
+
+                q.AddTrigger(opts => opts
+                    .ForJob(updateConfCompletedJobKey)
+                    .WithIdentity("AutoUpdateConferenceStatusQuartzJob")
+                    .WithSimpleSchedule(x => x.WithIntervalInHours(12).RepeatForever()));
+
+
             });
 
             return services;
