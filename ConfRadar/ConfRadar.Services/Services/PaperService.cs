@@ -70,7 +70,7 @@ namespace ConfRadar.Services.Services
         Task<List<PapersAssignedToReviewerResponse>> GetAllAssignedPapersToAReviewer(string userId, string conferenceId);
 
         Task<List<UserSubmittedPaperDetailResponse>> GetSubmittedPaper(string userId, string? confId);
-        Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId);
+        Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId, string userId);
 
         Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases();
         Task<List<ConferenceWithAssignedPapersResponse>> GetAssignedPapersByReviewerId(string userId, string? confId);
@@ -102,7 +102,8 @@ namespace ConfRadar.Services.Services
         private readonly ITicketService _ticketService;
         private readonly ITimeProviderService _timeProviderService;
         private readonly INotificationService _notificationService;
-        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService, ITimeProviderService timeProviderService, INotificationService notificationService)
+        private readonly IConferenceStepService _conferenceStepService;
+        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService, ITimeProviderService timeProviderService, INotificationService notificationService, IConferenceStepService conferenceStepService)
         {
             _unitOfWork = unitOfWork;
             _momoService = momoService;
@@ -112,6 +113,7 @@ namespace ConfRadar.Services.Services
             _ticketService = ticketService;
             _timeProviderService = timeProviderService;
             _notificationService = notificationService;
+            _conferenceStepService = conferenceStepService;
         }
 
         public async Task<int> SubmitAbstract(CreateAbstractRequest request, string userId)
@@ -1719,6 +1721,7 @@ namespace ConfRadar.Services.Services
             // Use the new repository method to get paper reviewers for user and conference
             var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByUserIdAndConferenceIdAsync(userId, conferenceId);
 
+
             var assignedPapers = paperReviewers
                 .Where(pr => pr.Paper != null)
                 .Select(pr => pr.Paper)
@@ -1846,7 +1849,7 @@ namespace ConfRadar.Services.Services
             }).ToList();
         }
 
-        public async Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId)
+        public async Task<PaperDetailResponseDtoDetail> getPaperDetail(string paperId,string userId)
         {
             // Step 1: Fetch the main Paper entity. This is our starting point.
             // We get Phase and CameraReady here because they are included in the repo method.
@@ -1856,6 +1859,12 @@ namespace ConfRadar.Services.Services
             {
                 throw new KeyNotFoundException($"Không tìm thấy paper với id {paperId}");
             }
+
+            var paperAuthor = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paperId);
+            var authorIds = paperAuthor.Select(pa => pa.UserId).ToList();
+
+            if (!authorIds.Contains(userId))
+                throw new Exception("Bạn không thuộc tác giả của bài báo này, không thể xem chi tiết");
 
             var researchConferencePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByPaperId(paper.PaperId);
             if (researchConferencePhase == null) throw new BadRequestException("Paper này chưa có research phase");
@@ -1907,21 +1916,7 @@ namespace ConfRadar.Services.Services
                     UserId = user.UserId,
                     FullName = user.FullName
                 }).ToList(),
-                //ResearchPhase = researchConferencePhase != null ? new ResearchPhaseDtoDetail
-                //{
-                //    ResearchConferencePhaseId = researchConferencePhase.ResearchConferencePhaseId,
-                //    RegistrationStartDate = researchConferencePhase.RegistrationStartDate,
-                //    RegistrationEndDate = researchConferencePhase.RegistrationEndDate,
-                //    FullPaperStartDate = researchConferencePhase.FullPaperStartDate,
-                //    FullPaperEndDate = researchConferencePhase.FullPaperEndDate,
-                //    ReviewStartDate = researchConferencePhase.ReviewStartDate,
-                //    ReviewEndDate = researchConferencePhase.ReviewEndDate,
-                //    ReviseStartDate = researchConferencePhase.ReviseStartDate,
-                //    ReviseEndDate = researchConferencePhase.ReviseEndDate,
-                //    CameraReadyStartDate = researchConferencePhase.CameraReadyStartDate,
-                //    CameraReadyEndDate = researchConferencePhase.ReviewEndDate,
-                //    ConferenceId = researchConferencePhase.ConferenceId
-                //} : null,
+                researchConferenceInfo = await _conferenceStepService.GetResearchConferenceBasicAsync(paper.ConferenceId),
                 ResearchPhase = paper.ResearchConferencePhase != null ? new ResearchPhaseDtoDetail
                 {
                     ResearchConferencePhaseId = paper.ResearchConferencePhase.ResearchConferencePhaseId,

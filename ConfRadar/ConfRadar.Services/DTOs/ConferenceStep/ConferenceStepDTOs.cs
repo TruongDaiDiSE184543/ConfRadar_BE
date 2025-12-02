@@ -597,7 +597,9 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? TicketSaleStart { get; set; }
         public DateOnly? TicketSaleEnd { get; set; }
         public string? createdby { get; set; }
-        // Note: No target audience for research conference
+        public string? creatorUserName { get; set; }
+        //need to include conference status
+        public string? statusName { get; set; }
     }
 
     public class ResearchSessionWithMediaResponse

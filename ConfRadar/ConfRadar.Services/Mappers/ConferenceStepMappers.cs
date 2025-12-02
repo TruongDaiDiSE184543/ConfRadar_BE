@@ -374,8 +374,10 @@ namespace ConfRadar.Services.Mappers
                 CityId = model.CityId,
                 ConferenceCategoryId = model.ConferenceCategoryId,
                 TicketSaleStart = model.TicketSaleStart,
-                TicketSaleEnd = model.TicketSaleEnd
-                // Note: No target audience for research conference response
+                TicketSaleEnd = model.TicketSaleEnd,
+                statusName = model.ConferenceStatus.ConferenceStatusName,
+                creatorUserName = model.CreatedByNavigation.FullName
+                
             };
         }
 
