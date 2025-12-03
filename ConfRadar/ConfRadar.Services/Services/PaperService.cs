@@ -155,8 +155,8 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Bạn không sở hữu bài báo này");
             }
 
-            var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
-            if (request.CoAuthorId != null && request.CoAuthorId.Count > 0)
+            var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(paper.ConferenceId);
+            if (request.CoAuthorId != null && request.CoAuthorId.Any())
             {
                 foreach (var coauthorId in request.CoAuthorId)
                 {
@@ -165,19 +165,22 @@ namespace ConfRadar.Services.Services
                         throw new BadRequestException("Bạn không thể thêm chính mình là co-author.");
                     }
 
-                    bool isCoauthorReviewerInPaperReviewer = submitterReviewContracts.Any(pr => pr.UserId == coauthorId);
+                    bool isReviewerOfConference = paperReviewers.Any(pr => pr.UserId == coauthorId);
                     var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(coauthorId, paper.Conference!.ConferenceId);
                     if (reviewerContractFound != null)
                     {
                         if (reviewerContractFound.IsActive == true)
                         {
-                            throw new BadRequestException($"Co author với id {coauthorId} tên {reviewerContractFound.User!.FullName} đang có hợp đồng review với hội nghị này");
+                            throw new BadRequestException($"Co author với id {coauthorId} tên {reviewerContractFound.User!.FullName} đang có hợp đồng review với hội nghị {paper.Conference!.ConferenceName}");
                         }
                     }
-                    if (isCoauthorReviewerInPaperReviewer == true)
+                    if (isReviewerOfConference == true)
                     {
-                        throw new BadRequestException($"Nguời dùng {coauthorId} đang là reviewer bài báo này, không thể thêm làm co-author.");
+                        throw new BadRequestException($"Nguời dùng {coauthorId} đang là reviewer của hội nghị này, không thể thêm làm co-author.");
                     }
+
+
+
                 }
             }
 
@@ -2451,13 +2454,13 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Bạn không sỡ hữu bài báo này");
             }
-            var submitterReviewContracts = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(request.PaperId);
+            var conferenceReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(paper.ConferenceId);
             string notiTitle = $"CoAuthor cho bài báo {request.Title}";
             string notiMessage = $"Bạn đã được thêm làm coauthor cho bài báo {request.Title} của hội nghị {paper.Conference!.ConferenceName}";
             var timeNow = await _timeProviderService.GetVietnamTime();
             List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
             List<Notification> notificationList = new List<Notification>();
-            if (request.CoAuthorId != null && request.CoAuthorId.Count > 0 && submitterReviewContracts.Count() > 0)
+            if (request.CoAuthorId != null && request.CoAuthorId.Any() && conferenceReviewers.Count()>0)
             {
                 foreach (var coauthorId in request.CoAuthorId)
                 {
@@ -2466,10 +2469,10 @@ namespace ConfRadar.Services.Services
                         throw new BadRequestException("Bạn không thể thêm mình làm coauthor.");
                     }
                     //check coauthor có là reviewer cho bài báo này
-                    bool isCoauthorReviewerInPaperReviewer = submitterReviewContracts.Any(pr => pr.UserId == coauthorId);
-                    if (isCoauthorReviewerInPaperReviewer == true)
+                    bool isReviewerOfConference = conferenceReviewers.Any(pr => pr.UserId == coauthorId);
+                    if (isReviewerOfConference == true)
                     {
-                        throw new BadRequestException($"Nguời dùng {coauthorId} đang là reviewer của bài báo này.");
+                        throw new BadRequestException($"Nguời dùng {coauthorId} đang là reviewer của hội nghị {paper.Conference?.ConferenceName}.");
                     }
 
                     //check coauthor có là external reviewer có contract với hội nghị

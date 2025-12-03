@@ -1911,17 +1911,17 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy phiên với mã {request.ConferenceSessionId}");
             }
-            var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(request.ConferenceSessionId, userId);
+            var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(userId,request.ConferenceSessionId);
             if (userCheckInFound == null)
             {
                 throw new BadRequestException($"Bạn chưa mua vé nào nên không thể dánh giá");
             }
-            var pendingCheckInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Pending.GetDescription());
-            if (pendingCheckInStatus == null)
+            var checkdInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.CheckedIn.GetDescription());
+            if (checkdInStatus == null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái check in trong hệ thống");
             }
-            if (userCheckInFound.CheckinStatusId == pendingCheckInStatus.CheckinStatusId)
+            if (userCheckInFound.CheckinStatusId != checkdInStatus.CheckinStatusId)
             {
                 throw new BadRequestException($"Bạn phải check in rồi mới được dánh giá");
             }

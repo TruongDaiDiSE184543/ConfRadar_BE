@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class UserSuspendHistory
 {
@@ -13,6 +16,8 @@ public partial class UserSuspendHistory
     public DateTime? ResumedAt { get; set; }
 
     public bool? IsActiveSuspend { get; set; }
+
+    public string? SuspendType { get; set; }
 
     public virtual User User { get; set; } = null!;
 }

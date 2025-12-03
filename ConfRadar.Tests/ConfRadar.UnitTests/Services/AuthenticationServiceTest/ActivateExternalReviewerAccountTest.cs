@@ -2,6 +2,7 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using ConfRadar.Shared.DTO.User;
 using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
@@ -63,8 +64,12 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(u => u.UserRoleRepository.UpdateUserRole(userRole))
                 .ReturnsAsync(1);
+            var user1 = new UserActiveAccountRequest()
+            {
+                UserId = "u1",
 
-            var result = await _authService.ActivateExternalReviewerAccount("u1");
+            };
+            var result = await _authService.ActivateExternalReviewerAccount(user1);
 
             Assert.Equal(1, result);
             Assert.True(userRole.IsActive);
@@ -80,9 +85,13 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
         {
             _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(It.IsAny<string>()))
                 .ReturnsAsync((Role?)null);
+            var user1 = new UserActiveAccountRequest()
+            {
+                UserId = "u1",
 
+            };
             await Assert.ThrowsAsync<Exception>(() =>
-                _authService.ActivateExternalReviewerAccount("u1"));
+                _authService.ActivateExternalReviewerAccount(user1));
         }
 
         [Fact]
@@ -93,9 +102,13 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("u1"))
                 .ReturnsAsync((User?)null);
+            var user1 = new UserActiveAccountRequest()
+            {
+                UserId = "u1",
 
+            };
             await Assert.ThrowsAsync<NotFoundException>(() =>
-                _authService.ActivateExternalReviewerAccount("u1"));
+                _authService.ActivateExternalReviewerAccount(user1));
         }
 
         //[Fact]
@@ -128,9 +141,13 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetUserRoleByUserAndRole("u1", "r1"))
                 .ReturnsAsync((UserRole?)null);
+            var user1 = new UserActiveAccountRequest()
+            {
+                UserId = "u1",
 
+            };
             await Assert.ThrowsAsync<NotFoundException>(() =>
-                _authService.ActivateExternalReviewerAccount("u1"));
+                _authService.ActivateExternalReviewerAccount(user1));
         }
 
         [Fact]
@@ -147,9 +164,13 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetUserRoleByUserAndRole("u1", "r1"))
                 .ReturnsAsync(new UserRole { UserId = "u1", RoleId = "r1", IsActive = true });
+            var user1 = new UserActiveAccountRequest()
+            {
+                UserId = "u1",
 
+            };
             await Assert.ThrowsAsync<BadRequestException>(() =>
-                _authService.ActivateExternalReviewerAccount("u1"));
+                _authService.ActivateExternalReviewerAccount(user1));
         }
     }
 

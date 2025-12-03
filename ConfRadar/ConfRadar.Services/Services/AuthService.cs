@@ -25,7 +25,7 @@ namespace ConfRadar.Services.Services
         Task VerifyForgetPassword(string token, string newPassword);
         Task ChangePassword(string oldPassword, string newPassword, string userId);
         Task<LoginUserResponse> RefreshToken(string userId, string refreshToken);
-        Task<int> ActivateAccount(string userId);
+        Task<int> ActivateAccount(UserActiveAccountRequest request);
         Task<int> SuspendAccount(UserSuspendRequest request);
 
         Task<int> UpdateProfile(ProfileUpdateRequest request, string userId);
@@ -36,8 +36,8 @@ namespace ConfRadar.Services.Services
 
         Task<List<ReviewerDetailResponse>> ListAllReviewer();
 
-        Task<int> SuspendExternalReviewerAccount(string userId);
-        Task<int> ActivateExternalReviewerAccount(string userId);
+        Task<int> SuspendExternalReviewerAccount(UserSuspendRequest request);
+        Task<int> ActivateExternalReviewerAccount(UserActiveAccountRequest request);
 
         Task<int> CreateLocalReviewerAccount(CreateLocalReviewerAccountRequest request);
 
@@ -491,16 +491,9 @@ namespace ConfRadar.Services.Services
             int result = 0;
             user.IsActive = false;
             var timeNow = await _timeProviderService.GetVietnamTime();
-            user.CurrentSuspendReason = request.Reason;
-            user.CurrentSuspendedAt = timeNow;
+           
 
-            //var userSuspendHistories = await _unitOfWork.UserSuspendHistoryRepository.GetUserSuspendHistoriesByUser(request.UserId);
-            //var currentUserSuspend = userSuspendHistories.FirstOrDefault(ush => ush.IsActiveSuspend == true);
-            //if (currentUserSuspend != null) 
-            //{
-            //    throw new BadRequestException($"Người dùng đã bị suspend rồi");
-
-            //}
+            
             var newUserSuspendObj = new UserSuspendHistory()
             {
                 SuspendId = Guid.NewGuid().ToString(),
@@ -509,20 +502,21 @@ namespace ConfRadar.Services.Services
                 ResumedAt = null,
                 SuspendedAt = timeNow,
                 UserId = request.UserId,
+                SuspendType = SuspendTypeEnum.User.ToString()
             };
 
             result += await _unitOfWork.UserRepository.UpdateUserAsync(user);
             result += await _unitOfWork.UserSuspendHistoryRepository.CreateSuspensionAsync(newUserSuspendObj);
             if (result > 0)
             {
-                await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName, "Account bạn đã bị ngừng", "EmailSuspendAccount.html");
+                await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName,request.Reason, "Tải khoản của bạn đã bị ngừng", "EmailSuspendAccount.html");
             }
 
             return result;
         }
-        public async Task<int> ActivateAccount(string userId)
+        public async Task<int> ActivateAccount(UserActiveAccountRequest request)
         {
-            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(request.UserId);
             if (user == null)
             {
                 throw new BadRequestException("Người dùng không tìm thấy");
@@ -533,17 +527,16 @@ namespace ConfRadar.Services.Services
             }
             int result = 0;
             var timeNow = await _timeProviderService.GetVietnamTime();
-            var currentSuspendHistory = await _unitOfWork.UserSuspendHistoryRepository.GetCurrentUserSuspendHistoryByUser(userId);
-            if (currentSuspendHistory != null)
+            var currentSuspendHistories = await _unitOfWork.UserSuspendHistoryRepository.GetCurrentUserSuspendHistoryByUser(request.UserId);
+            var currentUserSuspend = currentSuspendHistories.FirstOrDefault(ush => ush.SuspendType == SuspendTypeEnum.User.ToString());
+            if (currentUserSuspend !=null )
             {
-                currentSuspendHistory.IsActiveSuspend = false;
-                currentSuspendHistory.ResumedAt = timeNow;
-                result += await _unitOfWork.UserSuspendHistoryRepository.UpdateSuspensionAsync(currentSuspendHistory);
+                currentUserSuspend.IsActiveSuspend = false;
+                currentUserSuspend.ResumedAt = timeNow;
+                result += await _unitOfWork.UserSuspendHistoryRepository.UpdateSuspensionAsync(currentUserSuspend);
             }
 
             user.IsActive = true;
-            user.CurrentSuspendReason = null;
-            user.CurrentSuspendedAt = null;
 
             result += await _unitOfWork.UserRepository.UpdateUserAsync(user);
 
@@ -621,26 +614,49 @@ namespace ConfRadar.Services.Services
             var userRolePais = userList.SelectMany(u => u.UserRoles, (user, userRole) => new { User = user, Role = userRole.Role }).ToList();
 
             var groupedByRole = userRolePais
-                .Where(x => x.Role != null)
-                .GroupBy(u => u.Role.RoleId)
-                .Select(g => new ListUserDetailForAdminAndOrganizerResponse
+    .Where(x => x.Role != null)
+    .GroupBy(u => u.Role.RoleId)
+    .Select(g => new ListUserDetailForAdminAndOrganizerResponse
+    {
+        RoleId = g.Key,
+        RoleName = g.First().Role!.RoleName,
+
+        Users = g.Select(x =>
+        {
+            var suspendHistories = x.User.UserSuspendHistories
+                .OrderByDescending(sh => sh.SuspendedAt) 
+                .Select(sh => new UserSuspendDetailForAdminAndOrganizerResponse
                 {
-                    RoleId = g.Key,
-                    RoleName = g.First().Role!.RoleName,
-                    Users = g.Select(x => new UserDetailForAdminAndOrganizerResponse
-                    {
-                        UserId = x.User.UserId,
-                        Email = x.User.Email,
-                        FullName = x.User.FullName,
-                        PhoneNumber = x.User.PhoneNumber,
-                        Gender = x.User.Gender,
-                        AvatarUrl = x.User.AvatarUrl,
-                        CreatedAt = x.User.CreatedAt,
-                        IsActive = x.User.IsActive,
-                        IsEmailConfirmed = x.User.IsEmailConfirmed
-                    }).ToList()
+                    SuspendId = sh.SuspendId,
+                    UserId = sh.UserId,
+                    Reason = sh.Reason,
+                    SuspendedAt = sh.SuspendedAt,
+                    ResumedAt = sh.ResumedAt,
+                    IsActiveSuspend = sh.IsActiveSuspend,
+                    SuspendType = sh.SuspendType,
+                    
                 }).ToList();
 
+            var currentUserSuspend = suspendHistories.FirstOrDefault(ush=> ush.SuspendType == SuspendTypeEnum.User.ToString() && ush.IsActiveSuspend == true);
+            var currentUserRoleSuspend = suspendHistories.FirstOrDefault(ush => ush.SuspendType == SuspendTypeEnum.UserRole.ToString() && ush.IsActiveSuspend == true);
+            return new UserDetailForAdminAndOrganizerResponse
+            {
+                UserId = x.User.UserId,
+                Email = x.User.Email,
+                FullName = x.User.FullName,
+                PhoneNumber = x.User.PhoneNumber,
+                Gender = x.User.Gender,
+                AvatarUrl = x.User.AvatarUrl,
+                CreatedAt = x.User.CreatedAt,
+                IsActive = x.User.IsActive,
+                IsEmailConfirmed = x.User.IsEmailConfirmed,
+
+                CurrentUserSuspend = currentUserSuspend,
+                CurrentUserRoleSuspend = currentUserRoleSuspend,
+                SuspendHistories = suspendHistories
+            };}).ToList()
+
+            }).ToList();
             return groupedByRole;
         }
 
@@ -739,24 +755,20 @@ namespace ConfRadar.Services.Services
             return result;
         }
 
-        public async Task<int> SuspendExternalReviewerAccount(string userId)
+        public async Task<int> SuspendExternalReviewerAccount(UserSuspendRequest request)
         {
             var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ExternalReviewer.GetDescription());
             if (externalReviewerRole == null)
             {
                 throw new Exception("Không tìm thấy role hệ thống");
             }
-            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(request.UserId);
             if (user == null)
             {
-                throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
+                throw new NotFoundException($"Không tìm thấy người dùng với id {request.UserId}");
             }
-            //var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
-            //if (!reviewContracts.Any())
-            //{
-            //    throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên{user.FullName}");
-            //}
-            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
+           
+            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(request.UserId, externalReviewerRole.RoleId);
             if (userRole == null)
             {
                 throw new NotFoundException($"Không tìm thấy role cho reviewer");
@@ -765,27 +777,42 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Người dùng {user.FullName} đã bị disable role reviewer");
             }
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            var newUserSuspendObj = new UserSuspendHistory()
+            {
+                SuspendId = Guid.NewGuid().ToString(),
+                IsActiveSuspend = true,
+                Reason = request.Reason,
+                ResumedAt = null,
+                SuspendedAt = timeNow,
+                UserId = request.UserId,
+                SuspendType = SuspendTypeEnum.UserRole.ToString(),
+            };
+
             userRole.IsActive = false;
-            return await _unitOfWork.UserRoleRepository.UpdateUserRole(userRole);
+            int result = 0;
+            result += await _unitOfWork.UserSuspendHistoryRepository.CreateSuspensionAsync(newUserSuspendObj);
+            result += await _unitOfWork.UserRoleRepository.UpdateUserRole(userRole);
+            if (result > 0)
+            {
+                await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName, request.Reason, "Tải khoản của reviewer bạn đã bị ngừng", "EmailSuspendAccount.html");
+            }
+            return result;
         }
-        public async Task<int> ActivateExternalReviewerAccount(string userId)
+        public async Task<int> ActivateExternalReviewerAccount(UserActiveAccountRequest request)
         {
             var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ExternalReviewer.GetDescription());
             if (externalReviewerRole == null)
             {
                 throw new Exception("Không tìm thấy role hệ thống");
             }
-            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(request.UserId);
             if (user == null)
             {
-                throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
+                throw new NotFoundException($"Không tìm thấy người dùng với id {request.UserId}");
             }
-            //var reviewContracts = await _unitOfWork.ReviewerContractRepository.GetReviewerContractsByUserIdAsync(userId);
-            //if (!reviewContracts.Any())
-            //{
-            //    throw new BadRequestException($"Không tìm thấy bất cứ reviewer outsourced với tên {user.FullName}");
-            //}
-            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, externalReviewerRole.RoleId);
+          
+            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(request.UserId, externalReviewerRole.RoleId);
             if (userRole == null)
             {
                 throw new NotFoundException($"Không tìm thấy role cho reviewer");
@@ -794,8 +821,20 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Người dùng {user.FullName} đã được cấp lại role reviewer");
             }
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            int result = 0;
+            var currentSuspendHistories = await _unitOfWork.UserSuspendHistoryRepository.GetCurrentUserSuspendHistoryByUser(request.UserId);
+            var currentUserRoleSuspend = currentSuspendHistories.FirstOrDefault(ush => ush.SuspendType == SuspendTypeEnum.UserRole.ToString());
+            if (currentUserRoleSuspend != null)
+            {
+                currentUserRoleSuspend.IsActiveSuspend = false;
+                currentUserRoleSuspend.ResumedAt = timeNow;
+                result += await _unitOfWork.UserSuspendHistoryRepository.UpdateSuspensionAsync(currentUserRoleSuspend);
+            }
+
             userRole.IsActive = true;
-            return await _unitOfWork.UserRoleRepository.UpdateUserRole(userRole);
+            result += await _unitOfWork.UserRoleRepository.UpdateUserRole(userRole);
+            return result;
         }
 
 

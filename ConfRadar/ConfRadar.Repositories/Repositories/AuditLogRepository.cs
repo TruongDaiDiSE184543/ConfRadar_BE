@@ -37,6 +37,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<AuditLog>> GetAllAuditLogsWithoutTrackingAsync()
         {
             return await _context.AuditLogs
+                .OrderByDescending(al=> al.CreatedAt)
                 .Include(al => al.Category)
                 .Include(al => al.User)
                 .AsNoTracking()
