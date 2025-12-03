@@ -260,6 +260,37 @@ namespace ConfRadar.Services.Services
             }
         }
 
+        private async Task ValidateForComplete(Conference conf)
+        {
+            // 1. Lấy danh sách session
+            
+            var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdWithRoomAsync(conf.ConferenceId);
+
+            // 2. Lấy thời gian hiện tại 
+            var now = await _timeProviderService.GetVietnamTime();
+
+            // 3. Validate ngày bắt đầu hội nghị (Phòng trường hợp bấm nhầm trước ngày diễn ra)
+            // Dùng StartDate của Conference làm chốt chặn đầu tiên
+            var confStartDateTime = conf.StartDate.Value.ToDateTime(new TimeOnly(0, 0, 0));
+            if (now < confStartDateTime)
+                throw new BadRequestException($"Hội nghị chưa diễn ra (Ngày {conf.StartDate:dd/MM/yyyy}). Không thể chuyển sang trạng thái hoàn thành.");
+
+            // 4. Tìm phiên khai mạc (First Session)
+            var firstSession = sessions
+                .OrderBy(cs => cs.SessionDate)
+                .ThenBy(cs => cs.StartTime)
+                .FirstOrDefault();
+
+            // 5. Kiểm tra điều kiện "Phiên đầu tiên phải kết thúc"
+            if (firstSession != null && firstSession.EndTime.HasValue && now <= firstSession.EndTime.Value)
+            {
+                throw new BadRequestException(
+                    $"Không thể chuyển sang trạng thái 'Completed' vì phiên khai mạc '{firstSession.Title}' chưa kết thúc.\n" +
+                    $"- Thời gian kết thúc dự kiến: {firstSession.EndTime:dd/MM/yyyy HH:mm}\n" +
+                    $"- Thời gian hiện tại: {now:dd/MM/yyyy HH:mm}\n"
+                );
+            }
+        }
 
         #endregion
 
@@ -847,6 +878,10 @@ namespace ConfRadar.Services.Services
             if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && ( newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId))
                 throw new Exception("Trạng thái hiện tại của hội nghị là rejected chỉ có thể đổi lên draft để tiếp tục sửa đổi hoặc xoá thành delete");
 
+            //collab can switch their conf to deleted only when the associated contract be invalid will the conf status be deleted
+            if (conference.IsInternalHosted != true && conference.ConferenceStatusId == deleteStatus.ConferenceStatusId)
+                throw new Exception("Hội nghị được liên kết không thể chuyển sang trạng thái bị xoá, chỉ có thể tự động chuyển sang trạng thái này khi hợp đồng bị huỷ");
+
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
 
@@ -896,9 +931,11 @@ namespace ConfRadar.Services.Services
                 if (newStatus.ConferenceStatusName == "Cancelled")
                     await ValidateForCancelledStateAsync(conference);
 
-                if (newStatus.ConferenceStatusName == "Cancelled")
-                    await ValidateForCancelledStateAsync(conference);
 
+                if (newStatus.ConferenceStatusName == ConferenceStatusEnum.Completed.GetDescription())
+                    await ValidateForComplete(conference);
+
+               
 
                 // Update the conference status
                 conference.ConferenceStatusId = newStatus.ConferenceStatusId;
@@ -2052,7 +2089,7 @@ namespace ConfRadar.Services.Services
             var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
             var onHoldTimelineEntry = await _unitOfWork.ConferenceTimelineRepository.GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(conf.ConferenceId, readyId, onHoldId);
             if (onHoldTimelineEntry == null)
-                throw new InvalidOperationException("Không tìm thấy lịch sử chuyển sang trạng thái 'OnHold'.");
+                throw new BadRequestException("Không tìm thấy lịch sử chuyển sang trạng thái 'OnHold'.");
 
             var onHoldStartDate = onHoldTimelineEntry.ChangeDate;
             var today = await _timeProviderService.GetVietnamDate();
@@ -2088,12 +2125,13 @@ namespace ConfRadar.Services.Services
             // --- BƯỚC A: KIỂM TRA SỰ ĐẦY ĐỦ THÔNG TIN ---
             // Đây là phần validation riêng của trạng thái Ready
 
-            //var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
-            //if (price == null)
-            //    invalidMessages.Add("Hội nghị phải có ít nhất một loại vé, trong đó có ít nhất một phase.");
+            var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
+            if (price == null)
+                invalidMessages.Add("Hội nghị phải có ít nhất một loại vé, trong đó có ít nhất một phase.");
             var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
             if (!sessions.Any())
                 invalidMessages.Add("Hội nghị phải có ít nhất một phiên.");
+
 
             // Kiểm tra nếu là hội nghị kỹ thuật, phiên phải có ít nhất một diễn giả
             if (conf.IsResearchConference == false)
