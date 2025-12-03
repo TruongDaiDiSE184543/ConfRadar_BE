@@ -85,6 +85,7 @@ namespace ConfRadar.Services.Services
         Task ValidateForReadyStateAsync(Conference conf);
         Task OnholdToReadyValidAsync(Conference conf, string readyId, string onHoldId);
         Task<List<SkeletonTechConfResponse>> getSkeletonTechConf(string collaboratorId);
+        Task <bool> AutoAdjustTimelineForOnHoldAsync(string conf, string userId);
         Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(int page, int pageSize, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName);
         Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorNoDraftAsync(int page, int pageSize, string? conferenceStatusId, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName);
     }
@@ -2257,6 +2258,163 @@ namespace ConfRadar.Services.Services
             }
 
             return await GetTechnicalConferencesListByCollaboratorAsync(page, pageSize, conferenceStatusId, searchKeyword, cityId, startDate, endDate, userId, isOrganizer, collaboratorId, organizationName, true);
+        }
+
+        public async Task<bool> AutoAdjustTimelineForOnHoldAsync(string conferenceId, string userId)
+        {
+            var conf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conf == null) throw new NotFoundException($"Không tìm thấy hội nghị {conferenceId}");
+
+            if (conf.CreatedBy != userId)
+                throw new Exception("Bạn không có quyền thực hiện thao tác này.");
+
+            // Check Status OnHold
+            var onHoldStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
+            var readyStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+
+            if (conf.ConferenceStatusId != onHoldStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException("Chức năng này chỉ khả dụng khi hội nghị đang ở trạng thái 'OnHold'.");
+            }
+
+            // Lấy lịch sử
+            var onHoldTimelineEntry = await _unitOfWork.ConferenceTimelineRepository
+                .GetLastOnHoldConferenceTimelineByConfIdAndStatusIdAsync(conf.ConferenceId, readyStatus.ConferenceStatusId, onHoldStatus.ConferenceStatusId);
+
+            if (onHoldTimelineEntry == null)
+                throw new BadRequestException("Không tìm thấy lịch sử chuyển sang trạng thái 'OnHold' để tính toán thời gian.");
+
+            var onHoldStartDate = onHoldTimelineEntry.ChangeDate.Value; // DateOnly (Ngày bắt đầu bị dừng)
+            var today = await _timeProviderService.GetVietnamDate(); // DateOnly (Ngày hôm nay)
+
+            int daysToShift = today.DayNumber - onHoldStartDate.DayNumber;
+
+            if (daysToShift <= 0)
+            {
+                throw new BadRequestException("Thời gian OnHold chưa đủ 1 ngày hoặc ngày hiện tại không hợp lệ để tự động điều chỉnh.");
+            }
+
+            // === BẮT ĐẦU CẬP NHẬT DỮ LIỆU ===
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // --- LOGIC QUAN TRỌNG: CHỈ DỜI NHỮNG NGÀY BỊ ẢNH HƯỞNG ---
+
+                DateOnly? Shift(DateOnly? d)
+                {
+                    if (!d.HasValue) return null;
+                    // Nếu ngày đó diễn ra TRƯỚC khi bị OnHold -> Giữ nguyên (Không dời)
+                    if (d.Value < onHoldStartDate) return d;
+
+                    // Nếu ngày đó nằm TRONG hoặc SAU khi bị OnHold -> Cộng thêm ngày
+                    return d.Value.AddDays(daysToShift);
+                }
+
+                DateTime? ShiftDt(DateTime? dt)
+                {
+                    if (!dt.HasValue) return null;
+                    var d = DateOnly.FromDateTime(dt.Value);
+
+                    // Logic tương tự cho DateTime
+                    if (d < onHoldStartDate) return dt;
+
+                    return dt.Value.AddDays(daysToShift);
+                }
+
+                // A. Cập nhật Conference (Root)
+                conf.StartDate = Shift(conf.StartDate);
+                conf.EndDate = Shift(conf.EndDate);
+                conf.TicketSaleStart = Shift(conf.TicketSaleStart);
+                conf.TicketSaleEnd = Shift(conf.TicketSaleEnd);
+
+                await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conf);
+
+                // B. Cập nhật PricePhases & RefundPolicies
+                var prices = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conferenceId);
+                foreach (var price in prices)
+                {
+                    foreach (var phase in price.PricePhases)
+                    {
+                        // Lưu ý: Có thể StartDate cũ (giữ nguyên) nhưng EndDate mới (dời đi) -> Phase dài ra. Hợp lý.
+                        phase.StartDate = Shift(phase.StartDate);
+                        phase.EndDate = Shift(phase.EndDate);
+                        await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(phase);
+
+                        foreach (var policy in phase.RefundPolicies)
+                        {
+                            policy.RefundDeadline = Shift(policy.RefundDeadline);
+                            await _unitOfWork.ConferenceRefundPolicyRepository.UpdateConferenceRefundPolicyAsync(policy);
+                        }
+                    }
+                }
+
+                // C. Cập nhật Sessions
+                var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conferenceId);
+                foreach (var session in sessions)
+                {
+                    // Chỉ những session bị dính vào đợt OnHold hoặc Tương lai mới bị dời
+                    // Những session đã diễn ra êm đẹp trong quá khứ sẽ đứng yên
+                    session.SessionDate = Shift(session.SessionDate);
+                    session.StartTime = ShiftDt(session.StartTime);
+                    session.EndTime = ShiftDt(session.EndTime);
+
+                    await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
+                }
+
+                // D. Cập nhật Research Phases (Nếu có)
+                if (conf.IsResearchConference == true)
+                {
+                    var researchPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
+                    foreach (var phase in researchPhases)
+                    {
+                        phase.RegistrationStartDate = Shift(phase.RegistrationStartDate);
+                        phase.RegistrationEndDate = Shift(phase.RegistrationEndDate);
+
+                        phase.AbstractDecideStatusStart = Shift(phase.AbstractDecideStatusStart);
+                        phase.AbstractDecideStatusEnd = Shift(phase.AbstractDecideStatusEnd);
+
+                        phase.FullPaperStartDate = Shift(phase.FullPaperStartDate);
+                        phase.FullPaperEndDate = Shift(phase.FullPaperEndDate);
+
+                        phase.ReviewStartDate = Shift(phase.ReviewStartDate);
+                        phase.ReviewEndDate = Shift(phase.ReviewEndDate);
+
+                        phase.FullPaperDecideStatusStart = Shift(phase.FullPaperDecideStatusStart);
+                        phase.FullPaperDecideStatusEnd = Shift(phase.FullPaperDecideStatusEnd);
+
+                        phase.ReviseStartDate = Shift(phase.ReviseStartDate);
+                        phase.ReviseEndDate = Shift(phase.ReviseEndDate);
+
+                        phase.RevisionPaperDecideStatusStart = Shift(phase.RevisionPaperDecideStatusStart);
+                        phase.RevisionPaperDecideStatusEnd = Shift(phase.RevisionPaperDecideStatusEnd);
+
+                        phase.CameraReadyStartDate = Shift(phase.CameraReadyStartDate);
+                        phase.CameraReadyEndDate = Shift(phase.CameraReadyEndDate);
+
+                        phase.CameraReadyDecideStatusStart = Shift(phase.CameraReadyDecideStatusStart);
+                        phase.CameraReadyDecideStatusEnd = Shift(phase.CameraReadyDecideStatusEnd);
+
+                        await _unitOfWork.ResearchConferencePhaseRepository.UpdateResearchConferencePhaseAsync(phase);
+
+                        // D.1 Cập nhật RevisionRoundDeadlines
+                        var deadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(phase.ResearchConferencePhaseId);
+                        foreach (var deadline in deadlines)
+                        {
+                            deadline.StartSubmissionDate = Shift(deadline.StartSubmissionDate);
+                            deadline.EndSubmissionDate = Shift(deadline.EndSubmissionDate);
+                            await _unitOfWork.RevisionRoundDeadlineRepository.UpdateCsAsync(deadline);
+                        }
+                    }
+                }
+
+                await _unitOfWork.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
         }
     }
 }
