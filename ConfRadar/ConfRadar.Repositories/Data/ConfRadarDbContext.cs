@@ -1372,6 +1372,7 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.SuspendId).HasMaxLength(50);
             entity.Property(e => e.ResumedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.SuspendType).HasMaxLength(255);
             entity.Property(e => e.SuspendedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.UserId).HasMaxLength(50);
 

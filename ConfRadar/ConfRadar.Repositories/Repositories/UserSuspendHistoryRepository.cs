@@ -10,7 +10,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateSuspensionAsync(UserSuspendHistory suspension);
         Task<int> UpdateSuspensionAsync(UserSuspendHistory suspension);
         Task<List<UserSuspendHistory>> GetUserSuspendHistoriesByUser(string userId);
-        Task<UserSuspendHistory?> GetCurrentUserSuspendHistoryByUser(string userId);
+        Task<List<UserSuspendHistory>> GetCurrentUserSuspendHistoryByUser(string userId);
     }
 
     public class UserSuspendHistoryRepository : GenericRepository<UserSuspendHistory>, IUserSuspendHistoryRepository
@@ -29,9 +29,12 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.UserSuspendHistories.Where(ush => ush.UserId == userId).ToListAsync();
         }
-        public async Task<UserSuspendHistory?> GetCurrentUserSuspendHistoryByUser(string userId)
+        public async Task<List<UserSuspendHistory>> GetCurrentUserSuspendHistoryByUser(string userId)
         {
-            return await _context.UserSuspendHistories.FirstOrDefaultAsync(ush => ush.UserId == userId && ush.IsActiveSuspend == true);
+            return await _context.UserSuspendHistories
+                .Where(ush => ush.UserId == userId && ush.IsActiveSuspend == true)
+                .OrderByDescending(ush => ush.SuspendedAt)
+                .ToListAsync();
         }
         public async Task<int> UpdateSuspensionAsync(UserSuspendHistory suspension)
         {

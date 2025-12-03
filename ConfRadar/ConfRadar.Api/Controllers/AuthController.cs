@@ -92,7 +92,7 @@ namespace ConfRadar.Api.Controllers
         [HttpPut("activate-account")]
         public async Task<IActionResult> ActivateAccount([FromBody] UserActiveAccountRequest request)
         {
-            var result = await _serviceManager.AuthService.ActivateAccount(request.UserId);
+            var result = await _serviceManager.AuthService.ActivateAccount(request);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã kích hoạt tài khoản của người dùng"));
         }
         [Authorize]
@@ -140,18 +140,18 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ReviewerDetailResponse>>.SuccessResponse(result, $"Danh sách reviewer"));
         }
         [Authorize(Roles = "Conference Organizer,Admin")]
-        [HttpPut("suspend-external-reviewer/{userId}")]
-        public async Task<IActionResult> SuspendExternalReviewer([FromRoute] string userId)
+        [HttpPut("suspend-external-reviewer")]
+        public async Task<IActionResult> SuspendExternalReviewer([FromBody] UserSuspendRequest request)
         {
-            var result = await _serviceManager.AuthService.SuspendExternalReviewerAccount(userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã suspend người reviewer outsource với id {userId}"));
+            var result = await _serviceManager.AuthService.SuspendExternalReviewerAccount(request);
+            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã suspend người reviewer outsource với id {request.UserId}"));
         }
         [Authorize(Roles = "Conference Organizer,Admin")]
-        [HttpPut("activate-external-reviewer/{userId}")]
-        public async Task<IActionResult> ActivateExternalReviewer([FromRoute] string userId)
+        [HttpPut("activate-external-reviewer")]
+        public async Task<IActionResult> ActivateExternalReviewer([FromBody] UserActiveAccountRequest request)
         {
-            var result = await _serviceManager.AuthService.ActivateExternalReviewerAccount(userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã activate người reviewer outsource với id {userId}"));
+            var result = await _serviceManager.AuthService.ActivateExternalReviewerAccount(request);
+            return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã activate người reviewer outsource với id {request.UserId}"));
         }
         [Authorize(Roles = "Conference Organizer")]
         [HttpPost("create-local-reviewer-account")]
