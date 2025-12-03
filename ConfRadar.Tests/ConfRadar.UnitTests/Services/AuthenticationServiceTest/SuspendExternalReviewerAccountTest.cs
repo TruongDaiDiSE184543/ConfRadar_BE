@@ -2,6 +2,7 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using ConfRadar.Shared.DTO.User;
 using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
@@ -65,8 +66,13 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             _mockUnitOfWork.Setup(u => u.UserRoleRepository
                 .UpdateUserRole(userRole))
                 .ReturnsAsync(1);
+            var user1 = new UserSuspendRequest()
+            {
+                UserId = "u1",
+                Reason = "siu"
 
-            var result = await _authService.SuspendExternalReviewerAccount("u1");
+            };
+            var result = await _authService.SuspendExternalReviewerAccount(user1);
 
             Assert.Equal(1, result);
             Assert.False(userRole.IsActive);
@@ -79,9 +85,14 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             _mockUnitOfWork.Setup(u => u.RoleRepository
                 .GetRoleByRoleName(It.IsAny<string>()))
                 .ReturnsAsync((Role?)null);
+            var user1 = new UserSuspendRequest()
+            {
+                UserId = "u1",
+                Reason = "siu"
 
+            };
             await Assert.ThrowsAsync<Exception>(() =>
-                _authService.SuspendExternalReviewerAccount("u1"));
+                _authService.SuspendExternalReviewerAccount(user1));
         }
 
         [Fact]
@@ -95,9 +106,14 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             _mockUnitOfWork.Setup(u => u.UserRepository
                 .GetUserByUserId("u1"))
                 .ReturnsAsync((User?)null);
+            var user1 = new UserSuspendRequest()
+            {
+                UserId = "u1",
+                Reason = "siu"
 
+            };
             await Assert.ThrowsAsync<NotFoundException>(() =>
-                _authService.SuspendExternalReviewerAccount("u1"));
+                _authService.SuspendExternalReviewerAccount(user1));
         }
 
         //[Fact]
@@ -144,9 +160,14 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             _mockUnitOfWork.Setup(u => u.UserRoleRepository
                 .GetUserRoleByUserAndRole("u1", "r1"))
                 .ReturnsAsync((UserRole?)null);
+            var user1 = new UserSuspendRequest()
+            {
+                UserId = "u1",
+                Reason = "siu"
 
+            };
             await Assert.ThrowsAsync<NotFoundException>(() =>
-                _authService.SuspendExternalReviewerAccount("u1"));
+                _authService.SuspendExternalReviewerAccount(user1));
         }
 
         [Fact]
@@ -168,9 +189,14 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetUserRoleByUserAndRole("u1", "r1"))
                 .ReturnsAsync(userRole);
+            var user1 = new UserSuspendRequest()
+            {
+                UserId = "u1",
+                Reason = "siu"
 
+            };
             await Assert.ThrowsAsync<BadRequestException>(() =>
-                _authService.SuspendExternalReviewerAccount("u1"));
+                _authService.SuspendExternalReviewerAccount(user1));
         }
     }
 
