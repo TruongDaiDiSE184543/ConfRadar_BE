@@ -265,7 +265,7 @@ namespace ConfRadar.Repositories.Repositories
                 .AsSplitQuery();
         }
 
-        public async Task<Conference> GetTechnicalIncludedById(string technicalId)
+        public async Task<Conference?> GetTechnicalIncludedById(string technicalId)
         {
             return await _context.Conferences
                 .Include(c => c.CreatedByNavigation)

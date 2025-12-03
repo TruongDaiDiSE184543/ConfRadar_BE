@@ -17,5 +17,7 @@ public partial class UserSuspendHistory
 
     public bool? IsActiveSuspend { get; set; }
 
+    public string? SuspendType { get; set; }
+
     public virtual User User { get; set; } = null!;
 }

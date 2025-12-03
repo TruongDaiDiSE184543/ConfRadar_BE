@@ -361,7 +361,11 @@ namespace ConfRadar.Services.Common
     }
 
 
-
+    public enum SuspendTypeEnum
+    {
+        User,
+        UserRole
+    }
 
 
 
