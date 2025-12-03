@@ -25,11 +25,11 @@ namespace ConfRadar.Services.DTOs.Paper
         public List<RevisionDeadlineDetail>? revisionDeadline { get; set; }
     }
 
-
     public class Author
     {
-        public string UserId { get; set; }
-        public string FullName { get; set; }
+        public string userId { get; set; }
+        public string fullName { get; set; }
+        public string avatarUrl { get; set; }
     }
     public class ResearchPhaseDtoDetail
     {

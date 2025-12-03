@@ -1915,11 +1915,12 @@ namespace ConfRadar.Services.Services
                 Title = paper.Title,
                 Description = paper.Description,
                 Created = paper.CreatedAt,
-                RootAuthor = RootAuthor != null ? new Author { UserId = RootAuthor.UserId, FullName = RootAuthor.FullName } : null,
+                RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName , avatarUrl = RootAuthor.AvatarUrl} : null,
                 CoAuthors = coAuthors?.Select(user => new Author
                 {
-                    UserId = user.UserId,
-                    FullName = user.FullName
+                    userId = user.UserId,
+                    fullName = user.FullName,
+                    avatarUrl = user.AvatarUrl
                 }).ToList(),
                 researchConferenceInfo = await _conferenceStepService.GetResearchConferenceBasicAsync(paper.ConferenceId),
                 ResearchPhase = paper.ResearchConferencePhase != null ? new ResearchPhaseDtoDetail

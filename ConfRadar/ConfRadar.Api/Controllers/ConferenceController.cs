@@ -360,7 +360,17 @@ namespace ConfRadar.Api.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.ActivateWaitlist(confId, userId);
             if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "kich hoat waitlit thanh cocng"));
-            return Ok(ApiResponse<bool>.FailResponse("kich hoat waitlit thanh cocng thất bại"));
+            return Ok(ApiResponse<bool>.FailResponse("kich hoat waitlit thất bại"));
+        }
+
+        [HttpPut("add-days-since-last-onhold")]
+        [Authorize(Roles = "Conference Organizer, Collaborator")]
+        public async Task<IActionResult> AddDaysFromLastOnHold([FromQuery] string confId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.ConferenceService.AutoAdjustTimelineForOnHoldAsync(confId, userId);
+            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Thêm ngày dựa trên ngày onhold thành công"));
+            else return Ok(ApiResponse<bool>.FailResponse("Thêm ngày dựa trên ngày onhold thất bại"));
         }
     }
 }
