@@ -1873,7 +1873,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy phiên với mã {request.ConferenceSessionId}");
             }
-            var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(request.ConferenceSessionId, userId);
+            var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(userId,request.ConferenceSessionId);
             if (userCheckInFound == null)
             {
                 throw new BadRequestException($"Bạn chưa mua vé nào nên không thể dánh giá");
