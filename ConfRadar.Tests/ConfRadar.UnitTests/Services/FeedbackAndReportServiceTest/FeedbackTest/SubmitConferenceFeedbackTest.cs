@@ -53,7 +53,7 @@ namespace ConfRadar.UnitTests.Services.FeedbackAndReportServiceTest.FeedbackTest
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync("S1"))
                 .ReturnsAsync(new ConferenceSession { ConferenceSessionId = "S1" });
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync("S1", "U1"))
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync("U1", "S1"))
                 .ReturnsAsync((UserCheckIn)null);
 
             await Assert.ThrowsAsync<BadRequestException>(() =>
@@ -66,7 +66,7 @@ namespace ConfRadar.UnitTests.Services.FeedbackAndReportServiceTest.FeedbackTest
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync("S1"))
                 .ReturnsAsync(new ConferenceSession { ConferenceSessionId = "S1" });
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync("S1", "U1"))
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync("U1", "S1"))
                 .ReturnsAsync(new UserCheckIn { CheckinStatusId = "CS1" });
 
             _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync(It.IsAny<string>()))
@@ -98,7 +98,7 @@ namespace ConfRadar.UnitTests.Services.FeedbackAndReportServiceTest.FeedbackTest
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync("S1"))
                 .ReturnsAsync(new ConferenceSession { ConferenceSessionId = "S1" });
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync("S1", "U1"))
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync("U1", "S1"))
                 .ReturnsAsync(new UserCheckIn { CheckinStatusId = "CS1" });
 
             _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync(It.IsAny<string>()))
