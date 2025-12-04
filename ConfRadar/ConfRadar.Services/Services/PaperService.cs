@@ -2940,12 +2940,16 @@ namespace ConfRadar.Services.Services
         {
             var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
             var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
-            if (adminRole == null || organizerRole == null)
+            var internalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
+            var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
+            if (adminRole == null || organizerRole == null || internalReviewerRole ==null || collabRole ==null)
                 throw new NotFoundException("Không tìm thấy các role trong hệ thống");
             List<string> systemRoles = new List<string>()
             {
                 adminRole.RoleId,
-                organizerRole.RoleId
+                organizerRole.RoleId,
+                internalReviewerRole.RoleId,
+                collabRole.RoleId
             };
             var availableUsers = await _unitOfWork.PaperRepository.GetAvailableCoAuthorForInclude(conferenceId,systemRoles);
             availableUsers = availableUsers.Where(u => u.UserId != userId).ToList();
