@@ -6,6 +6,7 @@
         public decimal OriginalPrice { get; set; }
         public string TicketName { get; set; }
         public string PhaseName { get; set; }
+        public bool? isAuthor {  get; set; }
         public decimal ApplyPhasePercent { get; set; }
         public int HasCheckin { get; set; }
         public int ExpireCheckin { get; set; }

@@ -198,6 +198,7 @@ namespace ConfRadar.Services.Services
                         ConferencePriceId = price.ConferencePriceId,
                         TicketName = price.TicketName,
                         PhaseName = phase.PhaseName,
+                        isAuthor = price.IsAuthor ?? null,
                         OriginalPrice = price.TicketPrice ?? 0,
                         ApplyPhasePercent = phase.ApplyPercent ?? 0,
 
@@ -232,7 +233,6 @@ namespace ConfRadar.Services.Services
                         stat.AmountToConfRadar = commissionAmt;
                         stat.AmountToCollaborator = phaseTotalRealRevenue - commissionAmt;
                     }
-
                     ticketPhaseStats.Add(stat);
 
                     // E. Cộng dồn tổng
