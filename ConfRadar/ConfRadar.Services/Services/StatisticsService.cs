@@ -386,6 +386,8 @@ namespace ConfRadar.Services.Services
                     PaperId = paper.PaperId,
                     Title = paper.Title,
                     SubmittingAuthorId = rootUser?.UserId ?? "N/A",
+                    SubmittingAuthorName = rootUser?.FullName ?? "N/A",
+                    SubmittingAuthorEmail = rootUser?.Email ?? "N/A",
                     PaperPhase = paperPhaseName,
                     AssignedReviewers = assignedReviewers
                 };
