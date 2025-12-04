@@ -302,7 +302,22 @@ namespace ConfRadar.Api.Controllers
             return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
         }
 
+        [HttpPut("disable-conference")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> DisablingConference([FromQuery]string conferenceId, [FromQuery] string? reason = null)
+        {
+            var result = await _serviceManager.ConferenceService.DisableContractedConference(conferenceId, reason);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Disable Hội nghị thành công"));
+        }
 
+
+        [HttpPut("transition-conference-from-disable-to-ready")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> ActivateConference([FromQuery] string conferenceId, [FromQuery] string? reason = null)
+        {
+            var result = await _serviceManager.ConferenceService.ToReadyFromDisabledContractedConference(conferenceId, reason);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Cập nhật trạng thái từ disabled về ready thành công"));
+        }
 
 
         [HttpGet("get-own-conferences")]

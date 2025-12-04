@@ -172,6 +172,8 @@ namespace ConfRadar.Services.Common
         [Description("Deleted")]
         Deleted,
         Rejected,
+        [Description("Disabled")]
+        Disabled
     }
     public enum PaperPhaseEnum
     {

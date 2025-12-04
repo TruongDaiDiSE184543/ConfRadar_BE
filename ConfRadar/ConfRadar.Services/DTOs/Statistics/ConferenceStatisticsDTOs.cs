@@ -135,11 +135,18 @@
         public string Title { get; set; }
         public string SubmittingAuthorId { get; set; }
         public string PaperPhase { get; set; }
-        public List<string> AssignedReviewers { get; set; } = new();
+        public List<Reviewer> AssignedReviewers { get; set; } = new();
         public PaperAbstractPhaseResponse? AbstractPhase { get; set; }
         public PaperFullPaperPhaseResponse? FullPaperPhase { get; set; }
         public PaperRevisionPhaseResponse? RevisionPhase { get; set; }
         public PaperCameraReadyPhaseResponse? CameraReadyPhase { get; set; }
+    }
+
+    public class Reviewer
+    {
+        public string? userId { get; set; }
+        public string? name { get; set; }
+        public bool? isHeadReviewer { get; set; }
     }
 
     public class PaperAbstractPhaseResponse

@@ -306,8 +306,6 @@ namespace ConfRadar.Services.Services
         }
 
 
-        // DÁN TOÀN B? PHIÊN B?N NÀY Ð? THAY TH? PHIÊN B?N CU C?A B?N
-
         private async Task checkEachDateHasConferenceSession(Conference conference, List<DateOnly> newSessionDates, bool checkOnlyBoundaries = false)
         {
             // --- BU?C 1: T?NG H?P T?T C? CÁC NGÀY CÓ SESSION (CU + M?I) ---
@@ -376,6 +374,8 @@ namespace ConfRadar.Services.Services
                 }
             }
         }
+
+
 
         private async Task EnsureConferenceIsEditable(Conference conference, bool restrictExternalHostedAtPreaparingStatus = false)
         {
