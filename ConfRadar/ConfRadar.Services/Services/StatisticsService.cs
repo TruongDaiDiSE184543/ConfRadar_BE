@@ -351,7 +351,7 @@ namespace ConfRadar.Services.Services
                 var rootAuthor = await _unitOfWork.PaperAuthorRepository.GetRootAuthor(paper.PaperId);
 
                 var rootUser = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
-                var assignedReviewers = new List<string>();
+                var assignedReviewers = new List<Reviewer>();
                 if (paperReviewers != null && paperReviewers.Any())
                 {
                     foreach (var paperReviewer in paperReviewers)
@@ -360,7 +360,12 @@ namespace ConfRadar.Services.Services
                         var reviewer = await _unitOfWork.UserRepository.GetUserByUserId(paperReviewer.UserId);
                         if (reviewer != null)
                         {
-                            assignedReviewers.Add(reviewer.FullName + " (" + reviewer.UserId + ")");
+                            assignedReviewers.Add(new Reviewer
+                            {
+                                userId = reviewer.UserId,
+                                name = reviewer.FullName,
+                                isHeadReviewer = paperReviewer.IsHeadReviewer
+                            });
                         }
                     }
                 }
