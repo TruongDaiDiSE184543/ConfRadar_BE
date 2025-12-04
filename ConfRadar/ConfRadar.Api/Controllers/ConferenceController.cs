@@ -297,7 +297,7 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.ApproveConferenceAsync(conferenceId, request);
             if (result)
             {
-                return Ok(ApiResponse<object>.SuccessResponse(null, "Conference approved successfully"));
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Duyệt hội nghị thành công"));
             }
             return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
         }

@@ -134,6 +134,8 @@
         public string PaperId { get; set; }
         public string Title { get; set; }
         public string SubmittingAuthorId { get; set; }
+        public string? SubmittingAuthorName {  get; set; }
+        public string? SubmittingAuthorEmail {  get; set; }
         public string PaperPhase { get; set; }
         public List<Reviewer> AssignedReviewers { get; set; } = new();
         public PaperAbstractPhaseResponse? AbstractPhase { get; set; }
