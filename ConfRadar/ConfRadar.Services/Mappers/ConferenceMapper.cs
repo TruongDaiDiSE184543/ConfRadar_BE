@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Conference;
+using System.Data;
 using System.Runtime.CompilerServices;
 
 namespace ConfRadar.Services.Mappers
@@ -201,7 +202,8 @@ namespace ConfRadar.Services.Mappers
                 ConferenceId = model.ConferenceId,
                 RoomId = model.RoomId,
                 Room = model.Room != null ? model.Room.ToRoomInfoResponse() : null,
-                SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList()
+                SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList(),
+                feedbacks = model.ConferenceFeedbacks?.Select(f => f.ToConferenceSessionFeedbackResponse()).ToList()
             };
         }
 
@@ -245,7 +247,9 @@ namespace ConfRadar.Services.Mappers
                 RoomId = model.RoomId,
                 Speakers = model.Speakers?.Select(s => s.ToSpeakerResponse()).ToList(),
                 SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList(),
-                Room = model.Room != null ? model?.Room?.ToRoomInfoResponse() : null
+                Room = model.Room != null ? model?.Room?.ToRoomInfoResponse() : null,
+                feedback = model.ConferenceFeedbacks?.Select(f => f.ToConferenceSessionFeedbackResponse()).ToList()
+                
             };
         }
 
@@ -298,6 +302,18 @@ namespace ConfRadar.Services.Mappers
                 RankYear = model.RankYear,
                 ReviewFee = model.ReviewFee,
                 RevisionAttemptAllowed = model.RevisionAttemptAllowed
+            };
+        }
+
+        public static ConferenceSessionFeedbackResponse ToConferenceSessionFeedbackResponse (this ConferenceFeedback model)
+        {
+            return new ConferenceSessionFeedbackResponse
+            {
+                createdAt = model.CreatedAt,
+                Message = model.Message,
+                rating = model.Rating,
+                UserEmail = model.User.Email,
+                UserName = model.User.FullName
             };
         }
     }
