@@ -21,6 +21,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public bool? IsResearchConference { get; set; }
         public string? CityId { get; set; }
         public string? CreatedBy { get; set; }
+        public string? userNameCreator { get; set; }
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
     }
@@ -320,6 +321,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public RoomInfoResponse? Room { get; set; } // Include room information
         public List<SpeakerResponse>? Speakers { get; set; }
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
+        public List<ConferenceSessionFeedbackResponse>? feedback { get; set; }
     }
 
     public class SpeakerResponse
@@ -483,6 +485,16 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? RoomId { get; set; }
         public RoomInfoResponse? Room { get; set; } // Include room information
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
+        public List<ConferenceSessionFeedbackResponse>? feedbacks {  get; set; }
+    }
+
+    public class ConferenceSessionFeedbackResponse
+    {
+        public int? rating { get; set; }
+        public string? Message { get; set; }
+        public string? UserName {  get; set; }
+        public string? UserEmail {  get; set; }
+        public DateTime? createdAt {  get; set; }
     }
 
     public class SkeletonTechConfResponse

@@ -17,7 +17,7 @@ namespace ConfRadar.Repositories.Repositories
         IQueryable<Conference> GetAllConferences();
         Task<Conference?> GetConferenceWithDetailsAsync(string conferenceId);
         IQueryable<Conference> GetAllTechnicalIncludedConference();
-        Task<Conference> GetTechnicalIncludedById(string technicalId);
+        Task<Conference> GetTechnicalIncludedById(string technicalId, string? statusId = null);
         Task<Conference> GetResearchIncludedById(string researchId);
         IQueryable<Conference> GetAllResearchIncludedConference();
 
@@ -265,9 +265,9 @@ namespace ConfRadar.Repositories.Repositories
                 .AsSplitQuery();
         }
 
-        public async Task<Conference?> GetTechnicalIncludedById(string technicalId)
+        public async Task<Conference?> GetTechnicalIncludedById(string technicalId,string? statusId = null)
         {
-            return await _context.Conferences
+            var query = _context.Conferences
                 .Include(c => c.CreatedByNavigation)
                     .ThenInclude(u => u.Organization)
                 .Include(c => c.CollaboratorContract)
@@ -285,6 +285,9 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(cs => cs.Room) // Include room information
                          .ThenInclude(r => r.Destination)
                             .ThenInclude(d => d.City)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceFeedbacks)
+                        .ThenInclude(f => f.User)
                 .Include(c => c.Sponsors)
                 .Include(c => c.TechnicalConferenceDetail)
                 .Include(c => c.ConferenceTimelines) // Include timeline
@@ -292,9 +295,11 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(c => c.ConferenceTimelines)
                     .ThenInclude(ct => ct.AfterwardStatus)
                 .Include(c => c.RefundPolicies)
-                .AsNoTracking()
-                .AsSplitQuery()
-               .FirstOrDefaultAsync(c => c.ConferenceId == technicalId);
+                .AsSplitQuery().AsNoTracking();
+            if (!string.IsNullOrEmpty(statusId)){
+                query = query.Where(c => c.ConferenceStatusId == statusId);
+            }
+            return await query.Where(c => c.ConferenceId == technicalId).FirstOrDefaultAsync();
         }
 
         public Task<Conference> GetResearchIncludedById(string researchId)

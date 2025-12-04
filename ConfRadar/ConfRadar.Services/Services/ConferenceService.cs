@@ -482,28 +482,10 @@ namespace ConfRadar.Services.Services
             }
 
 
+            var readystatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
 
-            var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
-                .Include(c => c.CollaboratorContract)
-                .Include(c => c.CreatedByNavigation)
-                    .ThenInclude(u => u.Organization)
-                .Include(c => c.ConferenceCategory)
-                .Include(c => c.ConferenceMedia)
-                .Include(c => c.Policies)
-                .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhases)
-                        .ThenInclude(pp => pp.RefundPolicies)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Speakers)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.ConferenceSessionMedia)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Room) // Include room information
-                         .ThenInclude(r => r.Destination)
-                            .ThenInclude(d => d.City)
-                .Include(c => c.Sponsors)
-                .Include(c => c.TechnicalConferenceDetail)
-                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
+
+            var conference = await _unitOfWork.ConferenceRepository.GetTechnicalIncludedById(conferenceId);
 
             if (conference == null)
             {
@@ -741,7 +723,7 @@ namespace ConfRadar.Services.Services
                 };
             }
 
-            var query = _unitOfWork.ConferenceRepository.GetAllConferences()
+            var query = _unitOfWork.ConferenceRepository.GetAllConferences().Include(c => c.CreatedByNavigation)
                 .Where(c => c.ConferenceStatusId == pendingStatus.ConferenceStatusId);
 
             // Apply search filter if provided
@@ -776,6 +758,7 @@ namespace ConfRadar.Services.Services
                 IsResearchConference = conference.IsResearchConference,
                 CityId = conference.CityId,
                 CreatedBy = conference.CreatedBy,
+                userNameCreator = conference.CreatedByNavigation?.FullName,
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId
             }).ToList();
@@ -982,6 +965,7 @@ namespace ConfRadar.Services.Services
             }
             // Get the main conference with related data
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.ConferenceStatus)
                 .Include(c => c.CreatedByNavigation)
                     .ThenInclude(u => u.Organization)
                 .Include(c => c.ConferenceCategory)
@@ -996,6 +980,9 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.Room) // Include room information
                          .ThenInclude(r => r.Destination)
                             .ThenInclude(d => d.City)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceFeedbacks)
+                        .ThenInclude(f => f.User)
                 .Include(c => c.Sponsors)
                 .Include(c => c.RefundPolicies)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
@@ -1080,6 +1067,8 @@ namespace ConfRadar.Services.Services
         {
             // Get the main conference with related data and timeline
             var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
+                .Include(c => c.ResearchConferenceDetail)
+
                 .Include(c => c.ConferenceCategory)
                 .Include(c => c.ConferenceMedia)
                 .Include(c => c.Policies)
@@ -1092,6 +1081,9 @@ namespace ConfRadar.Services.Services
                     .ThenInclude(cs => cs.Room) // Include room information
                          .ThenInclude(r => r.Destination)
                             .ThenInclude(d => d.City)
+                 .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceFeedbacks)
+                        .ThenInclude(f => f.User)
                 .Include(c => c.Sponsors)
                 .Include(c => c.RefundPolicies)
                 .Include(c => c.ConferenceTimelines) // Include timeline
@@ -2137,11 +2129,11 @@ namespace ConfRadar.Services.Services
             // Kiểm tra nếu là hội nghị kỹ thuật, phiên phải có ít nhất một diễn giả
             if (conf.IsResearchConference == false)
             {
-                //var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conf.ConferenceId);
-                //if (technicalDetail == null)
-                //{
-                //    invalidMessages.Add("Hội nghị kỹ thuật phải có thông tin chi tiết kỹ thuật.");
-                //}
+                var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conf.ConferenceId);
+                if (technicalDetail == null)
+                {
+                    invalidMessages.Add("Hội nghị kỹ thuật phải có thông tin chi tiết kỹ thuật.");
+                }
 
                 // Kiểm tra các phiên trong hội nghị kỹ thuật có ít nhất một diễn giả
                 //foreach (var session in sessions)
@@ -2205,6 +2197,7 @@ namespace ConfRadar.Services.Services
             {
                 invalidMessages.Add("Hội nghị phải có ít nhất một chính sách.");
             }
+
 
             // --- BƯỚC B: KIỂM TRA NGÀY THÁNG LỖI THỜI ---
             var today = await _timeProviderService.GetVietnamDate();
