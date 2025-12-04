@@ -29,6 +29,7 @@
 
 
   <ItemGroup>
+    <Folder Include="Services\ConferenceManangment\" />
     <Folder Include="Utilities\" />
     <Folder Include="Shared\" />
   </ItemGroup>

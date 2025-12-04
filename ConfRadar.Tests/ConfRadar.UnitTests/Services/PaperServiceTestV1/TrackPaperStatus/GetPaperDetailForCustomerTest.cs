@@ -189,10 +189,10 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
             Assert.Equal("Paper Title", result.Title);
 
             Assert.NotNull(result.RootAuthor);
-            Assert.Equal("u1", result.RootAuthor.UserId);
+            Assert.Equal("u1", result.RootAuthor.userId);
 
             Assert.Single(result.CoAuthors);
-            Assert.Equal("u2", result.CoAuthors[0].UserId);
+            Assert.Equal("u2", result.CoAuthors[0].userId);
 
             Assert.NotNull(result.ResearchPhase);
             Assert.Equal("rcp1", result.ResearchPhase.ResearchConferencePhaseId);
@@ -270,9 +270,9 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
             Assert.Equal("Test Conf", result.researchConferenceInfo.ConferenceName);
             Assert.Equal("Open", result.researchConferenceInfo.statusName);
             Assert.Equal("Root Author Name", result.researchConferenceInfo.creatorUserName);
-            Assert.Equal("U1", result.RootAuthor.UserId);
+            Assert.Equal("U1", result.RootAuthor.userId);
             Assert.Single(result.CoAuthors);
-            Assert.Equal("U2", result.CoAuthors[0].UserId);
+            Assert.Equal("U2", result.CoAuthors[0].userId);
             Assert.NotNull(result.RevisionPaper);
             Assert.Single(result.revisionDeadline);
         }
