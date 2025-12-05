@@ -2237,6 +2237,11 @@ namespace ConfRadar.Services.Services
 
             // 3. Validation logic cho danh sách các phase t? request
             var newPhases = request.Phases.OrderBy(p => p.RegistrationStartDate).ToList();
+
+            if (newPhases.Any() && newPhases.Last().AuthorPaymentEnd >= conference.StartDate)
+            {
+                throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả ({newPhases.Last().AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate:dd/MM/yyyy}).");
+            }
             // 3a. Ph?i có dúng M?T phase chính (IsWaitlist = false) 
             //if (newPhases.Count(p => p.IsWaitlist == false) != 1)
             //    throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
@@ -2421,8 +2426,34 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Ngày bắt đầu của phase mới ({newPhaseRequest.RegistrationStartDate:dd/MM/yyyy}) phải sau ngày kết thúc của phase cuối cùng ({lastPhase.AuthorPaymentEnd:dd/MM/yyyy}).");
 
             // (Tái sử dụng logic validate timeline nội bộ của phase)
-            if (newPhaseRequest.RegistrationStartDate > newPhaseRequest.RegistrationEndDate || /* ... các cặp ngày khác ... */ newPhaseRequest.AuthorPaymentStart > newPhaseRequest.AuthorPaymentEnd)
-                throw new BadRequestException("Các mốc thời gian trong phase mới không theo đúng thứ tự.");
+            if (newPhaseRequest.RegistrationStartDate > newPhaseRequest.RegistrationEndDate ||
+                newPhaseRequest.RegistrationEndDate > newPhaseRequest.AbstractDecideStatusStart ||
+                newPhaseRequest.AbstractDecideStatusStart > newPhaseRequest.AbstractDecideStatusEnd ||
+                newPhaseRequest.AbstractDecideStatusEnd > newPhaseRequest.FullPaperStartDate ||
+                newPhaseRequest.FullPaperStartDate > newPhaseRequest.FullPaperEndDate ||
+                newPhaseRequest.FullPaperEndDate > newPhaseRequest.ReviewStartDate ||
+                newPhaseRequest.ReviewStartDate > newPhaseRequest.ReviewEndDate ||
+                newPhaseRequest.ReviewEndDate > newPhaseRequest.FullPaperDecideStatusStart ||
+                newPhaseRequest.FullPaperDecideStatusStart > newPhaseRequest.FullPaperDecideStatusEnd ||
+                newPhaseRequest.FullPaperDecideStatusEnd > newPhaseRequest.ReviseStartDate ||
+                newPhaseRequest.ReviseStartDate > newPhaseRequest.ReviseEndDate ||
+                newPhaseRequest.ReviseEndDate > newPhaseRequest.RevisionPaperDecideStatusStart ||
+                newPhaseRequest.RevisionPaperDecideStatusStart > newPhaseRequest.RevisionPaperDecideStatusEnd ||
+                newPhaseRequest.RevisionPaperDecideStatusEnd > newPhaseRequest.CameraReadyStartDate ||
+                newPhaseRequest.CameraReadyStartDate > newPhaseRequest.CameraReadyEndDate ||
+                newPhaseRequest.CameraReadyEndDate > newPhaseRequest.CameraReadyDecideStatusStart ||
+                newPhaseRequest.CameraReadyDecideStatusStart > newPhaseRequest.CameraReadyDecideStatusEnd ||
+                newPhaseRequest.CameraReadyDecideStatusEnd > newPhaseRequest.AuthorPaymentStart ||
+                newPhaseRequest.AuthorPaymentStart > newPhaseRequest.AuthorPaymentEnd
+                )
+            {
+                throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
+            }
+
+            if (newPhaseRequest.AuthorPaymentEnd >= conference.StartDate)
+            {
+                throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả trong phase mới ({newPhaseRequest.AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate:dd/MM/yyyy}).");
+            }
 
             // 2.3 Validate RevisionRoundDeadlines cho phase mới
             // (Tái sử dụng logic validate RevisionRoundDeadlines)
@@ -2438,8 +2469,8 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException($"Trong Revision Deadline, ngày bắt đầu ({deadline.StartSubmissionDate:dd/MM/yyyy}) phải trước ngày kết thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
 
                 // Kho?ng th?i gian c?a deadline ph?i n?m trong kho?ng Revise c?a Phase
-                if (deadline.StartSubmissionDate < request.NewPhase.ReviseStartDate || deadline.EndSubmissionDate > request.NewPhase.ReviseEndDate)
-                    throw new BadRequestException($"Revision Deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) phải nằm trong giai đoạn sửa đổi của phase ({request.NewPhase.ReviseStartDate:dd/MM/yyyy} - {request.NewPhase.ReviseEndDate:dd/MM/yyyy}).");
+                if (deadline.StartSubmissionDate < newPhaseRequest.ReviseStartDate || deadline.EndSubmissionDate > newPhaseRequest.ReviseEndDate)
+                    throw new BadRequestException($"Revision Deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) phải nằm trong giai đoạn sửa đổi của phase ({newPhaseRequest.ReviseStartDate:dd/MM/yyyy} - {newPhaseRequest.ReviseEndDate:dd/MM/yyyy}).");
 
                 if (lastEndDate.HasValue && deadline.StartSubmissionDate <= lastEndDate)
                     throw new BadRequestException("Các Revision Deadline không được chồng chéo lên nhau.");
