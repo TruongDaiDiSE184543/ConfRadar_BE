@@ -24,6 +24,10 @@ namespace ConfRadar.Services.Services
         #region export to excel
         //Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
         Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId);
+        //Task<byte[]> ExportTicketHoldersToExcelAsync(TicketHolderSearchParam request);
+        //Task<byte[]> ExportPaperStatisticsToExcelAsync(string conferenceId);
+        //Task<byte[]> ExportReviewersToExcelAsync(string conferenceId);
+        //Task<byte[]> ExportSessionsToExcelAsync(string conferenceId);
         #endregion
     }
     public class StatisticsService : IStatisticsService
@@ -198,6 +202,7 @@ namespace ConfRadar.Services.Services
                         ConferencePriceId = price.ConferencePriceId,
                         TicketName = price.TicketName,
                         PhaseName = phase.PhaseName,
+                        isAuthor = price.IsAuthor ?? null,
                         OriginalPrice = price.TicketPrice ?? 0,
                         ApplyPhasePercent = phase.ApplyPercent ?? 0,
 
@@ -232,7 +237,6 @@ namespace ConfRadar.Services.Services
                         stat.AmountToConfRadar = commissionAmt;
                         stat.AmountToCollaborator = phaseTotalRealRevenue - commissionAmt;
                     }
-
                     ticketPhaseStats.Add(stat);
 
                     // E. Cộng dồn tổng
@@ -690,123 +694,174 @@ namespace ConfRadar.Services.Services
         #region export
         public async Task<byte[]> ExportDetailedConferenceStatisticsAsync(string conferenceId)
         {
-            // Bước 1: Lấy dữ liệu thống kê đầy đủ
+            // 1. Lấy dữ liệu thống kê chi tiết (đã bao gồm logic check-in, refund, commission)
             var statistics = await GetSoldTicketStatisticsAsync(conferenceId);
 
-            ExcelPackage.License.SetNonCommercialPersonal("<My Name>");
+            ExcelPackage.License.SetNonCommercialPersonal("NonCommercial");
             using (var package = new ExcelPackage())
             {
-                var worksheet = package.Workbook.Worksheets.Add("Thống Kê Doanh Thu");
+                var worksheet = package.Workbook.Worksheets.Add("Báo Cáo Chi Tiết");
 
-                // === PHẦN 1: TRÌNH BÀY THÔNG TIN TỔNG QUAN ===
+                // ======================================================
+                // PHẦN 1: HEADER & THÔNG TIN CHUNG (DÒNG 1-6)
+                // ======================================================
 
-                // Dùng Merge và Style để làm tiêu đề báo cáo
-                worksheet.Cells["A1:H1"].Merge = true;
-                worksheet.Cells["A1"].Value = $"BÁO CÁO DOANH THU - {statistics.ConferenceName}";
+                // Tiêu đề lớn
+                worksheet.Cells["A1:L1"].Merge = true;
+                worksheet.Cells["A1"].Value = $"BÁO CÁO DOANH THU & VẬN HÀNH - {statistics.ConferenceName.ToUpper()}";
+                worksheet.Cells["A1"].Style.Font.Size = 18;
                 worksheet.Cells["A1"].Style.Font.Bold = true;
-                worksheet.Cells["A1"].Style.Font.Size = 16;
                 worksheet.Cells["A1"].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet.Cells["A1"].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                worksheet.Cells["A1"].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells["A1"].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                worksheet.Row(1).Height = 30;
 
-                worksheet.Cells["A3"].Value = "Tổng số vé đã bán:";
-                worksheet.Cells["B3"].Value = statistics.TotalTicketsSold;
-                worksheet.Cells["B3"].Style.Font.Bold = true;
+                // Ngày xuất báo cáo
+                worksheet.Cells["A2:L2"].Merge = true;
+                worksheet.Cells["A2"].Value = $"Ngày xuất báo cáo: {DateTime.Now:dd/MM/yyyy HH:mm}";
+                worksheet.Cells["A2"].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet.Cells["A2"].Style.Font.Italic = true;
 
-                worksheet.Cells["A4"].Value = "Tổng doanh thu:";
-                worksheet.Cells["B4"].Value = statistics.TotalRevenue;
-                worksheet.Cells["B4"].Style.Numberformat.Format = "#,##0"; // Định dạng số cho dễ đọc
-                worksheet.Cells["B4"].Style.Font.Bold = true;
+                // --- Bảng tóm tắt nhỏ (Dashboard) ---
+                worksheet.Cells["B4"].Value = "TỔNG VÉ ĐÃ BÁN";
+                worksheet.Cells["C4"].Value = statistics.TotalTicketsSold;
+                worksheet.Cells["B4:C4"].Style.Font.Bold = true;
 
-                // Tính toán và hiển thị tổng hoa hồng nếu có
+                worksheet.Cells["B5"].Value = "TỔNG DOANH THU THỰC TẾ";
+                worksheet.Cells["C5"].Value = statistics.TotalRevenue;
+                worksheet.Cells["C5"].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells["B5:C5"].Style.Font.Bold = true;
+                worksheet.Cells["B5:C5"].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells["B5:C5"].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightYellow);
+
+                // Nếu có chia sẻ doanh thu
+                int summaryRow = 6;
                 if (!statistics.IsInternalHosted)
                 {
                     var totalCommission = statistics.TicketPhaseStatistics.Sum(s => s.AmountToCollaborator ?? 0);
-                    var totalToConfRadar = statistics.TicketPhaseStatistics.Sum(s => s.AmountToConfRadar ?? 0);
+                    var totalConfRadar = statistics.TicketPhaseStatistics.Sum(s => s.AmountToConfRadar ?? 0);
 
-                    worksheet.Cells["A5"].Value = "Tổng tiền cho Cộng tác viên:";
-                    worksheet.Cells["B5"].Value = totalCommission;
-                    worksheet.Cells["B5"].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[$"B{summaryRow}"].Value = "Doanh thu Đối tác (Sau hoa hồng)";
+                    worksheet.Cells[$"C{summaryRow}"].Value = totalCommission;
+                    worksheet.Cells[$"C{summaryRow}"].Style.Numberformat.Format = "#,##0";
+                    summaryRow++;
 
-                    worksheet.Cells["A6"].Value = "Tổng tiền cho ConfRadar:";
-                    worksheet.Cells["B6"].Value = totalToConfRadar;
-                    worksheet.Cells["B6"].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[$"B{summaryRow}"].Value = "Phí nền tảng ConfRadar";
+                    worksheet.Cells[$"C{summaryRow}"].Value = totalConfRadar;
+                    worksheet.Cells[$"C{summaryRow}"].Style.Numberformat.Format = "#,##0";
                 }
 
-                // === PHẦN 2: BẢNG CHI TIẾT DOANH THU THEO PHASE ===
+                // ======================================================
+                // PHẦN 2: BẢNG CHI TIẾT (TABLE)
+                // ======================================================
 
-                int startRowForTable = 8;
+                int tableStartRow = summaryRow + 3; // Cách bảng tóm tắt 3 dòng
+                int col = 1;
 
-                // Tạo header cho bảng chi tiết
-                worksheet.Cells[startRowForTable, 1].Value = "ID Loại Vé";
-                worksheet.Cells[startRowForTable, 2].Value = "Tên Vé";
-                worksheet.Cells[startRowForTable, 3].Value = "Tên Giai Đoạn";
-                worksheet.Cells[startRowForTable, 4].Value = "Số Lượng Bán";
-                worksheet.Cells[startRowForTable, 5].Value = "Tổng Doanh Thu";
+                // --- 2.1 Tạo Header cột ---
 
-                int currentColumn = 6;
-                // Chỉ thêm các cột hoa hồng nếu cần
-                if (!statistics.IsInternalHosted)
+                // Nhóm: Thông tin vé
+                worksheet.Cells[tableStartRow, col++].Value = "Tên Vé";
+                worksheet.Cells[tableStartRow, col++].Value = "Giai Đoạn (Phase)";
+                worksheet.Cells[tableStartRow, col++].Value = "Giá Gốc";
+
+                // Nhóm: Số lượng (Vận hành)
+                worksheet.Cells[tableStartRow, col++].Value = "Tổng Bán";
+                worksheet.Cells[tableStartRow, col++].Value = "Đang Active"; // Chưa hoàn
+                worksheet.Cells[tableStartRow, col++].Value = "Đã Hoàn";
+
+                // Nhóm: Check-in (Vận hành)
+                worksheet.Cells[tableStartRow, col++].Value = "Đã Check-in";
+                worksheet.Cells[tableStartRow, col++].Value = "Chưa Check-in";
+
+                // Nhóm: Tài chính
+                worksheet.Cells[tableStartRow, col++].Value = "DT Từ Vé Active"; // TotalAmountNotRefunded
+                worksheet.Cells[tableStartRow, col++].Value = "Tiền Trả Khách (Refund)"; // TotalAmountRefunded
+                worksheet.Cells[tableStartRow, col++].Value = "Doanh Thu Thực (Net)"; // TotalAmount
+
+                // Cột hoa hồng (nếu cần)
+                bool showCommission = !statistics.IsInternalHosted;
+                if (showCommission)
                 {
-                    worksheet.Cells[startRowForTable, currentColumn++].Value = "% Hoa Hồng";
-                    worksheet.Cells[startRowForTable, currentColumn++].Value = "Tiền cho CTV";
-                    worksheet.Cells[startRowForTable, currentColumn++].Value = "Tiền cho ConfRadar";
+                    worksheet.Cells[tableStartRow, col++].Value = "Hoa hồng (%)";
+                    worksheet.Cells[tableStartRow, col++].Value = "Thực Nhận (Partner)";
                 }
 
-                // Làm đậm header
-                worksheet.Cells[startRowForTable, 1, startRowForTable, currentColumn - 1].Style.Font.Bold = true;
+                // Style cho Header bảng
+                using (var range = worksheet.Cells[tableStartRow, 1, tableStartRow, col - 1])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(52, 152, 219)); // Màu xanh dương đậm
+                    range.Style.Font.Color.SetColor(System.Drawing.Color.White);
+                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Medium;
+                }
 
-                // Đổ dữ liệu chi tiết vào bảng
-                int currentRow = startRowForTable + 1;
+                // --- 2.2 Đổ dữ liệu ---
+                int currentRow = tableStartRow + 1;
                 foreach (var stat in statistics.TicketPhaseStatistics)
                 {
-                    worksheet.Cells[currentRow, 1].Value = stat.ConferencePriceId;
-                    worksheet.Cells[currentRow, 2].Value = stat.TicketName;
-                    worksheet.Cells[currentRow, 3].Value = stat.PhaseName;
-                    worksheet.Cells[currentRow, 4].Value = stat.TotalSold;
-                    worksheet.Cells[currentRow, 5].Value = stat.TotalAmount;
+                    int c = 1;
+                    // Info
+                    worksheet.Cells[currentRow, c++].Value = stat.TicketName;
+                    worksheet.Cells[currentRow, c++].Value = stat.PhaseName;
+                    worksheet.Cells[currentRow, c++].Value = stat.OriginalPrice;
+                    worksheet.Cells[currentRow, c - 1].Style.Numberformat.Format = "#,##0";
 
-                    if (!statistics.IsInternalHosted)
+                    // Counts
+                    worksheet.Cells[currentRow, c++].Value = stat.TotalSold;
+                    worksheet.Cells[currentRow, c++].Value = stat.TotalNotRefuned;
+                    worksheet.Cells[currentRow, c++].Value = stat.TotalRefunded;
+
+                    // Check-in Stats (Tô màu nhẹ để phân biệt)
+                    worksheet.Cells[currentRow, c].Value = stat.HasCheckin;
+                    worksheet.Cells[currentRow, c].Style.Font.Color.SetColor(System.Drawing.Color.Green); // Checkin xanh lá
+                    c++;
+
+                    worksheet.Cells[currentRow, c].Value = stat.Pending + stat.ExpireCheckin; // Gom pending và expired vào "Chưa checkin" hoặc tách ra tùy ý
+                    c++;
+
+                    // Financials
+                    worksheet.Cells[currentRow, c].Value = stat.TotalAmountNotRefunded;
+                    worksheet.Cells[currentRow, c++].Style.Numberformat.Format = "#,##0";
+
+                    worksheet.Cells[currentRow, c].Value = stat.TotalAmountRefunded; // Số âm
+                    worksheet.Cells[currentRow, c].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                    worksheet.Cells[currentRow, c++].Style.Numberformat.Format = "#,##0";
+
+                    worksheet.Cells[currentRow, c].Value = stat.TotalAmount; // Net Revenue
+                    worksheet.Cells[currentRow, c].Style.Font.Bold = true;
+                    worksheet.Cells[currentRow, c++].Style.Numberformat.Format = "#,##0";
+
+                    // Commission Columns
+                    if (showCommission)
                     {
-                        worksheet.Cells[currentRow, 6].Value = stat.CommissionPercentage;
-                        worksheet.Cells[currentRow, 7].Value = stat.AmountToCollaborator;
-                        worksheet.Cells[currentRow, 8].Value = stat.AmountToConfRadar;
+                        worksheet.Cells[currentRow, c++].Value = (stat.CommissionPercentage ?? 0) + "%";
+                        worksheet.Cells[currentRow, c].Value = stat.AmountToCollaborator;
+                        worksheet.Cells[currentRow, c++].Style.Numberformat.Format = "#,##0";
                     }
+
                     currentRow++;
                 }
 
-                // Định dạng số cho các cột tiền tệ trong bảng
-                worksheet.Cells[startRowForTable + 1, 5, currentRow - 1, 5].Style.Numberformat.Format = "#,##0";
-                if (!statistics.IsInternalHosted)
-                {
-                    worksheet.Cells[startRowForTable + 1, 7, currentRow - 1, 8].Style.Numberformat.Format = "#,##0";
-                }
+                // --- 2.3 Style đường viền cho bảng dữ liệu ---
+                var tableRange = worksheet.Cells[tableStartRow, 1, currentRow - 1, col - 1];
+                tableRange.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                tableRange.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                tableRange.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                tableRange.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
 
-                // Tự động điều chỉnh độ rộng cột
-                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                // Tự động giãn cột cho đẹp
+                worksheet.Cells.AutoFitColumns();
 
                 return await package.GetAsByteArrayAsync();
             }
         }
+    
 
-        //public async Task<byte[]> ExportTicketHoldersListAsync(string conferenceId)
-        //{
-        //    // Get the list of ticket holders for the conference
-        //    var ticketHolders = await GetTicketHoldersByConferenceIdAsync(conferenceId);
-
-        //    // Prepare the data for export - flatten it appropriately
-        //    var exportData = ticketHolders.Select(holder => new
-        //    {
-        //        TicketId = holder.TicketId,
-        //        CustomerName = holder.CustomerName,
-        //        TicketTypeName = holder.TicketTypeName,
-        //        PhaseName = holder.PhaseName,
-        //        ActualPrice = holder.ActualPrice,
-        //        PurchaseDate = holder.PurchaseDate.ToString("yyyy-MM-dd HH:mm:ss"),
-        //        Status = holder.Status // Already in Vietnamese text format
-        //    }).ToList();
-
-        //    // Call the Excel export service
-        //    return await _excelExportService.ExportToExcelAsync(exportData, "Danh Sách Người Mua Vé");
-        //}
+       
 
         #endregion
     }

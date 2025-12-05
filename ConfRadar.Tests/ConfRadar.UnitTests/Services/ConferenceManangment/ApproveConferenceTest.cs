@@ -29,6 +29,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment
             _mockConferenceTimelineService = new Mock<IConferenceTimelineService>();
             _mockObjectStorageFileService = new Mock<IObjectStorageFileService>();
             _mockTokenService = new Mock<ITokenService>();
+
             _mockSystemConfigurationService = new Mock<ISystemConfigurationService>();
             _mockTimeProviderService = new Mock<ITimeProviderService>();
             _mockNotificationService = new Mock<INotificationService>();
@@ -268,6 +269,91 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment
             )), Times.Once);
 
            
+        }
+
+        [Fact]
+        public async Task ApproveConferenceAsync_Approve_ShouldUpdateStatusToPreparing_AndNotify()
+        {
+            // ARRANGE
+            var confId = "conf-1";
+            var creatorId = "user-creator";
+            var request = new ApproveConferenceRequest { IsApprove = true, Reason = "Good job" };
+
+            var pendingId = "status-pending";
+            var preparingId = "status-preparing";
+
+            var conference = new Conference
+            {
+                ConferenceId = confId,
+                CreatedBy = creatorId,
+                ConferenceName = "Test Conf",
+                ConferenceStatusId = pendingId,
+                CreatedByNavigation = new User { UserId = creatorId, FullName = "Creator", FirebaseMobileFcmToken = "token" }
+            };
+
+            // Mock Data
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(conference);
+
+            // Mock Status
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(pendingId))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = pendingId, ConferenceStatusName = "Pending" });
+
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Preparing"))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = preparingId, ConferenceStatusName = "Preparing" });
+
+            // Mock Validation Transition
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Pending", "Preparing")).ReturnsAsync(true);
+
+            // Mock Notification creation
+            _mockUnitOfWork.Setup(u => u.NotificationRepository.CreateNotificationAsync(It.IsAny<Notification>())).ReturnsAsync(1);
+
+            // ACT
+            var result = await _conferenceService.ApproveConferenceAsync(confId, request);
+
+            // ASSERT
+            result.Should().BeTrue();
+            conference.ConferenceStatusId.Should().Be(preparingId); // Trạng thái phải đổi
+
+            // Kiểm tra có gửi thông báo không
+            _mockNotificationService.Verify(n => n.SendMobilePushAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ApproveConferenceAsync_Reject_ShouldUpdateStatusToRejected()
+        {
+            // ARRANGE
+            var confId = "conf-1";
+            var request = new ApproveConferenceRequest { IsApprove = false, Reason = "Bad content" };
+            var pendingId = "status-pending";
+            var rejectedId = "status-rejected";
+
+            var conference = new Conference
+            {
+                ConferenceId = confId,
+                ConferenceStatusId = pendingId,
+                CreatedByNavigation = new User { UserId = "u1" }
+            };
+
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(conference);
+
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(pendingId))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = pendingId, ConferenceStatusName = "Pending" });
+
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Rejected"))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = rejectedId, ConferenceStatusName = "Rejected" });
+
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Pending", "Rejected")).ReturnsAsync(true);
+
+            // Mock Notification creation
+            _mockUnitOfWork.Setup(u => u.NotificationRepository.CreateNotificationAsync(It.IsAny<Notification>())).ReturnsAsync(1);
+
+            // ACT
+            var result = await _conferenceService.ApproveConferenceAsync(confId, request);
+
+            // ASSERT
+            result.Should().BeTrue();
+            conference.ConferenceStatusId.Should().Be(rejectedId);
         }
     }
 }

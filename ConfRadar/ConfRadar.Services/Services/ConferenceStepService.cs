@@ -6,6 +6,7 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using Minio.Exceptions;
+using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -192,10 +193,11 @@ namespace ConfRadar.Services.Services
             }
         }
 
-        private void ValidateUpdateForOnHoldConference(Conference conference, Action checkFieldChanges)
+        private async Task ValidateUpdateForOnHoldConference(Conference conference, Action checkFieldChanges)
         {
             // Logic 1: Chỉ áp dụng cho Conference đang OnHold
-            bool isOnHold = conference.ConferenceStatus?.ConferenceStatusName == ConferenceStatusEnum.OnHold.GetDescription();
+            var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
+            bool isOnHold = currentStatus.ConferenceStatusName == ConferenceStatusEnum.OnHold.GetDescription();
 
             if (!isOnHold)
             {
@@ -726,19 +728,19 @@ namespace ConfRadar.Services.Services
         public async Task<TechnicalConferenceBasicStepResponse> UpdateConferenceBasicAsync(string conferenceId, UpdateConferenceBasicRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"H?i ngh? v?i ID {conferenceId} không tìm th?y");
+            if (conference == null) throw new NotFoundException($"Hội nghị vứi ID {conferenceId} không tìm thấy");
 
 
             var technicalDetail = await _unitOfWork.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(conferenceId);
-            if (technicalDetail == null) throw new NotFoundException($"Không tìm th?y chi ti?t k? thu?t (technical detail) cho h?i ngh? ID {conferenceId}");
+            if (technicalDetail == null) throw new NotFoundException($"Không tìm thấy chi tiết (technical detail) cho hội nghị ID {conferenceId}");
 
 
 
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("B?n không có quy?n c?p nh?t h?i ngh? này.");
+                throw new Exception("Bạn không có quyền cập nhật hội nghị này.");
             await EnsureConferenceIsEditable(conference,true);
 
-            ValidateUpdateForOnHoldConference(conference, () =>
+            await ValidateUpdateForOnHoldConference(conference, () =>
             {
                 if (!string.IsNullOrEmpty(request.ConferenceName) && request.ConferenceName != conference.ConferenceName)
                     throw new BadRequestException("Không thể thay đổi 'Tên hội nghị' khi đang trong trạng thái OnHold.");
@@ -768,7 +770,7 @@ namespace ConfRadar.Services.Services
             if (finalStartDate.HasValue && finalEndDate.HasValue && finalTicketSaleStart.HasValue && finalTicketSaleEnd.HasValue)
             {
                 if (!IsValidConferenceAndTicketSaleDates(finalStartDate.Value, finalEndDate.Value, finalTicketSaleStart.Value, finalTicketSaleEnd.Value).Result)
-                    throw new BadRequestException("Ngày tháng cung c?p không h?p l?.");
+                    throw new BadRequestException("Ngày tháng cung cấp không hợp lệ.");
             }
 
 
@@ -781,17 +783,13 @@ namespace ConfRadar.Services.Services
 
 
             if (request.BannerImageFile != null && !_objectStorageFileService.IsValidImageFile(request.BannerImageFile))
-                throw new BadRequestException("Định d?ng ?nh bìa không du?c h? tr?.");
-
-            var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(conference.CreatedBy);
-            var roleNames = userRoles.Select(ur => ur.Role?.RoleName).ToHashSet();
-            bool isCollaborator = roleNames.Contains(SystemRoleEnum.Collaborator.GetDescription());
+                throw new BadRequestException("Định dạng ảnh bìa không được hỗ trợ.");
 
             if (!string.IsNullOrWhiteSpace(request.CityId) && request.CityId != conference.CityId)
             {
                 if (await _unitOfWork.CityRepository.GetCityByIdAsync(request.CityId) == null)
                 {
-                    throw new NotFoundException($"Thành ph? v?i ID '{request.CityId}' không t?n t?i.");
+                    throw new NotFoundException($"Thành phố với ID '{request.CityId}' không tồn tại.");
                 }
             }
 
@@ -1340,7 +1338,7 @@ namespace ConfRadar.Services.Services
             if (conference.IsResearchConference == true)
                 throw new BadRequestException("Chức năng này không dành cho phiên của hội nghị nghiên cứu.");
 
-            ValidateUpdateForOnHoldConference(conference, () =>
+            await ValidateUpdateForOnHoldConference(conference, () =>
             {
                 if (!string.IsNullOrEmpty(request.Title) && request.Title != session.Title)
                     throw new BadRequestException("Không thể thay đổi 'Tiêu đề phiên' khi hội nghị đang OnHold.");
@@ -1435,10 +1433,14 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferencePolicyResponse>> AddConferencePoliciesAsync(string conferenceId, AddConferencePoliciesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null) 
+                throw new NotFoundException($"Hội nghị với ID {conferenceId} không thấy");
 
             if (conference.CreatedBy != userId)
                 throw new Exception("Bạn phải là người tạo mới có quyền thực hiện hành động này");
+
+            if (!request.Policies.Any())
+                throw new Exception("Phải có ít nhất một policy");
 
             var responses = new List<ConferencePolicyResponse>();
 
@@ -1524,6 +1526,7 @@ namespace ConfRadar.Services.Services
             if (!request.Media.Any())
                 throw new Exception("Cần phải có ít nhất một media");
 
+
             var responses = new List<ConferenceMediaResponse>();
 
             await _unitOfWork.BeginTransactionAsync();
@@ -1531,6 +1534,8 @@ namespace ConfRadar.Services.Services
             {
                 foreach (var media in request.Media)
                 {
+                    if (media.MediaFile == null)
+                        throw new Exception("Media file không được để trống");
                     string? mediaUrl = media.MediaUrl;
                     if (media.MediaFile != null)
                     {
@@ -1549,6 +1554,7 @@ namespace ConfRadar.Services.Services
             catch (Exception e)
             {
                 await _unitOfWork.RollbackAsync();
+                throw e;
             }
             return responses;
         }
@@ -3287,7 +3293,7 @@ namespace ConfRadar.Services.Services
             if (conference.CreatedBy != userId)
                 throw new ForbiddenException("Bạn không có quyền cập nhật giai đoạn này.");
 
-            ValidateUpdateForOnHoldConference(conference, () =>
+            await ValidateUpdateForOnHoldConference(conference, () =>
             {
                 if (!string.IsNullOrEmpty(request.PhaseName) && request.PhaseName != pricePhaseToUpdate.PhaseName)
                     throw new BadRequestException("Không thể thay đổi 'Tên giai đoạn' khi hội nghị đang OnHold.");
