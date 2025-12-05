@@ -720,7 +720,7 @@ namespace ConfRadar.Services.Services
                     revisionPaper = new RevisionPaper()
                     {
                         RevisionPaperId = Guid.NewGuid().ToString(),
-                        RevisionRound = 1,
+                        RevisionRound = null,
                         GlobalStatusId = pendingGlobalStatus.GlobalStatusId,
                         CreatedAt = await _timeProviderService.GetVietnamTime(),
                         ReviewAt = null,
@@ -728,6 +728,7 @@ namespace ConfRadar.Services.Services
                     paper.RevisionPaperId = revisionPaper.RevisionPaperId;
                     await _unitOfWork.RevisionPaperRepository.CreateRevisionPaperAsync(revisionPaper);
                     await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+                    revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(revisionPaper.RevisionPaperId);
                 }
                 else
                 {
@@ -745,13 +746,13 @@ namespace ConfRadar.Services.Services
                             throw new BadRequestException($"Bạn đã nộp revision, deadline hiện tại diễn ra từ {revisionPaperSubmissionFound.RevisionDeadlineRound?.StartSubmissionDate} đến {revisionPaperSubmissionFound.RevisionDeadlineRound?.EndSubmissionDate} này ");
                         }
                     }
-                    revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
                 }
-                var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
-                if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
-                {
-                    throw new BadRequestException($"Không thể nộp thêm revision vì quá số lần: {totalRevisionRoundAllowed} cho phép, vui lòng chờ đợi head reviewer!");
-                }
+                revisionPaper.RevisionRound = validRevisionDeadline.RoundNumber;
+                //var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
+                //if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
+                //{
+                //    throw new BadRequestException($"Không thể nộp thêm revision vì quá số lần: {totalRevisionRoundAllowed} cho phép, vui lòng chờ đợi head reviewer!");
+                //}
 
                 string? revisionFileUrl = null;
                 if (request.RevisionPaperFile != null)
