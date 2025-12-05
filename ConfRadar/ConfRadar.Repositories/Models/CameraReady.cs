@@ -19,6 +19,8 @@ public partial class CameraReady
 
     public DateTime? ReviewAt { get; set; }
 
+    public string? Reason { get; set; }
+
     public virtual GlobalStatus? GlobalStatus { get; set; }
 
     public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();

@@ -133,8 +133,6 @@ namespace ConfRadar.Services.Common
 
     public enum PaymentMethodEnum
     {
-        [Description("ZaloPay")]
-        ZaloPay,
         [Description("MoMo")]
         MoMo,
         [Description("PayOs")]

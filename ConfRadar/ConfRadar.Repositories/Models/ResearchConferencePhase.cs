@@ -29,8 +29,6 @@ public partial class ResearchConferencePhase
 
     public DateOnly? CameraReadyEndDate { get; set; }
 
-    public bool? IsWaitlist { get; set; }
-
     public bool? IsActive { get; set; }
 
     public DateOnly? AbstractDecideStatusStart { get; set; }
@@ -48,6 +46,12 @@ public partial class ResearchConferencePhase
     public DateOnly? CameraReadyDecideStatusStart { get; set; }
 
     public DateOnly? CameraReadyDecideStatusEnd { get; set; }
+
+    public DateTime? AuthorPaymentStart { get; set; }
+
+    public DateTime? AuthorPaymentEnd { get; set; }
+
+    public int? PhaseOrder { get; set; }
 
     public virtual Conference? Conference { get; set; }
 

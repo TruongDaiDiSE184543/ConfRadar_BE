@@ -19,6 +19,8 @@ public partial class FullPaper
 
     public DateTime? ReviewAt { get; set; }
 
+    public string? Reason { get; set; }
+
     public virtual ICollection<FullPaperReview> FullPaperReviews { get; set; } = new List<FullPaperReview>();
 
     public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
