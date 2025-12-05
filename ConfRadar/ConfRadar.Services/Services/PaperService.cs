@@ -748,11 +748,11 @@ namespace ConfRadar.Services.Services
                     }
                 }
                 revisionPaper.RevisionRound = validRevisionDeadline.RoundNumber;
-                var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
-                if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
-                {
-                    throw new BadRequestException($"Không thể nộp thêm revision vì quá số lần: {totalRevisionRoundAllowed} cho phép, vui lòng chờ đợi head reviewer!");
-                }
+                //var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
+                //if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
+                //{
+                //    throw new BadRequestException($"Không thể nộp thêm revision vì quá số lần: {totalRevisionRoundAllowed} cho phép, vui lòng chờ đợi head reviewer!");
+                //}
 
                 string? revisionFileUrl = null;
                 if (request.RevisionPaperFile != null)
