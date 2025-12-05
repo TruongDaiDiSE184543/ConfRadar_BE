@@ -227,7 +227,7 @@ namespace ConfRadar.Repositories.Repositories
 
 
                     IsActive = currentActivePhase.IsActive,
-                    IsWaitlist = currentActivePhase.IsWaitlist,
+                    PhaseOrder = currentActivePhase.PhaseOrder,
                     RevisionRoundsDetail = currentActivePhase.RevisionRoundDeadlines.Any() ? currentActivePhase.RevisionRoundDeadlines.Select(rrd => new RevisionRoundDeadLineDetailForReviewerResponse()
                     {
                         RevisionRoundDeadlineId = rrd.RevisionRoundDeadlineId,

@@ -751,7 +751,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
 
         [Required(ErrorMessage = "Phải xác định đây có phải là phase waitlist hay không.")]
-        public bool? IsWaitlist { get; set; }
         public List<CreateRevisionRoundDeadlineRequest>? RevisionRoundDeadlines { get; set; }
     }
 

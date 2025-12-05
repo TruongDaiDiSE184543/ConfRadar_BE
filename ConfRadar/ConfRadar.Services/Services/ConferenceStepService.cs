@@ -1937,6 +1937,7 @@ namespace ConfRadar.Services.Services
             if (!request.IsResearchConference.HasValue || !request.IsResearchConference.Value)
                 throw new BadRequestException("Phải là hội nghị học thuật và giá trị IsResearchConference phải bằng true");
             var category = await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId);
+
             if (category == null)
             {
                 throw new Exception($"Category {request.ConferenceCategoryId} does not exist");
@@ -2245,23 +2246,23 @@ namespace ConfRadar.Services.Services
             // 3. Validation logic cho danh sách các phase t? request
             var newPhases = request.Phases.OrderBy(p => p.RegistrationStartDate).ToList();
             // 3a. Ph?i có dúng M?T phase chính (IsWaitlist = false) 
-            if (newPhases.Count(p => p.IsWaitlist == false) != 1)
-                throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
+            //if (newPhases.Count(p => p.IsWaitlist == false) != 1)
+            //    throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
 
-            // 3b. Phase d?u tiên ph?i là phase chính
-            if (newPhases.First().IsWaitlist == true)
-                throw new BadRequestException("Phase đầu tiên (địa theo ngày bắt đầu) phải là phase chính.");
+            //// 3b. Phase d?u tiên ph?i là phase chính
+            //if (newPhases.First().IsWaitlist == true)
+            //    throw new BadRequestException("Phase đầu tiên (địa theo ngày bắt đầu) phải là phase chính.");
 
 
-            // 3c. Ph?i có ít nh?t M?T phase waitlist
-            if (!newPhases.Any(p => p.IsWaitlist == true))
-                throw new BadRequestException("Yêu cầu phải có ít nhất một phase dự phòng (IsWaitlist = true).");
+            //// 3c. Ph?i có ít nh?t M?T phase waitlist
+            //if (!newPhases.Any(p => p.IsWaitlist == true))
+            //    throw new BadRequestException("Yêu cầu phải có ít nhất một phase dự phòng (IsWaitlist = true).");
 
-            var requestWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == true);
-            var requestNotWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == false);
-            if (newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase đâu tiên phải là phase chính.");
+            //var requestWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == true);
+            //var requestNotWaitlist = request.Phases.FirstOrDefault(p => p.IsWaitlist == false);
+            //if (newPhases.First().IsWaitlist == true) throw new BadRequestException("Phase đâu tiên phải là phase chính.");
 
-            if (newPhases.Count != 2) throw new BadRequestException("Phải có chính xác 2 phase 1 cho chính thức và 1 cho waitlist");
+            //if (newPhases.Count != 2) throw new BadRequestException("Phải có chính xác 2 phase 1 cho chính thức và 1 cho waitlist");
             // 4. Validation logic cho ngày tháng (tu?n t? và h?p l?)
             DateOnly? lastPhaseEndDate = null;
             foreach (var phase in newPhases)

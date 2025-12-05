@@ -44,7 +44,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.ResearchConferencePhases
                 .Include(r => r.RevisionRoundDeadlines)
-                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsWaitlist == false);
+                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId);
         }
 
         public async Task<ResearchConferencePhase?> GetResearchConferencePhaseByIdAsync(string phaseId)
@@ -75,7 +75,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.ResearchConferencePhases
                 .Include(r => r.RevisionRoundDeadlines)
-                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsWaitlist == true);
+                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId );
         }
 
         public async Task<ResearchConferencePhase?> GetActiveResearchConferencePhaseByConferenceIdAsync(string conferenceId)

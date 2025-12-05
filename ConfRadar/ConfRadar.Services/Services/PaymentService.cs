@@ -250,8 +250,8 @@ namespace ConfRadar.Services.Services
                     var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalAmount, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
-                case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
-                    throw new BadRequestException("Phuong thức thanh toán ZaloPay đang trong trạng thái bảo trì");
+                //case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
+                //    throw new BadRequestException("Phuong thức thanh toán ZaloPay đang trong trạng thái bảo trì");
                 case var s when s == PaymentMethodEnum.Wallet.GetDescription():
                     var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
                     if (userWallet == null) throw new NotFoundException("Không tìm thấy ví của bạn trong hệ thống");
@@ -530,8 +530,8 @@ namespace ConfRadar.Services.Services
                     var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
-                case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
-                    throw new BadRequestException("Phuong thức thanh toán ZaloPay đang trong trong thái bảo trì ");
+                //case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
+                //    throw new BadRequestException("Phuong thức thanh toán ZaloPay đang trong trong thái bảo trì ");
                 case var s when s == PaymentMethodEnum.Wallet.GetDescription():
                     var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
                     if (userWallet == null) throw new NotFoundException("Không tìm thấy ví của bạn trong hệ thống");
@@ -774,8 +774,8 @@ namespace ConfRadar.Services.Services
                     var vnPayResult = _vnPayService.CreateVnPayPayment(orderCode, finalPrice, expireMinute);
                     checkOutUrl = vnPayResult;
                     break;
-                case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
-                    throw new BadRequestException("Phuong thức thanh toán ZaloPay đang bảo trì");
+                //case var s when s == PaymentMethodEnum.ZaloPay.GetDescription():
+                //    throw new BadRequestException("Phuong thức thanh toán ZaloPay đang bảo trì");
                 case var s when s == PaymentMethodEnum.Wallet.GetDescription():
                     var userWallet = await _unitOfWork.WalletRepository.GetWalletByUserIdAsync(userId);
                     if (userWallet == null) throw new NotFoundException("Không tìm thấy ví của bạn trong hệ thống");
