@@ -400,6 +400,16 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<CreatePhasesResponse>.SuccessResponse(phase, "Giai đoạn hội nghị nghiên cứu được tạo thành công"));
         }
 
+        [HttpPost("create-next-phase")]
+        [Authorize(Roles = "Conference Organizer")]
+        public async Task<IActionResult> CreateNextResearchConferencePhase([FromQuery ]string conferenceId, [FromBody] CreateNextResearchPhaseRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var phase = await _serviceManager.ConferenceStepService.CreateNextResearchPhaseAsync(conferenceId, request, userId);
+            return Ok(ApiResponse<ResearchConferencePhaseResponse>.SuccessResponse(phase, "Giai đoạn hội nghị nghiên cứu tiếp theo được tạo thành công"));
+        }
+
+
         [HttpGet("{conferenceId}/research/phases")]
         public async Task<IActionResult> GetResearchConferencePhase(string conferenceId)
         {
@@ -639,7 +649,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> AddWaitListPhase([FromQuery] string conferencePriceId, [FromBody] PhaseForWaitList request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStepService.AddPricePhaseForWaitList(conferencePriceId, request, userId);
+            var result = await _serviceManager.ConferenceStepService.AddPricePhaseForNextPhase(conferencePriceId, request, userId);
             return Ok(ApiResponse<PricePhaseResponse>.SuccessResponse(null, "Giai đoạn giá vé cho waitlist được thêm thành công"));
         }
 

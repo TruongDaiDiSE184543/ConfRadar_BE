@@ -62,7 +62,6 @@ namespace ConfRadar.Services.Mappers
 
                 ConferenceId = model.ConferenceId,
                 IsActive = model.IsActive,
-                IsWaitlist = model.IsWaitlist,
                 ResearchConferencePhaseId = model.ResearchConferencePhaseId,
                 RevisionRoundDeadlines = model.RevisionRoundDeadlines.Select(r => r.toRevisionRoundDeadlineResponse()).ToList(),
             };
