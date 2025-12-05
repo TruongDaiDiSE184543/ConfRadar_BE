@@ -750,8 +750,27 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required]
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
 
+        [Required]
+        public DateOnly? AuthorPaymentStart {  get; set; }
+        [Required]
+        public DateOnly? AuthorPaymentEnd {  get; set; }
+
+
         [Required(ErrorMessage = "Phải xác định đây có phải là phase waitlist hay không.")]
         public List<CreateRevisionRoundDeadlineRequest>? RevisionRoundDeadlines { get; set; }
+    }
+
+
+    public class CreateNextResearchPhaseRequest
+    {
+        // Tái sử dụng DTO đã có để định nghĩa thông tin của phase mới
+        [Required]
+        public CreateResearchConferencePhaseItemRequest NewPhase { get; set; }
+
+        // Danh sách các ID của ConferencePrice (loại isAuthor=true) 
+        // mà bạn muốn tự động tạo PricePhase tương ứng cho phase mới này.
+        [Required]
+        public List<string> AuthorConferencePriceIds { get; set; }
     }
 
     public class addRevisionRequest
@@ -789,6 +808,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? CameraReadyEndDate { get; set; }
         public DateOnly? CameraReadyDecideStatusStart { get; set; }
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
+        public DateOnly? AuthorPaymentStart { get; set; }
+        public DateOnly? AuthorPaymentEnd { get; set; }
     }
 
     public class UpdateRevisionRoundDeadlineRequest
@@ -834,7 +855,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         // Camera ready decide status dates (head reviewer only)
         public DateOnly? CameraReadyDecideStatusStart { get; set; }
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
-        public bool? IsWaitlist { get; set; }
+        public int? PhaseOrder {  get; set; }
         public bool? IsActive { get; set; }
         public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
     }

@@ -30,9 +30,9 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPost("assign-author-to-paper")]
         [Authorize(Roles = "Customer")]
-        public async Task<IActionResult> AssignAuthorToPaper([FromBody] AssignAuthorToPaperRequest request)
+        public async Task<IActionResult> AssignAuthorToPaper([FromBody] AssignCoAuthorsToPaperRequest request)
         {
-            var result = await _serviceManager.PaperAssignmentService.AssignAuthorToPaper(request);
+            var result = await _serviceManager.PaperAssignmentService.AssignCoAuthorsToPaper(request);
             return Ok(ApiResponse<string>.SuccessResponse(result, "Author assigned to paper successfully"));
         }
 

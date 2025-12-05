@@ -472,7 +472,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Research Conference Phase Mappers
-        public static ResearchConferencePhase ToModel(this CreateResearchConferencePhaseItemRequest request, string conferenceId)
+        public static ResearchConferencePhase ToModel(this CreateResearchConferencePhaseItemRequest request, string conferenceId,int order)
         {
             return new ResearchConferencePhase
             {
@@ -511,7 +511,10 @@ namespace ConfRadar.Services.Mappers
 
                 CameraReadyDecideStatusStart = request.CameraReadyDecideStatusStart,
                 CameraReadyDecideStatusEnd = request.CameraReadyDecideStatusEnd,
-                IsWaitlist = request.IsWaitlist
+
+                AuthorPaymentStart = request.AuthorPaymentStart,
+                AuthorPaymentEnd = request.AuthorPaymentEnd,
+                PhaseOrder = order
             };
         }
 
@@ -563,7 +566,7 @@ namespace ConfRadar.Services.Mappers
                 CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
 
                 // Các trường khác
-                IsWaitlist = model.IsWaitlist,
+                PhaseOrder = model.PhaseOrder,
                 IsActive = model.IsActive,
                 RevisionRoundDeadlines = model.RevisionRoundDeadlines?.Select(r => r.ToResponse()).ToList()
             };

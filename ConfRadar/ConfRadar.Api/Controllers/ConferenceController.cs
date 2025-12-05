@@ -373,7 +373,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> WaitListBegin([FromQuery] string confId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceService.ActivateWaitlist(confId, userId);
+            var result = await _serviceManager.ConferenceService.ActivateNextPhase(confId, userId);
             if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "kich hoat waitlit thanh cocng"));
             return Ok(ApiResponse<bool>.FailResponse("kich hoat waitlit thất bại"));
         }

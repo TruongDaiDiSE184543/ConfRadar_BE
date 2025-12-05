@@ -65,7 +65,7 @@
         public DateOnly? CameraReadyEndDate { get; set; }
         public DateOnly? CameraReadyDecideStatusStart { get; set; }
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
-        public bool? IsWaitlist { get; set; }
+        public int? PhaseOrder{ get; set; }
         public bool? IsActive { get; set; }
         public List<RevisionRoundDeadLineDetailForReviewerResponse> RevisionRoundsDetail { get; set; }
     }

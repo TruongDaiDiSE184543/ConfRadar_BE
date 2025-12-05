@@ -10,12 +10,13 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> CreateResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
         Task<int> UpdateResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
         Task<int> DeleteResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
-        Task<ResearchConferencePhase?> GetResearchConferencePhaseNotWaitListByConferenceIdAsync(string conferenceId);
-        Task<ResearchConferencePhase?> GetResearchConferencePhaseIsWaitListByConferenceIdAsync(string conferenceId);
+        Task<ResearchConferencePhase?> GetResearchConferencePhaseFirstByConferenceIdAsync(string conferenceId);
+        Task<ResearchConferencePhase?> GetResearchConferencePhaseByOrderAndConferenceIdAsync(string conferenceId,int phaseOrder);
         Task<ResearchConferencePhase?> GetActiveResearchConferencePhaseByConferenceIdAsync(string conferenceId);
         Task<ResearchConferencePhase?> GetResearchConferencePhaseByIdAsync(string phaseId);
         Task<List<RevisionRoundDeadline>> GetRevisionRoundDeadlinesByPhaseIdAsync(string phaseId);
         Task<List<ResearchConferencePhase>> GetResearchPhaseByConfId(string confId);
+        Task<ResearchConferencePhase?> GetResearchConferencePhaseLastByConferenceIdAsync(string conferenceId);
         Task<ResearchConferencePhase> GetResearchConferencePhaseByPaperId(string PaperId);
     }
 
@@ -40,11 +41,18 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseNotWaitListByConferenceIdAsync(string conferenceId)
+        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseFirstByConferenceIdAsync(string conferenceId)
         {
             return await _context.ResearchConferencePhases
                 .Include(r => r.RevisionRoundDeadlines)
-                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId);
+                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.PhaseOrder == 1);
+        }
+
+        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseLastByConferenceIdAsync(string conferenceId)
+        {
+            return await _context.ResearchConferencePhases
+                .Include(r => r.RevisionRoundDeadlines).OrderByDescending(p => p.PhaseOrder)
+                .Where(r => r.ConferenceId == conferenceId).FirstAsync();
         }
 
         public async Task<ResearchConferencePhase?> GetResearchConferencePhaseByIdAsync(string phaseId)
@@ -71,11 +79,11 @@ namespace ConfRadar.Repositories.Repositories
             return paperWithResearchPhase?.ResearchConferencePhase;
         }
 
-        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseIsWaitListByConferenceIdAsync(string conferenceId)
+        public async Task<ResearchConferencePhase?> GetResearchConferencePhaseByOrderAndConferenceIdAsync(string conferenceId, int phaseOrder)
         {
             return await _context.ResearchConferencePhases
                 .Include(r => r.RevisionRoundDeadlines)
-                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId );
+                .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.PhaseOrder == phaseOrder);
         }
 
         public async Task<ResearchConferencePhase?> GetActiveResearchConferencePhaseByConferenceIdAsync(string conferenceId)
@@ -84,5 +92,7 @@ namespace ConfRadar.Repositories.Repositories
               .Include(r => r.RevisionRoundDeadlines)
               .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsActive == true);
         }
+
+        
     }
 }

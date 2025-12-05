@@ -47,9 +47,9 @@ public partial class ResearchConferencePhase
 
     public DateOnly? CameraReadyDecideStatusEnd { get; set; }
 
-    public DateTime? AuthorPaymentStart { get; set; }
 
-    public DateTime? AuthorPaymentEnd { get; set; }
+    public DateOnly? AuthorPaymentStart { get; set; }
+    public DateOnly? AuthorPaymentEnd { get; set; }
 
     public int? PhaseOrder { get; set; }
 

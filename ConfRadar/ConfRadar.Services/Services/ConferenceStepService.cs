@@ -67,6 +67,7 @@ namespace ConfRadar.Services.Services
 
         // Research Conference Step 3: Research Conference Phases
         Task<CreatePhasesResponse> CreateResearchConferencePhaseAsync(string conferenceId, CreateResearchConferencePhasesRequest request, string userId);
+        Task<ResearchConferencePhaseResponse> CreateNextResearchPhaseAsync(string conferenceId, CreateNextResearchPhaseRequest request, string userId);
         Task<ResearchConferencePhaseResponse> GetResearchConferencePhaseAsync(string conferenceId);
         Task<ResearchConferencePhaseResponse> UpdateResearchConferencePhaseAsync(string phaseId, UpdateResearchConferencePhaseRequest request, string userId);
 
@@ -97,7 +98,7 @@ namespace ConfRadar.Services.Services
 
         // PricePhase CRUD operations - Create with conferencePriceId, RUD with its own id
         Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request, string userId);
-        Task<List<PricePhaseResponse>> AddPricePhaseForWaitList(string conferencePriceId, PhaseForWaitList request, string userId);
+        Task<List<PricePhaseResponse>> AddPricePhaseForNextPhase(string conferencePriceId, PhaseForWaitList request, string userId);
         Task<List<PricePhaseResponse>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId);
         Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request, string userId);
         Task<bool> DeletePricePhaseAsync(string pricePhaseId);
@@ -261,49 +262,40 @@ namespace ConfRadar.Services.Services
         //price check for research conf
         private async Task<ResearchConferencePhase> ValidateAndGetResearchConferencePrerequisitesAsync(string conferenceId, AddConferencePricesRequest request)
         {
-            var hasResearchDetail = await _conferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, "researchconferencedetail");
-            var hasResearchPhase = await _conferenceService.CheckResearchConferenceStepCompletionAsync(conferenceId, "researchphase");
-            if (!hasResearchDetail || !hasResearchPhase)
+
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+            var activePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
+            if (researchDetail == null || activePhase == null)
             {
-                throw new BadRequestException("H?i ngh? nghiên c?u c?n hoàn thành bu?c 'chi ti?t' và 'giai do?n' tru?c khi thêm giá vé.");
+                throw new BadRequestException("Hội nghị nghiên cứu cần hoàn thành bước 'chi tiết' và 'giai đoạn' trước khi thêm giá vé.");
             }
 
             if (!request.TypeOfTicket.Any(tot => tot.isAuthor == true))
             {
-                throw new BadRequestException("H?i ngh? nghiên c?u c?n có ít nh?t m?t lo?i vé dành cho tác gi?.");
+                throw new BadRequestException("Hội nghị nghiên cứu cần có ít nhất một loại vé dành cho tác giả.");
             }
 
-
-
-
-            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
-            if (researchDetail == null)
-                throw new InvalidOperationException("Không tìm th?y chi ti?t nghiên c?u cho h?i ngh? này.");
 
             //price must be larger than review fee
             if (request.TypeOfTicket.Any(tot => tot.TicketPrice < researchDetail.ReviewFee && tot.isAuthor == true))
                 throw new Exception($"Không thể để giá của vé isauthor bé hơn review fee {researchDetail.ReviewFee} của conference {conferenceId}");
+
+
             var IsAuthorConferencePrice = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(conferenceId);
             var sumOfExistingIssAuthor = IsAuthorConferencePrice.Sum(cp => cp.TotalSlot);
             var sumOfRequestIsAuthor = request.TypeOfTicket.Where(cp => cp.isAuthor == true).Sum(cp => cp.TotalSlot);
 
             //existing isAuthor + request sum of isAuthor must net exceed numberOfAcceptedPaper in researchDetail
             if (sumOfExistingIssAuthor + sumOfRequestIsAuthor > researchDetail.NumberPaperAccept)
-                throw new Exception($"T?ng vé is author dã có {sumOfExistingIssAuthor} và các vé trong request lo?i isauthor{sumOfRequestIsAuthor} không th? vu?t numberOfAccepted in researchDetail{researchDetail.NumberPaperAccept}");
+                throw new Exception($"Tổng vé IsAuthor đã có {sumOfExistingIssAuthor} và các vé trong request loại IsAuthor {sumOfRequestIsAuthor} không thể vượt NumberOfAccepted in ResearchDetail {researchDetail.NumberPaperAccept}");
 
             if (researchDetail.AllowListener == true)
             {
                 if (!request.TypeOfTicket.Any(tot => tot.isAuthor == false))
                 {
-                    throw new BadRequestException("H?i ngh? nghiên c?u này cho phép thính gi?, do dó c?n có ít nh?t m?t lo?i vé không dành cho tác gi?.");
+                    throw new BadRequestException("Hội nghị nghiên cứu này cho phép thính giả, do đó cần có ít nhất một loại vé không dành cho tác giả.");
                 }
             }
-            var activePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
-            if (activePhase == null)
-            {
-                throw new InvalidOperationException("Không tìm th?y phase nào dang ho?t d?ng cho h?i ngh? này.");
-            }
-
             return activePhase;
         }
 
@@ -941,9 +933,9 @@ namespace ConfRadar.Services.Services
                         if (toBeConferencePrice.isAuthor == true)
                         {
                             //each phase of author ticket types must be in registation start/end interval
-                            if (createPricePhaseRequest.StartDate < researchPhase.RegistrationStartDate || createPricePhaseRequest.EndDate > researchPhase.RegistrationEndDate)
+                            if (createPricePhaseRequest.StartDate < researchPhase.AuthorPaymentStart || createPricePhaseRequest.EndDate > researchPhase.AuthorPaymentEnd)
                             {
-                                throw new BadRequestException("Vé bán cho authors phải trong khoảng registration start và end");
+                                throw new BadRequestException($"Giai đoạn bán vé '{createPricePhaseRequest.PhaseName}' cho tác giả phải nằm trong khoảng thời gian cho phép thanh toán ({researchPhase.AuthorPaymentStart:dd/MM/yyyy} - {researchPhase.AuthorPaymentEnd:dd/MM/yyyy}).");
                             }
 
                         }
@@ -2059,11 +2051,11 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException("Ngày tháng cung cấp không hợp lệ.");
             }
 
-            var Waitlist = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(conferenceId);
-            if (Waitlist != null && Waitlist.CameraReadyEndDate > finalTicketSaleStart)
-            {
-                throw new BadRequestException("TicketSaleStart phải diễn ra sau Waitlist của hội nghị");
-            }
+            //var Waitlist = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseLastByConferenceIdAsync(conferenceId);
+            //if (Waitlist != null && Waitlist.CameraReadyEndDate > finalTicketSaleStart)
+            //{
+            //    throw new BadRequestException("TicketSaleStart phải diễn ra sau phase cuối của hội nghị");
+            //}
 
             conference.ConferenceName = request.ConferenceName ?? conference.ConferenceName;
             conference.Description = request.Description ?? conference.Description;
@@ -2245,6 +2237,11 @@ namespace ConfRadar.Services.Services
 
             // 3. Validation logic cho danh sách các phase t? request
             var newPhases = request.Phases.OrderBy(p => p.RegistrationStartDate).ToList();
+
+            if (newPhases.Any() && newPhases.Last().AuthorPaymentEnd >= conference.StartDate)
+            {
+                throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả ({newPhases.Last().AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate:dd/MM/yyyy}).");
+            }
             // 3a. Ph?i có dúng M?T phase chính (IsWaitlist = false) 
             //if (newPhases.Count(p => p.IsWaitlist == false) != 1)
             //    throw new BadRequestException("Yêu cầu phải có chính xác một phase chính (IsWaitlist = false).");
@@ -2284,7 +2281,9 @@ namespace ConfRadar.Services.Services
                     phase.RevisionPaperDecideStatusEnd > phase.CameraReadyStartDate ||
                     phase.CameraReadyStartDate > phase.CameraReadyEndDate ||
                     phase.CameraReadyEndDate > phase.CameraReadyDecideStatusStart ||
-                    phase.CameraReadyDecideStatusStart > phase.CameraReadyDecideStatusEnd
+                    phase.CameraReadyDecideStatusStart > phase.CameraReadyDecideStatusEnd ||
+                    phase.CameraReadyDecideStatusEnd > phase.AuthorPaymentStart ||
+                    phase.AuthorPaymentStart > phase.AuthorPaymentEnd
                     )
                 {
                     throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
@@ -2295,7 +2294,7 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException($"Ngày bắt đầu của một phase phải sau ngày kết thúc của phase trước đó. Cụ thể ngày kết thúc phase liền trước {lastPhaseEndDate.Value} > {phase.RegistrationStartDate.Value} ngày bắt đầu phase liền sau là sai");
                 }
-                lastPhaseEndDate = phase.CameraReadyEndDate;
+                lastPhaseEndDate = phase.AuthorPaymentEnd;
             }
 
             await _unitOfWork.BeginTransactionAsync();
@@ -2306,11 +2305,11 @@ namespace ConfRadar.Services.Services
                 {
                     var phaseRequest = newPhases[i];
 
-                    #region === 2. VALIDATION RIÊNG CHO T?NG PHASE (VÀ REVISION DEADLINES) ===
+                    #region === 2. VALIDATION RIÊNG CHO TỪNG PHASE (VÀ REVISION DEADLINES) ===
 
                     // Ch? phase chính m?i c?n ki?m tra và t?o Revision Deadlines
-                    if (phaseRequest.IsWaitlist == false)
-                    {
+                    //if (phaseRequest.phase == false)
+                    //{
                         var deadlines = phaseRequest.RevisionRoundDeadlines;
                         int allowedAttempts = researchDetail.RevisionAttemptAllowed ?? 0;
 
@@ -2321,9 +2320,9 @@ namespace ConfRadar.Services.Services
                         }
 
                         // 2b. S?p x?p và ki?m tra tu?n t?, ch?ng chéo cho các deadline
-                        var sortedDeadlines = deadlines.OrderBy(d => d.StartSubmissionDate).ToList();
+                        var sortedDeadliness = deadlines.OrderBy(d => d.StartSubmissionDate).ToList();
                         DateOnly? lastEndDate = null;
-                        foreach (var deadline in sortedDeadlines)
+                        foreach (var deadline in sortedDeadliness)
                         {
                             if (deadline.StartSubmissionDate >= deadline.EndSubmissionDate)
                                 throw new BadRequestException($"Trong Revision Deadline, ngày bắt đầu ({deadline.StartSubmissionDate:dd/MM/yyyy}) phải trước ngày kết thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
@@ -2337,11 +2336,11 @@ namespace ConfRadar.Services.Services
 
                             lastEndDate = deadline.EndSubmissionDate;
                         }
-                    }
+                    //}
                     #endregion
 
                     #region === 3. TH?C THI ===
-                    var phaseModel = phaseRequest.ToModel(conferenceId);
+                    var phaseModel = phaseRequest.ToModel(conferenceId,i +1);
                     phaseModel.IsActive = (i == 0); // Phase chính active
                     await _unitOfWork.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(phaseModel);
                     createdPhaseIds.Add(phaseModel.ResearchConferencePhaseId);
@@ -2377,6 +2376,175 @@ namespace ConfRadar.Services.Services
             {
                 await _unitOfWork.RollbackAsync();
                 throw ex;
+            }
+        }
+
+
+        public async Task<ResearchConferencePhaseResponse> CreateNextResearchPhaseAsync(string conferenceId, CreateNextResearchPhaseRequest request, string userId)
+        {
+            // === BƯỚC 1: VALIDATION BAN ĐẦU ===
+            if (request?.NewPhase == null || request.AuthorConferencePriceIds == null || !request.AuthorConferencePriceIds.Any())
+            {
+                throw new BadRequestException("Dữ liệu đầu vào không hợp lệ. Cần cung cấp thông tin phase mới và ít nhất một ConferencePriceId.");
+            }
+
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+            if (conference == null) throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
+
+            var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
+            if (researchDetail == null) throw new BadRequestException("Hội nghị này chưa có chi tiết nghiên cứu (Research Detail).");
+
+            // Phân quyền và loại hội nghị
+            if (conference.CreatedBy != userId)
+                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
+            if (conference.IsResearchConference != true)
+                throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
+
+            // Kiểm tra trạng thái đặc biệt: Cho phép khi Preparing, Ready, hoặc OnHold
+            var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
+            var allowedStatuses = new HashSet<string>
+            {
+                ConferenceStatusEnum.Preparing.GetDescription(),
+                ConferenceStatusEnum.Ready.GetDescription(),
+                ConferenceStatusEnum.OnHold.GetDescription()
+            };
+            if (!allowedStatuses.Contains(currentStatus.ConferenceStatusName))
+            {
+                throw new BadRequestException($"Không thể thêm phase mới khi hội nghị đang ở trạng thái '{currentStatus.ConferenceStatusName}'.");
+            }
+
+            // === BƯỚC 2: VALIDATION LOGIC NGHIỆP VỤ ===
+
+            // 2.1 Lấy phase cuối cùng để xác định thứ tự và kiểm tra chồng chéo
+            var lastPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseLastByConferenceIdAsync(conferenceId);
+            if (lastPhase == null)
+                throw new BadRequestException("Hội nghị chưa có phase nào. Vui lòng sử dụng chức năng tạo phase ban đầu.");
+
+            // 2.2 Validate timeline của phase mới so với phase cuối cùng
+            var newPhaseRequest = request.NewPhase;
+            if (newPhaseRequest.RegistrationStartDate <= lastPhase.AuthorPaymentEnd)
+                throw new BadRequestException($"Ngày bắt đầu của phase mới ({newPhaseRequest.RegistrationStartDate:dd/MM/yyyy}) phải sau ngày kết thúc của phase cuối cùng ({lastPhase.AuthorPaymentEnd:dd/MM/yyyy}).");
+
+            // (Tái sử dụng logic validate timeline nội bộ của phase)
+            if (newPhaseRequest.RegistrationStartDate > newPhaseRequest.RegistrationEndDate ||
+                newPhaseRequest.RegistrationEndDate > newPhaseRequest.AbstractDecideStatusStart ||
+                newPhaseRequest.AbstractDecideStatusStart > newPhaseRequest.AbstractDecideStatusEnd ||
+                newPhaseRequest.AbstractDecideStatusEnd > newPhaseRequest.FullPaperStartDate ||
+                newPhaseRequest.FullPaperStartDate > newPhaseRequest.FullPaperEndDate ||
+                newPhaseRequest.FullPaperEndDate > newPhaseRequest.ReviewStartDate ||
+                newPhaseRequest.ReviewStartDate > newPhaseRequest.ReviewEndDate ||
+                newPhaseRequest.ReviewEndDate > newPhaseRequest.FullPaperDecideStatusStart ||
+                newPhaseRequest.FullPaperDecideStatusStart > newPhaseRequest.FullPaperDecideStatusEnd ||
+                newPhaseRequest.FullPaperDecideStatusEnd > newPhaseRequest.ReviseStartDate ||
+                newPhaseRequest.ReviseStartDate > newPhaseRequest.ReviseEndDate ||
+                newPhaseRequest.ReviseEndDate > newPhaseRequest.RevisionPaperDecideStatusStart ||
+                newPhaseRequest.RevisionPaperDecideStatusStart > newPhaseRequest.RevisionPaperDecideStatusEnd ||
+                newPhaseRequest.RevisionPaperDecideStatusEnd > newPhaseRequest.CameraReadyStartDate ||
+                newPhaseRequest.CameraReadyStartDate > newPhaseRequest.CameraReadyEndDate ||
+                newPhaseRequest.CameraReadyEndDate > newPhaseRequest.CameraReadyDecideStatusStart ||
+                newPhaseRequest.CameraReadyDecideStatusStart > newPhaseRequest.CameraReadyDecideStatusEnd ||
+                newPhaseRequest.CameraReadyDecideStatusEnd > newPhaseRequest.AuthorPaymentStart ||
+                newPhaseRequest.AuthorPaymentStart > newPhaseRequest.AuthorPaymentEnd
+                )
+            {
+                throw new BadRequestException("Các mốc thời gian trong một phase không theo dúng thứ tự.");
+            }
+
+            if (newPhaseRequest.AuthorPaymentEnd >= conference.StartDate)
+            {
+                throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả trong phase mới ({newPhaseRequest.AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate:dd/MM/yyyy}).");
+            }
+
+            // 2.3 Validate RevisionRoundDeadlines cho phase mới
+            // (Tái sử dụng logic validate RevisionRoundDeadlines)
+            var deadlines = newPhaseRequest.RevisionRoundDeadlines;
+            int allowedAttempts = researchDetail.RevisionAttemptAllowed ?? 0;
+            if (deadlines == null || deadlines.Count != allowedAttempts)
+                throw new BadRequestException($"Phase mới phải có chính xác {allowedAttempts} Revision Deadline(s), nhưng nhận được {deadlines?.Count ?? 0}.");
+            var sortedDeadliness = deadlines.OrderBy(d => d.StartSubmissionDate).ToList();
+            DateOnly? lastEndDate = null;
+            foreach (var deadline in sortedDeadliness)
+            {
+                if (deadline.StartSubmissionDate >= deadline.EndSubmissionDate)
+                    throw new BadRequestException($"Trong Revision Deadline, ngày bắt đầu ({deadline.StartSubmissionDate:dd/MM/yyyy}) phải trước ngày kết thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
+
+                // Kho?ng th?i gian c?a deadline ph?i n?m trong kho?ng Revise c?a Phase
+                if (deadline.StartSubmissionDate < newPhaseRequest.ReviseStartDate || deadline.EndSubmissionDate > newPhaseRequest.ReviseEndDate)
+                    throw new BadRequestException($"Revision Deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) phải nằm trong giai đoạn sửa đổi của phase ({newPhaseRequest.ReviseStartDate:dd/MM/yyyy} - {newPhaseRequest.ReviseEndDate:dd/MM/yyyy}).");
+
+                if (lastEndDate.HasValue && deadline.StartSubmissionDate <= lastEndDate)
+                    throw new BadRequestException("Các Revision Deadline không được chồng chéo lên nhau.");
+
+                lastEndDate = deadline.EndSubmissionDate;
+            }
+
+            // 2.4 Validate danh sách ConferencePriceIds
+            foreach (var priceId in request.AuthorConferencePriceIds)
+            {
+                var price = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(priceId);
+                if (price == null) throw new NotFoundException($"Không tìm thấy loại vé với ID {priceId}.");
+                if (price.ConferenceId != conferenceId) throw new BadRequestException($"Loại vé {price.TicketName} ({priceId}) không thuộc hội nghị này.");
+                if (price.IsAuthor != true) throw new BadRequestException($"Loại vé {price.TicketName} ({priceId}) không phải là vé dành cho tác giả.");
+                if (price.AvailableSlot <= 0) throw new BadRequestException($"Loại vé {price.TicketName} ({priceId}) đã hết vé.");
+            }
+
+            // === BƯỚC 3: THỰC THI TRONG TRANSACTION ===
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // 3.1 Tạo ResearchConferencePhase mới
+                int newPhaseOrder = lastPhase.PhaseOrder.GetValueOrDefault(0) + 1;
+                var newPhaseModel = newPhaseRequest.ToModel(conferenceId, newPhaseOrder);
+                newPhaseModel.IsActive = false; // Phase mới không được active ngay
+                await _unitOfWork.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(newPhaseModel);
+
+                // 3.2 Tạo RevisionRoundDeadlines cho phase mới
+                if (newPhaseRequest.RevisionRoundDeadlines != null)
+                {
+                    var sortedDeadlines = newPhaseRequest.RevisionRoundDeadlines.OrderBy(d => d.StartSubmissionDate).ToList();
+                    for (int j = 0; j < sortedDeadlines.Count; j++)
+                    {
+                        var deadlineModel = new RevisionRoundDeadline
+                        {
+                            RevisionRoundDeadlineId = Guid.NewGuid().ToString(),
+                            ResearchConferencePhaseId = newPhaseModel.ResearchConferencePhaseId,
+                            StartSubmissionDate = sortedDeadlines[j].StartSubmissionDate,
+                            EndSubmissionDate = sortedDeadlines[j].EndSubmissionDate,
+                            RoundNumber = j + 1
+                        };
+                        await _unitOfWork.RevisionRoundDeadlineRepository.CreateCsAsync(deadlineModel);
+                    }
+                }
+
+                // 3.3 Tự động tạo PricePhase cho các loại vé được chỉ định
+                foreach (var priceId in request.AuthorConferencePriceIds)
+                {
+                    var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(priceId);
+
+                    var newPricePhase = new PricePhase
+                    {
+                        PricePhaseId = Guid.NewGuid().ToString(),
+                        ConferencePriceId = priceId,
+                        ResearchConferencePhaseId = newPhaseModel.ResearchConferencePhaseId,
+                        PhaseName = $"Bán vé Giai đoạn {newPhaseOrder}", // Tên tự động
+                        StartDate = newPhaseModel.AuthorPaymentStart,
+                        EndDate = newPhaseModel.AuthorPaymentEnd,
+                        ApplyPercent = 0, // Giả định không giảm giá
+                        TotalSlot = conferencePrice.AvailableSlot, // Gán toàn bộ số vé còn lại
+                        AvailableSlot = conferencePrice.AvailableSlot
+                    };
+                    await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(newPricePhase);
+                }
+
+                await _unitOfWork.CommitAsync();
+
+                // Trả về thông tin của phase vừa tạo
+                return newPhaseModel.ToResponse();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
             }
         }
 
@@ -2455,6 +2623,12 @@ namespace ConfRadar.Services.Services
             var finalCameraDecideStart = request.CameraReadyDecideStatusStart ?? phaseToUpdate.CameraReadyDecideStatusStart;
             var finalCameraDecideEnd = request.CameraReadyDecideStatusEnd ?? phaseToUpdate.CameraReadyDecideStatusEnd;
 
+            //giai đoạn 11: authorpayment (lastest change)
+
+            var finalAuthorPaymentStart = request.AuthorPaymentStart ?? phaseToUpdate.AuthorPaymentStart;
+            var finalAuthorPaymentEnd = request.AuthorPaymentEnd ?? phaseToUpdate.AuthorPaymentEnd;
+
+
 
             // 2. KIỂM TRA LOGIC (Validation)
             // Kiểm tra dây chuyền từ trên xuống dưới theo đúng thứ tự DTO
@@ -2481,6 +2655,7 @@ namespace ConfRadar.Services.Services
 
                 // 6. Revise
                 finalReviseStart > finalReviseEnd ||
+                finalReviseEnd > finalReviseDecideStart ||
                 /* finalReviseEnd > finalReviseReviewStart ||
 
                  // 7. Revision Review
@@ -2496,7 +2671,12 @@ namespace ConfRadar.Services.Services
                 finalCameraEnd > finalCameraDecideStart ||
 
                 // 10. Camera Ready Decide
-                finalCameraDecideStart > finalCameraDecideEnd
+                finalCameraDecideStart > finalCameraDecideEnd ||
+
+                //11. Author payment
+
+                finalCameraDecideEnd > finalAuthorPaymentStart ||
+                finalAuthorPaymentStart > finalAuthorPaymentEnd 
             )
             {
                 throw new BadRequestException("Các mốc thời gian sau khi cập nhật không tuân thủ đúng thứ tự quy trình.");
@@ -2509,7 +2689,7 @@ namespace ConfRadar.Services.Services
             foreach (var otherPhase in allOtherPhases)
             {
                 // Ki?m tra xem phase dang c?p nh?t có "nu?t" phase khác không
-                if (finalRegStart < otherPhase.CameraReadyEndDate && finalCameraEnd > otherPhase.RegistrationStartDate)
+                if (finalRegStart < otherPhase.AuthorPaymentEnd && finalCameraEnd > otherPhase.RegistrationStartDate)
                 {
                     throw new BadRequestException($"Kho?ng th?i gian m?i ({finalRegStart:dd/MM/yyyy} - {finalCameraEnd:dd/MM/yyyy}) b? ch?ng chéo v?i m?t phase khác dã t?n t?i.");
                 }
@@ -2571,6 +2751,9 @@ namespace ConfRadar.Services.Services
                 // 10. Camera Ready Decide (Thêm mới)
                 phaseToUpdate.CameraReadyDecideStatusStart = finalCameraDecideStart;
                 phaseToUpdate.CameraReadyDecideStatusEnd = finalCameraDecideEnd;
+
+                phaseToUpdate.AuthorPaymentStart = finalAuthorPaymentStart;
+                phaseToUpdate.AuthorPaymentEnd = finalAuthorPaymentEnd;
 
                 // Sau bước này, bạn gọi lệnh SaveChangesAsync() để lưu xuống DB
                 // await _context.SaveChangesAsync();
@@ -3057,9 +3240,6 @@ namespace ConfRadar.Services.Services
 
         #region PricePhase CRUD Operations
 
-        // DÁN TOÀN B? PHIÊN B?N NÀY Ð? THAY TH? PHIÊN B?N CU
-
-        // DÁN TOÀN B? PHIÊN B?N NÀY Ð? THAY TH? PHIÊN B?N CU
 
         public async Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request, string userId)
         {
@@ -3109,7 +3289,7 @@ namespace ConfRadar.Services.Services
                 foreach (var phaseRequest in request.PricePhases)
                 {
                     // Luôn ki?m tra v?i phase dang ho?t d?ng t?i th?i di?m dó
-                    if (phaseRequest.StartDate < targetResearchPhase.RegistrationStartDate || phaseRequest.EndDate > targetResearchPhase.RegistrationEndDate)
+                    if (phaseRequest.StartDate < targetResearchPhase.AuthorPaymentStart || phaseRequest.EndDate > targetResearchPhase.AuthorPaymentEnd)
                         throw new BadRequestException($"Giai do?n '{phaseRequest.PhaseName}' ph?i n?m trong kho?ng dang ký c?a phase dang ho?t d?ng ({targetResearchPhase.RegistrationStartDate:dd/MM/yyyy} - {targetResearchPhase.RegistrationEndDate:dd/MM/yyyy}).");
                 }
             }
@@ -3144,7 +3324,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        public async Task<List<PricePhaseResponse>> AddPricePhaseForWaitList(string conferencePriceId, PhaseForWaitList request, string userId)
+        public async Task<List<PricePhaseResponse>> AddPricePhaseForNextPhase(string conferencePriceId, PhaseForWaitList request, string userId)
         {
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(conferencePriceId);
             if (conferencePrice == null) throw new NotFoundException($"Không tìm thấy loại vé với ID {conferencePriceId}");
@@ -3161,44 +3341,46 @@ namespace ConfRadar.Services.Services
             if (conferencePrice.AvailableSlot == 0)
                 throw new BadRequestException("Không thể thêm giai đoạn mới vì loại vé này đã hết vé (available slot = 0).");
 
-            // 1.2. Ki?m tra th?i di?m h?p l?
-            var notWaitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseNotWaitListByConferenceIdAsync(conference.ConferenceId);
-            var waitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(conference.ConferenceId);
-            if (notWaitlistPhase == null || waitlistPhase == null)
-                throw new BadRequestException("Hội nghị chưa được cấu hình đầy đủ phase chính và phase waitlist.");
+            // 1.2. Kiểm tra thời điểm hợp lệ
+            var activePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conference.ConferenceId);
+            if (activePhase == null)
+                throw new BadRequestException("Hội nghị không có phase nào đang hoạt động.");
+
+            var nextPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByOrderAndConferenceIdAsync(conference.ConferenceId, activePhase.PhaseOrder.Value + 1);
+            if (nextPhase == null)
+                throw new BadRequestException("Hội nghị không còn phase tiếp theo để thêm giai đoạn bán vé.");
 
             DateOnly today = await _timeProviderService.GetVietnamDate();
-            if (today <= notWaitlistPhase.CameraReadyEndDate)
-                throw new BadRequestException($"Chua d?n th?i di?m h?p l?. C?n ph?i sau khi phase chính k?t thúc (sau ngày {notWaitlistPhase.CameraReadyEndDate:dd/MM/yyyy}).");
+            if (today <= activePhase.AuthorPaymentEnd)
+                throw new BadRequestException($"Chưa đến thời điểm hợp lệ. Cần phải sau khi phase chính kết thúc (sau ngày {activePhase.AuthorPaymentEnd:dd/MM/yyyy}).");
 
-            // 1.3. S?a l?i logic tính toán Slot
+            // 1.3. 
             var allExistingPhases = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(conferencePriceId);
-            var existingWaitlistPhases = allExistingPhases.Where(p => p.ResearchConferencePhaseId == waitlistPhase.ResearchConferencePhaseId).ToList();
 
-            var existingWaitlistSlot = existingWaitlistPhases.Sum(p => p.TotalSlot ?? 0);
-            var requestWaitlistSlot = request.Phases.Sum(p => p.Totalslot);
-            if (existingWaitlistSlot + requestWaitlistSlot > conferencePrice.AvailableSlot)
+            var requestTotalSlot = request.Phases.Sum(p => p.Totalslot);
+            if (requestTotalSlot > conferencePrice.AvailableSlot)
             {
-                throw new BadRequestException($"T?ng s? vé cho các giai do?n waitlist ({existingWaitlistSlot + requestWaitlistSlot}) không du?c vu?t quá s? vé còn l?i c?a lo?i vé này ({conferencePrice.AvailableSlot}).");
+                throw new BadRequestException($"Tổng số vé muốn thêm ({requestTotalSlot}) không được vượt quá số vé còn lại của loại vé này ({conferencePrice.AvailableSlot}).");
             }
 
-            // Ki?m tra ch?ng chéo: s? d?ng l?i allExistingPhases dã l?y ? trên
-            var allPhasesForCheck = new List<PricePhase>(allExistingPhases); // <-- Tái s? d?ng ? dây
+            // 1.4. Kiểm tra chồng chéo ngày tháng
+            var allPhasesForCheck = new List<PricePhase>(allExistingPhases);
             allPhasesForCheck.AddRange(request.Phases.Select(p => new PricePhase { StartDate = p.StartDate, EndDate = p.EndDate }));
             var sortedPhases = allPhasesForCheck.OrderBy(p => p.StartDate).ToList();
             for (int i = 0; i < sortedPhases.Count - 1; i++)
             {
                 if (sortedPhases[i].EndDate >= sortedPhases[i + 1].StartDate)
-                    throw new BadRequestException("Các giai do?n bán vé không du?c có ngày ch?ng chéo ho?c quá sát nhau.");
+                    throw new BadRequestException("Các giai đoạn bán vé không được có ngày chồng chéo hoặc quá sát nhau.");
             }
 
             foreach (var phaseRequest in request.Phases)
             {
-                if (phaseRequest.StartDate < waitlistPhase.RegistrationStartDate || phaseRequest.EndDate > waitlistPhase.RegistrationEndDate)
-                    throw new BadRequestException($"Giai đoạn '{phaseRequest.PhaseName}' phải nằm trong khoảng đăng ký của waitlist ({waitlistPhase.RegistrationStartDate:dd/MM/yyyy} - {waitlistPhase.RegistrationEndDate:dd/MM/yyyy}).");
+
+                if (phaseRequest.StartDate < nextPhase.AuthorPaymentStart || phaseRequest.EndDate > nextPhase.AuthorPaymentEnd)
+                    throw new BadRequestException($"Giai đoạn '{phaseRequest.PhaseName}' phải nằm trong khoảng thời gian thanh toán của phase tiếp theo ({nextPhase.AuthorPaymentStart:dd/MM/yyyy} - {nextPhase.AuthorPaymentEnd:dd/MM/yyyy}).");
 
                 if (phaseRequest.StartDate > phaseRequest.EndDate)
-                    throw new BadRequestException("Start phase phải lớn hơn end");
+                    throw new BadRequestException("Ngày bắt đầu của phase phải trước ngày kết thúc.");
 
                 if (phaseRequest.refundInPhase != null && phaseRequest.refundInPhase.Any())
                 {
@@ -3210,67 +3392,59 @@ namespace ConfRadar.Services.Services
                         if (!refundRequest.PercentRefund.HasValue || !refundRequest.RefundDeadline.HasValue)
                             throw new BadRequestException("Chính sách hoàn tiền phải có đủ phần trăm và hạn chót.");
                         if (refundRequest.PercentRefund.Value < 0 || refundRequest.PercentRefund.Value > 100)
-                            throw new BadRequestException("PerentRefund phải nằm trong khoảng 0-100");
+                            throw new BadRequestException("Phần trăm hoàn tiền phải nằm trong khoảng 0-100");
 
-                        // *** VALIDATION M?I: Deadline c?a refund policy ***
-                        // 1. Ph?i sau ngày b?t d?u c?a phase
                         if (refundRequest.RefundDeadline.Value <= phaseRequest.StartDate)
-                        {
-                            throw new BadRequestException($"Trong giai do?n '{phaseRequest.PhaseName}', hạn chót hoàn tiền ({refundRequest.RefundDeadline.Value:dd/MM/yyyy}) ph?i sau ngày bắt đầu giai đoạn ({phaseRequest.StartDate:dd/MM/yyyy}).");
-                        }
-                        // 2. Ph?i tru?c ngày b?t d?u bán vé c?a c? h?i ngh?
-                        if (refundRequest.RefundDeadline.Value >= waitlistPhase.RegistrationEndDate)
-                        {
-                            throw new BadRequestException($"Trong giai do?n '{phaseRequest.PhaseName}',  hạn chót hoàn tiền ({refundRequest.RefundDeadline.Value:dd/MM/yyyy}) phải trước ngày kết thúc đăng ký nộp paper của hội nghị ({waitlistPhase.RegistrationEndDate:dd/MM/yyyy}).");
-                        }
+                            throw new BadRequestException($"Trong giai đoạn '{phaseRequest.PhaseName}', hạn chót hoàn tiền phải sau ngày bắt đầu giai đoạn.");
 
-
+                        // SỬA LỖI 4: Validate deadline hoàn tiền với `AuthorPaymentEnd` của `nextPhase`
+                        if (refundRequest.RefundDeadline.Value >= nextPhase.AuthorPaymentEnd)
+                            throw new BadRequestException($"Trong giai đoạn '{phaseRequest.PhaseName}', hạn chót hoàn tiền phải trước ngày kết thúc thanh toán của phase ({nextPhase.AuthorPaymentEnd:dd/MM/yyyy}).");
                     }
                 }
-                #endregion
-
-
-
             }
-            #region === 2. TH?C THI ===
+            #endregion
+            #region === 2. THỰC THI ===
             var responses = new List<DTOs.ConferenceStep.PricePhaseResponse>();
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 foreach (var pricePhaseRequest in request.Phases)
                 {
-                    var pricePhase = pricePhaseRequest.ToModel(conferencePriceId, waitlistPhase.ResearchConferencePhaseId);
+                    // SỬA LỖI 5: Gán đúng ID của `nextPhase`
+                    var pricePhase = pricePhaseRequest.ToModel(conferencePriceId, nextPhase.ResearchConferencePhaseId);
                     await _unitOfWork.PricePhaseRepository.CreatePricePhaseAsync(pricePhase);
-                    List<ConfRadar.Services.DTOs.ConferenceStep.RefundPolicyResponse> refundPolicyResponses = new();
-                    var sortedRefunds = pricePhaseRequest.refundInPhase.OrderBy(r => r.RefundDeadline).ToList();
-                    for (int i = 0; i < sortedRefunds.Count; i++)
+
+                    var refundPolicyResponses = new List<RefundPolicyResponse>();
+                    if (pricePhaseRequest.refundInPhase != null)
                     {
-                        var refundRequest = sortedRefunds[i];
-                        var refundModel = new RefundPolicy
+                        var sortedRefunds = pricePhaseRequest.refundInPhase.OrderBy(r => r.RefundDeadline).ToList();
+                        for (int i = 0; i < sortedRefunds.Count; i++)
                         {
-                            RefundPolicyId = Guid.NewGuid().ToString(),
-                            PricePhaseId = pricePhase.PricePhaseId,
-                            PercentRefund = refundRequest.PercentRefund.Value,
-                            RefundDeadline = refundRequest.RefundDeadline,
-                            RefundOrder = i + 1 // T? d?ng gán th? t? d?a trên deadline
-                        };
-                        await _unitOfWork.ConferenceRefundPolicyRepository.CreateConferenceRefundPolicyAsync(refundModel);
-                        refundPolicyResponses.Add(refundModel.ToResponse());
+                            var refundRequest = sortedRefunds[i];
+                            var refundModel = new RefundPolicy
+                            {
+                                RefundPolicyId = Guid.NewGuid().ToString(),
+                                PricePhaseId = pricePhase.PricePhaseId,
+                                PercentRefund = refundRequest.PercentRefund.Value,
+                                RefundDeadline = refundRequest.RefundDeadline.Value,
+                                RefundOrder = i + 1
+                            };
+                            await _unitOfWork.ConferenceRefundPolicyRepository.CreateConferenceRefundPolicyAsync(refundModel);
+                            refundPolicyResponses.Add(refundModel.ToResponse());
+                        }
                     }
-
-
                     responses.Add(pricePhase.ToResponse(refundPolicyResponses));
                 }
                 await _unitOfWork.CommitAsync();
                 return responses;
-                #endregion
             }
             catch (Exception)
             {
                 await _unitOfWork.RollbackAsync();
-                return responses;
                 throw;
             }
+            #endregion
         }
 
         public async Task<List<PricePhaseResponse>> GetPricePhasesByConferencePriceIdAsync(string conferencePriceId)
@@ -3307,20 +3481,28 @@ namespace ConfRadar.Services.Services
             });
 
             // 1.2. Kiểm tra trạng thái linh hoạt (Waitlist bypass)
-            bool isWaitlistRelated = false;
+            bool canEditWhileReady = false;
             if (pricePhaseToUpdate.ResearchConferencePhaseId != null)
             {
-                var waitlistPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseIsWaitListByConferenceIdAsync(conference.ConferenceId);
-                isWaitlistRelated = pricePhaseToUpdate.ResearchConferencePhaseId == waitlistPhase?.ResearchConferencePhaseId;
-            }
-            if (!isWaitlistRelated)
-            {
-                await EnsureConferenceIsEditable(conference, true);
+                var activePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conference.ConferenceId);
+
+                // SỬA LỖI: Thêm kiểm tra null cho activePhase
+                if (activePhase != null && activePhase.PhaseOrder.HasValue)
+                {
+                    var nextPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByOrderAndConferenceIdAsync(conference.ConferenceId, activePhase.PhaseOrder.Value + 1);
+
+                    // Nếu price phase này thuộc về "nextPhase" thì cho phép chỉnh sửa
+                    if (nextPhase != null && pricePhaseToUpdate.ResearchConferencePhaseId == nextPhase.ResearchConferencePhaseId)
+                    {
+                        canEditWhileReady = true;
+                    }
+                }
             }
 
             // 1.3. Tính số vé đã bán
             int soldTickets = (pricePhaseToUpdate.TotalSlot ?? 0) - (pricePhaseToUpdate.AvailableSlot ?? 0);
-            bool isOnHold = conference.ConferenceStatus?.ConferenceStatusName == ConferenceStatusEnum.OnHold.GetDescription();
+            var onholdStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.OnHold.GetDescription());
+            bool isOnHold = conference.ConferenceStatusId == onholdStatus.ConferenceStatusId;
 
             // 1.4. Validation tên trùng lặp
             if (!string.IsNullOrEmpty(request.PhaseName) && request.PhaseName != pricePhaseToUpdate.PhaseName)
@@ -3384,8 +3566,8 @@ namespace ConfRadar.Services.Services
                 if (researchPhase == null)
                     throw new Exception("Không tìm thấy research phase tương ứng.");
 
-                if (finalStartDate < researchPhase.RegistrationStartDate || finalEndDate > researchPhase.RegistrationEndDate)
-                    throw new BadRequestException($"Vé dành cho tác giả phải nằm trong khoảng thời gian Đăng ký (Registration): {researchPhase.RegistrationStartDate:dd/MM/yyyy} - {researchPhase.RegistrationEndDate:dd/MM/yyyy}");
+                if (finalStartDate < researchPhase.AuthorPaymentStart || finalEndDate > researchPhase.AuthorPaymentEnd)
+                    throw new BadRequestException($"Vé dành cho tác giả phải nằm trong khoảng thời gian Thanh toán (Author Payment): {researchPhase.AuthorPaymentStart:dd/MM/yyyy} - {researchPhase.AuthorPaymentEnd:dd/MM/yyyy}");
             }
             #endregion
 

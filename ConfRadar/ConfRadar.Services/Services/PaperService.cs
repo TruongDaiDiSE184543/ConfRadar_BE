@@ -2374,8 +2374,8 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Hội nghị id {conferenceId} không tồn tại");
             }
             var conferencePhases = conference.ResearchConferencePhases;
-            var firstPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true && cp.IsWaitlist == false);
-            var waitListPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true && cp.IsWaitlist == true);
+            var firstPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true /*&& cp.IsWaitlist == false */);
+            var waitListPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true /*&& cp.IsWaitlist == true */);
             if (firstPhase != null && waitListPhase != null)
             {
                 throw new BadRequestException("Hiện tại hội nghị trong giai đoạn trùng nhau.");

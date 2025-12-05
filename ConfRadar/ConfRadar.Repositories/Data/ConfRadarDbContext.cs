@@ -969,8 +969,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("ResearchConferencePhase");
 
             entity.Property(e => e.ResearchConferencePhaseId).HasMaxLength(50);
-            entity.Property(e => e.AuthorPaymentEnd).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.AuthorPaymentStart).HasColumnType("timestamp without time zone");
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
 
             entity.HasOne(d => d.Conference).WithMany(p => p.ResearchConferencePhases)
