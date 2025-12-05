@@ -228,7 +228,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        private async Task<List<string>> ValidateConferenceTimelineAsync(Conference conf, Func<DateOnly?, bool> dateOnlyValidationRule)
+        private async Task<List<string>> ValidateConferenceTimelineAsync(Conference conf, Func<DateOnly?, bool> dateOnlyValidationRule, CollaboratorContract? contract = null)
         {
             var invalidMessages = new List<string>();
 
@@ -242,35 +242,53 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-            // === TẢI DỮ LIỆU LIÊN QUAN TRƯỚC ĐỂ TRÁNH LỖI N+1 QUERY ===
-            // (Giả sử bạn có các phương thức repository hỗ trợ Include)
-            var allPricesWithPhasesAndPolicies = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conf.ConferenceId);
-            var allSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+            // --- tìm contract cho hội nghị nếu đầu vào là null ---
+            if (conf.IsInternalHosted == false && contract == null)
+            {
+                contract = await _unitOfWork.CollaboratorContractRepository.GetCollaboratorContractByConferenceId(conf.ConferenceId);
+            }
+
+            // hàm để check có nên kiểm tra bước này không
+            bool ShouldCheck(Func<CollaboratorContract, bool?> contractProperty)
+            {
+                if (conf.IsInternalHosted == true) return true;
+                if (contract == null) return false;
+                return contractProperty(contract) == true;
+            }
+
 
             // 1. Kiểm tra Conference
             AddIfInvalid(conf.StartDate, "Ngày bắt đầu hội nghị");
             AddIfInvalid(conf.EndDate, "Ngày kết thúc hội nghị");
             AddIfInvalid(conf.TicketSaleEnd, "Ngày kết thúc bán vé");
 
-            // 2. Kiểm tra PricePhase và RefundPolicy (dùng dữ liệu đã tải sẵn)
-            foreach (var price in allPricesWithPhasesAndPolicies)
+            // 2. Kiểm tra PricePhase và RefundPolicy (Conditional)
+            if (ShouldCheck(c => c.IsPriceStep))
             {
-                foreach (var phase in price.PricePhases)
+                var allPricesWithPhasesAndPolicies = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conf.ConferenceId);
+                foreach (var price in allPricesWithPhasesAndPolicies)
                 {
-                    AddIfInvalid(phase.EndDate, $"Giai đoạn bán vé '{phase.PhaseName}'");
-
-                    foreach (var policy in phase.RefundPolicies)
+                    foreach (var phase in price.PricePhases)
                     {
-                        AddIfInvalid(policy.RefundDeadline, $"Hạn chót hoàn tiền của phase '{phase.PhaseName}'");
+                        AddIfInvalid(phase.EndDate, $"Giai đoạn bán vé '{phase.PhaseName}'");
+                        foreach (var policy in phase.RefundPolicies)
+                        {
+                            AddIfInvalid(policy.RefundDeadline, $"Hạn chót hoàn tiền của phase '{phase.PhaseName}'");
+                        }
                     }
                 }
             }
 
-            // 3. Kiểm tra ConferenceSession (dùng dữ liệu đã tải sẵn)
-            foreach (var session in allSessions)
+            // 3. Kiểm tra ConferenceSession (Conditional)
+            if (ShouldCheck(c => c.IsSessionStep))
             {
-                AddIfInvalid(session.SessionDate, $"Phiên '{session.Title}'");
+                var allSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+                foreach (var session in allSessions)
+                {
+                    AddIfInvalid(session.SessionDate, $"Phiên '{session.Title}'");
+                }
             }
+
 
             // 4. Kiểm tra Research Conference (nếu có)
             if (conf.IsResearchConference == true)
@@ -353,6 +371,8 @@ namespace ConfRadar.Services.Services
             if (onHoldTimelineEntry == null)
                 throw new BadRequestException("Không tìm thấy lịch sử chuyển sang trạng thái 'OnHold'.");
 
+
+
             var onHoldStartDate = onHoldTimelineEntry.ChangeDate;
             var today = await _timeProviderService.GetVietnamDate();
             var todayAsDateTime = await _timeProviderService.GetVietnamTime();
@@ -383,16 +403,60 @@ namespace ConfRadar.Services.Services
         private async Task ValidateForReadyStateAsync(Conference conf)
         {
             var invalidMessages = new List<string>();
+            CollaboratorContract? contract = null;
 
-            // --- BƯỚC A: KIỂM TRA SỰ ĐẦY ĐỦ THÔNG TIN ---
-            // Đây là phần validation riêng của trạng thái Ready
+            if (conf.IsInternalHosted == false)
+            {
+                contract = await _unitOfWork.CollaboratorContractRepository.GetCollaboratorContractByConferenceId(conf.ConferenceId);
+                if (contract == null)
+                {
+                    // A non-internal conference MUST have a contract to be Ready.
+                    invalidMessages.Add("Hội nghị liên kết (Collaborator) phải có một hợp đồng hợp lệ.");
+                }
+            }
 
-            var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
-            if (price == null)
-                invalidMessages.Add("Hội nghị phải có ít nhất một loại vé, trong đó có ít nhất một phase.");
+
+            // --- BƯỚC A: KIỂM TRA SỰ ĐẦY ĐỦ THÔNG TIN (CONTRACT-AWARE) ---
+
+            // Function to decide if a check should be performed
+            bool ShouldCheck(Func<CollaboratorContract, bool?> contractProperty)
+            {
+                if (conf.IsInternalHosted == true) return true; // Internal always checks
+                if (contract == null) return false; // No contract, can't check
+                return contractProperty(contract) == true; // Check only if contract flag is true
+            }
+
+            // Validate Prices only if the step is enabled
+            if (ShouldCheck(c => c.IsPriceStep))
+            {
+                var price = await _unitOfWork.ConferencePriceRepository.AnyConferencePriceWithAtLeastOnePricePhase(conf.ConferenceId);
+                if (price == null)
+                    invalidMessages.Add("Hội nghị phải có ít nhất một loại vé, trong đó có ít nhất một phase bán vé.");
+            }
+
+            // Validate Sessions only if the step is enabled
             var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
-            if (!sessions.Any())
-                invalidMessages.Add("Hội nghị phải có ít nhất một phiên.");
+            if (ShouldCheck(c => c.IsSessionStep))
+            {
+                if (!sessions.Any())
+                    invalidMessages.Add("Hội nghị phải có ít nhất một phiên (session).");
+            }
+
+            // Validate Policies only if the step is enabled
+            if (ShouldCheck(c => c.IsPolicyStep))
+            {
+                var policies = await _unitOfWork.ConferencePolicyRepository.GetPoliciesByConferenceIdAsync(conf.ConferenceId);
+                if (!policies.Any())
+                    invalidMessages.Add("Hội nghị phải có ít nhất một chính sách.");
+            }
+
+            // Validate Sponsors only if the step is enabled
+            if (ShouldCheck(c => c.IsSponsorStep))
+            {
+                var sponsors = await _unitOfWork.SponsorRepository.GetSponsorsByConferenceIdAsync(conf.ConferenceId);
+                if (!sponsors.Any())
+                    invalidMessages.Add("Hội nghị phải có ít nhất một nhà tài trợ.");
+            }
 
 
             // Kiểm tra nếu là hội nghị kỹ thuật, phiên phải có ít nhất một diễn giả
@@ -460,13 +524,6 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-            // Kiểm tra tất cả hội nghị phải có ít nhất một chính sách
-            var policies = await _unitOfWork.ConferencePolicyRepository.GetPoliciesByConferenceIdAsync(conf.ConferenceId);
-            if (!policies.Any())
-            {
-                invalidMessages.Add("Hội nghị phải có ít nhất một chính sách.");
-            }
-
 
             // --- BƯỚC B: KIỂM TRA NGÀY THÁNG LỖI THỜI ---
             var today = await _timeProviderService.GetVietnamDate();
@@ -480,7 +537,7 @@ namespace ConfRadar.Services.Services
             //    dateTimeToCheck.HasValue && dateTimeToCheck.Value < todayAsDateTime;
 
             // --- GỌI "ENGINE" VỚI RULE TRÊN ---
-            var timelineErrors = await ValidateConferenceTimelineAsync(conf, dateOnlyRule);
+            var timelineErrors = await ValidateConferenceTimelineAsync(conf, dateOnlyRule, contract);
             invalidMessages.AddRange(timelineErrors); // Thêm các lỗi timeline vào danh sách chung
 
             if (invalidMessages.Any())
@@ -563,6 +620,21 @@ namespace ConfRadar.Services.Services
                 return dt.Value.AddDays(daysToShift);
             }
 
+            CollaboratorContract? contract = null;
+            if (conf.IsInternalHosted == false)
+            {
+                contract = await _unitOfWork.CollaboratorContractRepository.GetCollaboratorContractByConferenceId(conf.ConferenceId);
+            }
+
+            // dựa vào istep trong collab contract để test
+            bool ShouldProcess(Func<CollaboratorContract, bool?> contractProperty)
+            {
+                if (conf.IsInternalHosted == true) return true; // nội bộ luôn check
+                if (contract == null) return false; //check cho an toàn
+                return contractProperty(contract) == true;
+            }
+
+
             // A. Cập nhật Conference
             conf.StartDate = Shift(conf.StartDate);
             conf.EndDate = Shift(conf.EndDate);
@@ -570,32 +642,40 @@ namespace ConfRadar.Services.Services
             conf.TicketSaleEnd = Shift(conf.TicketSaleEnd);
             await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conf);
 
-            // B. Cập nhật PricePhases
-            var prices = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conf.ConferenceId);
-            foreach (var price in prices)
+            // B. Cập nhật PricePhases (Conditional)
+            if (ShouldProcess(c => c.IsPriceStep))
             {
-                foreach (var phase in price.PricePhases)
+                var prices = await _unitOfWork.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(conf.ConferenceId);
+                foreach (var price in prices)
                 {
-                    phase.StartDate = Shift(phase.StartDate);
-                    phase.EndDate = Shift(phase.EndDate);
-                    await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(phase);
-                    foreach (var policy in phase.RefundPolicies)
+                    foreach (var phase in price.PricePhases)
                     {
-                        policy.RefundDeadline = Shift(policy.RefundDeadline);
-                        await _unitOfWork.ConferenceRefundPolicyRepository.UpdateConferenceRefundPolicyAsync(policy);
+                        phase.StartDate = Shift(phase.StartDate);
+                        phase.EndDate = Shift(phase.EndDate);
+                        await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(phase);
+                        foreach (var policy in phase.RefundPolicies)
+                        {
+                            policy.RefundDeadline = Shift(policy.RefundDeadline);
+                            await _unitOfWork.ConferenceRefundPolicyRepository.UpdateConferenceRefundPolicyAsync(policy);
+                        }
                     }
                 }
             }
 
-            // C. Cập nhật Sessions
-            var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
-            foreach (var session in sessions)
+            // C. Cập nhật Sessions (Conditional)
+            if (ShouldProcess(c => c.IsSessionStep))
             {
-                session.SessionDate = Shift(session.SessionDate);
-                session.StartTime = ShiftDt(session.StartTime);
-                session.EndTime = ShiftDt(session.EndTime);
-                await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
+                var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+                foreach (var session in sessions)
+                {
+                    session.SessionDate = Shift(session.SessionDate);
+                    session.StartTime = ShiftDt(session.StartTime);
+                    session.EndTime = ShiftDt(session.EndTime);
+                    await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
+                }
             }
+
+          
 
             // D. Cập nhật Research Phases 
             if (conf.IsResearchConference == true)
@@ -2265,7 +2345,7 @@ namespace ConfRadar.Services.Services
 
             //must be draft to submit the request
             var draftStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Draft.GetDescription());
-            if (conference.ConferenceStatusId != draftStatus.ConferenceStatusId) throw new BadRequestException($" conference với ID {confId} phải dang là draft status mới có thể yêu cầu duyệt được");
+            if (conference.ConferenceStatusId != draftStatus.ConferenceStatusId) throw new BadRequestException($" conference với ID {confId} phải đang là draft status mới có thể yêu cầu duyệt được");
 
             //if you already submit one and is waiting you can must wait first although it will never reach here since the current need to be draft first so it can't be pending anywaya
             var pendingStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Pending.GetDescription());
