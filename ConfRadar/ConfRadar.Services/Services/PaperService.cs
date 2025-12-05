@@ -745,7 +745,7 @@ namespace ConfRadar.Services.Services
                             throw new BadRequestException($"Bạn đã nộp revision, deadline hiện tại diễn ra từ {revisionPaperSubmissionFound.RevisionDeadlineRound?.StartSubmissionDate} đến {revisionPaperSubmissionFound.RevisionDeadlineRound?.EndSubmissionDate} này ");
                         }
                     }
-                    revisionPaper.RevisionRound = revisionPaper.RevisionRound + 1;
+                    revisionPaper.RevisionRound = validRevisionDeadline.RoundNumber;
                 }
                 var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
                 if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
