@@ -1,16 +1,14 @@
-﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.FullPaper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Microsoft.Extensions.Options;
-
-using ConfRadar.Repositories.Repositories;
-
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
-
+using ConfRadar.Services.Exceptions;
+using Microsoft.Extensions.Options;
+using ConfRadar.Repositories.Repositories;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
