@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class ResearchConferencePhase
 {
@@ -26,6 +29,12 @@ public partial class ResearchConferencePhase
 
     public DateOnly? CameraReadyEndDate { get; set; }
 
+    public int? PhaseOrder { get; set; }
+
+    public DateOnly? AuthorPaymentStart { get; set; }
+
+    public DateOnly? AuthorPaymentEnd { get; set; }
+
     public bool? IsActive { get; set; }
 
     public DateOnly? AbstractDecideStatusStart { get; set; }
@@ -43,12 +52,6 @@ public partial class ResearchConferencePhase
     public DateOnly? CameraReadyDecideStatusStart { get; set; }
 
     public DateOnly? CameraReadyDecideStatusEnd { get; set; }
-
-
-    public DateOnly? AuthorPaymentStart { get; set; }
-    public DateOnly? AuthorPaymentEnd { get; set; }
-
-    public int? PhaseOrder { get; set; }
 
     public virtual Conference? Conference { get; set; }
 

@@ -28,6 +28,11 @@ namespace ConfRadar.Api.Middleware
                     if (!string.IsNullOrEmpty(userId))
                     {
                         var user = await unitOfWork.UserRepository.GetUserByUserId(userId);
+                        if (user == null)
+                        {
+                            await WriteApiError(context, StatusCodes.Status404NotFound, "Đừng xài access token cũ nữa!!!");
+                            return;
+                        }
                         if (user != null && user.IsActive == false)
                         {
                             await WriteApiError(context, StatusCodes.Status401Unauthorized, "Bạn không thể mua vì tài khoản đã bị vô hiệu hóa.");

@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class RevisionPaperReview
 {
@@ -9,8 +12,6 @@ public partial class RevisionPaperReview
     public string? Note { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
-    public string? FeedbackToAuthor { get; set; }
 
     public string? FeedbackMaterialUrl { get; set; }
 

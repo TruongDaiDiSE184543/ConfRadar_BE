@@ -145,13 +145,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Không tìm thấy giai đoạn hiệu lực nào của hội nghị");
             }
-            var existingPaper = await _unitOfWork.PaperRepository.GetPaperByUserAndConference(request.ConferenceId, userId);
+            var existingPaper = await _unitOfWork.PaperRepository.GetPaperByRootUserAndConference(request.ConferenceId, userId);
             if (existingPaper != null)
             {
-                if (existingPaper.PaperAuthors.Any(pa => pa.UserId == userId && pa.IsRootAuthor == true))
-                {
-                    throw new BadRequestException($"Bạn đã nộp báo cho hội nghị {existingPaper.Conference!.ConferenceName} vào {existingPaper.CreatedAt}");
-                }
+                
+               throw new BadRequestException($"Bạn đã nộp báo cho hội nghị {existingPaper.Conference!.ConferenceName} vào {existingPaper.CreatedAt}");
             }
 
             if (dateNow < activeResearchPhase.RegistrationStartDate || dateNow > activeResearchPhase.RegistrationEndDate)
@@ -1038,7 +1036,7 @@ namespace ConfRadar.Services.Services
                 GlobalStatusId = finalGlobalStatusId,
                 Note = request.Note,
                 CreatedAt = await _timeProviderService.GetVietnamTime(),
-                FeedbackToAuthor = request.FeedbackToAuthor,
+                //FeedbackToAuthor = request.FeedbackToAuthor,
                 FeedbackMaterialUrl = revisionReviewUrl,
                 ReviewerId = userId,
                 RevisionPaperId = request.RevisionPaperId,
@@ -1233,7 +1231,7 @@ namespace ConfRadar.Services.Services
                 GlobalStatusName = x.GlobalStatus?.Name,
                 Note = x.Note,
                 CreatedAt = x.CreatedAt,
-                FeedbackToAuthor = x.FeedbackToAuthor,
+                //FeedbackToAuthor = x.FeedbackToAuthor,
                 FeedbackMaterialUrl = x.FeedbackMaterialUrl,
                 ReviewerId = x.ReviewerId,
                 ReviewerName = x.Reviewer?.FullName,
@@ -2087,7 +2085,7 @@ namespace ConfRadar.Services.Services
                 {
                     ReviewId = review.RevisionPaperReviewId,
                     Note = review.Note,
-                    FeedBackToAuthor = review.FeedbackToAuthor,
+                    //FeedBackToAuthor = review.FeedbackToAuthor,
                     FeedbackMaterialURL = review.FeedbackMaterialUrl,
                     ReviewedAt = review.CreatedAt ?? default // Use default if nullable
                 }).ToList() ?? new List<RevisionReviewDtoDetail>(),

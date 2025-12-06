@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class CameraReady
 {
@@ -12,11 +15,11 @@ public partial class CameraReady
 
     public string? Description { get; set; }
 
+    public string? Reason { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? ReviewAt { get; set; }
-
-    public string? Reason { get; set; }
 
     public virtual GlobalStatus? GlobalStatus { get; set; }
 

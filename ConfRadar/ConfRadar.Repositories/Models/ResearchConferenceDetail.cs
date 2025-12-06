@@ -1,8 +1,13 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class ResearchConferenceDetail
 {
     public string ConferenceId { get; set; } = null!;
+
+    public string? Name { get; set; }
 
     public string? PaperFormat { get; set; }
 
