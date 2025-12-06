@@ -23,9 +23,13 @@ namespace ConfRadar.Services.DTOs.FullPaper
         [Required(ErrorMessage = "Paper id là bắt buộc")]
         public string PaperId { get; set; } = null!;
         [Required(ErrorMessage = "Full Paper id là bắt buộc")]
+
         public string FullPaperId { get; set; }
         [EnumDataType(typeof(ReviewStatusEnum), ErrorMessage = "Review status là bắt buộc")]
         public ReviewStatusEnum? ReviewStatus { get; set; }
+        [Required(ErrorMessage = "Lí do là bắt buộc")]
+
+        public string? Reason { get; set; }
 
     }
 }

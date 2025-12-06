@@ -13,6 +13,9 @@ namespace ConfRadar.Services.DTOs.RevisionPaper
         [Required(ErrorMessage = "GlobalStatusEnum là bắt buộc")]
         [EnumDataType(typeof(GlobalStatusEnum), ErrorMessage = "Global status là bắt buộc")]
         public GlobalStatusEnum GlobalStatus { get; set; }
+        [Required(ErrorMessage = "Lí do là bắt buộc")]
+
+        public string? Reason { get; set; }
 
     }
 }

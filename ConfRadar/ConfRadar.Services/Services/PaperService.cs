@@ -379,6 +379,7 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Accepted:
                         abstractPaper.GlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = timeNow;
+                        abstractPaper.Reason = request.Reason;
                         basePaper.PaperPhaseId = fullPaperPhase.PaperPhaseId;
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận ở phase abstract vào lúc {timeNow.ToString()}";
@@ -387,12 +388,8 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Rejected:
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = timeNow;
-
-                        var validTicket = basePaper.TicketId;
-                        if (validTicket == null)
-                        {
-                            throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                        }
+                        abstractPaper.Reason = request.Reason;
+                        
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối ở phase abstract vào lúc {timeNow.ToString()}";
 
@@ -631,6 +628,7 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = acceptedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
+                        fullPaper.Reason = request.Reason;
                         paper.PaperPhaseId = cameraReadyPhase.PaperPhaseId;
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase fullpaper vào lúc {timeNow.ToString()}";
 
@@ -641,12 +639,8 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = rejectedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
+                        fullPaper.Reason = request.Reason;
 
-                        var validTicket = paper.TicketId;
-                        if (validTicket == null)
-                        {
-                            throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                        }
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase fullpaper vào lúc {timeNow.ToString()}";
 
                         break;
@@ -656,6 +650,7 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = reviseStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
+                        fullPaper.Reason = request.Reason;
                         paper.PaperPhaseId = revisePhase.PaperPhaseId;
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chuyển sang phase revise vào lúc {timeNow.ToString()}";
 
@@ -1139,6 +1134,7 @@ namespace ConfRadar.Services.Services
                         //update instance get:
                         revisionPaper.GlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
                         revisionPaper.ReviewAt = timeNow;
+                        revisionPaper.Reason = request.Reason;
                         paper.PaperPhaseId = cameraReadyPaperPhase.PaperPhaseId;
 
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
@@ -1150,11 +1146,7 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Rejected:
                         revisionPaper.GlobalStatusId = rejectGlobalStautus.GlobalStatusId;
                         revisionPaper.ReviewAt = timeNow;
-                        var validTicket = paper.TicketId;
-                        if (validTicket == null)
-                        {
-                            throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                        }
+                        revisionPaper.Reason = request.Reason;
 
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
@@ -1702,7 +1694,7 @@ namespace ConfRadar.Services.Services
             {
                 case GlobalStatusEnum.Accepted:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-
+                    
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
@@ -1710,11 +1702,7 @@ namespace ConfRadar.Services.Services
                 case GlobalStatusEnum.Rejected:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
 
-                    var validTicket = basePaper.TicketId;
-                    if (validTicket == null)
-                    {
-                        throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                    }
+                    
 
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
@@ -1734,6 +1722,7 @@ namespace ConfRadar.Services.Services
             int result = 0;
             cameraReady.GlobalStatusId = newGlobalStatus.GlobalStatusId;
             cameraReady.ReviewAt = timeNow;
+            cameraReady.Reason = request.Reason;
             var notification = new Notification()
             {
                 NotificationId = Guid.NewGuid().ToString(),
