@@ -6,7 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
 using Microsoft.Extensions.Options;
 using Minio.Exceptions;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.Services
 {
@@ -480,7 +479,7 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Bạn không có quyền cập nhật phiên này.");
             if (conference.IsInternalHosted != true)
             {
-                await EnsureConferenceIsEditable(conference,true);
+                await EnsureConferenceIsEditable(conference, true);
             }
             else
             {
@@ -730,7 +729,7 @@ namespace ConfRadar.Services.Services
 
             if (conference.CreatedBy != userId)
                 throw new Exception("Bạn không có quyền cập nhật hội nghị này.");
-            await EnsureConferenceIsEditable(conference,true);
+            await EnsureConferenceIsEditable(conference, true);
 
             await ValidateUpdateForOnHoldConference(conference, () =>
             {
@@ -1425,7 +1424,7 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferencePolicyResponse>> AddConferencePoliciesAsync(string conferenceId, AddConferencePoliciesRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) 
+            if (conference == null)
                 throw new NotFoundException($"Hội nghị với ID {conferenceId} không thấy");
 
             if (conference.CreatedBy != userId)
@@ -2310,37 +2309,37 @@ namespace ConfRadar.Services.Services
                     // Ch? phase chính m?i c?n ki?m tra và t?o Revision Deadlines
                     //if (phaseRequest.phase == false)
                     //{
-                        var deadlines = phaseRequest.RevisionRoundDeadlines;
-                        int allowedAttempts = researchDetail.RevisionAttemptAllowed ?? 0;
+                    var deadlines = phaseRequest.RevisionRoundDeadlines;
+                    int allowedAttempts = researchDetail.RevisionAttemptAllowed ?? 0;
 
-                        // 2a. S? lu?ng deadline ph?i kh?p chính xác v?i s? l?n cho phép
-                        if (deadlines == null || deadlines.Count != allowedAttempts)
-                        {
-                            throw new BadRequestException($"Phase chính phải có chính xác {allowedAttempts} Revision Deadline(s), nhưng nhận được {deadlines?.Count ?? 0}.");
-                        }
+                    // 2a. S? lu?ng deadline ph?i kh?p chính xác v?i s? l?n cho phép
+                    if (deadlines == null || deadlines.Count != allowedAttempts)
+                    {
+                        throw new BadRequestException($"Phase chính phải có chính xác {allowedAttempts} Revision Deadline(s), nhưng nhận được {deadlines?.Count ?? 0}.");
+                    }
 
-                        // 2b. S?p x?p và ki?m tra tu?n t?, ch?ng chéo cho các deadline
-                        var sortedDeadliness = deadlines.OrderBy(d => d.StartSubmissionDate).ToList();
-                        DateOnly? lastEndDate = null;
-                        foreach (var deadline in sortedDeadliness)
-                        {
-                            if (deadline.StartSubmissionDate >= deadline.EndSubmissionDate)
-                                throw new BadRequestException($"Trong Revision Deadline, ngày bắt đầu ({deadline.StartSubmissionDate:dd/MM/yyyy}) phải trước ngày kết thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
+                    // 2b. S?p x?p và ki?m tra tu?n t?, ch?ng chéo cho các deadline
+                    var sortedDeadliness = deadlines.OrderBy(d => d.StartSubmissionDate).ToList();
+                    DateOnly? lastEndDate = null;
+                    foreach (var deadline in sortedDeadliness)
+                    {
+                        if (deadline.StartSubmissionDate >= deadline.EndSubmissionDate)
+                            throw new BadRequestException($"Trong Revision Deadline, ngày bắt đầu ({deadline.StartSubmissionDate:dd/MM/yyyy}) phải trước ngày kết thúc ({deadline.EndSubmissionDate:dd/MM/yyyy}).");
 
-                            // Kho?ng th?i gian c?a deadline ph?i n?m trong kho?ng Revise c?a Phase
-                            if (deadline.StartSubmissionDate < phaseRequest.ReviseStartDate || deadline.EndSubmissionDate > phaseRequest.ReviseEndDate)
-                                throw new BadRequestException($"Revision Deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) phải nằm trong giai đoạn sửa đổi của phase ({phaseRequest.ReviseStartDate:dd/MM/yyyy} - {phaseRequest.ReviseEndDate:dd/MM/yyyy}).");
+                        // Kho?ng th?i gian c?a deadline ph?i n?m trong kho?ng Revise c?a Phase
+                        if (deadline.StartSubmissionDate < phaseRequest.ReviseStartDate || deadline.EndSubmissionDate > phaseRequest.ReviseEndDate)
+                            throw new BadRequestException($"Revision Deadline ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}) phải nằm trong giai đoạn sửa đổi của phase ({phaseRequest.ReviseStartDate:dd/MM/yyyy} - {phaseRequest.ReviseEndDate:dd/MM/yyyy}).");
 
-                            if (lastEndDate.HasValue && deadline.StartSubmissionDate <= lastEndDate)
-                                throw new BadRequestException("Các Revision Deadline không được chồng chéo lên nhau.");
+                        if (lastEndDate.HasValue && deadline.StartSubmissionDate <= lastEndDate)
+                            throw new BadRequestException("Các Revision Deadline không được chồng chéo lên nhau.");
 
-                            lastEndDate = deadline.EndSubmissionDate;
-                        }
+                        lastEndDate = deadline.EndSubmissionDate;
+                    }
                     //}
                     #endregion
 
                     #region === 3. TH?C THI ===
-                    var phaseModel = phaseRequest.ToModel(conferenceId,i +1);
+                    var phaseModel = phaseRequest.ToModel(conferenceId, i + 1);
                     phaseModel.IsActive = (i == 0); // Phase chính active
                     await _unitOfWork.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(phaseModel);
                     createdPhaseIds.Add(phaseModel.ResearchConferencePhaseId);
@@ -2676,7 +2675,7 @@ namespace ConfRadar.Services.Services
                 //11. Author payment
 
                 finalCameraDecideEnd > finalAuthorPaymentStart ||
-                finalAuthorPaymentStart > finalAuthorPaymentEnd 
+                finalAuthorPaymentStart > finalAuthorPaymentEnd
             )
             {
                 throw new BadRequestException("Các mốc thời gian sau khi cập nhật không tuân thủ đúng thứ tự quy trình.");
@@ -3453,7 +3452,7 @@ namespace ConfRadar.Services.Services
             return pricePhases.Select(p => p.ToResponse()).ToList();
         }
 
-      
+
 
         public async Task<PricePhaseResponse> UpdatePricePhaseAsync(string pricePhaseId, UpdatePricePhaseRequest request, string userId)
         {

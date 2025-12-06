@@ -4,16 +4,10 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -199,7 +193,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             );
         }
 
- 
+
 
         [Fact]
         public async Task CreateRankingFileUrlAsync_Should_ThrowNotFoundException_When_ConferenceDoesNotExist()
@@ -268,7 +262,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             );
         }
 
-        
+
         [Fact]
         public async Task CreateRankingFileUrlAsync_Should_AcceptNullFileUrl_When_NotProvided()
         {
@@ -298,9 +292,9 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Verify(u => u.RankingFileUrlRepository.CreateRankingFileUrlAsync(It.IsAny<RankingFileUrl>()), Times.Once);
         }
 
-     
 
-       
+
+
         [Fact]
         public async Task CreateRankingFileUrlAsync_Should_AcceptValidPdfFile()
         {
@@ -321,12 +315,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // ACT
             var result = await _conferenceStepService.CreateRankingFileUrlAsync("conf-123", request, "user-123");
-            
-           
+
+
 
             // Verify file validation was called
             _mockObjectStorageFileService.Verify(f => f.IsValidDocumentFile(It.IsAny<IFormFile>()), Times.Once);
-            _mockUnitOfWork.Verify(u => u.RankingFileUrlRepository.CreateRankingFileUrlAsync(It.IsAny<RankingFileUrl>()),Times.Once);
+            _mockUnitOfWork.Verify(u => u.RankingFileUrlRepository.CreateRankingFileUrlAsync(It.IsAny<RankingFileUrl>()), Times.Once);
         }
 
         [Fact]

@@ -4,16 +4,10 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -151,7 +145,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
         #region Test Methods
 
-      
+
         [Fact]
         public async Task CreateMaterialDownloadAsync_Should_ThrowBadRequestException_When_FileIsNull()
         {
@@ -185,7 +179,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             );
         }
 
-     
+
 
         [Fact]
         public async Task CreateMaterialDownloadAsync_Should_ThrowNotFoundException_When_ConferenceDoesNotExist()
@@ -294,7 +288,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockObjectStorageFileService.Verify(f => f.UploadFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>()), Times.Once);
         }
 
-       
+
 
         [Fact]
         public async Task CreateMaterialDownloadAsync_Should_AcceptNullFileDescription_When_NotProvided()

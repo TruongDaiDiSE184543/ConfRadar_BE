@@ -402,7 +402,7 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPost("create-next-phase")]
         [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> CreateNextResearchConferencePhase([FromQuery ]string conferenceId, [FromBody] CreateNextResearchPhaseRequest request)
+        public async Task<IActionResult> CreateNextResearchConferencePhase([FromQuery] string conferenceId, [FromBody] CreateNextResearchPhaseRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var phase = await _serviceManager.ConferenceStepService.CreateNextResearchPhaseAsync(conferenceId, request, userId);

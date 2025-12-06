@@ -13,6 +13,6 @@ namespace ConfRadar.Shared.DTO.User
     {
         [Required(ErrorMessage = "Mã người dùng là bắt buộc")]
         public string UserId { get; set; }
-        
+
     }
 }

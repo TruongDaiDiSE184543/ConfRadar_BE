@@ -67,8 +67,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 ResearchConferencePhaseId = "RCP1",
                 ConferenceSessionIds = new List<string> { "S1", "S2" },
                 PricePhaseId = "PP1",
-                Title = "Sample Paper",
-                Description = "Sample Desc",
+                //Title = "Sample Paper",
+                //Description = "Sample Desc",
                 PaymentConferenceLockKey = "lock1",
                 PaymentPhaseLockKey = "lock2"
             };

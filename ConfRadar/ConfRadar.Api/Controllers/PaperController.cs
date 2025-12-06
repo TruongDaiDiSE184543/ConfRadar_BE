@@ -43,7 +43,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperAssignmentService.AssignReviewerToPaper(request);
             return Ok(ApiResponse<string>.SuccessResponse(result, "Reviewer assigned to paper successfully"));
         }
-
+        [Authorize]
+        [HttpPut("paper")]
+        public async Task<IActionResult> UpdatePaper([FromBody] UpdatePaperRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.PaperService.UpdatePaper(request, userId);
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật bài báo của bạn thành công"));
+        }
         [Authorize]
         [HttpPost("submit-abstract")]
         public async Task<IActionResult> SubmitAbstract([FromForm] CreateAbstractRequest request)
@@ -70,10 +77,10 @@ namespace ConfRadar.Api.Controllers
         }
         [Authorize]
         [HttpGet("coauthors/available")]
-        public async Task<IActionResult> ListAvailableCoAuthor([FromQuery]string conferenceId)
+        public async Task<IActionResult> ListAvailableCoAuthor([FromQuery] string conferenceId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.GetAvailableCoAuthorForInclude(conferenceId,userId);
+            var result = await _serviceManager.PaperService.GetAvailableCoAuthorForInclude(conferenceId, userId);
             return Ok(ApiResponse<List<AvailableCoAuthorResponse>>.SuccessResponse(result, "danh sách các người dùng coauthor"));
         }
 

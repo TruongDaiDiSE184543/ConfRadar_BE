@@ -39,15 +39,15 @@
 
     public class UserSuspendDetailForAdminAndOrganizerResponse
     {
-            public string SuspendId { get; set; } = null!;
-            public string UserId { get; set; } = null!;
-            public string? Reason { get; set; }
-            public DateTime? SuspendedAt { get; set; }
-            public DateTime? ResumedAt { get; set; }
-            public string? SuspendType { get; set; }
+        public string SuspendId { get; set; } = null!;
+        public string UserId { get; set; } = null!;
+        public string? Reason { get; set; }
+        public DateTime? SuspendedAt { get; set; }
+        public DateTime? ResumedAt { get; set; }
+        public string? SuspendType { get; set; }
 
-            public bool? IsActiveSuspend { get; set; }
-        
+        public bool? IsActiveSuspend { get; set; }
+
     }
     public class ReviewerDetailResponse
     {

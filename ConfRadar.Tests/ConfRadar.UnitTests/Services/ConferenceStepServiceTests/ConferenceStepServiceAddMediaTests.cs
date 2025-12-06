@@ -221,7 +221,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // ACT
             var result = await Assert.ThrowsAsync<Exception>(
-                () => _conferenceStepService.AddConferenceMediaAsync(conference.ConferenceId, request, "user-123")) ;
+                () => _conferenceStepService.AddConferenceMediaAsync(conference.ConferenceId, request, "user-123"));
 
             // ASSERT
             result.Message.Should().Contain("Không hỗ trợ định ");

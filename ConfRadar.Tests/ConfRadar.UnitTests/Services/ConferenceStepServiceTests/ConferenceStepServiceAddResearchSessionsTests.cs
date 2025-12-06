@@ -4,18 +4,10 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
-using ConfRadar.Repositories.Repositories;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -88,7 +80,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         private AddResearchSessionsRequest CreateValidRequest()
         {
             var today = ExtensionHelper.GetVietnamDate();
-            
+
             return new AddResearchSessionsRequest
             {
                 Sessions = new List<CreateResearchSessionRequest>
@@ -189,7 +181,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Mock conference status for EnsureConferenceIsEditable method
             if (isEditable)
             {
-                
+
                 _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(It.IsAny<string>()))
                     .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" });
             }
@@ -231,7 +223,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Mock ConferenceSessionRepository for GetSessionWithDetailsAsync method (used for response mapping)
             _mockUnitOfWork
                 .Setup(u => u.ConferenceSessionRepository.GetSessionWithDetailsAsync(It.IsAny<string>()))
-                .ReturnsAsync((string sessionId) => new ConferenceSession{});
+                .ReturnsAsync((string sessionId) => new ConferenceSession { });
 
             _mockUnitOfWork
                 .Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync("room-124", ExtensionHelper.GetVietnamDate().AddDays(25)))
@@ -312,7 +304,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             );
         }
 
-      
+
 
         [Fact]
         public async Task AddResearchSessionsAsync_Should_ThrowBadRequestException_When_StartTimeIsNull()
@@ -593,7 +585,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // Verify that session media creation was not called
             _mockUnitOfWork.Verify(u => u.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(It.IsAny<ConferenceSessionMedium>()), Times.Once);
-            
+
             // Verify that sessions were still created
             _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.CreateConferenceSessionAsync(It.IsAny<ConferenceSession>()), Times.Exactly(3));
         }
@@ -616,7 +608,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // Verify that room validation was not called
             _mockUnitOfWork.Verify(u => u.RoomRepository.GetRoomByIdAsync(It.IsAny<string>()), Times.Once);
-            
+
             // Verify that sessions were created without rooms
             _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.CreateConferenceSessionAsync(It.IsAny<ConferenceSession>()), Times.Exactly(3));
         }
@@ -639,7 +631,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // Verify that session media creation was not called
             _mockUnitOfWork.Verify(u => u.ConferenceSessionMediumRepository.CreateConferenceSessionMediumAsync(It.IsAny<ConferenceSessionMedium>()), Times.Once);
-            
+
             // Verify that sessions were created
             _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.CreateConferenceSessionAsync(It.IsAny<ConferenceSession>()), Times.Exactly(3));
         }
@@ -660,12 +652,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // Verify that no speaker creation was attempted (research conferences don't have speakers in sessions)
             _mockUnitOfWork.Verify(u => u.SpeakerRepository.CreateSpeakerAsync(It.IsAny<Speaker>()), Times.Never);
-            
+
             // Verify sessions were created correctly
             _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.CreateConferenceSessionAsync(It.IsAny<ConferenceSession>()), Times.Exactly(3));
         }
 
-     
+
 
         #endregion
     }

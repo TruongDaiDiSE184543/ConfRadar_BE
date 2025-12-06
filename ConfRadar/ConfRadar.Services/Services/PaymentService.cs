@@ -208,8 +208,6 @@ namespace ConfRadar.Services.Services
                 ConferenceId = conferencePrice.ConferenceId!,
                 PaymentConferenceLockKey = conferenceLockKey,
                 PaymentPhaseLockKey = phaseLockKey,
-                Description = null,
-                Title = null,
                 IsResearchConference = false,
                 IsResearchConferenceAuthor = null
             };
@@ -299,10 +297,48 @@ namespace ConfRadar.Services.Services
         {
             var dateNow = await _timeProviderService.GetVietnamDate();
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
-            if (paymentMethod == null)
+            var globalStatusAccepted = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+
+            if (paymentMethod == null || globalStatusAccepted == null)
             {
                 throw new BadRequestException($"Không tìm thấy phuong thúc thanh toán nào với mã {request.PaymentMethodId}");
             }
+            // paper check
+            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
+            if (paper == null)
+            {
+                throw new BadRequestException($"Bài báo không tồn tại");
+            }
+            var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.UserId == userId && pa.IsRootAuthor == true);
+            if (rootAuthorCheck == null)
+            {
+                throw new BadRequestException($"Bài báo không thuộc quyền sỡ hữu của bạn");
+
+            }
+            if (paper.TicketId != null)
+            {
+                throw new BadRequestException($"Bài báo đã được thanh toán rồi");
+
+            }
+            if (paper.CameraReadyId == null)
+            {
+                throw new BadRequestException($"Bạn chưa thể thanh toán vì camera ready không tồn tại");
+
+            }
+            var cameraReady = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(paper.CameraReadyId);
+            if (cameraReady == null)
+            {
+                throw new BadRequestException($"Không tìm thấy camera ready");
+            }
+            if (cameraReady.GlobalStatusId != globalStatusAccepted.GlobalStatusId)
+            {
+                throw new BadRequestException($"Bạn không thể thanh toán do camera ready chưa được chấp nhận");
+            }
+
+
+
+
+            //conference price check
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
             if (conferencePrice == null)
             {
@@ -333,7 +369,7 @@ namespace ConfRadar.Services.Services
             }
 
 
-
+            //lock payment check
             var paymentConferenceLockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult(userId, conferencePrice.ConferenceId!);
             bool paymentConferenceLockFound = await _redisService.KeyExistsAsync(paymentConferenceLockKey);
             if (paymentConferenceLockFound == true)
@@ -363,16 +399,27 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy các giai đoạn trong hội nghị nghiên cứu này");
             }
+
+
+
+
+
+
             var activeResearchConferencePhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+
+
+
+
             if (activeResearchConferencePhase == null)
             {
                 throw new BadRequestException($"Giai đoạn hội nghị nghiên cứu không khả dụng. Xin vui lòng liên hệ ban tổ chức");
             }
-            if (activeResearchConferencePhase.RegistrationStartDate > dateNow)
+           
+            if (activeResearchConferencePhase.AuthorPaymentStart > dateNow)
             {
-                throw new BadRequestException($"Chua đến thời hạn mua vé. Thời hạn nằm trong khoảng từ {activeResearchConferencePhase.RegistrationStartDate} đến {activeResearchConferencePhase.RegistrationEndDate}");
+                throw new BadRequestException($"Chưa đến thời hạn mua vé. Thời hạn nằm trong khoảng từ {activeResearchConferencePhase.AuthorPaymentStart} đến {activeResearchConferencePhase.AuthorPaymentEnd}");
             }
-            if (activeResearchConferencePhase.RegistrationEndDate < dateNow)
+            if (activeResearchConferencePhase.AuthorPaymentEnd < dateNow)
             {
                 throw new BadRequestException("Ðã hết thời hạn mua vé.");
             }
@@ -393,34 +440,9 @@ namespace ConfRadar.Services.Services
 
 
 
-            var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(userId, conferencePrice.ConferenceId);
-            if (reviewerContractFound != null)
-            {
-                if (reviewerContractFound.IsActive == true)
-                {
-                    throw new BadRequestException($"Bạn đang có hợp đồng với sự kiện này nên không thể thực hiện thanh toán");
-                }
-            }
-            var internalReviewRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
-            if (internalReviewRole == null)
-            {
-                throw new NotFoundException($"Không tìm thấy role trong hệ thống");
-            }
-            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, internalReviewRole.RoleId);
-            if (userRole != null)
-            {
-                throw new BadRequestException($"Bạn không thể mua vé này vì bạn là reviewer trong hệ thống");
-            }
-            decimal applyPercent = 0;
 
-            //if (conferencePrice.Conference?.TicketSaleStart > dateNow)
-            //{
-            //    throw new BadRequestException($"Chua d?n th?i h?n mua vé. Th?i h?n mua vé n?m trong kho?ng t? {conferencePrice.Conference.TicketSaleStart} d?n {conferencePrice.Conference.TicketSaleEnd}");
-            //}
-            //if (conferencePrice.Conference?.TicketSaleEnd < dateNow)
-            //{
-            //    throw new BadRequestException("Ðã h?t th?i h?n mua vé.");
-            //}
+
+            decimal applyPercent = 0;
 
             var validPhases = conferencePrice.PricePhases
             .Where(p => p.StartDate <= dateNow && p.EndDate >= dateNow)
@@ -486,10 +508,9 @@ namespace ConfRadar.Services.Services
                 PaymentConferenceLockKey = lockKeyConference,
                 PaymentPhaseLockKey = lockKeyPhase,
                 PricePhaseId = currentPhase.PricePhaseId,
-                Title = request.Title,
-                Description = request.Description,
                 IsResearchConference = true,
-                IsResearchConferenceAuthor = true
+                IsResearchConferenceAuthor = true,
+                PaperId = request.PaperId
             };
             var transacJson = JsonSerializer.Serialize(transactionData);
 
@@ -547,7 +568,7 @@ namespace ConfRadar.Services.Services
 
                     break;
                 default:
-                    throw new BadRequestException("Phuong thức thanh toán không hợp lệ");
+                    throw new BadRequestException("Phương thức thanh toán không hợp lệ");
             }
             if (paymentMethod.MethodName == PaymentMethodEnum.Wallet.GetDescription())
             {
@@ -1020,26 +1041,12 @@ namespace ConfRadar.Services.Services
                 userCheckInObj.QrUrl = qrUrl;
                 ticketObj.UserCheckIns.Add(userCheckInObj);
             }
-            var paperObj = new Paper()
+            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(transacDataHolder.PaperId);
+            if (paper == null)
             {
-                PaperId = Guid.NewGuid().ToString(),
-                ConferenceId = transacDataHolder.ConferenceId,
-                ResearchConferencePhaseId = transacDataHolder.ResearchConferencePhaseId,
-                CreatedAt = await _timeProviderService.GetVietnamTime(),
-                PaperPhaseId = currentPaperPhase.PaperPhaseId,
-                Title = transacDataHolder.Title,
-                Description = transacDataHolder.Description,
-                TicketId = transacDataHolder.TicketId,
-                PaperAuthors = new List<PaperAuthor>()
-            };
-            var presenterPaperAuthor = new PaperAuthor()
-            {
-                IsPresenter = true,
-                UserId = transacDataHolder.UserId,
-                PaperId = paperObj.PaperId,
-                IsRootAuthor = true,
-            };
-            paperObj.PaperAuthors.Add(presenterPaperAuthor);
+                throw new BadRequestException("Không tìm thấy bài báo");
+            }
+            paper.TicketId = ticketObj.TicketId;
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByPricePhaseId(transacDataHolder.PricePhaseId);
             if (pricePhase == null)
             {
@@ -1077,9 +1084,13 @@ namespace ConfRadar.Services.Services
                     await _unitOfWork.WalletRepository.UpdateWalletAsync(userWallet);
                     await _unitOfWork.WalletTransactionRepository.CreateWalletTransactionAsync(walletTransactionObj);
                 }
+
+
                 await _unitOfWork.TicketRepository.CreateTicketAsync(ticketObj);
-                await _unitOfWork.PaperRepository.CreatePaperAsync(paperObj);
+                await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
                 await _unitOfWork.PricePhaseRepository.UpdatePricePhaseAsync(pricePhase);
+
+
                 await _unitOfWork.CommitAsync();
                 await _redisService.DeleteKeyAsync(orderId);
                 await _redisService.DeleteKeyAsync(transacDataHolder.PaymentConferenceLockKey);

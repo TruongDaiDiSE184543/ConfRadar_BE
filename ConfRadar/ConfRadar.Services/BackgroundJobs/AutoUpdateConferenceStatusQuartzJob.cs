@@ -4,11 +4,6 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.BackgroundJobs
 {
@@ -26,7 +21,7 @@ namespace ConfRadar.Services.BackgroundJobs
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var readyconferenceStatus = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             var completedConferenceStatus = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
-            if (readyconferenceStatus == null || completedConferenceStatus ==null)
+            if (readyconferenceStatus == null || completedConferenceStatus == null)
             {
                 return;
             }
@@ -35,10 +30,10 @@ namespace ConfRadar.Services.BackgroundJobs
             {
                 var timeProviderService = scope.ServiceProvider.GetRequiredService<ITimeProviderService>();
                 var dateNow = await timeProviderService.GetVietnamDate();
-                
+
 
                 var conferenceNeedToBeComplete = new List<Conference>();
-                foreach(var conference in readyConferences)
+                foreach (var conference in readyConferences)
                 {
                     if (conference.EndDate.HasValue && conference.EndDate < dateNow)
                     {

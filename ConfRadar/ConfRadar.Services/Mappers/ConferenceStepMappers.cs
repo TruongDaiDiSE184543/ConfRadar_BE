@@ -472,7 +472,7 @@ namespace ConfRadar.Services.Mappers
         }
 
         // Research Conference Phase Mappers
-        public static ResearchConferencePhase ToModel(this CreateResearchConferencePhaseItemRequest request, string conferenceId,int order)
+        public static ResearchConferencePhase ToModel(this CreateResearchConferencePhaseItemRequest request, string conferenceId, int order)
         {
             return new ResearchConferencePhase
             {

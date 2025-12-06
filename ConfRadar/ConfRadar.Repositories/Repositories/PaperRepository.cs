@@ -108,6 +108,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId)
         {
             return await _context.Papers
+               .Include(p => p.PaperAuthors)
                .Include(p => p.Conference)
                .Include(p => p.PaperPhase)
                .Include(p => p.Abstract)
@@ -516,7 +517,7 @@ namespace ConfRadar.Repositories.Repositories
                                      && pr.Paper != null
                                      && pr.Paper.ConferenceId == conferenceId)
 
-                                     && !_context.ReviewerContracts.Any(rc=>rc.ConferenceId ==conferenceId && rc.UserId==u.UserId)
+                                     && !_context.ReviewerContracts.Any(rc => rc.ConferenceId == conferenceId && rc.UserId == u.UserId)
 
                                      && u.IsActive == true && u.IsEmailConfirmed == true
                                      && u.UserRoles.All(ur => ur.IsActive == true)
