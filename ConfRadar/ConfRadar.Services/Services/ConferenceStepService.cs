@@ -188,7 +188,7 @@ namespace ConfRadar.Services.Services
                 // Direct, simple comparison of local times.
                 if (startTime < existingEnd && endTime > existingStart)
                 {
-                    throw new BadRequestException($"Session conflicts with an existing session in room {roomId} from {existingStart:HH:mm} to {existingEnd:HH:mm}.");
+                    throw new BadRequestException($"bị trùng lặp với một phiên đã có từ {existingStart:HH:mm} đến {existingEnd:HH:mm}.");
                 }
             }
         }
@@ -1064,7 +1064,7 @@ namespace ConfRadar.Services.Services
                 throw new ForbiddenException("B?n không có quy?n c?p nh?t lo?i vé này.");
             }
 
-            await EnsureConferenceIsEditable(conference);
+            await EnsureConferenceIsEditable(conference,true);
 
             if (request.TicketPrice.HasValue && request.TicketPrice.Value < 0)
                 throw new BadRequestException("Giá vé không du?c là s? âm.");

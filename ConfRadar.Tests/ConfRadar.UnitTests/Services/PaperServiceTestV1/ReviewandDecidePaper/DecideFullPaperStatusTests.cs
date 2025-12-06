@@ -1,12 +1,14 @@
-﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.FullPaper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
+using ConfRadar.Services.Exceptions;
+using Microsoft.Extensions.Options;
+using ConfRadar.Repositories.Repositories;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
@@ -73,6 +75,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             _mockUnitOfWork.Setup(u => u.FullPaperReviewRepository.GetFullPaperReviewsByFullPaperIdAsync(fullPaperId)).ReturnsAsync(new List<FullPaperReview> { new FullPaperReview() });
 
             _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId(It.IsAny<string>())).ReturnsAsync(new User());
+            _mockUnitOfWork.Setup(u => u.NotificationRepository.CreateNotificationAsync(It.IsAny<Notification>())).ReturnsAsync(1);
         }
 
         [Fact]

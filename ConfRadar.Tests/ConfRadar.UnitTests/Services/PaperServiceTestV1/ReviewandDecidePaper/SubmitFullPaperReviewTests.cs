@@ -146,7 +146,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
         public async Task SubmitReviewForFullPaper_Should_Throw_When_FullPaperIsNotInPendingStatus()
         {
             var request = new CreateFullPaperReviewRequest { FullPaperId = "fp1", reviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("reviewer1", "p1", "fp1", DateTime.Now);
+            SetupHappyPathMocks("reviewer1", "p1", "fp1", DateTime.Now);    
 
             var fullPaper = new FullPaper { FullPaperId = "fp1", ReviewStatusId = "status-accepted" }; // Not pending
             _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync("fp1")).ReturnsAsync(fullPaper);
