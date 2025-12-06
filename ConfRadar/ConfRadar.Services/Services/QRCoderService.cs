@@ -130,9 +130,13 @@ namespace ConfRadar.Services.Services
             }
             var checkedInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.CheckedIn.GetDescription());
             var expiredCheckInStatus = await _unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Expired.GetDescription());
-            if (checkedInStatus == null || expiredCheckInStatus == null)
+
+
+            var readyStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+
+            if (checkedInStatus == null || expiredCheckInStatus == null || readyStatusConf ==null)
             {
-                throw new NotFoundException("Không tìm thấy các trạng thái checkin tương ứng");
+                throw new NotFoundException("Không tìm thấy các trạng thái tương ứng");
             }
             var conferenceSessionDetail = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(data.ConferenceSessionId);
             if (conferenceSessionDetail == null)
@@ -149,6 +153,16 @@ namespace ConfRadar.Services.Services
             if (userCheckIn == null)
             {
                 throw new NotFoundException("Không tìm thấy user check in trong hệ thống");
+            }
+            var confStatus = userCheckIn.ConferenceSession?.Conference?.ConferenceStatus;
+            if (confStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái của conference");
+            }
+            if (confStatus != readyStatusConf)
+            {
+                throw new BadRequestException("Chỉ có thể check in cho hội nghị trong trạng thái ready");
+
             }
             var ticket = userCheckIn.Ticket;
             if (ticket!.IsRefunded == true)
@@ -187,7 +201,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Vé này dã hết hạn check in vì session {userConferenceSession.Title} dã hết hạn vào lúc {userConferenceSession.EndTime}");
             }
             userCheckIn.CheckinStatus = checkedInStatus;
-            userCheckIn.CheckInTime = await _timeProviderService.GetVietnamTime();
+            userCheckIn.CheckInTime = timeNow;
             var result = await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(userCheckIn);
             if (result > 0)
             {

@@ -393,7 +393,6 @@ namespace ConfRadar.Services.Services
                         {
                             throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
                         }
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Abstract của bạn đã bị từ chối");
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối ở phase abstract vào lúc {timeNow.ToString()}";
 
@@ -648,7 +647,6 @@ namespace ConfRadar.Services.Services
                         {
                             throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
                         }
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Full paper của bạn đã bị từ chối");
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase fullpaper vào lúc {timeNow.ToString()}";
 
                         break;
@@ -1157,7 +1155,6 @@ namespace ConfRadar.Services.Services
                         {
                             throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
                         }
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Revise paper của bạn đã bị từ chối");
 
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
@@ -1718,7 +1715,6 @@ namespace ConfRadar.Services.Services
                     {
                         throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
                     }
-                    await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Camera ready paper của bạn đã bị từ chối");
 
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
