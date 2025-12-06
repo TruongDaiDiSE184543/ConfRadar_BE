@@ -7,8 +7,6 @@ namespace ConfRadar.Services.DTOs.Abstract
     {
         [Required(ErrorMessage = "Abstract file bắt buộc")]
         public IFormFile AbstractFile { get; set; }
-        [Required(ErrorMessage = "Mã bài báo bắt buộc")]
-        public string PaperId { get; set; }
 
         [Required(ErrorMessage = "Tiêu đề cho abstract là bắt buộc")]
 
@@ -17,6 +15,9 @@ namespace ConfRadar.Services.DTOs.Abstract
         [Required(ErrorMessage = "Mô tả cho abstract là bắt buộc")]
 
         public string? Description { get; set; }
+        [Required(ErrorMessage = "Mã hội nghị là bắt buộc")]
+
+        public string ConferenceId { get; set; }
 
         public List<string>? CoAuthorId { get; set; }
     }
@@ -31,4 +32,23 @@ namespace ConfRadar.Services.DTOs.Abstract
         public string? ReviewStatus { get; set; }
         public string? FullPaperURL { get; set; }
     }
+
+
+    public class UpdatePaperRequest
+    {
+        [Required(ErrorMessage = "Mã bài báo là bắt buộc")]
+
+        public string PaperId { get; set; }
+
+
+        [Required(ErrorMessage = "Tiêu đề cho bài báo là bắt buộc")]
+
+        public string Title { get; set; }
+
+
+        [Required(ErrorMessage = "Mô tả cho bài báo là bắt buộc")]
+
+        public string? Description { get; set; }
+    }
+
 }

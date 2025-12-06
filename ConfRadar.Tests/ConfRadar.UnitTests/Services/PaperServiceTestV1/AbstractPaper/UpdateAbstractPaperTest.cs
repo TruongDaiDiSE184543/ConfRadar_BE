@@ -6,12 +6,6 @@ using ConfRadar.Shared.DTO.Paper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
@@ -144,7 +138,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var globalStatus = new GlobalStatus { GlobalStatusId = "status1" };
             var paperPhase = new PaperPhase { PaperPhaseId = "phase1" };
             var abstractPaper = new Abstract { AbstractId = "abs1", GlobalStatusId = "status1" };
-           
+
             var paper = new Paper
             {
                 PaperId = "p1",

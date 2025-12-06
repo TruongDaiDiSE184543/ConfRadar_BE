@@ -751,9 +751,9 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
 
         [Required]
-        public DateOnly? AuthorPaymentStart {  get; set; }
+        public DateOnly? AuthorPaymentStart { get; set; }
         [Required]
-        public DateOnly? AuthorPaymentEnd {  get; set; }
+        public DateOnly? AuthorPaymentEnd { get; set; }
 
 
         [Required(ErrorMessage = "Phải xác định đây có phải là phase waitlist hay không.")]
@@ -855,7 +855,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         // Camera ready decide status dates (head reviewer only)
         public DateOnly? CameraReadyDecideStatusStart { get; set; }
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
-        public int? PhaseOrder {  get; set; }
+        public int? PhaseOrder { get; set; }
         public bool? IsActive { get; set; }
         public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
     }

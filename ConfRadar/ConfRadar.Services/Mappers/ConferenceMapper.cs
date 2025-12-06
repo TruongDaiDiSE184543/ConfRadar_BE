@@ -1,7 +1,6 @@
 ﻿using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Conference;
 using System.Data;
-using System.Runtime.CompilerServices;
 
 namespace ConfRadar.Services.Mappers
 {
@@ -248,7 +247,7 @@ namespace ConfRadar.Services.Mappers
                 SessionMedia = model.ConferenceSessionMedia?.Select(csm => csm.ToConferenceSessionMediaResponse()).ToList(),
                 Room = model.Room != null ? model?.Room?.ToRoomInfoResponse() : null,
                 feedback = model.ConferenceFeedbacks?.Select(f => f.ToConferenceSessionFeedbackResponse()).ToList()
-                
+
             };
         }
 
@@ -287,7 +286,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static ResearchDetailForWithPriceEndpoint ToResearchDetailForWithPriceEndpoint (this ResearchConferenceDetail model)
+        public static ResearchDetailForWithPriceEndpoint ToResearchDetailForWithPriceEndpoint(this ResearchConferenceDetail model)
         {
             return new ResearchDetailForWithPriceEndpoint
             {
@@ -304,7 +303,7 @@ namespace ConfRadar.Services.Mappers
             };
         }
 
-        public static ConferenceSessionFeedbackResponse ToConferenceSessionFeedbackResponse (this ConferenceFeedback model)
+        public static ConferenceSessionFeedbackResponse ToConferenceSessionFeedbackResponse(this ConferenceFeedback model)
         {
             return new ConferenceSessionFeedbackResponse
             {

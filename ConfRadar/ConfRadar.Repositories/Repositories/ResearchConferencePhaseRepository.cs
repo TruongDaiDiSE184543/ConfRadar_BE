@@ -11,7 +11,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> UpdateResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
         Task<int> DeleteResearchConferencePhaseAsync(ResearchConferencePhase researchConferencePhase);
         Task<ResearchConferencePhase?> GetResearchConferencePhaseFirstByConferenceIdAsync(string conferenceId);
-        Task<ResearchConferencePhase?> GetResearchConferencePhaseByOrderAndConferenceIdAsync(string conferenceId,int phaseOrder);
+        Task<ResearchConferencePhase?> GetResearchConferencePhaseByOrderAndConferenceIdAsync(string conferenceId, int phaseOrder);
         Task<ResearchConferencePhase?> GetActiveResearchConferencePhaseByConferenceIdAsync(string conferenceId);
         Task<ResearchConferencePhase?> GetResearchConferencePhaseByIdAsync(string phaseId);
         Task<List<RevisionRoundDeadline>> GetRevisionRoundDeadlinesByPhaseIdAsync(string phaseId);
@@ -93,6 +93,6 @@ namespace ConfRadar.Repositories.Repositories
               .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId && r.IsActive == true);
         }
 
-        
+
     }
 }

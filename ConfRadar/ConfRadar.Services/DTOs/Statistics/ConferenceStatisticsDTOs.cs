@@ -6,7 +6,7 @@
         public decimal OriginalPrice { get; set; }
         public string TicketName { get; set; }
         public string PhaseName { get; set; }
-        public bool? isAuthor {  get; set; }
+        public bool? isAuthor { get; set; }
         public decimal ApplyPhasePercent { get; set; }
         public int HasCheckin { get; set; }
         public int ExpireCheckin { get; set; }
@@ -135,8 +135,8 @@
         public string PaperId { get; set; }
         public string Title { get; set; }
         public string SubmittingAuthorId { get; set; }
-        public string? SubmittingAuthorName {  get; set; }
-        public string? SubmittingAuthorEmail {  get; set; }
+        public string? SubmittingAuthorName { get; set; }
+        public string? SubmittingAuthorEmail { get; set; }
         public string PaperPhase { get; set; }
         public List<Reviewer> AssignedReviewers { get; set; } = new();
         public PaperAbstractPhaseResponse? AbstractPhase { get; set; }

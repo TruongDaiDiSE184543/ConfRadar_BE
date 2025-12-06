@@ -1,17 +1,11 @@
-﻿using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
+using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using ConfRadar.Services.Exceptions;
 
 
 namespace ConfRadar.UnitTests.Services.ConferenceManangment.SubmitConference
@@ -36,7 +30,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.SubmitConference
             _mockStatusService = new Mock<IConferenceStatusService>();
             _mockTimelineService = new Mock<IConferenceTimelineService>();
             _mockTimeProvider = new Mock<ITimeProviderService>();
-            _mockNotificationService = new Mock<INotificationService>(); 
+            _mockNotificationService = new Mock<INotificationService>();
             _mockObjectStorage = new Mock<IObjectStorageFileService>();
             _mockToken = new Mock<ITokenService>();
             _mockSysConfig = new Mock<ISystemConfigurationService>();

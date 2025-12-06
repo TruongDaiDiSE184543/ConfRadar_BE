@@ -268,7 +268,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment
                 n => n.UserId == userId && n.Title == "Kết quả duyệt hội nghị" && n.Message.Contains("đã được xét duyệt")
             )), Times.Once);
 
-           
+
         }
 
         [Fact]

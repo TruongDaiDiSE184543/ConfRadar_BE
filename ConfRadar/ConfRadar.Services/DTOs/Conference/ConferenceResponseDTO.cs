@@ -146,7 +146,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? CityId { get; set; }
         public string? ConferenceCategoryId { get; set; }
         public string? ConferenceStatusId { get; set; }
-        public string? targetAudience {  get; set; }
+        public string? targetAudience { get; set; }
         public ResearchDetailForWithPriceEndpoint ResearchConferenceDetailResponse { get; set; }
         public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
     }
@@ -485,16 +485,16 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? RoomId { get; set; }
         public RoomInfoResponse? Room { get; set; } // Include room information
         public List<ConferenceSessionMediaResponse>? SessionMedia { get; set; }
-        public List<ConferenceSessionFeedbackResponse>? feedbacks {  get; set; }
+        public List<ConferenceSessionFeedbackResponse>? feedbacks { get; set; }
     }
 
     public class ConferenceSessionFeedbackResponse
     {
         public int? rating { get; set; }
         public string? Message { get; set; }
-        public string? UserName {  get; set; }
-        public string? UserEmail {  get; set; }
-        public DateTime? createdAt {  get; set; }
+        public string? UserName { get; set; }
+        public string? UserEmail { get; set; }
+        public DateTime? createdAt { get; set; }
     }
 
     public class SkeletonTechConfResponse

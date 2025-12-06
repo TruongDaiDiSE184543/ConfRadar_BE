@@ -1,20 +1,14 @@
-﻿using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
+using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
+using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Moq;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
-using ConfRadar.Services.Exceptions;
-using ConfRadar.Repositories.Repositories;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
 {

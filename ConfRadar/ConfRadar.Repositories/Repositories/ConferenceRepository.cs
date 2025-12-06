@@ -3,7 +3,6 @@ using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Shared.DTO.Conference;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Repositories.Repositories
 {
@@ -265,7 +264,7 @@ namespace ConfRadar.Repositories.Repositories
                 .AsSplitQuery();
         }
 
-        public async Task<Conference?> GetTechnicalIncludedById(string technicalId,string? statusId = null)
+        public async Task<Conference?> GetTechnicalIncludedById(string technicalId, string? statusId = null)
         {
             var query = _context.Conferences
                 .Include(c => c.CreatedByNavigation)
@@ -296,7 +295,8 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(ct => ct.AfterwardStatus)
                 .Include(c => c.RefundPolicies)
                 .AsSplitQuery().AsNoTracking();
-            if (!string.IsNullOrEmpty(statusId)){
+            if (!string.IsNullOrEmpty(statusId))
+            {
                 query = query.Where(c => c.ConferenceStatusId == statusId);
             }
             return await query.Where(c => c.ConferenceId == technicalId).FirstOrDefaultAsync();
