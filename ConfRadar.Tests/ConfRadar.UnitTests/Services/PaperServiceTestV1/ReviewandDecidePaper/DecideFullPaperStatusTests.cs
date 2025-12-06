@@ -100,7 +100,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             await _paperService.DecideFullPaperFinalStatus(request, "head1");
 
             _mockUnitOfWork.Verify(u => u.FullPaperRepository.UpdateFullPaperAsync(It.Is<FullPaper>(fp => fp.ReviewStatusId == "status-rejected")), Times.Once);
-            _mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
+            //_mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
             _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
 

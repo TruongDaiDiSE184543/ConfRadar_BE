@@ -21,11 +21,23 @@ namespace ConfRadar.Services.BackgroundJobs
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var pendingCheckInStatus = await unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Pending.GetDescription());
             var expiredCheckInStatus = await unitOfWork.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Expired.GetDescription());
-            if (pendingCheckInStatus == null || expiredCheckInStatus == null)
+
+
+            var completedStatusConf = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
+            var readyStatusConf = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            var canceledStatusConf = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Cancelled.GetDescription());
+
+            if (pendingCheckInStatus == null || expiredCheckInStatus == null || completedStatusConf==null || readyStatusConf==null || canceledStatusConf ==null)
             {
                 return;
             }
-            var pendingUserCheckIn = await unitOfWork.UserCheckInRepository.GetUserCheckInByCheckInStatus(pendingCheckInStatus);
+            var confStatuses = new List<ConferenceStatus>()
+            {
+                completedStatusConf,
+                readyStatusConf,
+                canceledStatusConf
+            };
+            var pendingUserCheckIn = await unitOfWork.UserCheckInRepository.GetUserCheckInByCheckInStatusAndConfStatuses(pendingCheckInStatus, confStatuses);
             if (pendingUserCheckIn.Any())
             {
                 var timeProviderService = scope.ServiceProvider.GetRequiredService<ITimeProviderService>();
