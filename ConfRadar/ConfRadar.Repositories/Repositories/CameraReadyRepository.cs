@@ -9,10 +9,12 @@ namespace ConfRadar.Repositories.Repositories
     {
         Task<int> CreateCameraReadyAsync(CameraReady cameraReady);
         Task<int> UpdateCameraReadyAsync(CameraReady cameraReady);
+        Task<int> UpdateMutipleCameraReadiesAsync(List<CameraReady> cameraReadies);
         Task<bool> DeleteCameraReadyAsync(CameraReady cameraReady);
         Task<CameraReady?> GetCameraReadyByIdAsync(string cameraReadyId);
         Task<List<CameraReady>> GetAllCameraReadysAsync();
         Task<List<CameraReady>> GetCameraBystatusName(string status);
+        Task<List<CameraReady>> GetExpiredCameraReadies(DateOnly dateNow, GlobalStatus status, List<ConferenceStatus> confStatuses);
     }
     public class CameraReadyRepository : GenericRepository<CameraReady>, ICameraReadyRepository
     {
@@ -47,6 +49,26 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<CameraReady>> GetCameraBystatusName(string status)
         {
             return await _context.CameraReadies.Include(c => c.GlobalStatus).Where(c => c.GlobalStatus.Name == status).ToListAsync();
+        }
+
+        public async Task<List<CameraReady>> GetExpiredCameraReadies(DateOnly dateNow, GlobalStatus status, List<ConferenceStatus> confStatuses)
+        {
+            var confStatusIds = confStatuses
+            .Select(c => c.ConferenceStatusId)
+            .ToList();
+            return await _context.CameraReadies
+                .Where(c => c.GlobalStatusId == status.GlobalStatusId
+                && c.Papers.Any(p => p.ResearchConferencePhase != null
+                && p.ResearchConferencePhase.RegistrationEndDate < dateNow
+                && p.Conference != null 
+                && p.Conference.ConferenceStatus !=null
+                && confStatusIds.Contains(p.Conference.ConferenceStatusId))).ToListAsync();
+        }
+
+        public async Task<int> UpdateMutipleCameraReadiesAsync(List<CameraReady> cameraReadies)
+        {
+           _context.CameraReadies.UpdateRange(cameraReadies);
+            return await _context.SaveChangesAsync();
         }
     }
 }

@@ -39,19 +39,19 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> RegisterAccount([FromForm] CreateUserRequest request)
         {
             var result = await _serviceManager.AuthService.RegisterAccount(request);
-            return Ok(ApiResponse<object>.SuccessResponse(result, "Please check your email"));
+            return Ok(ApiResponse<object>.SuccessResponse(result, "Hãy kiểm tra email"));
         }
         [HttpPost("login")]
         public async Task<IActionResult> LocalLogin([FromBody] LocalLoginUserRequest request)
         {
             var loginResponse = await _serviceManager.AuthService.LocalLogin(request);
-            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Login successful"));
+            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Đăng nhập thành công"));
         }
         [HttpPost("firebase-login")]
         public async Task<IActionResult> FirebaseLogin([FromBody] FirebaseLoginRequest request)
         {
             var loginResponse = await _serviceManager.AuthService.FirebaseLogin(request);
-            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Login successful"));
+            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Đăng nhập thành công"));
         }
         [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(string email)
@@ -71,7 +71,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             await _serviceManager.AuthService.ChangePassword(request.OldPassword, request.NewPassword, userId);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "Your password has been changed"));
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Password đổi thành công"));
         }
         [Authorize]
         [HttpPost("refresh-token")]
@@ -79,7 +79,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var refreshTokenResponse = await _serviceManager.AuthService.RefreshToken(userId!, request.Token);
-            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(refreshTokenResponse, "Token refreshed successfully"));
+            return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(refreshTokenResponse, "token tạo mới thành công"));
         }
         [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("suspend-account")]
@@ -101,7 +101,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.UpdateProfile(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã update profile"));
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật profile"));
 
         }
         [HttpGet("view-profile-by-id")]

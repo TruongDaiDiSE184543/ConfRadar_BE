@@ -13,6 +13,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<FullPaper?> GetFullPaperByIdAsync(string fullPaperId);
         Task<List<FullPaper>> GetAllFullPapersAsync();
         Task<List<FullPaper>> GetFullPaperByStatusName(string status);
+        Task<List<FullPaper>> GetExpiredFullPaper(DateOnly dateNow, ReviewStatus status, List<ConferenceStatus> confStatuses);
+        Task<int> UpdateMutipleFullPaperAsync(List<FullPaper> fullPapers);
     }
     public class FullPaperRepository : GenericRepository<FullPaper>, IFullPaperRepository
     {
@@ -27,7 +29,11 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await UpdateAsync(fullPaper);
         }
-
+        public async Task<int> UpdateMutipleFullPaperAsync(List<FullPaper> fullPapers)
+        {
+             _context.FullPapers.UpdateRange(fullPapers);
+            return await _context.SaveChangesAsync();
+        }
         public async Task<bool> DeleteFullPaperAsync(FullPaper fullPaper)
         {
             return await RemoveAsync(fullPaper);
@@ -50,6 +56,19 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.FullPapers.Where(fp => fp.ReviewStatus.Name == status).ToListAsync();
         }
 
-
+        public async Task<List<FullPaper>> GetExpiredFullPaper(DateOnly dateNow, ReviewStatus status, List<ConferenceStatus> confStatuses)
+        {
+            var confStatusIds = confStatuses
+           .Select(c => c.ConferenceStatusId)
+           .ToList();
+            return await _context.FullPapers
+                .Where(fp => fp.ReviewStatusId == status.ReviewStatusId
+                && fp.Papers.Any(p => p.ResearchConferencePhase != null
+                && p.ResearchConferencePhase.FullPaperEndDate < dateNow
+                && p.Conference != null 
+                && p.Conference.ConferenceStatus!=null
+                && confStatusIds.Contains(p.Conference.ConferenceStatusId)))
+                .ToListAsync();
+        }
     }
 }

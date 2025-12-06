@@ -237,7 +237,7 @@ namespace ConfRadar.Api.Controllers
         //    var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request, userId);
         //    return Ok(ApiResponse<int>.SuccessResponse(result, "Full paper review status decided successfully"));
         //}
-
+        [Authorize]
         [HttpPut("decide-camera-ready-status")]
 
         public async Task<IActionResult> DecideCameraReadyStatus([FromBody] UpdateCameraReadyStatusRequest request)
