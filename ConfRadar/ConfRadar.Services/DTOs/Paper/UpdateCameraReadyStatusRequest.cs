@@ -13,5 +13,8 @@ namespace ConfRadar.Services.DTOs.Paper
         public GlobalStatusEnum GlobalStatus { get; set; }
         [Required(ErrorMessage = "Cần có paperid của paper mà thuộc cameraready thuộc về")]
         public string Paperid { get; set; }
+        [Required(ErrorMessage = "Lí do là bắt buộc")]
+
+        public string? Reason { get; set; }
     }
 }

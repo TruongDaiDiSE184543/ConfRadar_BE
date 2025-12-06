@@ -18,7 +18,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Paper?> GetPaperByFullPaperIdAsync(string fullPaperId);
         Task<List<Paper>> GetAllPapersAsync();
         Task<Paper?> GetPaperByIdWithPhaseAsync(string paperId);
-        Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId);
+        Task<Paper?> GetPaperByRootUserAndConference(string conferenceId, string userId);
         Task<List<UnAssignAbstractResponse>> GetUnAssignAbstract();
 
         Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
@@ -105,14 +105,15 @@ namespace ConfRadar.Repositories.Repositories
         }
 
 
-        public async Task<Paper?> GetPaperByUserAndConference(string conferenceId, string userId)
+        public async Task<Paper?> GetPaperByRootUserAndConference(string conferenceId, string userId)
         {
             return await _context.Papers
+               .Include(p => p.PaperAuthors)
                .Include(p => p.Conference)
                .Include(p => p.PaperPhase)
                .Include(p => p.Abstract)
                     .ThenInclude(a => a.GlobalStatus)
-               .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == userId));
+               .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == userId && pa.IsRootAuthor==true));
         }
 
         public async Task<List<UnAssignAbstractResponse>> GetUnAssignAbstract()
@@ -359,7 +360,7 @@ namespace ConfRadar.Repositories.Repositories
                         GlobalStatusName = rpr.GlobalStatus?.Name,
                         Note = rpr.Note,
                         CreatedAt = rpr.CreatedAt,
-                        FeedbackToAuthor = rpr.FeedbackToAuthor,
+                        //FeedbackToAuthor = rpr.FeedbackToAuthor,
                         FeedbackMaterialUrl = rpr.FeedbackMaterialUrl,
                         ReviewerId = rpr.ReviewerId,
                         ReviewerName = rpr.Reviewer?.FullName,
@@ -516,7 +517,7 @@ namespace ConfRadar.Repositories.Repositories
                                      && pr.Paper != null
                                      && pr.Paper.ConferenceId == conferenceId)
 
-                                     && !_context.ReviewerContracts.Any(rc=>rc.ConferenceId ==conferenceId && rc.UserId==u.UserId)
+                                     && !_context.ReviewerContracts.Any(rc => rc.ConferenceId == conferenceId && rc.UserId == u.UserId)
 
                                      && u.IsActive == true && u.IsEmailConfirmed == true
                                      && u.UserRoles.All(ur => ur.IsActive == true)

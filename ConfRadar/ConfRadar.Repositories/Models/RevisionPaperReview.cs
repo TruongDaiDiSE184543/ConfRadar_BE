@@ -13,8 +13,6 @@ public partial class RevisionPaperReview
 
     public DateTime? CreatedAt { get; set; }
 
-    public string? FeedbackToAuthor { get; set; }
-
     public string? FeedbackMaterialUrl { get; set; }
 
     public string? ReviewerId { get; set; }

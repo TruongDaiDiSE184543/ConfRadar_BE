@@ -101,7 +101,7 @@ namespace ConfRadar.Services
                 q.AddTrigger(opts => opts
                     .ForJob(notifyJobKey)
                     .WithIdentity("NotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInHours(10).RepeatForever()));
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(460).RepeatForever()));
 
 
 
@@ -111,7 +111,7 @@ namespace ConfRadar.Services
                 q.AddTrigger(opts => opts
                     .ForJob(resetWLJobKey)
                     .WithIdentity("ResetNotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInHours(12).RepeatForever()));
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(470).RepeatForever()));
 
 
 
@@ -120,8 +120,8 @@ namespace ConfRadar.Services
 
                 q.AddTrigger(opts => opts
                     .ForJob(updateRVCJobKey)
-                    .WithIdentity("UpdateReviewerContractQuartzJob")
-                    .WithSimpleSchedule(x => x.WithIntervalInHours(12).RepeatForever()));
+                    .WithIdentity("UpdateReviewerContractQuartzTrigger")
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
 
 
 
@@ -130,8 +130,8 @@ namespace ConfRadar.Services
 
                 q.AddTrigger(opts => opts
                     .ForJob(updateUCIJobKey)
-                    .WithIdentity("UpdateUserCheckInQuartzJob")
-                    .WithSimpleSchedule(x => x.WithIntervalInHours(6).RepeatForever()));
+                    .WithIdentity("UpdateUserCheckInQuartzTrigger")
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
 
 
 
@@ -140,8 +140,17 @@ namespace ConfRadar.Services
 
                 q.AddTrigger(opts => opts
                     .ForJob(updateConfCompletedJobKey)
-                    .WithIdentity("AutoUpdateConferenceStatusQuartzJob")
-                    .WithSimpleSchedule(x => x.WithIntervalInHours(12).RepeatForever()));
+                    .WithIdentity("AutoUpdateConferenceStatusQuartzTrigger")
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
+
+
+                var updateExpiredPaperJobKey = new JobKey("UpdateExpiredPaperQuartzJob");
+                q.AddJob<UpdateExpiredPaperQuartzJob>(opts => opts.WithIdentity(updateExpiredPaperJobKey));
+
+                q.AddTrigger(opts => opts
+                    .ForJob(updateExpiredPaperJobKey)
+                    .WithIdentity("UpdateExpiredPaperQuartzTrigger")
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(60).RepeatForever()));
 
 
             });

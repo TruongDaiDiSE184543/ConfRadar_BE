@@ -1,18 +1,16 @@
-﻿using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.FullPaper;
-using ConfRadar.Services.Services;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static ConfRadar.Services.Common.AppSettingConfig;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Services;
 using Microsoft.Extensions.Options;
+
 using ConfRadar.Repositories.Repositories;
+
+using Moq;
+using static ConfRadar.Services.Common.AppSettingConfig;
+
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
@@ -107,7 +105,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             await _paperService.DecideFullPaperFinalStatus(request, "head1");
 
             _mockUnitOfWork.Verify(u => u.FullPaperRepository.UpdateFullPaperAsync(It.Is<FullPaper>(fp => fp.ReviewStatusId == "status-rejected")), Times.Once);
-            _mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
+            //_mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
             _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
 

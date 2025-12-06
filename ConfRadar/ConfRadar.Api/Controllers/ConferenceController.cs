@@ -55,7 +55,7 @@ namespace ConfRadar.Api.Controllers
             [FromQuery] string? containTargetAudience = null
             )
         {
-            var conferences = await _serviceManager.ConferenceService.GetConferencesWithPricesAsync(page, pageSize, searchKeyword, cityId, startDate, endDate,isResearch,rankingCategoryId,allowListener,noReviewerfee,totalRevisionRound, containTargetAudience);
+            var conferences = await _serviceManager.ConferenceService.GetConferencesWithPricesAsync(page, pageSize, searchKeyword, cityId, startDate, endDate, isResearch, rankingCategoryId, allowListener, noReviewerfee, totalRevisionRound, containTargetAudience);
             return Ok(ApiResponse<PagedResult<ConferenceWithPricesResponse>>.SuccessResponse(conferences, "Conferences with prices retrieved successfully"));
         }
 
@@ -304,7 +304,7 @@ namespace ConfRadar.Api.Controllers
 
         [HttpPut("disable-conference")]
         [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> DisablingConference([FromQuery]string conferenceId, [FromQuery] string? reason = null)
+        public async Task<IActionResult> DisablingConference([FromQuery] string conferenceId, [FromQuery] string? reason = null)
         {
             var result = await _serviceManager.ConferenceService.DisableContractedConference(conferenceId, reason);
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Disable Hội nghị thành công"));

@@ -8,7 +8,6 @@ using ConfRadar.Services.Mappers;
 using ConfRadar.Shared.DTO.Conference;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace ConfRadar.Services.Services
 {
@@ -82,7 +81,7 @@ namespace ConfRadar.Services.Services
         Task<bool> RequestOrganizerApproval(string confId, string userId);
         Task<bool> ActivateNextPhase(string confId, string userId);
         Task<List<SkeletonTechConfResponse>> getSkeletonTechConf(string collaboratorId);
-        Task <bool> AutoAdjustTimelineForOnHoldAsync(string conf, string userId);
+        Task<bool> AutoAdjustTimelineForOnHoldAsync(string conf, string userId);
         Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorOnlyDraftAsync(int page, int pageSize, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName);
         Task<PagedResult<TechnicalConferenceDetailResponse>> GetTechnicalConferencesListByCollaboratorNoDraftAsync(int page, int pageSize, string? conferenceStatusId, string? searchKeyword, string? cityId, DateOnly? startDate, DateOnly? endDate, string? userId, bool isOrganizer, string? collaboratorId, string? organizationName);
         Task<bool> DisableContractedConference(string confId, string? reason = null);
@@ -303,7 +302,7 @@ namespace ConfRadar.Services.Services
                     AddIfInvalid(phase.ReviewEndDate, $"{phase.PhaseOrder}: Hạn chót phản biện");
                     AddIfInvalid(phase.ReviseEndDate, $"{phase.PhaseOrder}: Hạn chót sửa đổi");
                     AddIfInvalid(phase.CameraReadyEndDate, $"{phase.PhaseOrder}: Hạn chót Camera Ready");
-                    foreach(RevisionRoundDeadline revisionRoundDeadline in phase.RevisionRoundDeadlines)
+                    foreach (RevisionRoundDeadline revisionRoundDeadline in phase.RevisionRoundDeadlines)
                     {
                         AddIfInvalid(revisionRoundDeadline.EndSubmissionDate, $"{revisionRoundDeadline.RoundNumber}: trong qua khứ");
                     }
@@ -554,7 +553,7 @@ namespace ConfRadar.Services.Services
         private async Task ValidateForComplete(Conference conf)
         {
             // 1. Lấy danh sách session
-            
+
             var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdWithRoomAsync(conf.ConferenceId);
 
             // 2. Lấy thời gian hiện tại 
@@ -678,7 +677,7 @@ namespace ConfRadar.Services.Services
                 }
             }
 
-          
+
 
             // D. Cập nhật Research Phases 
             if (conf.IsResearchConference == true)
@@ -772,7 +771,7 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS IMPLEMENTATION
 
-        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null,bool? isResearch = null,string? rankingCategoryId = null,bool? allowListener = null, bool? noReviewerFee = null,int? totalRevisionRound = null,string? targetAudience = null)
+        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noReviewerFee = null, int? totalRevisionRound = null, string? targetAudience = null)
         {
             var readyStatus = await _unitOfWork.ConferenceStatusRepository
        .GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
@@ -1293,7 +1292,7 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Không thể sử dụng với disabled status ở đây xin vui lòng sử dụng các endpoint ransition-conference-from-disable-to-ready và disable-conference");
             //from pending can only go delete or back to draft
 
-            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId)) 
+            if (conference.ConferenceStatusId == pendingStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId))
 
                 throw new Exception("Conference cần Organizer approve lên preparing trước để có thể thay đổi trạng thái hoặc về draft để tiếp tục chỉnh sửa");
 
@@ -1302,7 +1301,7 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Hiện tại bản draft của conference chỉ có thể chuyển sang delete. Conference cần request lên pending để Organizer approve lên preparing trước khi có thể thay đổi trạng thái khác");
 
             //from reject can only transitioned to draft
-            if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && ( newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId))
+            if (conference.ConferenceStatusId == rejectStatus.ConferenceStatusId && (newStatusEntity.ConferenceStatusId != draftStatus.ConferenceStatusId && newStatusEntity.ConferenceStatusId != deleteStatus.ConferenceStatusId))
                 throw new Exception("Trạng thái hiện tại của hội nghị là rejected chỉ có thể đổi lên draft để tiếp tục sửa đổi hoặc xoá thành delete");
 
             //collab can switch their conf to deleted only when the associated contract be invalid will the conf status be deleted
@@ -1312,7 +1311,7 @@ namespace ConfRadar.Services.Services
             return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
         }
 
-     
+
 
 
         public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId, string? userId)
@@ -2265,7 +2264,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy phiên với mã {request.ConferenceSessionId}");
             }
-            var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(userId,request.ConferenceSessionId);
+            var userCheckInFound = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(userId, request.ConferenceSessionId);
             if (userCheckInFound == null)
             {
                 throw new BadRequestException($"Bạn chưa mua vé nào nên không thể dánh giá");
@@ -2387,7 +2386,7 @@ namespace ConfRadar.Services.Services
                 throw new InvalidOperationException($"Hội nghị chưa có chi tiết nghiên cứu (Research Detail).");
 
             // 1.4. Kiểm tra xem waitlist đã được kích hoạt chưa
-            if (nextphase.IsActive == true) 
+            if (nextphase.IsActive == true)
                 throw new BadRequestException($"Waitlist cho hội nghị này đã kích hoạt truớc đó.");
 
 
@@ -2440,7 +2439,7 @@ namespace ConfRadar.Services.Services
             #endregion
         }
 
-       
+
 
         public async Task<List<SkeletonTechConfResponse>> getSkeletonTechConf(string collaboratorId)
         {
@@ -2517,14 +2516,14 @@ namespace ConfRadar.Services.Services
                 await _unitOfWork.CommitAsync();
                 return true;
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                await _unitOfWork.RollbackAsync(); 
-                throw; 
+                await _unitOfWork.RollbackAsync();
+                throw;
             }
         }
 
-        public async Task<bool> DisableContractedConference(string confId,string? reason = null)
+        public async Task<bool> DisableContractedConference(string confId, string? reason = null)
         {
             var conf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
             if (conf == null)
@@ -2540,7 +2539,7 @@ namespace ConfRadar.Services.Services
             string ReasonForDisabling = !string.IsNullOrEmpty(reason) ? reason : $"Hội nghị {conf.ConferenceName} đã bị chuyển về trạng thái Disabled";
             UpdateConferenceStatusAsync(confId, ConferenceStatusEnum.Disabled.GetDescription(), ReasonForDisabling);
             return true;
-            
+
         }
 
         public async Task<bool> ToReadyFromDisabledContractedConference(string confId, string? reason)

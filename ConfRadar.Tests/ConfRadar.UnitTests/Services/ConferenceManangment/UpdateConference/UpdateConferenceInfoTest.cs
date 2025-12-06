@@ -1,19 +1,13 @@
-﻿using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
+using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
-using ConfRadar.Services.Exceptions;
-using Microsoft.AspNetCore.Http;
 
 namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
 {

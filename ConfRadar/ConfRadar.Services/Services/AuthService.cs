@@ -491,9 +491,9 @@ namespace ConfRadar.Services.Services
             int result = 0;
             user.IsActive = false;
             var timeNow = await _timeProviderService.GetVietnamTime();
-           
 
-            
+
+
             var newUserSuspendObj = new UserSuspendHistory()
             {
                 SuspendId = Guid.NewGuid().ToString(),
@@ -509,7 +509,7 @@ namespace ConfRadar.Services.Services
             result += await _unitOfWork.UserSuspendHistoryRepository.CreateSuspensionAsync(newUserSuspendObj);
             if (result > 0)
             {
-                await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName,request.Reason, "Tải khoản của bạn đã bị ngừng", "EmailSuspendAccount.html");
+                await _emailService.SendSuspendTemplateEmailAsync(user.Email, user.FullName, request.Reason, "Tải khoản của bạn đã bị ngừng", "EmailSuspendAccount.html");
             }
 
             return result;
@@ -529,7 +529,7 @@ namespace ConfRadar.Services.Services
             var timeNow = await _timeProviderService.GetVietnamTime();
             var currentSuspendHistories = await _unitOfWork.UserSuspendHistoryRepository.GetCurrentUserSuspendHistoryByUser(request.UserId);
             var currentUserSuspend = currentSuspendHistories.FirstOrDefault(ush => ush.SuspendType == SuspendTypeEnum.User.ToString());
-            if (currentUserSuspend !=null )
+            if (currentUserSuspend != null)
             {
                 currentUserSuspend.IsActiveSuspend = false;
                 currentUserSuspend.ResumedAt = timeNow;
@@ -624,7 +624,7 @@ namespace ConfRadar.Services.Services
         Users = g.Select(x =>
         {
             var suspendHistories = x.User.UserSuspendHistories
-                .OrderByDescending(sh => sh.SuspendedAt) 
+                .OrderByDescending(sh => sh.SuspendedAt)
                 .Select(sh => new UserSuspendDetailForAdminAndOrganizerResponse
                 {
                     SuspendId = sh.SuspendId,
@@ -634,10 +634,10 @@ namespace ConfRadar.Services.Services
                     ResumedAt = sh.ResumedAt,
                     IsActiveSuspend = sh.IsActiveSuspend,
                     SuspendType = sh.SuspendType,
-                    
+
                 }).ToList();
 
-            var currentUserSuspend = suspendHistories.FirstOrDefault(ush=> ush.SuspendType == SuspendTypeEnum.User.ToString() && ush.IsActiveSuspend == true);
+            var currentUserSuspend = suspendHistories.FirstOrDefault(ush => ush.SuspendType == SuspendTypeEnum.User.ToString() && ush.IsActiveSuspend == true);
             var currentUserRoleSuspend = suspendHistories.FirstOrDefault(ush => ush.SuspendType == SuspendTypeEnum.UserRole.ToString() && ush.IsActiveSuspend == true);
             return new UserDetailForAdminAndOrganizerResponse
             {
@@ -654,9 +654,10 @@ namespace ConfRadar.Services.Services
                 CurrentUserSuspend = currentUserSuspend,
                 CurrentUserRoleSuspend = currentUserRoleSuspend,
                 SuspendHistories = suspendHistories
-            };}).ToList()
+            };
+        }).ToList()
 
-            }).ToList();
+    }).ToList();
             return groupedByRole;
         }
 
@@ -767,7 +768,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy người dùng với id {request.UserId}");
             }
-           
+
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(request.UserId, externalReviewerRole.RoleId);
             if (userRole == null)
             {
@@ -811,7 +812,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy người dùng với id {request.UserId}");
             }
-          
+
             var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(request.UserId, externalReviewerRole.RoleId);
             if (userRole == null)
             {

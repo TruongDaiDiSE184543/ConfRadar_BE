@@ -42,7 +42,7 @@ namespace ConfRadar.Services.Services
         Task<int> UpdateFullPaper(UpdateFullPaperRequest request, string userId);//
         Task<int> UpdateRevisionPaperSubmission(UpdateRevisionPaperRevisionSubmissionRequest request, string userId);//
         Task<int> UpdateCameraReady(UpdateCameraReadyRequest request, string userId);//
-
+        Task<int> UpdatePaper(UpdatePaperRequest request, string userId); //
         #endregion
 
 
@@ -121,41 +121,89 @@ namespace ConfRadar.Services.Services
         public async Task<int> SubmitAbstract(CreateAbstractRequest request, string userId)
         {
             var timeNow = await _timeProviderService.GetVietnamTime();
+            var dateNow = await _timeProviderService.GetVietnamDate();
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
-
-            if (paperPhase == null || pendingGlobalStatus == null)
+            var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
+            var auditLogPaper = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(AuditLogActionNameEnum.Paper.GetDescription());
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            if (user == null)
+            {
+                throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
+            }
+            if (abstractPhase == null || pendingGlobalStatus == null || auditLogPaper == null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");
             }
-            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
-            if (paper == null)
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(request.ConferenceId);
+            if (conference == null)
             {
-                throw new NotFoundException($"Không tìm thấy paper id:{request.PaperId}");
+                throw new BadRequestException($"Hội nghị với id {request.ConferenceId} không tồn tại");
+
             }
-            var activeCurrentPhase = paper.ResearchConferencePhase;
-            if (activeCurrentPhase == null)
+            var activeResearchPhase = conference.ResearchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeResearchPhase == null)
             {
-                throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị {paper.Conference!.ConferenceName}");
+                throw new BadRequestException("Không tìm thấy giai đoạn hiệu lực nào của hội nghị");
             }
-            var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
+            var existingPaper = await _unitOfWork.PaperRepository.GetPaperByRootUserAndConference(request.ConferenceId, userId);
+            if (existingPaper != null)
             {
-                throw new BadRequestException($"Giai đoạn nộp abstract diễn ra từ {activeCurrentPhase.RegistrationStartDate} đến {activeCurrentPhase.RegistrationEndDate}");
+                
+               throw new BadRequestException($"Bạn đã nộp báo cho hội nghị {existingPaper.Conference!.ConferenceName} vào {existingPaper.CreatedAt}");
             }
 
-            if (paper.PaperPhaseId != paperPhase.PaperPhaseId)
+            if (dateNow < activeResearchPhase.RegistrationStartDate || dateNow > activeResearchPhase.RegistrationEndDate)
             {
-                throw new BadRequestException($"Paper hiện tại không trong quá trình nộp abstract");
+                throw new BadRequestException($"Không thể nộp abstract, do ngày đăng kí nằm trong khoảng {activeResearchPhase.RegistrationStartDate} - {activeResearchPhase.RegistrationEndDate}");
             }
-            var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
-
-            if (rootAuthorCheck == null)
+            var ownReviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(userId, request.ConferenceId);
+            if (ownReviewerContractFound != null)
             {
-                throw new NotFoundException($"Bạn không sở hữu bài báo này");
+                throw new BadRequestException($"Bạn đang có hợp đồng với sự kiện này nên không thể thực hiện thanh toán");
             }
 
-            var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(paper.ConferenceId);
+
+            var internalReviewRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
+            if (internalReviewRole == null)
+            {
+                throw new NotFoundException($"Không tìm thấy role trong hệ thống");
+            }
+            var userRole = await _unitOfWork.UserRoleRepository.GetUserRoleByUserAndRole(userId, internalReviewRole.RoleId);
+            if (userRole != null)
+            {
+                throw new BadRequestException($"Bạn không thể mua vé này vì bạn là reviewer trong hệ thống");
+            }
+            var paper = new Paper()
+            {
+                PaperId = Guid.NewGuid().ToString(),
+                FullPaperId = null,
+                RevisionPaperId = null,
+                CameraReadyId = null,
+                ConferenceId = request.ConferenceId,
+                PaperPhase = abstractPhase,
+                ResearchConferencePhase = activeResearchPhase,
+                TicketId = null,
+                CreatedAt = timeNow,
+                Title = request.Title,
+                Description = request.Description,
+            };
+            paper.PaperAuthors = new List<PaperAuthor>()
+            {
+                new PaperAuthor()
+                {
+                        UserId = userId,
+                        IsPresenter = true,
+                        IsRootAuthor = true,
+                        PaperId =  paper.PaperId
+
+                }
+            };
+            List<Notification> notificationList = new List<Notification>();
+            string notiTitle = $"CoAuthor cho bài báo {request.Title}";
+            string notiMessage = $"Bạn đã được thêm làm coauthor cho bài báo {request.Title} của hội nghị {conference.ConferenceName}";
+
+
+            var paperReviewers = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(request.ConferenceId);
             if (request.CoAuthorId != null && request.CoAuthorId.Any())
             {
                 foreach (var coauthorId in request.CoAuthorId)
@@ -166,7 +214,7 @@ namespace ConfRadar.Services.Services
                     }
 
                     bool isReviewerOfConference = paperReviewers.Any(pr => pr.UserId == coauthorId);
-                    var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(coauthorId, paper.Conference!.ConferenceId);
+                    var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(coauthorId, request.ConferenceId);
                     if (reviewerContractFound != null)
                     {
                         if (reviewerContractFound.IsActive == true)
@@ -178,23 +226,46 @@ namespace ConfRadar.Services.Services
                     {
                         throw new BadRequestException($"Nguời dùng {coauthorId} đang là reviewer của hội nghị này, không thể thêm làm co-author.");
                     }
+                    var paperAuthorObj = new PaperAuthor()
+                    {
+                        IsPresenter = false,
+                        UserId = coauthorId,
+                        PaperId = paper.PaperId,
+                        IsRootAuthor = false,
+                    };
+                    paper.PaperAuthors.Add(paperAuthorObj);
 
-
-
+                    var notification = new Notification()
+                    {
+                        NotificationId = Guid.NewGuid().ToString(),
+                        UserId = coauthorId,
+                        Title = notiTitle,
+                        Message = notiMessage,
+                        Type = null,
+                        CreatedAt = timeNow,
+                        ReadStatus = false,
+                    };
+                    notificationList.Add(notification);
+                    var coauthorDetail = await _unitOfWork.UserRepository.GetUserByUserId(coauthorId);
+                    if (coauthorDetail != null)
+                    {
+                        if (coauthorDetail.FirebaseMobileFcmToken != null)
+                        {
+                            await _notificationService.SendMobilePushAsync(coauthorDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
+                        }
+                        if (coauthorDetail.FirebaseWebFcmToken != null)
+                        {
+                            await _notificationService.SendWebPushAsync(coauthorDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
+                        }
+                    }
                 }
-            }
-
-
-            if (paper.AbstractId != null)
-            {
-                throw new BadRequestException("Paper này dã có abstract được nộp");
             }
             string abstractFileUrl = string.Empty;
             if (request.AbstractFile != null)
             {
                 if (request.AbstractFile.ContentType == null)
                 {
-                    throw new BadRequestException("Content type is null");
+                    throw new BadRequestException("Content type không được bỏ trống");
                 }
                 using var stream = request.AbstractFile.OpenReadStream();
                 var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.AbstractFile.FileName);
@@ -212,65 +283,35 @@ namespace ConfRadar.Services.Services
                 Title = request.Title,
                 ReviewAt = null,
             };
-            paper.AbstractId = abstractObj.AbstractId;
+            paper.Abstract = abstractObj;
 
-            List<Notification> notificationList = new List<Notification>();
-            List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
-            string notiTitle = $"CoAuthor cho bài báo {request.Title}";
-            string notiMessage = $"Bạn đã được thêm làm coauthor cho bài báo {request.Title} của hội nghị {paper.Conference!.ConferenceName}";
-            if (request.CoAuthorId != null && request.CoAuthorId.Count > 0)
+            var auditLogObj = new AuditLog()
             {
-                foreach (var coAuthor in request.CoAuthorId)
-                {
-                    var paperAuthorObj = new PaperAuthor()
-                    {
-                        IsPresenter = false,
-                        UserId = coAuthor,
-                        PaperId = request.PaperId,
-                        IsRootAuthor = false,
-
-                    };
-                    paperAuthorList.Add(paperAuthorObj);
-
-                    var notification = new Notification()
-                    {
-                        NotificationId = Guid.NewGuid().ToString(),
-                        UserId = coAuthor,
-                        Title = notiTitle,
-                        Message = notiMessage,
-                        Type = null,
-                        CreatedAt = timeNow,
-                        ReadStatus = false,
-                    };
-                    notificationList.Add(notification);
-                    var coauthorDetail = await _unitOfWork.UserRepository.GetUserByUserId(coAuthor);
-                    if (coauthorDetail != null)
-                    {
-                        if (coauthorDetail.FirebaseMobileFcmToken != null)
-                        {
-                            await _notificationService.SendMobilePushAsync(coauthorDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
-                        }
-                        if (coauthorDetail.FirebaseWebFcmToken != null)
-                        {
-                            await _notificationService.SendWebPushAsync(coauthorDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
-                        }
-                    }
-                }
-            }
-
-
-
+                AuditLogId = Guid.NewGuid().ToString(),
+                CategoryId = auditLogPaper.CategoryId,
+                CreatedAt = timeNow,
+                UserId = userId,
+                ActionDescription = $"Người dùng {user.FullName} đã {AuditLogDescriptionData.SUBMIT_ABSTRACT} cho hội nghị {conference.ConferenceName}",
+            };
             await _unitOfWork.BeginTransactionAsync();
             try
             {
                 int finalResult = 0;
-                finalResult += await _unitOfWork.AbstractRepository.CreateAbstractAsync(abstractObj);
-                finalResult += await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
-                finalResult += await _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
-                if (paperAuthorList.Count > 0)
+                Task<int> notiTask = null;
+                if (notificationList.Any())
                 {
-                    finalResult += await _unitOfWork.PaperAuthorRepository.CreateMutiplePaperAuthorAsync(paperAuthorList);
+                    notiTask = _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
                 }
+                var paperTask = _unitOfWork.PaperRepository.CreatePaperAsync(paper);
+                var auditLogTask = _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLogObj);
+                var tasksToAwait = new List<Task> { paperTask, auditLogTask };
+                if (notiTask != null) tasksToAwait.Add(notiTask);
+
+
+
+                await Task.WhenAll(tasksToAwait);
+                finalResult = paperTask.Result;
+
                 await _unitOfWork.CommitAsync();
                 return finalResult;
             }
@@ -338,6 +379,7 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Accepted:
                         abstractPaper.GlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = timeNow;
+                        abstractPaper.Reason = request.Reason;
                         basePaper.PaperPhaseId = fullPaperPhase.PaperPhaseId;
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận ở phase abstract vào lúc {timeNow.ToString()}";
@@ -346,13 +388,8 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Rejected:
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = timeNow;
-
-                        var validTicket = basePaper.TicketId;
-                        if (validTicket == null)
-                        {
-                            throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                        }
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Abstract của bạn đã bị từ chối");
+                        abstractPaper.Reason = request.Reason;
+                        
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối ở phase abstract vào lúc {timeNow.ToString()}";
 
@@ -591,6 +628,7 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = acceptedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
+                        fullPaper.Reason = request.Reason;
                         paper.PaperPhaseId = cameraReadyPhase.PaperPhaseId;
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase fullpaper vào lúc {timeNow.ToString()}";
 
@@ -601,13 +639,8 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = rejectedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
+                        fullPaper.Reason = request.Reason;
 
-                        var validTicket = paper.TicketId;
-                        if (validTicket == null)
-                        {
-                            throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                        }
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Full paper của bạn đã bị từ chối");
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase fullpaper vào lúc {timeNow.ToString()}";
 
                         break;
@@ -617,6 +650,7 @@ namespace ConfRadar.Services.Services
 
                         fullPaper.ReviewStatusId = reviseStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
+                        fullPaper.Reason = request.Reason;
                         paper.PaperPhaseId = revisePhase.PaperPhaseId;
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chuyển sang phase revise vào lúc {timeNow.ToString()}";
 
@@ -995,7 +1029,7 @@ namespace ConfRadar.Services.Services
                 GlobalStatusId = finalGlobalStatusId,
                 Note = request.Note,
                 CreatedAt = await _timeProviderService.GetVietnamTime(),
-                FeedbackToAuthor = request.FeedbackToAuthor,
+                //FeedbackToAuthor = request.FeedbackToAuthor,
                 FeedbackMaterialUrl = revisionReviewUrl,
                 ReviewerId = userId,
                 RevisionPaperId = request.RevisionPaperId,
@@ -1100,6 +1134,7 @@ namespace ConfRadar.Services.Services
                         //update instance get:
                         revisionPaper.GlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
                         revisionPaper.ReviewAt = timeNow;
+                        revisionPaper.Reason = request.Reason;
                         paper.PaperPhaseId = cameraReadyPaperPhase.PaperPhaseId;
 
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
@@ -1111,12 +1146,7 @@ namespace ConfRadar.Services.Services
                     case GlobalStatusEnum.Rejected:
                         revisionPaper.GlobalStatusId = rejectGlobalStautus.GlobalStatusId;
                         revisionPaper.ReviewAt = timeNow;
-                        var validTicket = paper.TicketId;
-                        if (validTicket == null)
-                        {
-                            throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                        }
-                        await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Revise paper của bạn đã bị từ chối");
+                        revisionPaper.Reason = request.Reason;
 
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
@@ -1190,7 +1220,7 @@ namespace ConfRadar.Services.Services
                 GlobalStatusName = x.GlobalStatus?.Name,
                 Note = x.Note,
                 CreatedAt = x.CreatedAt,
-                FeedbackToAuthor = x.FeedbackToAuthor,
+                //FeedbackToAuthor = x.FeedbackToAuthor,
                 FeedbackMaterialUrl = x.FeedbackMaterialUrl,
                 ReviewerId = x.ReviewerId,
                 ReviewerName = x.Reviewer?.FullName,
@@ -1664,7 +1694,7 @@ namespace ConfRadar.Services.Services
             {
                 case GlobalStatusEnum.Accepted:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-
+                    
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
@@ -1672,12 +1702,7 @@ namespace ConfRadar.Services.Services
                 case GlobalStatusEnum.Rejected:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
 
-                    var validTicket = basePaper.TicketId;
-                    if (validTicket == null)
-                    {
-                        throw new BadRequestException("Không tìm thấy vé hoặc vé đã bị refund");
-                    }
-                    await _ticketService.RefundAuthorCloneFunction(rootAuthor!.UserId, validTicket, "Camera ready paper của bạn đã bị từ chối");
+                    
 
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
@@ -1697,6 +1722,7 @@ namespace ConfRadar.Services.Services
             int result = 0;
             cameraReady.GlobalStatusId = newGlobalStatus.GlobalStatusId;
             cameraReady.ReviewAt = timeNow;
+            cameraReady.Reason = request.Reason;
             var notification = new Notification()
             {
                 NotificationId = Guid.NewGuid().ToString(),
@@ -1916,7 +1942,7 @@ namespace ConfRadar.Services.Services
                 Title = paper.Title,
                 Description = paper.Description,
                 Created = paper.CreatedAt,
-                RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName , avatarUrl = RootAuthor.AvatarUrl} : null,
+                RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName, avatarUrl = RootAuthor.AvatarUrl } : null,
                 CoAuthors = coAuthors?.Select(user => new Author
                 {
                     userId = user.UserId,
@@ -2044,7 +2070,7 @@ namespace ConfRadar.Services.Services
                 {
                     ReviewId = review.RevisionPaperReviewId,
                     Note = review.Note,
-                    FeedBackToAuthor = review.FeedbackToAuthor,
+                    //FeedBackToAuthor = review.FeedbackToAuthor,
                     FeedbackMaterialURL = review.FeedbackMaterialUrl,
                     ReviewedAt = review.CreatedAt ?? default // Use default if nullable
                 }).ToList() ?? new List<RevisionReviewDtoDetail>(),
@@ -2461,7 +2487,7 @@ namespace ConfRadar.Services.Services
             var timeNow = await _timeProviderService.GetVietnamTime();
             List<PaperAuthor> paperAuthorList = new List<PaperAuthor>();
             List<Notification> notificationList = new List<Notification>();
-            if (request.CoAuthorId != null && request.CoAuthorId.Any() && conferenceReviewers.Count()>0)
+            if (request.CoAuthorId != null && request.CoAuthorId.Any() && conferenceReviewers.Count() > 0)
             {
                 foreach (var coauthorId in request.CoAuthorId)
                 {
@@ -2937,13 +2963,13 @@ namespace ConfRadar.Services.Services
             return responseList;
         }
 
-        public async Task<List<AvailableCoAuthorResponse>> GetAvailableCoAuthorForInclude(string conferenceId,string userId)
+        public async Task<List<AvailableCoAuthorResponse>> GetAvailableCoAuthorForInclude(string conferenceId, string userId)
         {
             var adminRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription());
             var organizerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription());
             var internalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
             var collabRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription());
-            if (adminRole == null || organizerRole == null || internalReviewerRole ==null || collabRole ==null)
+            if (adminRole == null || organizerRole == null || internalReviewerRole == null || collabRole == null)
                 throw new NotFoundException("Không tìm thấy các role trong hệ thống");
             List<string> systemRoles = new List<string>()
             {
@@ -2952,7 +2978,7 @@ namespace ConfRadar.Services.Services
                 internalReviewerRole.RoleId,
                 collabRole.RoleId
             };
-            var availableUsers = await _unitOfWork.PaperRepository.GetAvailableCoAuthorForInclude(conferenceId,systemRoles);
+            var availableUsers = await _unitOfWork.PaperRepository.GetAvailableCoAuthorForInclude(conferenceId, systemRoles);
             availableUsers = availableUsers.Where(u => u.UserId != userId).ToList();
             var result = availableUsers.Select(u => new AvailableCoAuthorResponse()
             {
@@ -2960,9 +2986,35 @@ namespace ConfRadar.Services.Services
                 AvatarUrl = u.AvatarUrl,
                 FullName = u.FullName,
                 UserId = u.UserId,
-                
+
             }).ToList();
             return result;
+        }
+
+        public async Task<int> UpdatePaper(UpdatePaperRequest request, string userId)
+        {
+            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
+            if (paper == null)
+            {
+                throw new BadRequestException($"Bài báo với mã {request.PaperId} không tồn tại");
+            }
+            var paperAuthor = paper.PaperAuthors;
+            var rootAuthorCheck = paperAuthor.FirstOrDefault(pa => pa.UserId == userId && pa.IsRootAuthor == true);
+            if (rootAuthorCheck == null)
+            {
+                throw new BadRequestException($"Bạn không sỡ hữu bài báo nên không thể cập nhật");
+
+            }
+            if (!string.IsNullOrWhiteSpace(request.Title))
+            {
+                paper.Title = request.Title;
+            }
+            if (!string.IsNullOrWhiteSpace(request.Description))
+            {
+                paper.Description = request.Description;
+            }
+            return await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+
         }
     }
 }

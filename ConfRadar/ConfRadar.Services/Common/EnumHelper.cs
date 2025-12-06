@@ -310,16 +310,23 @@ namespace ConfRadar.Services.Common
         public const string REMOVE_FROM_FAVOURITE = "Gỡ khỏi yêu thích";
 
         // QUẢN LÝ BÀI BÁO
-        public const string SUBMIT_ABSTRACT = "Nộp tóm tắt";
-        public const string SUBMIT_FULL_PAPER = "Nộp bài báo đầy đủ";
-        public const string SUBMIT_CAMERA_READY = "Nộp bài camera-ready";
-        public const string SUBMIT_REVISION = "Nộp bài sửa đổi";
-        public const string UPDATE_ABSTRACT = "Cập nhật tóm tắt";
-        public const string UPDATE_FULL_PAPER = "Cập nhật bài báo đầy đủ";
-        public const string UPDATE_CAMERA_READY = "Cập nhật bài camera-ready";
-        public const string DECIDE_ABSTRACT_STATUS = "Phê duyệt/từ chối tóm tắt";
-        public const string DECIDE_FULL_PAPER_STATUS = "Phê duyệt/từ chối bài báo đầy đủ";
-        public const string DECIDE_CAMERA_READY = "Phê duyệt/từ chối bài camera-ready";
+        public const string SUBMIT_ABSTRACT = "Nộp abstract";
+        public const string SUBMIT_FULL_PAPER = "Nộp fullpaper";
+        public const string SUBMIT_CAMERA_READY = "Nộp camera-ready";
+        public const string SUBMIT_REVISION = "Nộp revision";
+
+        public const string UPDATE_ABSTRACT = "Cập nhật abstract";
+        public const string UPDATE_FULL_PAPER = "Cập nhật fullpaper";
+        public const string UPDATE_CAMERA_READY = "Cập nhật camera-ready";
+        public const string UPDATE_REVISION = "Cập nhật revision";
+
+
+        public const string DECIDE_ABSTRACT_STATUS = "Phê duyệt/từ chối abstract";
+        public const string DECIDE_FULL_PAPER_STATUS = "Phê duyệt/từ chối fullpaper";
+        public const string DECIDE_CAMERA_READY = "Phê duyệt/từ chối  camera-ready";
+        public const string DECIDE_REVISION = "Phê duyệt/từ chối  revision";
+
+
         public const string ASSIGN_PAPER_TO_REVIEWER = "Phân công bài báo cho reviewer";
         public const string SUBMIT_PAPER_REVIEW = "Nộp đánh giá bài báo";
         public const string ASSIGN_PRESENTER = "Phân công người trình bày";

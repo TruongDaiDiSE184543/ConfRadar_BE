@@ -1,19 +1,19 @@
-//using ConfRadar.Repositories;
-//using ConfRadar.Repositories.Models;
-//using ConfRadar.Services.Common;
-//using ConfRadar.Services.DTOs.ConferenceStep;
-//using ConfRadar.Services.Exceptions;
-//using ConfRadar.Services.Services;
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.Extensions.Options;
-//using Moq;
-//using System;
-//using System.Collections.Generic;
-//using System.IO;
-//using System.Linq;
-//using System.Threading.Tasks;
-//using Xunit;
-//using FluentAssertions;
+using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Common;
+using ConfRadar.Services.DTOs.ConferenceStep;
+using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
+using FluentAssertions;
 
 //namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 //{
@@ -67,87 +67,87 @@
 
 //        #region Helper Methods
 
-//        /// <summary>
-//        /// Creates a valid request object for testing
-//        /// </summary>
-//        private CreateResearchConferencePhasesRequest CreateValidRequest()
-//        {
-//            var today = DateOnly.FromDateTime(DateTime.Now);
+        /// <summary>
+        /// Creates a valid request object for testing
+        /// </summary>
+        private CreateResearchConferencePhasesRequest CreateValidRequest()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
             
-//            return new CreateResearchConferencePhasesRequest
-//            {
-//                Phases = new List<CreateResearchConferencePhaseItemRequest>
-//                {
-//                    // Main phase
-//                    new CreateResearchConferencePhaseItemRequest
-//                    {
-//                        RegistrationStartDate = today.AddDays(1),
-//                        RegistrationEndDate = today.AddDays(30),
-//                        AbstractDecideStatusStart = today.AddDays(31),
-//                        AbstractDecideStatusEnd = today.AddDays(35),
-//                        FullPaperStartDate = today.AddDays(36),
-//                        FullPaperEndDate = today.AddDays(60),
-//                        ReviewStartDate = today.AddDays(61),
-//                        ReviewEndDate = today.AddDays(75),
-//                        FullPaperDecideStatusStart = today.AddDays(76),
-//                        FullPaperDecideStatusEnd = today.AddDays(80),
-//                        ReviseStartDate = today.AddDays(81),
-//                        ReviseEndDate = today.AddDays(95),
-//                        RevisionPaperDecideStatusStart = today.AddDays(96),
-//                        RevisionPaperDecideStatusEnd = today.AddDays(100),
-//                        CameraReadyStartDate = today.AddDays(101),
-//                        CameraReadyEndDate = today.AddDays(115),
-//                        CameraReadyDecideStatusStart = today.AddDays(116),
-//                        CameraReadyDecideStatusEnd = today.AddDays(120),
-//                        IsWaitlist = false,
-//                        RevisionRoundDeadlines = new List<CreateRevisionRoundDeadlineRequest>
-//                        {
-//                            new CreateRevisionRoundDeadlineRequest
-//                            {
-//                                StartSubmissionDate = today.AddDays(81),
-//                                EndSubmissionDate = today.AddDays(88)
-//                            },
-//                            new CreateRevisionRoundDeadlineRequest
-//                            {
-//                                StartSubmissionDate = today.AddDays(89),
-//                                EndSubmissionDate = today.AddDays(95)
-//                            }
-//                        }
-//                    },
-//                    // Waitlist phase
-//                    new CreateResearchConferencePhaseItemRequest
-//                    {
-//                        RegistrationStartDate = today.AddDays(125),
-//                        RegistrationEndDate = today.AddDays(155),
-//                        AbstractDecideStatusStart = today.AddDays(160),
-//                        AbstractDecideStatusEnd = today.AddDays(165),
-//                        FullPaperStartDate = today.AddDays(170),
-//                        FullPaperEndDate = today.AddDays(180),
-//                        ReviewStartDate = today.AddDays(190),
-//                        ReviewEndDate = today.AddDays(200),
-//                        FullPaperDecideStatusStart = today.AddDays(202),
-//                        FullPaperDecideStatusEnd = today.AddDays(210),
-//                        ReviseStartDate = today.AddDays(215),
-//                        ReviseEndDate = today.AddDays(230),
-//                        RevisionPaperDecideStatusStart = today.AddDays(235),
-//                        RevisionPaperDecideStatusEnd = today.AddDays(240),
-//                        CameraReadyStartDate = today.AddDays(242),
-//                        CameraReadyEndDate = today.AddDays(260),
-//                        CameraReadyDecideStatusStart = today.AddDays(261),
-//                        CameraReadyDecideStatusEnd = today.AddDays(270),
-//                        IsWaitlist = true,
-//                        RevisionRoundDeadlines = new List<CreateRevisionRoundDeadlineRequest>
-//                        {
-//                            new CreateRevisionRoundDeadlineRequest
-//                            {
-//                                StartSubmissionDate = today.AddDays(220),
-//                                EndSubmissionDate = today.AddDays(229)
-//                            }
-//                        }
-//                    }
-//                }
-//            };
-//        }
+            return new CreateResearchConferencePhasesRequest
+            {
+                Phases = new List<CreateResearchConferencePhaseItemRequest>
+                {
+                    // Main phase
+                    new CreateResearchConferencePhaseItemRequest
+                    {
+                        RegistrationStartDate = today.AddDays(1),
+                        RegistrationEndDate = today.AddDays(30),
+                        AbstractDecideStatusStart = today.AddDays(31),
+                        AbstractDecideStatusEnd = today.AddDays(35),
+                        FullPaperStartDate = today.AddDays(36),
+                        FullPaperEndDate = today.AddDays(60),
+                        ReviewStartDate = today.AddDays(61),
+                        ReviewEndDate = today.AddDays(75),
+                        FullPaperDecideStatusStart = today.AddDays(76),
+                        FullPaperDecideStatusEnd = today.AddDays(80),
+                        ReviseStartDate = today.AddDays(81),
+                        ReviseEndDate = today.AddDays(95),
+                        RevisionPaperDecideStatusStart = today.AddDays(96),
+                        RevisionPaperDecideStatusEnd = today.AddDays(100),
+                        CameraReadyStartDate = today.AddDays(101),
+                        CameraReadyEndDate = today.AddDays(115),
+                        CameraReadyDecideStatusStart = today.AddDays(116),
+                        CameraReadyDecideStatusEnd = today.AddDays(120),
+                        IsWaitlist = false,
+                        RevisionRoundDeadlines = new List<CreateRevisionRoundDeadlineRequest>
+                        {
+                            new CreateRevisionRoundDeadlineRequest
+                            {
+                                StartSubmissionDate = today.AddDays(81),
+                                EndSubmissionDate = today.AddDays(88)
+                            },
+                            new CreateRevisionRoundDeadlineRequest
+                            {
+                                StartSubmissionDate = today.AddDays(89),
+                                EndSubmissionDate = today.AddDays(95)
+                            }
+                        }
+                    },
+                    // Waitlist phase
+                    new CreateResearchConferencePhaseItemRequest
+                    {
+                        RegistrationStartDate = today.AddDays(125),
+                        RegistrationEndDate = today.AddDays(155),
+                        AbstractDecideStatusStart = today.AddDays(160),
+                        AbstractDecideStatusEnd = today.AddDays(165),
+                        FullPaperStartDate = today.AddDays(170),
+                        FullPaperEndDate = today.AddDays(180),
+                        ReviewStartDate = today.AddDays(190),
+                        ReviewEndDate = today.AddDays(200),
+                        FullPaperDecideStatusStart = today.AddDays(202),
+                        FullPaperDecideStatusEnd = today.AddDays(210),
+                        ReviseStartDate = today.AddDays(215),
+                        ReviseEndDate = today.AddDays(230),
+                        RevisionPaperDecideStatusStart = today.AddDays(235),
+                        RevisionPaperDecideStatusEnd = today.AddDays(240),
+                        CameraReadyStartDate = today.AddDays(242),
+                        CameraReadyEndDate = today.AddDays(260),
+                        CameraReadyDecideStatusStart = today.AddDays(261),
+                        CameraReadyDecideStatusEnd = today.AddDays(270),
+                        IsWaitlist = true,
+                        RevisionRoundDeadlines = new List<CreateRevisionRoundDeadlineRequest>
+                        {
+                            new CreateRevisionRoundDeadlineRequest
+                            {
+                                StartSubmissionDate = today.AddDays(220),
+                                EndSubmissionDate = today.AddDays(229)
+                            }
+                        }
+                    }
+                }
+            };
+        }
 
 //        /// <summary>
 //        /// Sets up common valid mocks for database repositories
@@ -168,10 +168,10 @@
 //                .Setup(u => u.ConferenceRepository.GetConferenceByIdAsync("conf-123"))
 //                .ReturnsAsync(mockConference);
 
-//            // Mock ResearchConferenceDetailRepository - to verify detail exists
-//            _mockUnitOfWork
-//                .Setup(u => u.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync("conf-123"))
-//                .ReturnsAsync(new ResearchConferenceDetail { ConferenceId = "conf-123" , RevisionAttemptAllowed = 2});
+            // Mock ResearchConferenceDetailRepository - to verify detail exists
+            _mockUnitOfWork
+                .Setup(u => u.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync("conf-123"))
+                .ReturnsAsync(new ResearchConferenceDetail { ConferenceId = "conf-123" , RevisionAttemptAllowed = 2});
 
 //            // Mock conference status for EnsureConferenceIsEditable method
 //            if (isEditable)
@@ -267,15 +267,15 @@
 //            );
 //        }
 
-//        [Fact]
-//        public async Task CreateResearchConferencePhaseAsync_Should_ThrowBadRequestException_When_NoWaitlistPhaseProvided()
-//        {
-//            // ARRANGE
-//            var request = CreateValidRequest();
-//            // Set both phases as non-waitlist
-//            request.Phases[0].IsWaitlist = false;
-//            request.Phases[1].IsWaitlist = false;
-//            SetupValidMocks();
+        [Fact]
+        public async Task CreateResearchConferencePhaseAsync_Should_ThrowBadRequestException_When_NoWaitlistPhaseProvided()
+        {
+            // ARRANGE
+            var request = CreateValidRequest();
+            // Set both phases as non-waitlist
+            request.Phases[0].IsWaitlist = false;
+            request.Phases[1].IsWaitlist = false;
+            SetupValidMocks();
 
 //            // ACT & ASSERT
 //            await Assert.ThrowsAsync<BadRequestException>(
@@ -283,15 +283,15 @@
 //            );
 //        }
 
-//        [Fact]
-//        public async Task CreateResearchConferencePhaseAsync_Should_ThrowBadRequestException_When_MultipleWaitlistPhasesProvided()
-//        {
-//            // ARRANGE
-//            var request = CreateValidRequest();
-//            // Set both phases as waitlist
-//            request.Phases[0].IsWaitlist = true;
-//            request.Phases[1].IsWaitlist = true;
-//            SetupValidMocks();
+        [Fact]
+        public async Task CreateResearchConferencePhaseAsync_Should_ThrowBadRequestException_When_MultipleWaitlistPhasesProvided()
+        {
+            // ARRANGE
+            var request = CreateValidRequest();
+            // Set both phases as waitlist
+            request.Phases[0].IsWaitlist = true;
+            request.Phases[1].IsWaitlist = true;
+            SetupValidMocks();
 
 //            // ACT & ASSERT
 //            await Assert.ThrowsAsync<BadRequestException>(
@@ -317,19 +317,19 @@
 //            );
 //        }
 
-//        [Fact]
-//        public async Task CreateResearchConferencePhaseAsync_Should_ThrowBadRequestException_When_IsWaitlistIsNull()
-//        {
-//            // ARRANGE
-//            var request = CreateValidRequest();
-//            request.Phases[0].IsWaitlist = null; // Invalid: required field
-//            SetupValidMocks();
+        [Fact]
+        public async Task CreateResearchConferencePhaseAsync_Should_ThrowBadRequestException_When_IsWaitlistIsNull()
+        {
+            // ARRANGE
+            var request = CreateValidRequest();
+            request.Phases[0].IsWaitlist = null; // Invalid: required field
+            SetupValidMocks();
 
-//            // ACT & ASSERT
-//            await Assert.ThrowsAsync<BadRequestException>(
-//                () => _conferenceStepService.CreateResearchConferencePhaseAsync("conf-123", request, "user-123")
-//            );
-//        }
+            // ACT & ASSERT
+            await Assert.ThrowsAsync<BadRequestException>(
+                () => _conferenceStepService.CreateResearchConferencePhaseAsync("conf-123", request, "user-123")
+            );
+        }
 
 //        [Fact]
 //        public async Task CreateResearchConferencePhaseAsync_Should_ThrowNotFoundException_When_ConferenceDoesNotExist()
@@ -547,17 +547,17 @@
 //            // ASSERT
 //            result.Should().NotBeNull();
 
-//            // Verify that phases were created with correct waitlist flags
-//            _mockUnitOfWork.Verify(
-//                u => u.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(
-//                    It.Is<ResearchConferencePhase>(p => p.IsWaitlist == false)), // Main phase
-//                Times.Once);
+            // Verify that phases were created with correct waitlist flags
+            _mockUnitOfWork.Verify(
+                u => u.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(
+                    It.Is<ResearchConferencePhase>(p => p.IsWaitlist == false)), // Main phase
+                Times.Once);
 
-//            _mockUnitOfWork.Verify(
-//                u => u.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(
-//                    It.Is<ResearchConferencePhase>(p => p.IsWaitlist == true)), // Waitlist phase
-//                Times.Once);
-//        }
+            _mockUnitOfWork.Verify(
+                u => u.ResearchConferencePhaseRepository.CreateResearchConferencePhaseAsync(
+                    It.Is<ResearchConferencePhase>(p => p.IsWaitlist == true)), // Waitlist phase
+                Times.Once);
+        }
 
 //        [Fact]
 //        public async Task CreateResearchConferencePhaseAsync_Should_AcceptNullRevisionRoundDeadlinesForWaitlistPhase_When_NotProvided()

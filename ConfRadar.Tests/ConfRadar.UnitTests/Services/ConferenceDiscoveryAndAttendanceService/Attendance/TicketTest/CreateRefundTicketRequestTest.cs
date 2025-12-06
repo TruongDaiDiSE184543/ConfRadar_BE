@@ -345,8 +345,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 Abstract = new Abstract { AbstractId = "A1", GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_NOT_PENDING" } }
             };
 
-            _mockPaperRepo.Setup(p => p.GetPaperByUserAndConference(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(paper);
+            //_mockPaperRepo.Setup(p => p.GetPaperByUserAndConference(It.IsAny<string>(), It.IsAny<string>()))
+            //    .ReturnsAsync(paper);
 
             _mockRefundRequestRepo.Setup(r => r.GetRefundRequestByTicketIdAsync(ticket.TicketId)).ReturnsAsync((RefundRequest)null);
 

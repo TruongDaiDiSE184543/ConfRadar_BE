@@ -1,7 +1,6 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
-using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using FluentAssertions;

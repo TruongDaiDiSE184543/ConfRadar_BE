@@ -6,12 +6,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Pipelines.Sockets.Unofficial.Threading.MutexSlim;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
 {
@@ -174,11 +168,11 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
             // Conference Basic Info
             _mockConferenceStepService.Setup(s => s.GetResearchConferenceBasicAsync("c1"))
             .ReturnsAsync(new ResearchConferenceBasicStepResponse
-    {
-        ConferenceName = "Conference X",
-        conferenceId = "c1"
-        // Các field khác nếu cần mock
-        });
+            {
+                ConferenceName = "Conference X",
+                conferenceId = "c1"
+                // Các field khác nếu cần mock
+            });
 
             // ACT ------------------------------------------
             var result = await _paperService.getPaperDetail("p1", "u1");

@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using ConfRadar.Repositories.Models;
+﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -154,9 +155,18 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
+    public static string GetConnectionString(string connectionStringName)
+    {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        string connectionString = config.GetConnectionString(connectionStringName);
+        return connectionString;
+    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -947,6 +957,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("ResearchConferenceDetail");
 
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.PaperFormat).HasMaxLength(255);
             entity.Property(e => e.RankValue).HasMaxLength(255);
             entity.Property(e => e.RankingCategoryId).HasMaxLength(50);
@@ -1271,6 +1282,7 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.UserId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.CurrentSuspendedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.FullName).HasMaxLength(50);
             entity.Property(e => e.Gender).HasMaxLength(50);

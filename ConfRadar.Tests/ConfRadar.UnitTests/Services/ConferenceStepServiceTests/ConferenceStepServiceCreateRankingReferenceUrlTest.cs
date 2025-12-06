@@ -4,17 +4,9 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Microsoft.AspNetCore.Http;
+using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
-using Minio.Exceptions;
 
 namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 {
@@ -290,7 +282,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Verify(u => u.RankingReferenceUrlRepository.CreateRankingReferenceUrlAsync(It.IsAny<RankingReferenceUrl>()), Times.Once);
         }
 
-       
+
         [Fact]
         public async Task CreateRankingReferenceUrlAsync_Should_ThrowBadRequestException_When_ConferenceIsDeletedOrCancelled()
         {
@@ -443,13 +435,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // Create a long but valid URL (under 1000 chars)
             var longPath = string.Join("/", Enumerable.Repeat("conference", 30));
             request.ReferenceUrl = $"https://www.example-ranking-portal.com/{longPath}?search=AI&category=computer-science&year=2024&format=json&limit=100";
-            
+
             // Ensure it's under the limit
             if (request.ReferenceUrl.Length >= 1000)
             {
                 request.ReferenceUrl = request.ReferenceUrl.Substring(0, 999);
             }
-            
+
             SetupValidMocks();
 
             // Mock response

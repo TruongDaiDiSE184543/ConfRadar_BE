@@ -7,6 +7,8 @@ public partial class ResearchConferenceDetail
 {
     public string ConferenceId { get; set; } = null!;
 
+    public string? Name { get; set; }
+
     public string? PaperFormat { get; set; }
 
     public int? NumberPaperAccept { get; set; }

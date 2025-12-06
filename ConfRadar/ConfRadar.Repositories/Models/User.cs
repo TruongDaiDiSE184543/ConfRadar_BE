@@ -43,6 +43,10 @@ public partial class User
 
     public string? FirebaseMobileFcmToken { get; set; }
 
+    public string? CurrentSuspendReason { get; set; }
+
+    public DateTime? CurrentSuspendedAt { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual ICollection<AcademicProfile> AcademicProfiles { get; set; } = new List<AcademicProfile>();

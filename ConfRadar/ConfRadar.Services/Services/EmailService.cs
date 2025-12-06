@@ -83,7 +83,7 @@ namespace ConfRadar.Services.Services
             await SendEmailAsync(toEmail, subject, body);
         }
 
-        public async Task SendSuspendTemplateEmailAsync(string toEmail, string userName,string reason, string subject, string templateFileName)
+        public async Task SendSuspendTemplateEmailAsync(string toEmail, string userName, string reason, string subject, string templateFileName)
         {
             var replacements = new Dictionary<string, string>
     {
