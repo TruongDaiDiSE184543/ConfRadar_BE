@@ -130,7 +130,7 @@ namespace ConfRadar.Services.Services
             var isAuthorTicket = ticket.PricePhase.ConferencePrice.IsAuthor;
             if (isAuthorTicket == true)
             {
-                var purchasedPaper = await _unitOfWork.PaperRepository.GetPaperByUserAndConference(ticket.PricePhase.ConferencePrice.ConferenceId, userId);
+                var purchasedPaper = await _unitOfWork.PaperRepository.GetPaperByRootUserAndConference(ticket.PricePhase.ConferencePrice.ConferenceId, userId);
                 if (purchasedPaper != null)
                 {
                     var abstractPaperDetail = purchasedPaper.Abstract;

@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class RevisionPaper
 {
@@ -12,9 +15,9 @@ public partial class RevisionPaper
 
     public DateTime? ReviewAt { get; set; }
 
-    public string? RevisionRoundDeadlineId { get; set; }
-
     public string? Reason { get; set; }
+
+    public string? RevisionRoundDeadlineId { get; set; }
 
     public virtual GlobalStatus? GlobalStatus { get; set; }
 
