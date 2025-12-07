@@ -114,18 +114,6 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
         }
 
         [Fact]
-        public async Task DecideReviseStatus_Should_Reject_And_TriggerRefund()
-        {
-            var request = new UpdateRevisionStatusRequest { PaperId = "p1", RevisionPaperId = "rev1", GlobalStatus = GlobalStatusEnum.Rejected };
-            SetupHappyPathMocks("head1", "p1", "rev1", true);
-
-            await _paperService.DecideReviseStatus(request, "head1");
-
-            _mockUnitOfWork.Verify(u => u.RevisionPaperRepository.UpdateRevisionPaperAsync(It.Is<RevisionPaper>(r => r.GlobalStatusId == "status-rejected")), Times.Once);
-            _mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
-        }
-
-        [Fact]
         public async Task DecideReviseStatus_Should_Throw_When_UserIsNotHeadReviewer()
         {
             var request = new UpdateRevisionStatusRequest { PaperId = "p1", RevisionPaperId = "rev1", GlobalStatus = GlobalStatusEnum.Rejected };

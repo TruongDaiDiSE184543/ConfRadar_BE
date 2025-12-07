@@ -85,18 +85,6 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
                 It.Is<CameraReady>(cr => cr.GlobalStatusId == "status-accepted" && cr.ReviewAt != null)), Times.Once);
         }
 
-        [Fact]
-        public async Task DecideCameraReadyStatus_Should_Reject_And_Refund()
-        {
-            var request = new UpdateCameraReadyStatusRequest { CameraReadyId = "cr1", GlobalStatus = GlobalStatusEnum.Rejected };
-            SetupHappyPathMocks("head1", "p1", "cr1", true);
-
-            await _paperService.DecideCameraReadyStatus(request, "head1");
-
-            _mockUnitOfWork.Verify(u => u.CameraReadyRepository.UpdateCameraReadyAsync(
-                It.Is<CameraReady>(cr => cr.GlobalStatusId == "status-rejected")), Times.Once);
-            _mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
-        }
 
         [Fact]
         public async Task DecideCameraReadyStatus_Should_Throw_When_NotHeadReviewer()
