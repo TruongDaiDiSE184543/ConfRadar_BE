@@ -44,8 +44,9 @@ namespace ConfRadar.Services.Services
             {
                 return;
             }
-            var listNotifiedUser = await _unitOfWork.PaperWaitListRepository.NotifyWaitListAsync(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, await _timeProviderService.GetVietnamTime());
-            if (listNotifiedUser != null && listNotifiedUser.Count > 0)
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            var listNotifiedUser = await _unitOfWork.PaperWaitListRepository.NotifyWaitListAsync(readyConferenceStatus.ConferenceStatusId, pendingWaitListStatus.WaitListStatusId, notifiedWaitListStatus.WaitListStatusId, timeNow);
+            if (listNotifiedUser != null && listNotifiedUser.Any())
             {
                 var notifionListObj = new List<Notification>();
                 foreach (var notfiedUser in listNotifiedUser)
@@ -54,16 +55,16 @@ namespace ConfRadar.Services.Services
                     {
                         NotificationId = Guid.NewGuid().ToString(),
                         UserId = notfiedUser.UserId,
-                        CreatedAt = await _timeProviderService.GetVietnamTime(),
+                        CreatedAt = timeNow,
                         ReadStatus = false,
                         Type = "Paper wait list",
-                        Title = "Danh sách hàng d?i cho h?i ngh?",
+                        Title = "Danh sách hàng đợi cho hội nghị",
 
                     };
-                    string message = $"H?i ngh? {notfiedUser.ConferenceName} hi?n dã m? l?i slot dang ký.";
-                    if (notfiedUser.ConferencePriceDetailList.Count > 0)
+                    string message = $"Hội nghị {notfiedUser.ConferenceName} hiện đã mở lại slot đăng kí.";
+                    if (notfiedUser.ConferencePriceDetailList.Any())
                     {
-                        message += " Các vé hi?n có: ";
+                        message += " Các vé hiện có: ";
                         foreach (var conferencePrice in notfiedUser.ConferencePriceDetailList)
                         {
                             message += $" Vé {conferencePrice.TicketName} — còn {conferencePrice.AvailableSlot}/{conferencePrice.TotalSlot} vé (giá {conferencePrice.TicketPrice}). ";
