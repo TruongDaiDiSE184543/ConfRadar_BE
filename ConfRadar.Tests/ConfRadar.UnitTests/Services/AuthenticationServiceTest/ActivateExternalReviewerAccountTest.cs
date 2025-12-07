@@ -12,6 +12,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
     public class ActivateExternalReviewerAccountTest
     {
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+        private readonly Mock<ITimeProviderService> _mockTimeProviderService;
         private readonly AuthService _authService;
 
         public ActivateExternalReviewerAccountTest()
@@ -22,7 +23,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             var mockTokenService = new Mock<ITokenService>();
             var mockObjectStorageFileService = new Mock<IObjectStorageFileService>();
             var mockFirebaseAuthService = new Mock<IFirebaseAuthService>();
-            var mockTimeProviderService = new Mock<ITimeProviderService>();
+            _mockTimeProviderService = new Mock<ITimeProviderService>();
             var jwtSettings = Options.Create(new JwtSettings { SecretKey = "mock", ExpiresRefreshToken = 7 });
             var objectStorageSettings = Options.Create(new ObjectStorageSettings { EndPoint = "https://mockstorage.com" });
 
@@ -35,7 +36,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
                 mockObjectStorageFileService.Object,
                 objectStorageSettings,
                 mockFirebaseAuthService.Object,
-                mockTimeProviderService.Object
+                _mockTimeProviderService.Object
             );
         }
 
@@ -61,7 +62,13 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
 
             _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetUserRoleByUserAndRole("u1", "role1"))
                 .ReturnsAsync(userRole);
+            _mockUnitOfWork.Setup(u =>
+        u.UserSuspendHistoryRepository.GetCurrentUserSuspendHistoryByUser("u1"))
+        .ReturnsAsync(new List<UserSuspendHistory>());
 
+            // ⭐ Mock time provider (nếu không sẽ null)
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime())
+                .ReturnsAsync(DateTime.UtcNow);
             _mockUnitOfWork.Setup(u => u.UserRoleRepository.UpdateUserRole(userRole))
                 .ReturnsAsync(1);
             var user1 = new UserActiveAccountRequest()
