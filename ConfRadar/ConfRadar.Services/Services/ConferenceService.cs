@@ -2423,7 +2423,8 @@ namespace ConfRadar.Services.Services
             var authorConferencePrices = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(confId);
             var remainingAuthorSlots = authorConferencePrices.Sum(cp => cp.AvailableSlot ?? 0);
             if (remainingAuthorSlots <= 0)
-                throw new BadRequestException("Không thể kích hoạt waitlist vì tất cả các suất dành cho tác giả (vé 'IsAuthor') đã được bán hết.");
+                throw new BadRequestException("Không thể kích hoạt phase tiếp theo vì tất cả các suất dành cho tác giả (vé 'IsAuthor') đã được bán hết.");
+
 
             // 2.2. Kiểm tra điều kiện thời gian
             var today = await _timeProviderService.GetVietnamDate();
@@ -2437,8 +2438,17 @@ namespace ConfRadar.Services.Services
             var allAuthorPricePhases = await _unitOfWork.PricePhaseRepository.GetPricePhaseByconferenceIdThatIsAuthor(confId);
             bool hasPricePhaseForWaitlist = allAuthorPricePhases.Any(pp => pp.ResearchConferencePhaseId == nextphase.ResearchConferencePhaseId);
 
+
+
             if (!hasPricePhaseForWaitlist)
                 throw new BadRequestException($"Không thể kích hoạt phase tiếp theo. Vui lòng tạo ít nhất một 'Giai đoạn bán vé' (Price Phase) cho loại vé 'IsAuthor' có khoảng thời gian nằm trong giai đoạn payment {nextphase.AuthorPaymentStart:dd/MM/yyyy} - {nextphase.AuthorPaymentEnd:dd/MM/yyyy} của waitlist.");
+            //2.4 kiểm tra xem phase tiếp theo có đầy đủ revision round chưa
+            int allowedAttempts = researchDetail.RevisionAttemptAllowed ?? 0;
+            var deadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(nextphase.ResearchConferencePhaseId); 
+            if (deadlines == null ||  allowedAttempts != deadlines.Count())
+            {
+                throw new BadRequestException($"Không thể kích hoạt. Giai đoạn tiếp theo chưa được cấu hình đủ số vòng sửa bài. Yêu cầu: {allowedAttempts}, Hiện có: {deadlines.Count()}.");
+            }
 
             #endregion
 
