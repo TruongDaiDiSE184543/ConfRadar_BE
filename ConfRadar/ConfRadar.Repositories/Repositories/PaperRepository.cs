@@ -541,9 +541,9 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.CameraReady)
                     .ThenInclude(c => c.GlobalStatus)
                 .Include(p => p.PaperAuthors)
-                .Where(p => p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
+                .Where(p =>p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
                 .AsNoTracking().AsSplitQuery();
-            return await query.FirstAsync();
+            return await query.FirstOrDefaultAsync();
         }
     }
 
