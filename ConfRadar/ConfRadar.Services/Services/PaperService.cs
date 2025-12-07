@@ -297,20 +297,12 @@ namespace ConfRadar.Services.Services
             try
             {
                 int finalResult = 0;
-                Task<int> notiTask = null;
                 if (notificationList.Any())
                 {
-                    notiTask = _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
+                    await _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
                 }
-                var paperTask = _unitOfWork.PaperRepository.CreatePaperAsync(paper);
-                var auditLogTask = _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLogObj);
-                var tasksToAwait = new List<Task> { paperTask, auditLogTask };
-                if (notiTask != null) tasksToAwait.Add(notiTask);
-
-
-
-                await Task.WhenAll(tasksToAwait);
-                finalResult = paperTask.Result;
+                finalResult += await _unitOfWork.PaperRepository.CreatePaperAsync(paper);
+                finalResult += await _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLogObj);
 
                 await _unitOfWork.CommitAsync();
                 return finalResult;
