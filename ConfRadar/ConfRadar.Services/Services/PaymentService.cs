@@ -86,7 +86,11 @@ namespace ConfRadar.Services.Services
         #region create payment for tech conference
         public async Task<GeneralPaymentResultResponse> CreatePaymentForTechConference(CreateTechPaymentRequest request, string userId)
         {
-
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
             if (paymentMethod == null)
             {
@@ -98,6 +102,14 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Giá conference với id {request.ConferencePriceId} không tìm thấy");
             }
+            var conferenceStatus = conferencePrice.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
             if (conferencePrice.Conference?.AvailableSlot <= 0)
             {
                 throw new BadRequestException($"{conferencePrice.Conference?.ConferenceName} đã bán hết vé!");
@@ -298,7 +310,11 @@ namespace ConfRadar.Services.Services
             var dateNow = await _timeProviderService.GetVietnamDate();
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
             var globalStatusAccepted = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
             if (paymentMethod == null || globalStatusAccepted == null)
             {
                 throw new BadRequestException($"Không tìm thấy phuong thúc thanh toán nào với mã {request.PaymentMethodId}");
@@ -309,6 +325,14 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bài báo không tồn tại");
             }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.UserId == userId && pa.IsRootAuthor == true);
             if (rootAuthorCheck == null)
             {
@@ -603,10 +627,24 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy phương thức thanh toán nào với mã {request.PaymentMethodId}");
             }
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
+
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(request.ConferencePriceId);
             if (conferencePrice == null)
             {
                 throw new BadRequestException($"Giá hội nghị với id {request.ConferencePriceId} không tìm thấy");
+            }
+
+            var conferenceStatus = conferencePrice.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             if (conferencePrice.Conference?.AvailableSlot <= 0)
             {
