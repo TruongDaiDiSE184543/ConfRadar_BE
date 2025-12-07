@@ -170,7 +170,7 @@ namespace ConfRadar.Services.Services
         {
             if ((endTime - startTime).TotalMinutes < 30)
             {
-                throw new BadRequestException("Session duration must be at least 30 minutes.");
+                throw new BadRequestException("Thời lượng phiên phải ít nhất 30 phút.");
             }
 
             // The date is simply the date part of the local start time. No time zone math.
@@ -336,7 +336,7 @@ namespace ConfRadar.Services.Services
                 if (missingBoundaryDates.Any())
                 {
                     var missingDatesString = string.Join(" và ", missingBoundaryDates.Select(d => d.ToString("dd/MM/yyyy")));
-                    throw new BadRequestException($"Ngày b?t d?u và ngày k?t thúc c?a h?i ngh? ph?i có ít nh?t m?t phiên. Các ngày sau dang b? thi?u phiên: {missingDatesString}");
+                    throw new BadRequestException($"Ngày bắt đầu và ngày kết thúc của hội nghị phải có ít nhất một phiên. Các ngày sau đang bị thiếu phiên: {missingDatesString}");
                 }
             }
             else // Tru?ng h?p checkOnlyBoundaries = false
@@ -363,7 +363,7 @@ namespace ConfRadar.Services.Services
                 if (missingDates.Any())
                 {
                     var missingDatesString = string.Join(", ", missingDates.Select(d => d.ToString("dd/MM/yyyy")));
-                    throw new BadRequestException($"T?t c? các ngày trong h?i ngh? ph?i có ít nh?t m?t phiên. Các ngày sau dang b? thi?u phiên: {missingDatesString}");
+                    throw new BadRequestException($"Tất cả các ngày trong hội nghị phải có ít nhất một phiên. Các ngày sau đang bị thiếu phiên: {missingDatesString}");
                 }
             }
         }
@@ -408,7 +408,7 @@ namespace ConfRadar.Services.Services
             if (!AllowedPaperFormats.Contains(paperFormat.Trim().ToLower()))
             {
                 var allowedFormatsString = string.Join(", ", AllowedPaperFormats.OrderBy(f => f));
-                throw new BadRequestException($"Ð?nh d?ng bài báo không h?p l?. Các d?nh d?ng du?c ch?p nh?n là: {allowedFormatsString}.");
+                throw new BadRequestException($"Định dạng bài báo không hợp lệ. Các định dạng được chấp nhận là: {allowedFormatsString}.");
             }
 
             return Task.CompletedTask; // Hoàn thành thành công n?u validation pass
@@ -428,7 +428,7 @@ namespace ConfRadar.Services.Services
             if (rankingCategory == null)
             {
                 // L?i này dã du?c x? lý ? các phuong th?c g?i, nhung d? an toàn v?n ki?m tra
-                throw new NotFoundException($"Lo?i x?p h?ng v?i ID '{rankingCategoryId}' không t?n t?i.");
+                throw new NotFoundException($"Loại xếp hạng với ID '{rankingCategoryId}' không tồn tại.");
             }
 
             // S? d?ng switch d? áp d?ng quy t?c validation cho t?ng lo?i RankName
@@ -439,7 +439,7 @@ namespace ConfRadar.Services.Services
                     var validQValues = new HashSet<string> { "Q1", "Q2", "Q3", "Q4" };
                     if (!validQValues.Contains(rankValue.ToUpper()))
                     {
-                        throw new BadRequestException($"Giá tr? x?p h?ng cho '{rankingCategory.RankName}' ph?i là Q1, Q2, Q3, ho?c Q4.");
+                        throw new BadRequestException($"Giá trị xếp hạng cho '{rankingCategory.RankName}' phải là Q1, Q2, Q3, hoặc Q4.");
                     }
                     break;
 
@@ -447,14 +447,14 @@ namespace ConfRadar.Services.Services
                 case "CiteScore":
                     if (!decimal.TryParse(rankValue, out var decimalValue) || decimalValue < 0)
                     {
-                        throw new BadRequestException($"Giá tr? x?p h?ng cho '{rankingCategory.RankName}' ph?i là m?t s? th?p phân không âm (ví d?: 1.25).");
+                        throw new BadRequestException($"Giá trị xếp hạng cho '{rankingCategory.RankName}' phải là một số thập phân không âm (ví dụ: 1.25).");
                     }
                     break;
 
                 case "H5": // H5-Index
                     if (!int.TryParse(rankValue, out var intValue) || intValue < 0)
                     {
-                        throw new BadRequestException($"Giá tr? x?p h?ng cho '{rankingCategory.RankName}' ph?i là m?t s? nguyên không âm (ví d?: 15).");
+                        throw new BadRequestException($"Giá trị xếp hạng cho '{rankingCategory.RankName}' phải là một số nguyên không âm (ví dụ: 15).");
                     }
                     break;
 
@@ -731,6 +731,10 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Bạn không có quyền cập nhật hội nghị này.");
             await EnsureConferenceIsEditable(conference, true);
 
+            var AllPrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
+            var totalSlotFromPrices = AllPrices.Sum(p => p.TotalSlot);
+            if (request.TotalSlot < totalSlotFromPrices) throw new BadRequestException("Không thể giảm tổng số vé xuống dưới tổng số vé đã phân bổ cho các loại vé.");
+
             await ValidateUpdateForOnHoldConference(conference, () =>
             {
                 if (!string.IsNullOrEmpty(request.ConferenceName) && request.ConferenceName != conference.ConferenceName)
@@ -789,7 +793,7 @@ namespace ConfRadar.Services.Services
                 if (await _unitOfWork.ConferenceCategoryRepository.GetConferenceCategoryByIdAsync(request.ConferenceCategoryId) == null)
                 {
                     // N?u Category ID m?i không t?n t?i, báo l?i NGAY L?P T?C
-                    throw new NotFoundException($"Danh m?c h?i ngh? v?i ID '{request.ConferenceCategoryId}' không t?n t?i.");
+                    throw new NotFoundException($"Danh mục hội nghị với ID '{request.ConferenceCategoryId}' không tồn tại.");
                 }
             }
 
@@ -810,10 +814,21 @@ namespace ConfRadar.Services.Services
                 conference.TicketSaleEnd = request.TicketSaleEnd ?? conference.TicketSaleEnd;
 
                 // C?p nh?t TotalSlot và AvailableSlot m?t cách chính xác
-                if (request.TotalSlot.HasValue)
+                if (request.TotalSlot.HasValue && request.TotalSlot.Value != conference.TotalSlot)
                 {
-                    conference.TotalSlot = request.TotalSlot.Value;
-                    conference.AvailableSlot = request.TotalSlot.Value;
+                    int oldTotalSlot = conference.TotalSlot ?? 0;
+                    int newTotalSlot = request.TotalSlot.Value;
+                    int slotDifference = newTotalSlot - oldTotalSlot;
+
+                    // Tính toán số vé đã bán của TOÀN BỘ hội nghị
+                    int soldTickets = (conference.TotalSlot ?? 0) - (conference.AvailableSlot ?? 0);
+                    if (newTotalSlot < soldTickets)
+                    {
+                        throw new BadRequestException($"Không thể giảm tổng số vé xuống {newTotalSlot} vì đã có {soldTickets} vé được bán ra.");
+                    }
+
+                    conference.TotalSlot = newTotalSlot;
+                    conference.AvailableSlot = (conference.AvailableSlot ?? 0) + slotDifference;
                 }
 
                 // 2.2. T?i và c?p nh?t URL file banner n?u có
@@ -1047,13 +1062,13 @@ namespace ConfRadar.Services.Services
             var price = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(priceId);
             if (price == null)
             {
-                throw new NotFoundException($"Không tìm th?y lo?i vé v?i ID {priceId}");
+                throw new NotFoundException($"Không tìm thấy loại vé với ID {priceId}");
             }
 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(price.ConferenceId);
             if (conference == null)
             {
-                throw new NotFoundException($"Không tìm th?y h?i ngh? g?c liên quan d?n lo?i vé này.");
+                throw new NotFoundException($"Không tìm thấy hội nghị gốc liên quan đến loại vé này.");
             }
 
 
@@ -1061,23 +1076,23 @@ namespace ConfRadar.Services.Services
             // 1. Phân quy?n
             if (conference.CreatedBy != userId)
             {
-                throw new ForbiddenException("B?n không có quy?n c?p nh?t lo?i vé này.");
+                throw new ForbiddenException("Bạn không có quyền cập nhật loại vé này.");
             }
 
             await EnsureConferenceIsEditable(conference,true);
 
             if (request.TicketPrice.HasValue && request.TicketPrice.Value < 0)
-                throw new BadRequestException("Giá vé không du?c là s? âm.");
+                throw new BadRequestException("Giá vé không được là số âm.");
 
             if (request.TotalSlot.HasValue)
             {
                 if (request.TotalSlot.Value <= 0)
-                    throw new BadRequestException("S? lu?ng vé ph?i l?n hon 0.");
+                    throw new BadRequestException("Số lượng vé phải lớn hơn 0.");
 
                 int soldTicketsForThisPrice = price.TotalSlot.GetValueOrDefault() - price.AvailableSlot.GetValueOrDefault();
                 if (request.TotalSlot.Value < soldTicketsForThisPrice)
                 {
-                    throw new BadRequestException($"Không th? gi?m s? lu?ng vé xu?ng {request.TotalSlot.Value} vì dã có {soldTicketsForThisPrice} vé du?c bán cho lo?i vé này.");
+                    throw new BadRequestException($"Không thể giảm số lượng vé xuống {request.TotalSlot.Value} vì đã có {soldTicketsForThisPrice} vé được bán cho loại vé này.");
                 }
 
                 var allConferencePrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(price.ConferenceId);
@@ -1088,7 +1103,7 @@ namespace ConfRadar.Services.Services
 
                 if (newConferenceTotalSlot > conference.TotalSlot)
                 {
-                    throw new BadRequestException($"C?p nh?t th?t b?i. T?ng s? vé m?i ({newConferenceTotalSlot}) s? vu?t quá gi?i h?n {conference.TotalSlot} c?a h?i ngh?.");
+                    throw new BadRequestException($"Cập nhật thất bại. Tổng số vé mới ({newConferenceTotalSlot}) sẽ vượt quá giới hạn {conference.TotalSlot} của hội nghị.");
                 }
             }
 
@@ -1098,7 +1113,7 @@ namespace ConfRadar.Services.Services
                 var existingPrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(price.ConferenceId);
                 if (existingPrices.Any(p => p.TicketName.Equals(request.TicketName, StringComparison.OrdinalIgnoreCase) && p.ConferencePriceId != priceId))
                 {
-                    throw new BadRequestException($"Tên vé '{request.TicketName}' dã t?n t?i trong h?i ngh? này.");
+                    throw new BadRequestException($"Tên vé '{request.TicketName}' đã tồn tại trong hội nghị này.");
                 }
             }
 
@@ -1138,7 +1153,7 @@ namespace ConfRadar.Services.Services
             await EnsureConferenceIsEditable(conference);
             // Check if there are any tickets already sold for this price
             var ticketCount = await _unitOfWork.TicketRepository.GetTicketCountByConferencePriceIdAsync(priceId);
-            if (ticketCount > 0) throw new BadRequestException("Cannot delete price because tickets have already been sold for this price");
+            if (ticketCount > 0) throw new BadRequestException("Không thể xóa giá vé vì đã có vé được bán cho mức giá này.");
 
             return await _unitOfWork.ConferencePriceRepository.DeleteConferencePriceAsync(price) > 0;
         }
@@ -1471,7 +1486,7 @@ namespace ConfRadar.Services.Services
         public async Task<ConferencePolicyResponse> UpdateConferencePolicyAsync(string policyId, UpdateConferencePolicyRequest request, string userId)
         {
             var policy = await _unitOfWork.ConferencePolicyRepository.GetConferencePolicyByIdAsync(policyId);
-            if (policy == null) throw new NotFoundException($"Conference policy with ID {policyId} not found");
+            if (policy == null) throw new NotFoundException($"Không tìm thấy chính sách hội nghị với ID {policyId}");
 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(policy.ConferenceId);
             if (conference == null)
@@ -1720,18 +1735,18 @@ namespace ConfRadar.Services.Services
         public async Task<List<RefundPolicyResponse>> AddRefundPoliciesAsync(string confId, string pricePhaseId, AddRefundPoliciesRequest request, string userId)
         {
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(pricePhaseId);
-            if (pricePhase == null) throw new NotFoundException($"Không tìm th?y giai do?n bán vé (PricePhase) v?i ID {pricePhaseId}.");
+            if (pricePhase == null) throw new NotFoundException($"Không tìm thấy giai đoạn bán vé (PricePhase) với ID {pricePhaseId}.");
 
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(pricePhase.ConferencePriceId);
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferencePrice.ConferenceId);
 
             #region Xác th?c
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("B?n không có quy?n thêm chính sách hoàn ti?n cho giai do?n này.");
+                throw new ForbiddenException("Bạn không có quyền thêm chính sách hoàn tiền cho giai đoạn này.");
             await EnsureConferenceIsEditable(conference);
 
             if (request.RefundPolicies == null || !request.RefundPolicies.Any())
-                throw new BadRequestException("Yêu c?u ph?i ch?a ít nh?t m?t chính sách hoàn ti?n.");
+                throw new BadRequestException("Yêu cầu phải chứa ít nhất một chính sách hoàn tiền.");
 
             DateOnly today = await _timeProviderService.GetVietnamDate();
             var existingPolicies = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByPricePhaseId(pricePhaseId);
@@ -1740,9 +1755,9 @@ namespace ConfRadar.Services.Services
             foreach (var policy in request.RefundPolicies)
             {
                 if (!policy.PercentRefund.HasValue || !policy.RefundDeadline.HasValue)
-                    throw new BadRequestException("Chính sách hoàn tiền phải có d? ph?n tram và h?n chót.");
+                    throw new BadRequestException("Chính sách hoàn tiền phải có đủ phần trăm và hạn chót.");
                 if (policy.PercentRefund < 0 || policy.PercentRefund > 100)
-                    throw new BadRequestException("Ph?n tram hoàn ti?n ph?i n?m trong kho?ng t? 0 d?n 100.");
+                    throw new BadRequestException("Phần trăm hoàn tiền phải nằm trong khoảng từ 0 đến 100.");
                 if (policy.RefundDeadline.Value <= today)
                     throw new BadRequestException("H?n chót hoàn ti?n ph?i là m?t ngày trong tuong lai.");
                 if (pricePhase.ConferencePrice.IsAuthor == false)
@@ -1766,13 +1781,13 @@ namespace ConfRadar.Services.Services
                         throw new BadRequestException($"Hạn chót hoàn tiền cho vé hội nghị  ({policy.RefundDeadline.Value:dd/MM/yyyy}) phải sau ngày bắt đầu củaa giai đoạn bán vé ({pricePhase.StartDate:dd/MM/yyyy}).");
                     }
 
-                    if (policy.RefundDeadline.Value > researchPhase.RegistrationEndDate)
-                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {policy.RefundDeadline.Value:dd/MM/yyyy} phải trước registration emd {researchPhase.RegistrationEndDate.Value:dd/MM/yyyy}");
+                    if (policy.RefundDeadline.Value > researchPhase.AuthorPaymentEnd)
+                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {policy.RefundDeadline.Value:dd/MM/yyyy} phải trước authorpaymentEnd {researchPhase.AuthorPaymentEnd.Value:dd/MM/yyyy}");
                 }
 
 
                 if (!existingDeadlines.Add(policy.RefundDeadline.Value))
-                    throw new BadRequestException($"Hạn chót hoàn ti?n '{policy.RefundDeadline.Value:dd/MM/yyyy}' dã t?n t?i trong giai do?n này.");
+                    throw new BadRequestException($"Hạn chót hoàn tiền '{policy.RefundDeadline.Value:dd/MM/yyyy}' đã tồn tại trong giai đoạn này.");
             }
             #endregion
 
@@ -1813,7 +1828,7 @@ namespace ConfRadar.Services.Services
             var pricephase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(pricephaseId);
             if (pricephase == null)
             {
-                throw new NotFoundException($"Không tìm th?y pricephase v?i ID {pricephaseId}");
+                throw new NotFoundException($"Không tìm thấy PricePhase với ID {pricephaseId}");
             }
 
             var policiesFromDb = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByPricePhaseId(pricephaseId);
@@ -1837,33 +1852,52 @@ namespace ConfRadar.Services.Services
         public async Task<RefundPolicyResponse> UpdateRefundPolicyAsync(string refundPolicyId, UpdateRefundPolicyRequest request, string userId)
         {
             var refundPolicy = await _unitOfWork.ConferenceRefundPolicyRepository.GetConferenceRefundPolicyByIdAsync(refundPolicyId);
-            if (refundPolicy == null) throw new NotFoundException($"Không tìm th?y chính sách hoàn ti?n v?i ID {refundPolicyId}");
+            if (refundPolicy == null) throw new NotFoundException($"Không tìm thấy chính sách hoàn tiền với ID {refundPolicyId}");
 
             var pricePhase = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(refundPolicy.PricePhaseId);
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(pricePhase.ConferencePriceId);
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferencePrice.ConferenceId);
 
             #region Xác th?c
-            if (conference.CreatedBy != userId) throw new ForbiddenException("B?n không có quy?n c?p nh?t chính sách này.");
+            if (conference.CreatedBy != userId) throw new ForbiddenException("Bạn không có quyền cập nhật chính sách này.");
             await EnsureConferenceIsEditable(conference);
 
             if (request.PercentRefund.HasValue && (request.PercentRefund < 0 || request.PercentRefund > 100))
-                throw new BadRequestException("Ph?n tram hoàn ti?n ph?i n?m trong kho?ng t? 0 d?n 100.");
+                throw new BadRequestException("Phần trăm hoàn tiền phải nằm trong khoảng từ 0 đến 100.");
 
             if (request.RefundDeadline.HasValue)
             {
                 if (request.RefundDeadline.Value <= await _timeProviderService.GetVietnamDate())
-                    throw new BadRequestException("H?n chót hoàn ti?n ph?i là m?t ngày trong tuong lai.");
-                if (request.RefundDeadline.Value < pricePhase.StartDate)
-                    throw new BadRequestException($"H?n chót hoàn ti?n ({request.RefundDeadline.Value:dd/MM/yyyy}) ph?i sau ngày b?t d?u c?a giai do?n ({pricePhase.StartDate:dd/MM/yyyy}).");
+                    throw new BadRequestException("Hạn chót hoàn tiền phải là một ngày trong tương lai.");
+                if (pricePhase.ConferencePrice.IsAuthor == false)
+                {
+                    // Validation quan tr?ng: Deadline hoàn ti?n ph?i TRU?C ngày b?t d?u c?a phase
+                    if (request.RefundDeadline.Value < pricePhase.StartDate)
+                    {
+                        throw new BadRequestException($"Hoàn chót hoàn tiền cho vé hội nghị  ({request.RefundDeadline.Value:dd/MM/yyyy}) phải sau ngày bắt đầu củaa giai đoạn bán vé ({pricePhase.StartDate:dd/MM/yyyy}).");
+                    }
 
-                if (request.RefundDeadline.Value > conference.TicketSaleEnd)
-                    throw new BadRequestException($"H?n chót hoàn toàn ti?n {request.RefundDeadline.Value:dd/MM/yyyy} ph?i tru?c conference ticketsaleend {conference.TicketSaleEnd.Value:dd/MM/yyyy}");
+                    if (request.RefundDeadline.Value > conference.TicketSaleEnd)
+                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {request.RefundDeadline.Value:dd/MM/yyyy} phải trước conference ticketsaleend {conference.TicketSaleEnd.Value:dd/MM/yyyy}");
+                }
+                else
+                {
+                    var researchPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseByIdAsync(pricePhase.ResearchConferencePhaseId);
+                    if (researchPhase == null)
+                        throw new Exception($"Không tìm ra researPhase cho conference price của price phase {pricePhase.PricePhaseId}");
+                    if (request.RefundDeadline.Value < pricePhase.StartDate)
+                    {
+                        throw new BadRequestException($"Hạn chót hoàn tiền cho vé hội nghị  ({request.RefundDeadline.Value:dd/MM/yyyy}) phải sau ngày bắt đầu củaa giai đoạn bán vé ({pricePhase.StartDate:dd/MM/yyyy}).");
+                    }
+
+                    if (request.RefundDeadline.Value > researchPhase.AuthorPaymentEnd)
+                        throw new BadRequestException($"Hạn chót hoàn toàn tiền vé hội nghị  {request.RefundDeadline.Value:dd/MM/yyyy} phải trước authorpaymentEnd {researchPhase.AuthorPaymentEnd.Value:dd/MM/yyyy}");
+                }
 
 
                 var allPoliciesInPhase = await _unitOfWork.ConferenceRefundPolicyRepository.GetRefundPoliciesByPricePhaseId(pricePhase.PricePhaseId);
                 if (allPoliciesInPhase.Any(p => p.RefundDeadline == request.RefundDeadline.Value && p.RefundPolicyId != refundPolicyId))
-                    throw new BadRequestException($"H?n chót hoàn ti?n '{request.RefundDeadline.Value:dd/MM/yyyy}' dã t?n t?i trong giai do?n này.");
+                    throw new BadRequestException($"Hạn chót hoàn tiền '{request.RefundDeadline.Value:dd/MM/yyyy}' đã tồn tại trong giai đoạn này.");
             }
             #endregion
 
@@ -1899,7 +1933,7 @@ namespace ConfRadar.Services.Services
             if (conference == null)
             {
                 // Tru?ng h?p hi?m g?p, nhung nên x? lý d? tránh l?i không mong mu?n
-                throw new NotFoundException("Không tìm th?y h?i ngh? liên quan d?n chính sách này.");
+                throw new NotFoundException("Không tìm thấy hội nghị liên quan đến chính sách này.");
             }
 
             #region Xác th?c
@@ -1907,7 +1941,7 @@ namespace ConfRadar.Services.Services
             // 1. Phân quy?n
             if (conference.CreatedBy != userId)
             {
-                throw new ForbiddenException("B?n không có quy?n xóa chính sách hoàn ti?n này.");
+                throw new ForbiddenException("Bạn không có quyền xóa chính sách hoàn tiền này.");
             }
 
             // 2. Xác th?c tr?ng thái h?i ngh? (s? d?ng helper dã có)
@@ -2011,7 +2045,7 @@ namespace ConfRadar.Services.Services
         public async Task<ResearchConferenceBasicStepResponse> UpdateResearchConferenceBasicAsync(string conferenceId, UpdateResearchConferenceBasicRequest request, string userId)
         {
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null) throw new NotFoundException($"Conference with ID {conferenceId} not found");
+            if (conference == null) throw new NotFoundException($"Hội với ID {conferenceId} không tồn tại");
 
             if (!string.IsNullOrWhiteSpace(request.ConferenceCategoryId) && request.ConferenceCategoryId != conference.ConferenceCategoryId)
             {
@@ -2040,6 +2074,10 @@ namespace ConfRadar.Services.Services
             if (conference.IsResearchConference != true)
                 throw new Exception("Phải là conference research mới update bằng endpoint này được");
 
+            var AllPrices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
+            var totalSlotFromPrices = AllPrices.Sum(p => p.TotalSlot);
+            if (request.TotalSlot < totalSlotFromPrices) throw new BadRequestException("Không thể giảm tổng số vé xuống dưới tổng số vé đã phân bổ cho các loại vé.");
+
             var finalStartDate = request.StartDate ?? conference.StartDate;
             var finalEndDate = request.EndDate ?? conference.EndDate;
             var finalTicketSaleStart = request.TicketSaleStart ?? conference.TicketSaleStart;
@@ -2048,6 +2086,24 @@ namespace ConfRadar.Services.Services
             {
                 if (!IsValidConferenceAndTicketSaleDates(finalStartDate.Value, finalEndDate.Value, finalTicketSaleStart.Value, finalTicketSaleEnd.Value).Result)
                     throw new BadRequestException("Ngày tháng cung cấp không hợp lệ.");
+            }
+
+
+            if (request.TotalSlot.HasValue && request.TotalSlot.Value != conference.TotalSlot)
+            {
+                int oldTotalSlot = conference.TotalSlot ?? 0;
+                int newTotalSlot = request.TotalSlot.Value;
+                int slotDifference = newTotalSlot - oldTotalSlot;
+
+                // Tính toán số vé đã bán của TOÀN BỘ hội nghị
+                int soldTickets = (conference.TotalSlot ?? 0) - (conference.AvailableSlot ?? 0);
+                if (newTotalSlot < soldTickets)
+                {
+                    throw new BadRequestException($"Không thể giảm tổng số vé xuống {newTotalSlot} vì đã có {soldTickets} vé được bán ra.");
+                }
+
+                conference.TotalSlot = newTotalSlot;
+                conference.AvailableSlot = (conference.AvailableSlot ?? 0) + slotDifference;
             }
 
             //var Waitlist = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseLastByConferenceIdAsync(conferenceId);
@@ -2059,9 +2115,7 @@ namespace ConfRadar.Services.Services
             conference.ConferenceName = request.ConferenceName ?? conference.ConferenceName;
             conference.Description = request.Description ?? conference.Description;
             conference.StartDate = request.StartDate;  // Fixed nullable DateOnly
-            conference.EndDate = request.EndDate;         // Fixed nullable DateOnly
-            conference.TotalSlot = request.TotalSlot ?? conference.TotalSlot;
-            conference.AvailableSlot = request.TotalSlot ?? conference.AvailableSlot;
+            conference.EndDate = request.EndDate;         // Fixed nullable DateOnly    
             conference.Address = request.Address ?? conference.Address;
             conference.ConferenceCategoryId = request.ConferenceCategoryId ?? conference.ConferenceCategoryId;
             conference.CityId = request.CityId ?? conference.CityId;
@@ -2088,13 +2142,13 @@ namespace ConfRadar.Services.Services
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
             if (conference == null)
             {
-                throw new NotFoundException($"Không tìm th?y h?i ngh? v?i ID {conferenceId}");
+                throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}");
             }
 
             // 1. Phân quy?n
             if (conference.CreatedBy != userId)
             {
-                throw new BadRequestException("B?n không có quy?n thêm chi ti?t cho h?i ngh? này.");
+                throw new BadRequestException("Bạn không có quyền thêm chi tiết cho hội nghị này.");
             }
 
             if (request.NumberPaperAccept <= 0)
@@ -2112,12 +2166,12 @@ namespace ConfRadar.Services.Services
             var existingDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
             if (existingDetail != null)
             {
-                throw new BadRequestException("Chi ti?t nghiên c?u cho h?i ngh? này dã t?n t?i.");
+                throw new BadRequestException("Chi tiết nghiên cứu cho hội nghị này đã tồn tại.");
             }
 
             if (conference.IsResearchConference != true)
             {
-                throw new BadRequestException("Ch? có th? thêm chi ti?t nghiên c?u cho m?t h?i ngh? lo?i 'nghiên c?u'.");
+                throw new BadRequestException("Chỉ có thể thêm chi tiết nghiên cứu cho một hội nghị loại 'nghiên cứu'.");
             }
 
 
@@ -2136,7 +2190,7 @@ namespace ConfRadar.Services.Services
                 int currentYear = DateTime.Now.Year;
                 if (request.RankYear.Value < currentYear - 20 || request.RankYear.Value > currentYear + 5)
                 {
-                    throw new BadRequestException($"Nam x?p h?ng '{request.RankYear.Value}' không h?p l?.");
+                    throw new BadRequestException($"Năm xếp hạng '{request.RankYear.Value}' không hợp lệ.");
                 }
             }
 
@@ -2168,16 +2222,39 @@ namespace ConfRadar.Services.Services
 
 
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("B?n không có quy?n c?p nh?t chi ti?t cho h?i ngh? này.");
+                throw new ForbiddenException("Bạn không có quyền cập nhật chi tiết cho hội nghị này.");
 
             var finalRankingCategoryId = request.RankingCategoryId ?? researchDetail.RankingCategoryId;
             var finalRankValue = request.RankValue ?? researchDetail.RankValue;
+
+            if (request.NumberPaperAccept.HasValue)
+            {
+                var authorTickets = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(conferenceId);
+                var totalAuthorSlots = authorTickets.Sum(t => t.TotalSlot ?? 0);
+
+                if (request.NumberPaperAccept.Value < totalAuthorSlots)
+                {
+                    throw new BadRequestException($"Không thể giảm số lượng bài báo chấp nhận xuống {request.NumberPaperAccept.Value} vì tổng số vé dành cho tác giả đã tạo là {totalAuthorSlots}.");
+                }
+                if (conference.TotalSlot < request.NumberPaperAccept)
+                    throw new Exception($"Không thể có số bài báo có thể nhận lớn hơn totalslot của toàn hội nghị (numberPaperAccept{request.NumberPaperAccept} > conference totalslot{conference.TotalSlot})");
+            }
+
+
+            if (request.RevisionAttemptAllowed.HasValue && request.RevisionAttemptAllowed.Value != researchDetail.RevisionAttemptAllowed)
+            {
+                var existingPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conferenceId);
+                if (existingPhases.Any())
+                {
+                    throw new BadRequestException("Không thể thay đổi số lần sửa bài cho phép sau khi đã tạo các giai đoạn (phase) của hội nghị.");
+                }
+            }
 
             // N?u RankingCategoryId du?c thay d?i, xác th?c s? t?n t?i c?a ID m?i
             if (request.RankingCategoryId != null && request.RankingCategoryId != researchDetail.RankingCategoryId)
             {
                 if (await _unitOfWork.RankingCategoryRepository.GetRankingCategoryByIdAsync(request.RankingCategoryId) == null)
-                    throw new NotFoundException($"Lo?i x?p h?ng v?i ID '{request.RankingCategoryId}' không t?n t?i.");
+                    throw new NotFoundException($"Loại xếp hạng với ID '{request.RankingCategoryId}' không tồn tại.");
             }
             if (request.NumberPaperAccept.HasValue)
                 if (conference.TotalSlot < request.NumberPaperAccept)
@@ -2368,7 +2445,7 @@ namespace ConfRadar.Services.Services
                 return new CreatePhasesResponse
                 {
                     CreatedPhaseIds = createdPhaseIds,
-                    Message = "T?o các giai đoạn cho hội nghị thành công.",
+                    Message = "Tạo các giai đoạn cho hội nghị thành công.",
                 };
             }
             catch (Exception ex)
@@ -2690,7 +2767,7 @@ namespace ConfRadar.Services.Services
                 // Ki?m tra xem phase dang c?p nh?t có "nu?t" phase khác không
                 if (finalRegStart < otherPhase.AuthorPaymentEnd && finalCameraEnd > otherPhase.RegistrationStartDate)
                 {
-                    throw new BadRequestException($"Kho?ng th?i gian m?i ({finalRegStart:dd/MM/yyyy} - {finalCameraEnd:dd/MM/yyyy}) b? ch?ng chéo v?i m?t phase khác dã t?n t?i.");
+                    throw new BadRequestException($"Khoảng thời gian mới ({finalRegStart:dd/MM/yyyy} - {finalCameraEnd:dd/MM/yyyy}) bị chồng chéo với một phase khác đã tồn tại.");
                 }
             }
 
@@ -2700,7 +2777,7 @@ namespace ConfRadar.Services.Services
             {
                 if (deadline.StartSubmissionDate < finalReviseStart || deadline.EndSubmissionDate > finalReviseEnd)
                 {
-                    throw new BadRequestException($"Không th? c?p nh?t. Kho?ng th?i gian s?a d?i m?i ({finalReviseStart:dd/MM/yyyy} - {finalReviseEnd:dd/MM/yyyy}) không còn ch?a Revision Deadline Round {deadline.RoundNumber} ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}). Vui lòng c?p nh?t các deadline tru?c.");
+                    throw new BadRequestException($"Không thể cập nhật. Khoảng thời gian sửa đổi mới ({finalReviseStart:dd/MM/yyyy} - {finalReviseEnd:dd/MM/yyyy}) không còn chứa Revision Deadline Round {deadline.RoundNumber} ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}). Vui lòng cập nhật các deadline trước.");
                 }
             }
             #endregion
@@ -2960,7 +3037,7 @@ namespace ConfRadar.Services.Services
             #region Xác th?c
             // 1. Phân quy?n và tr?ng thái
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("B?n không có quy?n xóa phiên này.");
+                throw new ForbiddenException("Bạn không có quyền xóa phiên này.");
             EnsureConferenceIsEditable(conference);
 
             //// 2. Ki?m tra xem dã có presenter nào du?c gán vào session này chua
@@ -3243,25 +3320,25 @@ namespace ConfRadar.Services.Services
         public async Task<List<PricePhaseResponse>> AddPricePhasesAsync(string conferencePriceId, AddPricePhasesRequest request, string userId)
         {
             var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(conferencePriceId);
-            if (conferencePrice == null) throw new NotFoundException($"Không tìm th?y lo?i vé v?i ID {conferencePriceId}");
+            if (conferencePrice == null) throw new NotFoundException($"Không tìm thấy loại vé với ID {conferencePriceId}");
 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferencePrice.ConferenceId);
-            if (conference == null) throw new InvalidOperationException("Không tìm th?y h?i ngh? cho lo?i vé này.");
+            if (conference == null) throw new InvalidOperationException("Không tìm thấy hội nghị cho loại vé này.");
 
             #region === 1. VALIDATION CO B?N & PHÂN QUY?N ===
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("B?n không có quy?n thêm giai do?n cho lo?i vé này.");
+                throw new ForbiddenException("Bạn không có quyền thêm giai đoạn cho loại vé này.");
             await EnsureConferenceIsEditable(conference);
 
             if (request.PricePhases == null || !request.PricePhases.Any())
-                throw new BadRequestException("Yêu c?u ph?i ch?a ít nh?t m?t giai do?n bán vé.");
+                throw new BadRequestException("Yêu cầu phải chứa ít nhất một giai đoạn bán vé.");
 
             // Ki?m tra t?ng slot
             var existingPhases = await _unitOfWork.PricePhaseRepository.GetPricePhasesByConferencePriceIdAsync(conferencePriceId);
             var existingTotalSlot = existingPhases.Sum(p => p.TotalSlot ?? 0);
             var requestTotalSlot = request.PricePhases.Sum(p => p.TotalSlot);
             if (existingTotalSlot + requestTotalSlot > conferencePrice.TotalSlot)
-                throw new BadRequestException($"T?ng s? vé trong các giai do?n ({existingTotalSlot + requestTotalSlot}) vu?t quá gi?i h?n {conferencePrice.TotalSlot} c?a lo?i vé này.");
+                throw new BadRequestException($"Tổng số vé trong các giai đoạn ({existingTotalSlot + requestTotalSlot}) vượt quá giới hạn {conferencePrice.TotalSlot} của loại vé này.");
 
             // Ki?m tra ch?ng chéo ngày tháng
             var allPhasesForCheck = new List<PricePhase>(existingPhases);

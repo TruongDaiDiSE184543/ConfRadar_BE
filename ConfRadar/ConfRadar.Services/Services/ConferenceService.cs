@@ -1407,7 +1407,7 @@ namespace ConfRadar.Services.Services
                 RankingFileUrls = rankingFileUrls?.Select(r => r.ToRankingFileUrlResponse()).ToList(),
                 MaterialDownloads = materialDownloads?.Select(m => m.ToMaterialDownloadResponse()).ToList(),
                 RankingReferenceUrls = rankingReferenceUrls?.Select(r => r.ToRankingReferenceUrlResponse()).ToList(),
-                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).ToList() : null,
+                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).OrderBy(researchPhase => researchPhase.PhaseOrder).ToList() : null,
                 ResearchSessions = researchSessions?.Select(rs => rs.ToResearchSessionWithMediaResponse()).ToList(),
 
                 Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
@@ -1513,7 +1513,7 @@ namespace ConfRadar.Services.Services
                 RankingFileUrls = rankingFileUrls?.Select(r => r.ToRankingFileUrlResponse()).ToList(),
                 MaterialDownloads = materialDownloads?.Select(m => m.ToMaterialDownloadResponse()).ToList(),
                 RankingReferenceUrls = rankingReferenceUrls?.Select(r => r.ToRankingReferenceUrlResponse()).ToList(),
-                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).ToList() : null,
+                ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).OrderBy(researchPhase => researchPhase.PhaseOrder).ToList() : null,
                 ResearchSessions = researchSessions?.Select(rs => rs.ToResearchSessionWithMediaResponse()).ToList(),
 
                 // Shared tables data (same as technical conference)
@@ -1944,7 +1944,7 @@ namespace ConfRadar.Services.Services
                     RankingFileUrls = rankingFileUrls?.Select(r => r.ToRankingFileUrlResponse()).ToList(),
                     MaterialDownloads = materialDownloads?.Select(m => m.ToMaterialDownloadResponse()).ToList(),
                     RankingReferenceUrls = rankingReferenceUrls?.Select(r => r.ToRankingReferenceUrlResponse()).ToList(),
-                    ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).ToList() : null,
+                    ResearchPhase = researchPhase != null ? researchPhase.Select(researchPhase => researchPhase.toResearchPhaseResponse()).OrderBy(researchPhase => researchPhase.PhaseOrder).ToList() : null,
                     ResearchSessions = researchSessions?.Select(rs => rs.ToResearchSessionWithMediaResponse()).ToList(),
 
                     // Shared tables data (same as technical conference)

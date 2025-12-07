@@ -459,8 +459,11 @@ namespace ConfRadar.Services.DTOs.Conference
         // Camera ready decide status dates (head reviewer only)
         public DateOnly? CameraReadyDecideStatusStart { get; set; }
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
-        public bool? IsWaitlist { get; set; }
+        public DateOnly? AuthorPaymentStart { get; set; }
+        public DateOnly? AuthorPaymentEnd { get; set; }
         public bool? IsActive { get; set; }
+        public int? PhaseOrder { get; set; }
+      
         public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
     }
 

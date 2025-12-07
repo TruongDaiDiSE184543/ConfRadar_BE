@@ -58,9 +58,12 @@ namespace ConfRadar.Services.Mappers
                 CameraReadyEndDate = model.CameraReadyEndDate,
                 CameraReadyDecideStatusStart = model.CameraReadyDecideStatusStart,
                 CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
+                AuthorPaymentStart = model.AuthorPaymentStart,
+                AuthorPaymentEnd = model.AuthorPaymentEnd,
 
                 ConferenceId = model.ConferenceId,
                 IsActive = model.IsActive,
+                PhaseOrder = model.PhaseOrder,
                 ResearchConferencePhaseId = model.ResearchConferencePhaseId,
                 RevisionRoundDeadlines = model.RevisionRoundDeadlines.Select(r => r.toRevisionRoundDeadlineResponse()).ToList(),
             };
