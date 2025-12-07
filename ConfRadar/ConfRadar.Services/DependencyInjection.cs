@@ -101,7 +101,7 @@ namespace ConfRadar.Services
                 q.AddTrigger(opts => opts
                     .ForJob(notifyJobKey)
                     .WithIdentity("NotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(460).RepeatForever()));
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(15).RepeatForever()));
 
 
 
@@ -111,7 +111,7 @@ namespace ConfRadar.Services
                 q.AddTrigger(opts => opts
                     .ForJob(resetWLJobKey)
                     .WithIdentity("ResetNotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(470).RepeatForever()));
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(60).RepeatForever()));
 
 
 
