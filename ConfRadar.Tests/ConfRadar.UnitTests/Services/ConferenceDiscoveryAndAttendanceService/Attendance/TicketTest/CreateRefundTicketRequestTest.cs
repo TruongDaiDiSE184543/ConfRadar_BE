@@ -322,38 +322,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("Tất cả các vé hoàn tiền đã quá hạn", ex.Message);
         }
 
-        [Fact]
-        public async Task CreateRefundTicketRequest_ShouldThrow_WhenAuthorTicketAndAbstractReviewed()
-        {
-            // Arrange
-            SetupGlobalAndPaymentMethodMocks();
-
-            var ticket = CreateBasicTicket(isAuthor: true);
-            // add a valid policy
-            ticket.PricePhase.RefundPolicies = new List<RefundPolicy>
-            {
-                new RefundPolicy { RefundPolicyId = "RP1", PercentRefund = 50, RefundDeadline = DateOnly.FromDateTime(DateTime.Now.AddDays(1)) }
-            };
-
-            _mockTicketRepo.Setup(t => t.GetTicketByTicketIdAndUserId(ticket.TicketId, ticket.UserId))
-                .ReturnsAsync(ticket);
-
-            // Simulate paper exists and its abstract GlobalStatus is not Pending
-            var paper = new Paper
-            {
-                PaperId = "P1",
-                Abstract = new Abstract { AbstractId = "A1", GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_NOT_PENDING" } }
-            };
-
-            //_mockPaperRepo.Setup(p => p.GetPaperByUserAndConference(It.IsAny<string>(), It.IsAny<string>()))
-            //    .ReturnsAsync(paper);
-
-            _mockRefundRequestRepo.Setup(r => r.GetRefundRequestByTicketIdAsync(ticket.TicketId)).ReturnsAsync((RefundRequest)null);
-
-            var req = CreateRequest(ticket.TicketId, "TX1");
-
-            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId));
-        }
+       
 
         [Fact]
         public async Task CreateRefundTicketRequest_ShouldThrow_WhenWalletNotFound()

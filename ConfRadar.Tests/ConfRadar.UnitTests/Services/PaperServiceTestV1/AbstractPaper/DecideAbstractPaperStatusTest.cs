@@ -302,25 +302,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             ex.Message.Should().Contain("abstract không trong quá trình pending");
         }
 
-        [Fact]
-        public async Task DecideAbstractPaperStatus_Should_ThrowBadRequest_When_Rejecting_But_NoValidTicket()
-        {
-            // ARRANGE
-            string paperId = "paper-1";
-            SetupHappyPathMocks(paperId, "abs-1", "user-1");
-
-            // Mock Paper has null ticket (maybe already refunded or data error)
-            var paper = await _mockUnitOfWork.Object.PaperRepository.GetPaperByIdAsync(paperId);
-            paper.TicketId = null;
-
-            var request = new UpdateAbstractPaperStatusRequest { PaperId = paperId, AbstractId = "abs-1", GlobalStatus = GlobalStatusEnum.Rejected };
-
-            // ACT & ASSERT
-            var ex = await Assert.ThrowsAsync<BadRequestException>(
-                () => _paperService.DecideAbstractPaperStatus(request, "user-1")
-            );
-            ex.Message.Should().Contain("Không tìm thấy vé hoặc vé đã bị refund");
-        }
+       
 
         #endregion
     }

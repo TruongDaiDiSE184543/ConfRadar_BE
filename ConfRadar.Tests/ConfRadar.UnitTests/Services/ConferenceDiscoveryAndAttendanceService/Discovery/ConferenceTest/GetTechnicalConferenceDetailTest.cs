@@ -5,7 +5,6 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using Microsoft.Extensions.Options;
-using MockQueryable;
 using Moq;
 
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Discovery.ConferenceTest
@@ -15,6 +14,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IConferenceRepository> _mockConferenceRepo;
         private readonly Mock<ITicketRepository> _mockTicketRepo;
+        private readonly Mock<IConferenceStatusRepository> _mockConferenceStatusRepo;
         private readonly Mock<IConferenceStatusService> _mockConferenceStatusService;
         private readonly Mock<IConferenceTimelineService> _mockTimelineService;
         private readonly Mock<IObjectStorageFileService> _mockObjectStorage;
@@ -29,6 +29,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockConferenceRepo = new Mock<IConferenceRepository>();
             _mockTicketRepo = new Mock<ITicketRepository>();
+            _mockConferenceStatusRepo = new Mock<IConferenceStatusRepository>();
             _mockConferenceStatusService = new Mock<IConferenceStatusService>();
             _mockTimelineService = new Mock<IConferenceTimelineService>();
             _mockObjectStorage = new Mock<IObjectStorageFileService>();
@@ -39,6 +40,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
 
             _mockUnitOfWork.Setup(u => u.ConferenceRepository).Returns(_mockConferenceRepo.Object);
             _mockUnitOfWork.Setup(u => u.TicketRepository).Returns(_mockTicketRepo.Object);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository).Returns(_mockConferenceStatusRepo.Object);
 
             var objectStorageSettings = Options.Create(new AppSettingConfig.ObjectStorageSettings());
 
@@ -72,7 +74,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                 TicketSaleStart = new DateOnly(2025, 11, 1),
                 TicketSaleEnd = new DateOnly(2025, 12, 9),
                 IsInternalHosted = true,
-                IsResearchConference = false, // Technical conference
+                IsResearchConference = false,
                 CityId = "CITY1",
                 ConferenceCategoryId = "CAT1",
                 ConferenceStatusId = "Ready",
@@ -197,7 +199,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                             new ConferenceSessionMedium
                             {
                                 ConferenceSessionMediaId = "SESSMED1",
-
                                 MediaUrl = "session-video.mp4"
                             }
                         }
@@ -215,7 +216,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                 Description = "Academic research conference",
                 StartDate = new DateOnly(2025, 12, 15),
                 EndDate = new DateOnly(2025, 12, 17),
-                IsResearchConference = true, // Research conference
+                IsResearchConference = true,
                 CreatedBy = "USER1",
                 CreatedByNavigation = new User
                 {
@@ -225,17 +226,28 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             };
         }
 
+        // Helper method to setup common mocks
+        private void SetupConferenceMock(Conference conference)
+        {
+            _mockConferenceRepo
+                .Setup(r => r.GetTechnicalIncludedById(conference.ConferenceId,null))
+                .ReturnsAsync(conference);
+
+            _mockConferenceStatusRepo
+                .Setup(r => r.GetConferenceStatusByName("Ready"))
+                .ReturnsAsync(new ConferenceStatus
+                {
+                    ConferenceStatusId = "READY",
+                    ConferenceStatusName = "Ready"
+                });
+        }
+
         [Fact]
         public async Task GetTechnicalConferenceDetailAsync_ShouldReturnDetailWithoutTicketInfo_WhenUserIdIsNull()
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -257,14 +269,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
+            SetupConferenceMock(conference);
 
             var ticket = new Ticket
             {
                 TicketId = "TICKET1",
                 UserId = "USER1",
-
                 PricePhaseId = "PP1",
                 PricePhase = new PricePhase
                 {
@@ -279,10 +289,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                     }
                 }
             };
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
 
             _mockTicketRepo
                 .Setup(r => r.GetTicketByUserIdAndConferenceId("USER1", "CONF1"))
@@ -304,12 +310,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             _mockTicketRepo
                 .Setup(r => r.GetTicketByUserIdAndConferenceId("USER1", "CONF1"))
@@ -329,12 +330,17 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         public async Task GetTechnicalConferenceDetailAsync_ShouldThrowNotFoundException_WhenConferenceDoesNotExist()
         {
             // Arrange
-            var conferences = new List<Conference>();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
             _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+                .Setup(r => r.GetTechnicalIncludedById("NONEXISTENT",null))
+                .ReturnsAsync((Conference)null);
+
+            _mockConferenceStatusRepo
+                .Setup(r => r.GetConferenceStatusByName("Ready"))
+                .ReturnsAsync(new ConferenceStatus
+                {
+                    ConferenceStatusId = "READY",
+                    ConferenceStatusName = "Ready"
+                });
 
             // Act & Assert
             await Assert.ThrowsAsync<NotFoundException>(
@@ -347,12 +353,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleResearchConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(
@@ -366,12 +367,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -400,12 +396,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -420,12 +411,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -433,7 +419,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             // Assert
             Assert.NotNull(result.Policies);
             Assert.Single(result.Policies);
-            // Note: Verify actual policy mapping based on ToConferencePolicyResponse() implementation
         }
 
         [Fact]
@@ -441,12 +426,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -454,7 +434,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             // Assert
             Assert.NotNull(result.Sponsors);
             Assert.Single(result.Sponsors);
-            // Note: Verify actual sponsor mapping based on ToSponsorResponse() implementation
         }
 
         [Fact]
@@ -462,12 +441,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -475,7 +449,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             // Assert
             Assert.NotNull(result.ConferenceMedia);
             Assert.Single(result.ConferenceMedia);
-            // Note: Verify actual media mapping based on ToConferenceMediaResponse() implementation
         }
 
         [Fact]
@@ -483,12 +456,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -496,7 +464,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             // Assert
             Assert.NotNull(result.ConferencePrices);
             Assert.Single(result.ConferencePrices);
-            // Note: Verify actual price mapping based on ToConferencePriceWithPhasesResponse() implementation
         }
 
         [Fact]
@@ -504,12 +471,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -517,7 +479,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             // Assert
             Assert.NotNull(result.Sessions);
             Assert.Single(result.Sessions);
-            // Note: Verify actual session mapping based on ToConferenceSessionWithSpeakersResponse() implementation
         }
 
         [Fact]
@@ -526,12 +487,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             // Arrange
             var conference = GetSampleTechnicalConference();
             conference.TechnicalConferenceDetail = null;
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -550,12 +506,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             conference.ConferenceMedia = new List<ConferenceMedium>();
             conference.ConferencePrices = new List<ConferencePrice>();
             conference.ConferenceSessions = new List<ConferenceSession>();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -583,18 +534,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             conference.ConferenceMedia = null;
             conference.ConferencePrices = null;
             conference.ConferenceSessions = null;
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
 
             // Assert
-            // Should handle null collections gracefully without throwing exceptions
             Assert.NotNull(result);
             Assert.Equal("CONF1", result.ConferenceId);
         }
@@ -604,17 +549,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
 
-            // Assert - Verify all nested relationships are included
+            // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.ConferencePrices);
             Assert.NotNull(result.Sessions);
@@ -629,20 +569,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
 
-            // Assert - Verify query was called (includes are applied)
-            _mockConferenceRepo.Verify(r => r.GetAllConferences(), Times.Once);
+            // Assert
+            _mockConferenceRepo.Verify(r => r.GetTechnicalIncludedById("CONF1", null), Times.Once);
             Assert.NotNull(result);
-            // The BuildMock() ensures all Include statements work properly
         }
 
         [Fact]
@@ -650,12 +584,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
@@ -670,12 +599,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conference = GetSampleTechnicalConference();
-            var conferences = new List<Conference> { conference };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
+            SetupConferenceMock(conference);
 
             // Act
             var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
