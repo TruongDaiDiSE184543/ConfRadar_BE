@@ -83,13 +83,14 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<NotifyUserWaitListDetailResponse>> NotifyWaitListAsync(string readyConferenceStatusId, string pendingWaitListStatusId, string notifiedAtWaitListStatusId, DateTime notifiedAt)
         {
-
+            var dateNow = DateOnly.FromDateTime(notifiedAt);
             var notifyUserList = new List<NotifyUserWaitListDetailResponse>();
             var activeConferenceIds = await _context.Conferences
                  //.Include(c => c.ResearchConferencePhases)
                  //.Include(c => c.ConferencePrices)
                  .Where(c => c.ResearchConferencePhases.Any(rcp => rcp.IsActive == true)
                         && c.ConferencePrices.Any(cp => cp.AvailableSlot > 0 && cp.IsAuthor == true)
+                        && c.ConferencePrices.Any(cp=> cp.PricePhases.Any(pp=> pp.StartDate <= dateNow && dateNow <= pp.EndDate))
                         && c.ConferenceStatusId == readyConferenceStatusId).Select(c => c.ConferenceId).ToListAsync();
             var finalResult = 0;
             if (activeConferenceIds.Any())
@@ -105,7 +106,8 @@ namespace ConfRadar.Repositories.Repositories
                     && pwl.WaitListStatusId == pendingWaitListStatusId
                     && pwl.UserId != null
                     && pwl.User != null
-                    && pwl.User.IsActive == true)
+                    && pwl.User.IsActive == true
+                    && pwl.User.IsEmailConfirmed==true)
                     .AsSplitQuery()
                     .ToListAsync();
                 if (paperWaitListUser.Any())
