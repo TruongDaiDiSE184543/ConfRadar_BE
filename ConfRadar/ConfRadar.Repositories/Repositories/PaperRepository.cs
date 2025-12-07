@@ -25,6 +25,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<Paper> GetAllIncludeById(string paper);
         Task<List<Paper>> GetPapersByConferenceIdAsync(string confId);
         Task<List<Paper>> GetPapersWithPhasesForStatisticsByConferenceIdAsync(string confId);
+        Task<Paper> GetSubmittedPaperWith4PhaseStatusByConferenceIdAndRootAuthor(string confId, string rootAuthorId);
         Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
         Task<List<Paper>> GetAllNotRejectEdPaper(GlobalStatus rejectedGlobalStatus, ReviewStatus rejectedFullPaperStatus, string confId);
         Task<int> GetPaperCountByConference(string conferenceId);
@@ -526,6 +527,23 @@ namespace ConfRadar.Repositories.Repositories
                                      select u).ToListAsync();
             return listCoAuthor;
 
+        }
+
+        public async Task<Paper> GetSubmittedPaperWith4PhaseStatusByConferenceIdAndRootAuthor(string confId, string rootAuthorId)
+        {
+            IQueryable<Paper> query = _context.Papers
+                .Include(p => p.Abstract)
+                    .ThenInclude(a => a.GlobalStatus)
+                .Include(p => p.FullPaper)
+                    .ThenInclude(fp => fp.ReviewStatus)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rvp => rvp.GlobalStatus)
+                .Include(p => p.CameraReady)
+                    .ThenInclude(c => c.GlobalStatus)
+                .Include(p => p.PaperAuthors)
+                .Where(p => p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
+                .AsNoTracking().AsSplitQuery();
+            return await query.FirstAsync();
         }
     }
 

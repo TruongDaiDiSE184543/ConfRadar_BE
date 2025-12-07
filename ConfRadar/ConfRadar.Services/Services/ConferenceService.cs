@@ -903,6 +903,8 @@ namespace ConfRadar.Services.Services
             };
         }
 
+
+        //Only get technical detail for anon use this so only allow onhold,ready,complete, cancel status
         public async Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId, string? userId)
         {
             string ticketId = "", pricePhaseId = "", conferencePriceId = "";
@@ -927,6 +929,16 @@ namespace ConfRadar.Services.Services
 
             if (conference.IsResearchConference == true)
                 throw new Exception("chức năng chỉ dành cho tech");
+
+            if(
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Ready.GetDescription() &&
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.OnHold.GetDescription() &&
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Cancelled.GetDescription() &&
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Completed.GetDescription()
+               )
+            {
+                throw new BadRequestException($"Hội thảo đang ở trạng thái không khả dụng để xem được chi tiết");
+            }
 
             // Get technical conference detail if it exists (for technical conferences)
             var technicalDetail = conference.TechnicalConferenceDetail;
@@ -959,6 +971,9 @@ namespace ConfRadar.Services.Services
                 Sessions = conference.ConferenceSessions?.Select(cs => cs.ToConferenceSessionWithSpeakersResponse()).ToList(),
                 ConferenceMedia = conference.ConferenceMedia?.Select(cfm => cfm.ToConferenceMediaResponse()).ToList(),
                 ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
+                CategoryName = conference.ConferenceCategory?.ConferenceCategoryName ?? "N/A",
+                CityName = conference.City?.CityName ?? "N/A",
+                StatusName = conference.ConferenceStatus?.ConferenceStatusName ?? "N/A",
                 purchasedInfo = new PurchasedInfo
                 {
                     ticketId = ticketId,
@@ -1317,44 +1332,49 @@ namespace ConfRadar.Services.Services
         public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId, string? userId)
         {
             string ticketId = "", pricePhaseId = "", conferencePriceId = "";
-            if (userId != null)
-            {
-                var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
-                ticketId = ticket?.TicketId;
-                pricePhaseId = ticket?.PricePhaseId;
-                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferencePriceId;
-            }
+            SubmittedPaperInfo submittedPaperInfo = new SubmittedPaperInfo();
             // Get the main conference with related data
-            var conference = await _unitOfWork.ConferenceRepository.GetAllConferences()
-                .Include(c => c.ConferenceStatus)
-                .Include(c => c.CreatedByNavigation)
-                    .ThenInclude(u => u.Organization)
-                .Include(c => c.ConferenceCategory)
-                .Include(c => c.ConferenceMedia)
-                .Include(c => c.Policies)
-                .Include(c => c.ConferencePrices)
-                    .ThenInclude(cp => cp.PricePhases)
-                        .ThenInclude(pp => pp.RefundPolicies)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.ConferenceSessionMedia) // No speakers for research sessions
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Room) // Include room information
-                         .ThenInclude(r => r.Destination)
-                            .ThenInclude(d => d.City)
-                .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.ConferenceFeedbacks)
-                        .ThenInclude(f => f.User)
-                .Include(c => c.Sponsors)
-                .Include(c => c.RefundPolicies)
-                .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);
+            var conference = await _unitOfWork.ConferenceRepository.GetResearchIncludedById(conferenceId);
 
             if (conference == null)
             {
                 throw new NotFoundException($"Conference với ID {conferenceId} không tìm thấy");
             }
 
+            if (
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Ready.GetDescription() &&
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.OnHold.GetDescription() &&
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Cancelled.GetDescription() &&
+                conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Completed.GetDescription()
+               )
+            {
+                throw new BadRequestException($"Hội nghị nghiên cứu đang ở trạng thái không khả dụng để xem được chi tiết");
+            }
+
+
             if (conference.IsResearchConference == false)
                 throw new Exception("chức năng chỉ dành cho research");
+
+            if (userId != null)
+            {
+                var ticket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(userId, conferenceId);
+                ticketId = ticket?.TicketId;
+                pricePhaseId = ticket?.PricePhaseId;
+                conferencePriceId = ticket?.PricePhase?.ConferencePrice?.ConferencePriceId;
+
+                var SubmittedPaper = await _unitOfWork.PaperRepository.GetSubmittedPaperWith4PhaseStatusByConferenceIdAndRootAuthor(conferenceId, userId);
+                if (SubmittedPaper != null)
+                {
+                    submittedPaperInfo = new SubmittedPaperInfo()
+                    {
+                        PaperId = SubmittedPaper.PaperId,
+                        AbstractStatus = SubmittedPaper.Abstract?.GlobalStatus?.Name,
+                        FullpaperStatus = SubmittedPaper.FullPaper?.ReviewStatus?.Name,
+                        RevisionStatus = SubmittedPaper.RevisionPaper?.GlobalStatus?.Name,
+                        CameraReadyStatus = SubmittedPaper.CameraReady?.GlobalStatus?.Name
+                    };
+                }
+            }
 
             // Get research conference detail if it exists (for research conferences)
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
@@ -1390,7 +1410,10 @@ namespace ConfRadar.Services.Services
                 ConferenceStatusId = conference.ConferenceStatusId,
                 createdBy = conference.CreatedBy,
                 UserNameCreator = conference.CreatedByNavigation.FullName,
-
+                CategoryName = conference.ConferenceCategory?.ConferenceCategoryName ?? "N/A",
+                CityName = conference.City?.CityName ?? "N/A",
+                StatusName = conference.ConferenceStatus?.ConferenceStatusName ?? "N/A",
+                
                 // Research Conference Detail specific fields
                 PaperFormat = researchDetail?.PaperFormat,
                 NumberPaperAccept = researchDetail?.NumberPaperAccept,
@@ -1420,7 +1443,8 @@ namespace ConfRadar.Services.Services
                     ticketId = ticketId,
                     conferencePriceId = conferencePriceId,
                     pricePhaseId = pricePhaseId
-                }
+                },
+                submittedPaper = submittedPaperInfo != null ? submittedPaperInfo : null
             };
         }
 

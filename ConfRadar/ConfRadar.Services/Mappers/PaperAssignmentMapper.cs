@@ -15,14 +15,14 @@ namespace ConfRadar.Services.Mappers
         //    };
         //}
 
-        public static PaperReviewer ToModel(this AssignReviewerToPaperRequest request)
-        {
-            return new PaperReviewer
-            {
-                UserId = request.UserId,
-                PaperId = request.PaperId,
-                IsHeadReviewer = request.IsHeadReviewer
-            };
-        }
+        //public static PaperReviewer ToModel(this AssignReviewerToPaperRequest request)
+        //{
+        //    return new PaperReviewer
+        //    {
+        //        UserId = request.UserId,
+        //        PaperId = request.PaperId,
+        //        IsHeadReviewer = request.IsHeadReviewer
+        //    };
+        //}
     }
 }

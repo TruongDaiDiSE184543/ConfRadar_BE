@@ -271,6 +271,8 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(u => u.Organization)
                 .Include(c => c.CollaboratorContract)
                 .Include(c => c.ConferenceCategory)
+                .Include(c => c.City)
+                .Include(c => c.ConferenceStatus)
                 .Include(c => c.ConferenceMedia)
                 .Include(c => c.Policies)
                 .Include(c => c.ConferencePrices)
@@ -302,9 +304,32 @@ namespace ConfRadar.Repositories.Repositories
             return await query.Where(c => c.ConferenceId == technicalId).FirstOrDefaultAsync();
         }
 
-        public Task<Conference> GetResearchIncludedById(string researchId)
+        public async Task<Conference> GetResearchIncludedById(string researchId)
         {
-            throw new NotImplementedException();
+            IQueryable<Conference> query = _context.Conferences
+                .Include(c => c.ConferenceStatus)
+                .Include(c => c.City)
+                .Include(c => c.CreatedByNavigation)
+                .Include(c => c.ConferenceCategory)
+                .Include(c => c.ConferenceMedia)
+                .Include(c => c.Policies)
+                .Include(c => c.ConferencePrices)
+                    .ThenInclude(cp => cp.PricePhases)
+                        .ThenInclude(pp => pp.RefundPolicies)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceSessionMedia) 
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) 
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.ConferenceFeedbacks)
+                        .ThenInclude(f => f.User)
+                .Include(c => c.Sponsors)
+                .Include(c => c.RefundPolicies)
+                .Where(c => c.ConferenceId == researchId)
+                .AsSplitQuery().AsNoTracking();
+            return await query.FirstAsync();
         }
 
         public IQueryable<Conference> GetAllResearchIncludedConference()

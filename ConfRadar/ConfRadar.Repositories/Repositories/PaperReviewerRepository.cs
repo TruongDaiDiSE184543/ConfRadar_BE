@@ -19,6 +19,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Paper>> getAllAssignedPapers(string userId);
         Task<List<PaperReviewer>> GetPaperReviewersByConferenceIdAsync(string conferenceId);
         Task<List<Paper>> GetTotalPapersBelongToReviewer(string userId);
+        Task<int> DeleteMultiplePaperReviewersAsync (List<PaperReviewer> paperReviewers);
+        Task<int> CreateMultiplePaperReviewersAsync(List<PaperReviewer> paperReviewers);
     }
     public class PaperReviewerRepository : GenericRepository<PaperReviewer>, IPaperReviewerRepository
     {
@@ -141,6 +143,18 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(p => p.PaperReviewers.Any(pa => pa.UserId == userId))
                 .AsSplitQuery()
                 .ToListAsync();
+        }
+
+        public async Task<int> DeleteMultiplePaperReviewersAsync(List<PaperReviewer> paperReviewers)
+        {
+            _context.PaperReviewers.RemoveRange(paperReviewers);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> CreateMultiplePaperReviewersAsync(List<PaperReviewer> paperReviewers)
+        {
+            await _context.PaperReviewers.AddRangeAsync(paperReviewers);
+            return await _context.SaveChangesAsync();
         }
     }
 }
