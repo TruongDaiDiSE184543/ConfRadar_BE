@@ -208,6 +208,11 @@ namespace ConfRadar.Services.Services
             {
                 foreach (var coauthorId in request.CoAuthorId)
                 {
+                    var coAuthor = await _unitOfWork.UserRepository.GetUserByUserId(coauthorId);
+                    if (coAuthor == null)
+                    {
+                        throw new BadRequestException($"Coauthor với id {coauthorId} không tìm thấy");
+                    }
                     if (coauthorId == userId)
                     {
                         throw new BadRequestException("Bạn không thể thêm chính mình là co-author.");
@@ -299,7 +304,7 @@ namespace ConfRadar.Services.Services
                 int finalResult = 0;
                 if (notificationList.Any())
                 {
-                    await _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
+                    finalResult += await _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notificationList);
                 }
                 finalResult += await _unitOfWork.PaperRepository.CreatePaperAsync(paper);
                 finalResult += await _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLogObj);

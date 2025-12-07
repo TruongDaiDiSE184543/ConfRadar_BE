@@ -4,8 +4,8 @@ using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Services;
 using Microsoft.Extensions.Options;
-using MockQueryable;
 using Moq;
+using MockQueryable.Moq;
 
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Discovery.ConferenceTest
 {
@@ -62,7 +62,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                 {
                     ConferenceId = "C1",
                     ConferenceName = "AI Conference 2025",
-                    ConferenceStatusId = "Ready",
+                    ConferenceStatusId = "READY",
                     CreatedAt = new DateTime(2025, 11, 20),
                     Description = "Artificial Intelligence summit",
                     StartDate = new DateOnly(2025, 12, 10),
@@ -119,7 +119,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                 {
                     ConferenceId = "C2",
                     ConferenceName = "Data Science Workshop",
-                    ConferenceStatusId = "Ready",
+                    ConferenceStatusId = "READY",
                     CreatedAt = new DateTime(2025, 11, 25),
                     Description = "Learn data science techniques",
                     StartDate = new DateOnly(2025, 12, 15),
@@ -140,7 +140,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                 {
                     ConferenceId = "C3",
                     ConferenceName = "ML Summit",
-                    ConferenceStatusId = "Draft",
+                    ConferenceStatusId = "DRAFT",
                     CreatedAt = new DateTime(2025, 11, 28),
                     Description = "Machine Learning event",
                     StartDate = new DateOnly(2025, 12, 20),
@@ -156,26 +156,40 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             };
         }
 
+        // Setup repository mock với BuildMockDbSet để hỗ trợ async operations
+        private void SetupConferenceRepoMock(List<Conference> conferences)
+        {
+            // Mock GetConferencesWithPrice để filter theo statusId
+            _mockConferenceRepo
+                .Setup(r => r.GetConferencesWithPrice(It.IsAny<string>()))
+                .Returns<string>(statusId =>
+                {
+                    // Filter conferences theo statusId trước khi return
+                    var filtered = conferences
+                        .Where(c => c.ConferenceStatusId == statusId)
+                        .AsQueryable()
+                        .BuildMockDbSet();
+                    return filtered.Object;
+                });
+
+            _mockConferenceStatusRepo
+                .Setup(r => r.GetConferenceStatusByName("Ready"))
+                .ReturnsAsync(new ConferenceStatus
+                {
+                    ConferenceStatusId = "READY",
+                    ConferenceStatusName = "Ready"
+                });
+        }
+
         [Fact]
         public async Task GetConferencesWithPricesAsync_ShouldReturnOnlyReadyConferences()
         {
             // Arrange
-            var page = 1;
-            var pageSize = 10;
-
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
-            var result = await _service.GetConferencesWithPricesAsync(page, pageSize);
+            var result = await _service.GetConferencesWithPricesAsync(1, 10);
 
             // Assert
             Assert.Equal(2, result.Items.Count);
@@ -188,15 +202,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10, searchKeyword: "AI");
@@ -212,15 +218,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10, searchKeyword: "data science");
@@ -235,15 +233,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10, cityId: "CITY1");
@@ -259,15 +249,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10, startDate: new DateOnly(2025, 12, 15));
@@ -283,15 +265,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10, endDate: new DateOnly(2025, 12, 12));
@@ -307,15 +281,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(
@@ -334,23 +300,15 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10);
 
             // Assert
             Assert.Equal(2, result.Items.Count);
-            Assert.Equal("C2", result.Items[0].ConferenceId); // Created on 2025-11-25 (latest)
-            Assert.Equal("C1", result.Items[1].ConferenceId); // Created on 2025-11-20 (older)
+            Assert.Equal("C2", result.Items[0].ConferenceId);
+            Assert.Equal("C1", result.Items[1].ConferenceId);
         }
 
         [Fact]
@@ -358,22 +316,15 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
+            SetupConferenceRepoMock(conferences);
 
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
-
-            // Act
+            // Act - Page 2 với pageSize = 1
             var result = await _service.GetConferencesWithPricesAsync(2, 1);
 
             // Assert
+            // Order: C2 (2025-11-25), C1 (2025-11-20) -> Page 2 sẽ là C1
             Assert.Single(result.Items);
-            Assert.Equal("C1", result.Items.First().ConferenceId); // Second page, first item
+            Assert.Equal("C1", result.Items.First().ConferenceId); // C1 ở page 2
             Assert.Equal(2, result.TotalCount);
             Assert.Equal(2, result.Page);
             Assert.Equal(1, result.PageSize);
@@ -384,15 +335,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10);
@@ -427,15 +370,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10);
@@ -461,15 +396,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10, searchKeyword: "NonExistentKeyword");
@@ -484,15 +411,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = GetSampleConferencesWithPrices();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10);
@@ -513,7 +432,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                 {
                     ConferenceId = "C1",
                     ConferenceName = "Test Conference",
-                    ConferenceStatusId = "Ready",
+                    ConferenceStatusId = "READY",
                     CreatedAt = new DateTime(2025, 11, 20),
                     StartDate = new DateOnly(2025, 12, 10),
                     EndDate = new DateOnly(2025, 12, 12),
@@ -540,15 +459,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
                     }
                 }
             };
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10);
@@ -566,15 +477,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             var conferences = new List<Conference>();
-            var mockQueryable = conferences.AsQueryable().BuildMock();
-
-            _mockConferenceRepo
-                .Setup(r => r.GetAllConferences())
-                .Returns(mockQueryable);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "Ready", ConferenceStatusName = "Ready" });
+            SetupConferenceRepoMock(conferences);
 
             // Act
             var result = await _service.GetConferencesWithPricesAsync(1, 10);

@@ -59,14 +59,18 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         {
             var adminRole = new Role { RoleId = "admin" };
             var organizerRole = new Role { RoleId = "org" };
-
+            var localReviewerRole = new Role { RoleId = "rev" };
+            var collabRole = new Role { RoleId = "col" };
             _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription()))
                 .ReturnsAsync(adminRole);
             _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
                 .ReturnsAsync(organizerRole);
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetAvailableCoAuthorForInclude("conf1", It.IsAny<List<string>>()))
                 .ReturnsAsync(new List<User>());
-
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription()))
+    .ReturnsAsync(new Role { RoleId = "rev" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription()))
+                .ReturnsAsync(new Role { RoleId = "col" });
             var result = await _paperService.GetAvailableCoAuthorForInclude("conf1", "user1");
 
             Assert.Empty(result);
@@ -75,18 +79,26 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         [Fact]
         public async Task GetAvailableCoAuthor_ShouldExcludeCurrentUser()
         {
-            var adminRole = new Role { RoleId = "admin" };
-            var organizerRole = new Role { RoleId = "org" };
             var users = new List<User>
         {
             new User { UserId = "user1" },
             new User { UserId = "user2" }
         };
 
+            var adminRole = new Role { RoleId = "admin" };
+            var organizerRole = new Role { RoleId = "org" };
+            var reviewerRole = new Role { RoleId = "rev" };
+            var collabRole = new Role { RoleId = "col" };
+
+            // Mock tất cả 4 role
             _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription()))
                 .ReturnsAsync(adminRole);
             _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
                 .ReturnsAsync(organizerRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription()))
+                .ReturnsAsync(reviewerRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription()))
+                .ReturnsAsync(collabRole);
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetAvailableCoAuthorForInclude("conf1", It.IsAny<List<string>>()))
                 .ReturnsAsync(users);
 
@@ -97,52 +109,61 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         }
 
         [Fact]
-        public async Task GetAvailableCoAuthor_ShouldExcludeAdminOrganizer()
+        public async Task GetAvailableCoAuthor_ShouldExcludeSystemRole()
         {
+            // 1. Chuẩn bị role
             var adminRoleId = "role-admin";
             var organizerRoleId = "role-organizer";
+            var localReviewerRoleId = "role-reviewer";
+            var collabRoleId = "role-collab";
 
-            var users = new List<User>
-{
-    new User
-    {
-        UserId = "u1",
-        IsActive = true,
-        IsEmailConfirmed = true,
-        UserRoles = new List<UserRole> { new UserRole { RoleId = adminRoleId, IsActive = true } }
-    },
-    new User
-    {
-        UserId = "u2",
-        IsActive = true,
-        IsEmailConfirmed = true,
-        UserRoles = new List<UserRole> { new UserRole { RoleId = organizerRoleId, IsActive = true } }
-    },
-    new User
-    {
-        UserId = "u3",
-        IsActive = true,
-        IsEmailConfirmed = true,
-        UserRoles = new List<UserRole>() // hợp lệ
-    }
-};
             _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription()))
-    .ReturnsAsync(new Role { RoleId = adminRoleId, RoleName = "Admin" });
-
+                .ReturnsAsync(new Role { RoleId = adminRoleId, RoleName = "Admin" });
             _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
                 .ReturnsAsync(new Role { RoleId = organizerRoleId, RoleName = "Conference Organizer" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription()))
+                .ReturnsAsync(new Role { RoleId = localReviewerRoleId, RoleName = "Local Reviewer" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription()))
+                .ReturnsAsync(new Role { RoleId = collabRoleId, RoleName = "Collaborator" });
 
-            // Mock repo: chỉ trả users không có role admin/organizer
+            // 2. Tạo users (có admin, organizer và user hợp lệ)
+            var users = new List<User>
+    {
+        new User
+        {
+            UserId = "u1",
+            IsActive = true,
+            IsEmailConfirmed = true,
+            UserRoles = new List<UserRole> { new UserRole { RoleId = adminRoleId, IsActive = true } }
+        },
+        new User
+        {
+            UserId = "u2",
+            IsActive = true,
+            IsEmailConfirmed = true,
+            UserRoles = new List<UserRole> { new UserRole { RoleId = organizerRoleId, IsActive = true } }
+        },
+        new User
+        {
+            UserId = "u3",
+            IsActive = true,
+            IsEmailConfirmed = true,
+            UserRoles = new List<UserRole>() // hợp lệ
+        }
+    };
+
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetAvailableCoAuthorForInclude("conf1", It.IsAny<List<string>>()))
-                .ReturnsAsync(users.Where(u => !u.UserRoles.Any(ur => ur.RoleId == adminRoleId || ur.RoleId == organizerRoleId)).ToList());
+    .ReturnsAsync(new List<User>
+    {
+        new User { UserId = "u3", IsActive = true, IsEmailConfirmed = true, UserRoles = new List<UserRole>() }
+    });
 
-            // Act
             var result = await _paperService.GetAvailableCoAuthorForInclude("conf1", "currentUserId");
 
-            // Assert
-            Assert.DoesNotContain(result, u => u.UserId == "u1");
-            Assert.DoesNotContain(result, u => u.UserId == "u2");
-            Assert.Contains(result, u => u.UserId == "u3");
+            Assert.Single(result);
+            Assert.Equal("u3", result[0].UserId);
+
+           
         }
 
         [Fact]
@@ -150,6 +171,19 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         {
             var adminRole = new Role { RoleId = "admin" };
             var organizerRole = new Role { RoleId = "org" };
+            var reviewerRole = new Role { RoleId = "rev" };
+            var collabRole = new Role { RoleId = "col" };
+
+            // Mock tất cả 4 role
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription()))
+                .ReturnsAsync(adminRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
+                .ReturnsAsync(organizerRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription()))
+                .ReturnsAsync(reviewerRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription()))
+                .ReturnsAsync(collabRole);
+
             var users = new List<User>
         {
             new User { UserId = "u1", IsActive = false, IsEmailConfirmed = true },
@@ -157,10 +191,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             new User { UserId = "u3", IsActive = true, IsEmailConfirmed = true }
         };
 
-            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription()))
-                .ReturnsAsync(adminRole);
-            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
-                .ReturnsAsync(organizerRole);
+         
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetAvailableCoAuthorForInclude("conf1", It.IsAny<List<string>>()))
                 .ReturnsAsync(users);
 
@@ -180,16 +211,25 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         {
             var adminRole = new Role { RoleId = "admin" };
             var organizerRole = new Role { RoleId = "org" };
+            var reviewerRole = new Role { RoleId = "rev" };
+            var collabRole = new Role { RoleId = "col" };
+
+            // Mock tất cả 4 role
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription()))
+                .ReturnsAsync(adminRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
+                .ReturnsAsync(organizerRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription()))
+                .ReturnsAsync(reviewerRole);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Collaborator.GetDescription()))
+                .ReturnsAsync(collabRole);
             var users = new List<User>
         {
             new User { UserId = "u1", IsActive = true, IsEmailConfirmed = true, UserRoles = new List<UserRole>() },
             new User { UserId = "u2", IsActive = true, IsEmailConfirmed = true, UserRoles = new List<UserRole>() }
         };
 
-            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.Admin.GetDescription()))
-                .ReturnsAsync(adminRole);
-            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(SystemRoleEnum.ConferenceOrganizer.GetDescription()))
-                .ReturnsAsync(organizerRole);
+           
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetAvailableCoAuthorForInclude("conf1", It.IsAny<List<string>>()))
                 .ReturnsAsync(users);
 

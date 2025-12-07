@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Repositories.Repositories;
+using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
@@ -21,11 +22,19 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         private readonly Mock<IQRCoderService> _mockQr = new();
         private readonly Mock<ITimeProviderService> _mockTime = new();
         private readonly Mock<ITokenService> _mockToken = new();
-
+        private readonly Mock<IRedisService> _mockRedisService = new();
         // Repositories
         private readonly Mock<IPaymentMethodRepository> _mockPaymentMethodRepo = new();
         private readonly Mock<IConferencePriceRepository> _mockConferencePriceRepo = new();
         private readonly Mock<IPaperRepository> _mockPaperRepo = new();
+        private readonly Mock<ITransactionRepository> _mockTransactionRepo = new();
+
+        private readonly Mock<ICameraReadyRepository> _mockCameraReadyRepo = new();
+        private readonly Mock<IGlobalStatusRepository> _mockGlobalStatusRepo = new();
+        private readonly Mock<IPaperWaitListRepository> _mockPaperWaitListRepo = new();
+        private readonly Mock<IAuditLogRepository> _mockAuditRepo = new();
+        private readonly Mock<INotificationRepository> _mockNotificationRepo = new();
+
 
         private readonly Mock<ITicketRepository> _mockTicketRepo = new();
         private readonly Mock<IWalletRepository> _mockWalletRepo = new();
@@ -40,6 +49,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             _mockUnitOfWork.Setup(u => u.TicketRepository).Returns(_mockTicketRepo.Object);
             _mockUnitOfWork.Setup(u => u.WalletRepository).Returns(_mockWalletRepo.Object);
             _mockUnitOfWork.Setup(u => u.PaperRepository).Returns(_mockPaperRepo.Object);
+            _mockUnitOfWork.Setup(u => u.AuditLogRepository).Returns(_mockAuditRepo.Object);
+            _mockUnitOfWork.Setup(u => u.NotificationRepository).Returns(_mockNotificationRepo.Object);
+            _mockUnitOfWork.Setup(u => u.TransactionRepository).Returns(_mockTransactionRepo.Object);
+
+            _mockUnitOfWork.Setup(u => u.CameraReadyRepository).Returns(_mockCameraReadyRepo.Object);
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository).Returns(_mockGlobalStatusRepo.Object);
+            _mockUnitOfWork.Setup(u => u.PaperWaitListRepository).Returns(_mockPaperWaitListRepo.Object);
 
 
             // Create service AFTER setup
@@ -56,11 +72,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 _mockTime.Object
             );
         }
-
-
-        // -------------------------------------------
-        // Helper: tạo ConferencePrice hợp lệ
-        // -------------------------------------------
         private ConferencePrice CreateValidConferencePrice(decimal ticketPrice = 200000)
         {
             return new ConferencePrice
@@ -82,33 +93,33 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                         NumberPaperAccept = 10
                     },
                     ResearchConferencePhases = new List<ResearchConferencePhase>()
-                {
-                    new ResearchConferencePhase
                     {
-                        ResearchConferencePhaseId = "RCP1",
-                        IsActive = true,
-                        RegistrationStartDate = DateOnly.Parse("2025-01-01"),
-                        RegistrationEndDate = DateOnly.Parse("2025-12-30")
-                    }
-                },
+                        new ResearchConferencePhase
+                        {
+                            ResearchConferencePhaseId = "RCP1",
+                            IsActive = true,
+                            AuthorPaymentStart = DateOnly.Parse("2025-01-01"),
+                            AuthorPaymentEnd = DateOnly.Parse("2025-12-30"),
+                            RegistrationStartDate = DateOnly.Parse("2025-01-01"),
+                            RegistrationEndDate = DateOnly.Parse("2025-12-30")
+                        }
+                    },
                     ConferenceSessions = new List<ConferenceSession>()
-                {
-                    new ConferenceSession {
-                        ConferenceSessionId = "S1"
+                    {
+                        new ConferenceSession { ConferenceSessionId = "S1" }
                     }
-                }
                 },
                 PricePhases = new List<PricePhase>()
-            {
-                new PricePhase
                 {
-                    PricePhaseId = "PP1",
-                    StartDate = DateOnly.Parse("2025-01-01"),
-                    EndDate = DateOnly.Parse("2025-12-30"),
-                    AvailableSlot = 5,
-                    ApplyPercent = 100
+                    new PricePhase
+                    {
+                        PricePhaseId = "PP1",
+                        StartDate = DateOnly.Parse("2025-01-01"),
+                        EndDate = DateOnly.Parse("2025-12-30"),
+                        AvailableSlot = 5,
+                        ApplyPercent = 100
+                    }
                 }
-            }
             };
         }
 
@@ -117,281 +128,271 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             _mockTime.Setup(t => t.GetVietnamDate())
                 .ReturnsAsync(DateOnly.Parse(yyyyMMdd));
         }
+
+        // Setup base valid mocks for "happy path" then tests override what they want
+        private void SetupBaseValidMocks(string paymentMethodId = "PM1", string paymentMethodName = "MoMo", string paperId = "P1", string userId = "U1")
+        {
+            MockDate("2025-02-01");
+
+            // payment method
+            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById(paymentMethodId))
+                .ReturnsAsync(new PaymentMethod { PaymentMethodId = paymentMethodId, MethodName = paymentMethodName });
+
+            // global status
+            _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "GS_ACCEPTED" });
+
+            // paper + root author + camera ready
+            var paper = new Paper
+            {
+                PaperId = paperId,
+                CameraReadyId = "CR1",
+                PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = userId, IsRootAuthor = true } },
+                TicketId = null
+            };
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync(paperId)).ReturnsAsync(paper);
+
+            _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1"))
+                .ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "GS_ACCEPTED" });
+
+            // conference price
+            var cp = CreateValidConferencePrice();
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            // paper count below limit
+            _mockPaperRepo.Setup(r => r.GetPaperCountByConference("C1")).ReturnsAsync(0);
+
+            // no tickets
+            _mockTicketRepo.Setup(r => r.GetAttendeeTicketByUserIdAndConferenceId(userId, "C1"))
+                .ReturnsAsync(new List<Ticket>());
+            _mockTicketRepo.Setup(r => r.GetAuthorTicketByUserIdAndConferenceId(userId, "C1"))
+                .ReturnsAsync(new List<Ticket>());
+
+            // redis default: no lock, no phase lock
+            _mockRedis.Setup(r => r.KeyExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
+            _mockRedis.Setup(r => r.GetKeysByPatternAsync(It.IsAny<string>())).ReturnsAsync(new List<string>());
+
+            // paper waitlist default none
+            _mockPaperWaitListRepo.Setup(r => r.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, "C1"))
+                .ReturnsAsync((PaperWaitList)null);
+
+            // wallet default (not used unless Wallet path)
+            _mockWalletRepo.Setup(r => r.GetWalletByUserIdAsync(userId)).ReturnsAsync(new Wallet { WalletId = "W1", Balance = 1000000 });
+        }
+
+        // -------------------------
+        // 1. Payment method / GlobalStatus
+        // -------------------------
         [Fact]
-        public async Task CreatePaymentForAbstract_ShouldThrow_WhenPaymentMethodNotFound()
+        public async Task ShouldThrow_WhenPaymentMethodNotFound()
         {
             // Arrange
-            var req = new CreatePaperPaymentRequest
-            {
-                PaymentMethodId = "PM1",
-                ConferencePriceId = "CP1"
-            };
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            MockDate("2025-02-01");
+            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync((PaymentMethod)null);
 
-            // 1. Setup repo trong UnitOfWork (nếu chưa setup)
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-
-            // 2. Setup hành vi trả về null
-            _mockPaymentMethodRepo
-                .Setup(r => r.GetPaymentMethodById("PM1"))
-                .ReturnsAsync((PaymentMethod)null);
-
-
-            // Act + Assert
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            // Act & Assert
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
+
         [Fact]
-        public async Task CreatePaymentForAbstract_ShouldThrow_WhenConferencePriceNotFound()
+        public async Task ShouldThrow_WhenGlobalStatusAcceptedNotFound()
         {
-            // Arrange
-            var req = new CreatePaperPaymentRequest
-            {
-                PaymentMethodId = "PM1",
-                ConferencePriceId = "CP1"
-            };
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            MockDate("2025-02-01");
+            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync(new PaymentMethod { PaymentMethodId = "PM1", MethodName = "MoMo" });
+            _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync((GlobalStatus)null);
 
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository)
-                    .Returns(_mockPaymentMethodRepo.Object);
-
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                                  .ReturnsAsync(new PaymentMethod());
-
-
-            // Bước 1: Gán repo cho UnitOfWork
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository)
-                           .Returns(_mockConferencePriceRepo.Object);
-
-            // Bước 2: Mock hành vi repo
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                                    .ReturnsAsync((ConferencePrice)null);
-
-
-            // Act + Assert
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
-        [Fact]
-        public async Task ShouldThrow_WhenConferenceAvailableSlotZero()
-        {
-            var req = new CreatePaperPaymentRequest
-            {
-                PaymentMethodId = "PM1",
-                ConferencePriceId = "CP1"
-            };
 
+        // -------------------------
+        // 2. Paper checks
+        // -------------------------
+        [Fact]
+        public async Task ShouldThrow_WhenPaperNotFound()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks(); // other things valid
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1")).ReturnsAsync((Paper)null);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenUserIsNotRootAuthor()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            // override paper authors to not include U1 as root
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1"))
+                .ReturnsAsync(new Paper { PaperId = "P1", CameraReadyId = "CR1", PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "Other", IsRootAuthor = true } } });
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenPaperAlreadyHasTicket()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1"))
+                .ReturnsAsync(new Paper { PaperId = "P1", CameraReadyId = "CR1", PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "U1", IsRootAuthor = true } }, TicketId = "T1" });
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenCameraReadyIdNull()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1"))
+                .ReturnsAsync(new Paper { PaperId = "P1", CameraReadyId = null, PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "U1", IsRootAuthor = true } } });
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        // -------------------------
+        // 3. Camera ready checks
+        // -------------------------
+        [Fact]
+        public async Task ShouldThrow_WhenCameraReadyNotFound()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync((CameraReady)null);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenCameraReadyNotAccepted()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "NOT_ACCEPTED" });
+            _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(new GlobalStatus { GlobalStatusId = "GS_ACCEPTED" });
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        // -------------------------
+        // 4. Conference price checks
+        // -------------------------
+        [Fact]
+        public async Task ShouldThrow_WhenConferencePriceNotFound()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync((ConferencePrice)null);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenConferenceSoldOut()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
             var cp = CreateValidConferencePrice();
             cp.Conference.AvailableSlot = 0;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
 
-            // 1. Gán repo cho UnitOfWork
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
-
-            // 2. Mock hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                                  .ReturnsAsync(new PaymentMethod());
-
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                                    .ReturnsAsync(cp);
-
-
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
-        [Fact]
-        public async Task ShouldThrow_WhenNotResearchConference()
-        {
-            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
 
+        [Fact]
+        public async Task ShouldThrow_WhenConferenceNotResearch()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
             var cp = CreateValidConferencePrice();
             cp.Conference.IsResearchConference = false;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
 
-            // 1. Setup các repo trả về từ UnitOfWork
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
-
-            // 2. Setup hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                .ReturnsAsync(new PaymentMethod());
-
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                .ReturnsAsync(cp);
-
-
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
-        [Fact]
-        public async Task ShouldThrow_WhenIsNotAuthorTicket()
-        {
-            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
 
+        [Fact]
+        public async Task ShouldThrow_WhenPriceIsNotAuthor()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
             var cp = CreateValidConferencePrice();
             cp.IsAuthor = false;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
 
-            // 1. Setup UnitOfWork trả về các repo mock
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
-
-            // 2. Setup hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                .ReturnsAsync(new PaymentMethod());
-
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                .ReturnsAsync(cp);
-
-
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
-        [Fact]
-        public async Task ShouldThrow_WhenNotInternalHosted()
-        {
-            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
 
+        [Fact]
+        public async Task ShouldThrow_WhenConferenceNotInternalHosted()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
             var cp = CreateValidConferencePrice();
             cp.Conference.IsInternalHosted = false;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
 
-            // 1. Setup UnitOfWork trả về các repo mock
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
-
-            // 2. Setup hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                .ReturnsAsync(new PaymentMethod());
-
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                .ReturnsAsync(cp);
-
-
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
+
         [Fact]
-        public async Task ShouldThrow_WhenResearchConferenceDetailNull()
+        public async Task ShouldThrow_WhenResearchConferenceDetailNotFound()
         {
-            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
             var cp = CreateValidConferencePrice();
             cp.Conference.ResearchConferenceDetail = null;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
 
-            // 1. Setup UnitOfWork trả về các repo mock
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
-
-            // 2. Setup hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                .ReturnsAsync(new PaymentMethod());
-
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                .ReturnsAsync(cp);
-
-
-            await Assert.ThrowsAsync<NotFoundException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<NotFoundException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
+
         [Fact]
-        public async Task ShouldThrow_WhenPaperCountExceedLimit()
+        public async Task ShouldThrow_WhenPaperCountExceedsLimit()
         {
-            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockPaperRepo.Setup(r => r.GetPaperCountByConference("C1")).ReturnsAsync(20); // exceeds
 
-            var cp = CreateValidConferencePrice();
-
-            // 1. Setup UnitOfWork trả về các repo mock
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
-
-            // 2. Setup hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                .ReturnsAsync(new PaymentMethod());
-
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                .ReturnsAsync(cp);
-
-
-            _mockUnitOfWork.Setup(u => u.PaperRepository).Returns(_mockPaperRepo.Object);
-
-            // 3. Setup hành vi của repo
-            _mockPaperRepo.Setup(r => r.GetPaperCountByConference("C1"))
-                          .ReturnsAsync(20);
-
-
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
+
+        // -------------------------
+        // 5. Redis Lock checks
+        // -------------------------
         [Fact]
-        public async Task ShouldThrow_WhenRedisLockExists_WithDifferentPaymentMethod()
+        public async Task ShouldThrow_WhenPaymentLockExistsWithDifferentMethod()
         {
-            var req = new CreatePaperPaymentRequest
-            {
-                PaymentMethodId = "PM2",
-                ConferencePriceId = "CP1"
-            };
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM2", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks(paymentMethodId: "PM2", paymentMethodName: "MoMo");
 
-            var cp = CreateValidConferencePrice();
-            // 1. Setup repo trong UnitOfWork
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
+            // Redis says lock exists
+            var lockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult("U1", "C1");
+            _mockRedis.Setup(r => r.KeyExistsAsync(lockKey)).ReturnsAsync(true);
 
-            // 2. Setup hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM2"))
-                                  .ReturnsAsync(new PaymentMethod { MethodName = "PayOs" });
+            var dto = new PaymentLockKeyDTO { PaymentMethodId = "PM1", OldCheckOutUrl = "old" };
+            _mockRedis.Setup(r => r.GetStringAsync(lockKey)).ReturnsAsync(JsonSerializer.Serialize(dto));
 
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                                     .ReturnsAsync(cp); // cp là đối tượng ConferencePrice bạn đã tạo
-
-
-            // Redis báo là có lock
-            _mockRedis.Setup(r => r.KeyExistsAsync(It.IsAny<string>()))
-                .ReturnsAsync(true);
-
-            var lockObj = new PaymentLockKeyDTO
-            {
-                PaymentMethodId = "PM1",
-                OldCheckOutUrl = "existingUrl"
-            };
-
-            _mockRedis.Setup(r => r.GetStringAsync(It.IsAny<string>()))
-                .ReturnsAsync(JsonSerializer.Serialize(lockObj));
-
-            // 1. Setup repo trong UnitOfWork
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-
-            // 2. Setup hành vi của repo
+            // PaymentMethod in lock info
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                                  .ReturnsAsync(new PaymentMethod { MethodName = "MoMo" });
+                .ReturnsAsync(new PaymentMethod { PaymentMethodId = "PM1", MethodName = "MoMo" });
 
-
-            await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.CreatePaymentForAbstract(req, "U1"));
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
+
         [Fact]
-        public async Task ShouldReturnExistingPayment_WhenRedisLockExists_AndSameMethod()
+        public async Task ShouldReturnExistingPayment_WhenRedisLockExistsAndSameMethod()
         {
-            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks(paymentMethodId: "PM1", paymentMethodName: "MoMo");
 
-            var cp = CreateValidConferencePrice();
-            // 1. Setup repo trong UnitOfWork
-            _mockUnitOfWork.Setup(u => u.PaymentMethodRepository).Returns(_mockPaymentMethodRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository).Returns(_mockConferencePriceRepo.Object);
-
-            // 2. Setup hành vi của repo
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
-                                  .ReturnsAsync(new PaymentMethod { MethodName = "MoMo" });
-
-            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1"))
-                                    .ReturnsAsync(cp);
-
-
-            _mockRedis.Setup(r => r.KeyExistsAsync(It.IsAny<string>()))
-                .ReturnsAsync(true);
-
-            var dto = new PaymentLockKeyDTO
-            {
-                PaymentMethodId = "PM1",
-                OldCheckOutUrl = "https://oldurl.com"
-            };
-
-            _mockRedis.Setup(r => r.GetStringAsync(It.IsAny<string>()))
-                .ReturnsAsync(JsonSerializer.Serialize(dto));
+            var lockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult("U1", "C1");
+            _mockRedis.Setup(r => r.KeyExistsAsync(lockKey)).ReturnsAsync(true);
+            var dto = new PaymentLockKeyDTO { PaymentMethodId = "PM1", OldCheckOutUrl = "https://oldurl.com" };
+            _mockRedis.Setup(r => r.GetStringAsync(lockKey)).ReturnsAsync(JsonSerializer.Serialize(dto));
 
             var result = await _service.CreatePaymentForAbstract(req, "U1");
 
@@ -399,6 +400,141 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("https://oldurl.com", result.CheckOutUrl);
         }
 
+        // -------------------------
+        // 6. Phase/time checks
+        // -------------------------
+        [Fact]
+        public async Task ShouldThrow_WhenResearchConferencePhasesNull()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            var cp = CreateValidConferencePrice();
+            cp.Conference.ResearchConferencePhases = null;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
 
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenNoActivePhaseFound()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            var cp = CreateValidConferencePrice();
+            cp.Conference.ResearchConferencePhases = new List<ResearchConferencePhase> { new ResearchConferencePhase { IsActive = false } };
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenPaymentStartDateNotReached()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            // make date later than start
+            MockDate("2024-01-01");
+            var cp = CreateValidConferencePrice();
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenPaymentEndDatePassed()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            // set date after end
+            MockDate("2026-01-01");
+            var cp = CreateValidConferencePrice();
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        // -------------------------
+        // 7. Ticket checks
+        // -------------------------
+        [Fact]
+        public async Task ShouldThrow_WhenUserAlreadyHasAttendeeTicket()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockTicketRepo.Setup(r => r.GetAttendeeTicketByUserIdAndConferenceId("U1", "C1"))
+                .ReturnsAsync(new List<Ticket> { new Ticket { TicketId = "T1", IsRefunded = false } });
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenUserAlreadyHasAuthorTicket()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockTicketRepo.Setup(r => r.GetAuthorTicketByUserIdAndConferenceId("U1", "C1"))
+                .ReturnsAsync(new List<Ticket> { new Ticket { TicketId = "T2", IsRefunded = false } });
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        // -------------------------
+        // 8. Price phase details
+        // -------------------------
+        [Fact]
+        public async Task ShouldThrow_WhenNoValidPricePhase()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            var cp = CreateValidConferencePrice();
+            cp.PricePhases = new List<PricePhase>(); // empty
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenPricePhaseHasNoSlot()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            var cp = CreateValidConferencePrice();
+            cp.PricePhases.First().AvailableSlot = 0;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenApplyPercentLessThanZero()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            var cp = CreateValidConferencePrice();
+            cp.PricePhases.First().ApplyPercent = -10;
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        [Fact]
+        public async Task ShouldThrow_WhenFinalPriceTooLow()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            var cp = CreateValidConferencePrice(ticketPrice: 10000); // finalPrice <= 10000 when applyPercent 100%
+            _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+
+        
+
+        // end of tests
     }
+
+
+
+
+
 }

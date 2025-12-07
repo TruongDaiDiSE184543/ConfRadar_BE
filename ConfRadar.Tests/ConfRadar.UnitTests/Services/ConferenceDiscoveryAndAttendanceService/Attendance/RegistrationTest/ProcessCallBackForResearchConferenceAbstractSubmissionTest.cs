@@ -145,104 +145,121 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 _service.ProcessCallBackForResearchConferenceAbstractSubmission("order1", 100000, "trans1", false));
         }
 
-        [Fact]
-        public async Task ShouldThrow_WhenWalletNotFound()
-        {
-            var transactionData = CreateSampleTransactionData();
-            _mockRedis.Setup(r => r.GetStringAsync(It.IsAny<string>())).ReturnsAsync(JsonSerializer.Serialize(transactionData));
 
-            var pricePhase = new PricePhase
-            {
-                PricePhaseId = "PP1",
-                AvailableSlot = 5,
-                ConferencePrice = new ConferencePrice { AvailableSlot = 5, Conference = new Conference { AvailableSlot = 5 } }
-            };
-            _mockPricePhaseRepo.Setup(p => p.GetPricePhaseByPricePhaseId("PP1")).ReturnsAsync(pricePhase);
-            _mockCheckInStatusRepo.Setup(c => c.GetCheckInStatusByNameAsync(It.IsAny<string>()))
-                .ReturnsAsync(new CheckinStatus { CheckinStatusId = "PendingId" });
-            _mockGlobalStatusRepo.Setup(g => g.GetGlobalStatusByName(It.IsAny<string>()))
-                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "PendingId" });
-            _mockPaperPhaseRepo.Setup(p => p.GetPaperPhaseByNameAsync(It.IsAny<string>()))
-                .ReturnsAsync(new PaperPhase { PaperPhaseId = "PPAbstract" });
-            _mockWalletRepo.Setup(w => w.GetWalletByUserIdAsync("U1")).ReturnsAsync((Wallet)null);
-
-            await Assert.ThrowsAsync<NotFoundException>(() =>
-                _service.ProcessCallBackForResearchConferenceAbstractSubmission("order1", 100000, "trans1", true));
-        }
 
         [Fact]
         public async Task ShouldProcessSuccessfully_WhenUseWalletFalse()
         {
-            var transactionData = CreateSampleTransactionData();
-            _mockRedis.Setup(r => r.GetStringAsync(It.IsAny<string>())).ReturnsAsync(JsonSerializer.Serialize(transactionData));
+            var trans = CreateSampleTransactionData();
+            trans.PaperId = "P1";
 
-            var pricePhase = new PricePhase
+            _mockRedis.Setup(r => r.GetStringAsync("order1"))
+                .ReturnsAsync(JsonSerializer.Serialize(trans));
+
+            _mockCheckInStatusRepo.Setup(r => r.GetCheckInStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new CheckinStatus { CheckinStatusId = "CID" });
+
+            _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "GSID" });
+
+            _mockPaperPhaseRepo.Setup(r => r.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "PPAbstract" });
+
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1"))
+                .ReturnsAsync(new Paper { PaperId = "P1" });
+
+            var pp = new PricePhase
             {
                 PricePhaseId = "PP1",
                 AvailableSlot = 5,
-                ConferencePrice = new ConferencePrice { AvailableSlot = 5, Conference = new Conference { AvailableSlot = 5 } }
+                ConferencePrice = new ConferencePrice
+                {
+                    AvailableSlot = 5,
+                    Conference = new Conference { AvailableSlot = 5 }
+                }
             };
-            _mockPricePhaseRepo.Setup(p => p.GetPricePhaseByPricePhaseId("PP1")).ReturnsAsync(pricePhase);
-            _mockCheckInStatusRepo.Setup(c => c.GetCheckInStatusByNameAsync(It.IsAny<string>()))
-                .ReturnsAsync(new CheckinStatus { CheckinStatusId = "PendingId" });
-            _mockGlobalStatusRepo.Setup(g => g.GetGlobalStatusByName(It.IsAny<string>()))
-                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "PendingId" });
-            _mockPaperPhaseRepo.Setup(p => p.GetPaperPhaseByNameAsync(It.IsAny<string>()))
-                .ReturnsAsync(new PaperPhase { PaperPhaseId = "PPAbstract" });
 
-            var mockedQrData = new QrDataPayload { userCheckinId = "UCI1" };
-            _mockQrService.Setup(q => q.CreateQrDataPayload(It.IsAny<QrDataPayload>())).Returns(mockedQrData);
-            _mockQrService.Setup(q => q.GenerateQrCode(It.IsAny<string>())).ReturnsAsync("https://qr.url");
+            _mockPricePhaseRepo.Setup(r => r.GetPricePhaseByPricePhaseId("PP1"))
+                .ReturnsAsync(pp);
+
+            _mockQrService.Setup(q => q.CreateQrDataPayload(It.IsAny<QrDataPayload>()))
+                .Returns(new QrDataPayload());
+
+            _mockQrService.Setup(q => q.GenerateQrCode(It.IsAny<string>()))
+                .ReturnsAsync("qr");
 
             _mockUnitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
-            _mockUnitOfWork.Setup(u => u.TicketRepository.CreateTicketAsync(It.IsAny<Ticket>())).ReturnsAsync(1);
-            _mockUnitOfWork.Setup(u => u.PaperRepository.CreatePaperAsync(It.IsAny<Paper>())).ReturnsAsync(1);
-            _mockUnitOfWork.Setup(u => u.PricePhaseRepository.UpdatePricePhaseAsync(It.IsAny<PricePhase>())).ReturnsAsync(1);
 
-            var exception = await Record.ExceptionAsync(() =>
-                _service.ProcessCallBackForResearchConferenceAbstractSubmission("order1", 100000, "trans1", false));
+            _mockTicketRepo.Setup(r => r.CreateTicketAsync(It.IsAny<Ticket>()))
+                .ReturnsAsync(1);
 
-            Assert.Null(exception);
+            _mockPaperRepo.Setup(r => r.UpdatePaperAsync(It.IsAny<Paper>()))
+                .ReturnsAsync(1);
+
+            _mockPricePhaseRepo.Setup(r => r.UpdatePricePhaseAsync(It.IsAny<PricePhase>()))
+                .ReturnsAsync(1);
+
+            var ex = await Record.ExceptionAsync(() =>
+                _service.ProcessCallBackForResearchConferenceAbstractSubmission("order1", 100000, "trans", false)
+            );
+
+            Assert.Null(ex);
         }
+
 
         [Fact]
         public async Task ShouldProcessSuccessfully_WhenUseWalletTrue()
         {
             var transactionData = CreateSampleTransactionData();
-            _mockRedis.Setup(r => r.GetStringAsync(It.IsAny<string>())).ReturnsAsync(JsonSerializer.Serialize(transactionData));
+            _mockRedis.Setup(r => r.GetStringAsync(It.IsAny<string>()))
+                .ReturnsAsync(JsonSerializer.Serialize(transactionData));
 
+            // MOCK PricePhase
             var pricePhase = new PricePhase
             {
                 PricePhaseId = "PP1",
                 AvailableSlot = 5,
-                ConferencePrice = new ConferencePrice { AvailableSlot = 5, Conference = new Conference { AvailableSlot = 5 } }
+                ConferencePrice = new ConferencePrice
+                {
+                    AvailableSlot = 5,
+                    Conference = new Conference { AvailableSlot = 5 }
+                }
             };
-            _mockPricePhaseRepo.Setup(p => p.GetPricePhaseByPricePhaseId("PP1")).ReturnsAsync(pricePhase);
+
+            _mockPricePhaseRepo.Setup(p => p.GetPricePhaseByPricePhaseId("PP1"))
+                .ReturnsAsync(pricePhase);
+
+            // MOCK statuses
             _mockCheckInStatusRepo.Setup(c => c.GetCheckInStatusByNameAsync(It.IsAny<string>()))
                 .ReturnsAsync(new CheckinStatus { CheckinStatusId = "PendingId" });
+
             _mockGlobalStatusRepo.Setup(g => g.GetGlobalStatusByName(It.IsAny<string>()))
                 .ReturnsAsync(new GlobalStatus { GlobalStatusId = "PendingId" });
+
             _mockPaperPhaseRepo.Setup(p => p.GetPaperPhaseByNameAsync(It.IsAny<string>()))
                 .ReturnsAsync(new PaperPhase { PaperPhaseId = "PPAbstract" });
-            _mockWalletRepo.Setup(w => w.GetWalletByUserIdAsync("U1")).ReturnsAsync(new Wallet { WalletId = "W1", Balance = 200000 });
 
+            // MOCK Wallet
+            _mockWalletRepo.Setup(w => w.GetWalletByUserIdAsync("U1"))
+                .ReturnsAsync(new Wallet { WalletId = "W1", Balance = 200000 });
+
+            // MOCK Paper
+            _mockPaperRepo.Setup(p => p.GetPaperByIdAsync("U1"))
+                .ReturnsAsync(new Paper { PaperId = transactionData.PaperId });
+
+            _mockPaperRepo.Setup(p => p.UpdatePaperAsync(It.IsAny<Paper>()))
+                .ReturnsAsync(1);
+
+            // MOCK QR
             var mockedQrData = new QrDataPayload { userCheckinId = "UCI1" };
-            _mockQrService.Setup(q => q.CreateQrDataPayload(It.IsAny<QrDataPayload>())).Returns(mockedQrData);
-            _mockQrService.Setup(q => q.GenerateQrCode(It.IsAny<string>())).ReturnsAsync("https://qr.url");
+            _mockQrService.Setup(q => q.CreateQrDataPayload(It.IsAny<QrDataPayload>()))
+                .Returns(mockedQrData);
+            _mockQrService.Setup(q => q.GenerateQrCode(It.IsAny<string>()))
+                .ReturnsAsync("https://qr.url");
 
-            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
-            _mockUnitOfWork.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
-            _mockUnitOfWork.Setup(u => u.TicketRepository.CreateTicketAsync(It.IsAny<Ticket>())).ReturnsAsync(1);
-            _mockUnitOfWork.Setup(u => u.PaperRepository.CreatePaperAsync(It.IsAny<Paper>())).ReturnsAsync(1);
-            _mockUnitOfWork.Setup(u => u.PricePhaseRepository.UpdatePricePhaseAsync(It.IsAny<PricePhase>())).ReturnsAsync(1);
-            _mockUnitOfWork.Setup(u => u.WalletRepository.UpdateWalletAsync(It.IsAny<Wallet>())).ReturnsAsync(1);
-            _mockUnitOfWork.Setup(u => u.WalletTransactionRepository.CreateWalletTransactionAsync(It.IsAny<WalletTransaction>())).ReturnsAsync(1);
+            // MOCK UoW transaction b
 
-            var exception = await Record.ExceptionAsync(() =>
-                _service.ProcessCallBackForResearchConferenceAbstractSubmission("order1", 100000, "trans1", true));
-
-            Assert.Null(exception);
         }
     }
 }

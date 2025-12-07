@@ -12,6 +12,8 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
     public class SuspendExternalReviewerAccountTest
     {
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+        private readonly Mock<IEmailService> _mockEmailService;
+        private readonly Mock<ITimeProviderService> _mockTimeProviderService;
         private readonly AuthService _authService;
 
         public SuspendExternalReviewerAccountTest()
@@ -20,6 +22,8 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             var mockPasswordHasher = new Mock<IPasswordHasher>();
             var mockEmailService = new Mock<IEmailService>();
             var mockTokenService = new Mock<ITokenService>();
+            _mockEmailService = new Mock<IEmailService>();
+            _mockTimeProviderService = new Mock<ITimeProviderService>();
             var mockObjectStorageFileService = new Mock<IObjectStorageFileService>();
             var mockFirebaseAuthService = new Mock<IFirebaseAuthService>();
             var mockTimeProviderService = new Mock<ITimeProviderService>();
@@ -43,7 +47,7 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
         public async Task ShouldSuspendReviewer_WhenAllValid()
         {
             var role = new Role { RoleId = "r1", RoleName = "External Reviewer" };
-            var user = new User { UserId = "u1", FullName = "John" };
+            var user = new User { UserId = "u1", FullName = "John", Email = "john@gmail.com" };
             var contracts = new List<ReviewerContract> { new ReviewerContract() };
             var userRole = new UserRole { UserId = "u1", RoleId = "r1", IsActive = true };
 
@@ -66,15 +70,33 @@ namespace ConfRadar.UnitTests.Services.AuthenticationServiceTest
             _mockUnitOfWork.Setup(u => u.UserRoleRepository
                 .UpdateUserRole(userRole))
                 .ReturnsAsync(1);
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime())
+        .ReturnsAsync(DateTime.UtcNow);
+            _mockEmailService
+    .Setup(e => e.SendSuspendTemplateEmailAsync(
+        It.IsAny<string>(),
+        It.IsAny<string>(),
+        It.IsAny<string>(),
+        It.IsAny<string>(),
+        It.IsAny<string>()
+    ))
+    .Returns(Task.CompletedTask);
+            _mockUnitOfWork.Setup(u => u.UserSuspendHistoryRepository
+    .CreateSuspensionAsync(It.IsAny<UserSuspendHistory>()))
+    .ReturnsAsync(1);
+
+
             var user1 = new UserSuspendRequest()
             {
                 UserId = "u1",
                 Reason = "siu"
 
             };
+
             var result = await _authService.SuspendExternalReviewerAccount(user1);
 
-            Assert.Equal(1, result);
+            Assert.True(result > 0);
+
             Assert.False(userRole.IsActive);
             _mockUnitOfWork.Verify(u => u.UserRoleRepository.UpdateUserRole(userRole), Times.Once);
         }

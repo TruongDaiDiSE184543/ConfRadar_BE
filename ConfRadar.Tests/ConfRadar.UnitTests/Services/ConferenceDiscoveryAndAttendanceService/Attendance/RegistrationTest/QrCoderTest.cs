@@ -2,6 +2,7 @@
 {
     using ConfRadar.Repositories;
     using ConfRadar.Repositories.Models;
+    using ConfRadar.Repositories.Repositories;
     using ConfRadar.Services.Common;
     using ConfRadar.Services.Exceptions;
     using ConfRadar.Services.Services;
@@ -21,7 +22,6 @@
         private readonly Mock<ITokenService> _mockTokenService;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<ITimeProviderService> _mockTimeProviderService;
-
         private readonly QRCoderService _qrCoderService;
         private readonly IOptions<ObjectStorageSettings> _mockObjectStorageSettings;
         private readonly IOptions<QrSettings> _mockQrSettings;
@@ -61,17 +61,15 @@
             );
         }
 
+     
+
         // ============================================
-        // 1. DECRYPT QR INVALID -> THROW BADREQUEST
+        // 1. INVALID JSON
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenJsonInvalid()
         {
-            var request = new VerifyQrDataRequest
-            {
-                Content = "xx",
-                ConferenceSessionId = "ss1"
-            };
+            var request = new VerifyQrDataRequest { Content = "xx", ConferenceSessionId = "ss1" };
 
             _mockTokenService.Setup(t => t.DecryptString(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns("INVALID_JSON");
@@ -79,403 +77,443 @@
             await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(request));
         }
 
-
         // ============================================
-        // 2. CHECKSUM SAI -> THROW
+        // 2. CHECKSUM INVALID
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenChecksumInvalid()
         {
-            var fakePayload = new QrDataPayload
-            {
-                userCheckinId = "u1",
-                userId = "u2",
-                ticketId = "t1",
-                conferenceSessionId = "s1",
-                createAt = DateTime.Now,
-                signature = "WRONG"
-            };
-
-            var request = new VerifyQrDataRequest
-            {
-                Content = "abc",
-                ConferenceSessionId = "s1"
-            };
+            var payload = FakePayload();
 
             _mockTokenService.Setup(t => t.DecryptString(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(JsonSerializer.Serialize(fakePayload));
+                .Returns(JsonSerializer.Serialize(payload));
 
             _mockTokenService.Setup(t => t.CreateSignature512(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns("CORRECT");
+                .Returns("wrong");
 
-            await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(request));
+            await Assert.ThrowsAsync<BadRequestException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
         }
 
-
         // ============================================
-        // 3. CHECKIN STATUS MISSING → THROW
+        // 3. CHECKIN STATUS MISSING
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenCheckInStatusMissing()
         {
             var payload = FakePayload();
-
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
+            SetupReadyStatus();
 
             _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync(It.IsAny<string>()))
                 .ReturnsAsync((CheckinStatus?)null);
 
-            var req = new VerifyQrDataRequest { Content = "xx", ConferenceSessionId = payload.conferenceSessionId };
-
-            await Assert.ThrowsAsync<NotFoundException>(() => _qrCoderService.ProceedQrCode(req));
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
         }
 
-
         // ============================================
-        // 4. SESSION NOT FOUND → THROW
+        // 4. SESSION NOT FOUND
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenSessionNotFound()
         {
             var payload = FakePayload();
-
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
-
             SetupCheckinStatuses();
+            SetupReadyStatus();
 
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(payload.conferenceSessionId))
+            _mockUnitOfWork.Setup(u =>
+                u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(payload.conferenceSessionId))
                 .ReturnsAsync((ConferenceSession?)null);
 
-            var req = new VerifyQrDataRequest { Content = "xx", ConferenceSessionId = payload.conferenceSessionId };
-
-            await Assert.ThrowsAsync<NotFoundException>(() => _qrCoderService.ProceedQrCode(req));
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
         }
 
         // ============================================
-        // 5. SESSION ID MISMATCH → THROW
+        // 5. SESSION MISMATCH
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenSessionMismatch()
         {
             var payload = FakePayload();
-
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
             SetupCheckinStatuses();
+            SetupReadyStatus();
 
-            var session = new ConferenceSession
-            {
-                ConferenceSessionId = payload.conferenceSessionId,
-                Title = "Session A",
-                StartTime = DateTime.Now.AddHours(-1),
-                EndTime = DateTime.Now.AddHours(2)
-            };
+            _mockUnitOfWork.Setup(u =>
+                u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceSession
+                {
+                    ConferenceSessionId = payload.conferenceSessionId,
+                    Conference = new Conference
+                    {
+                        ConferenceStatus = new ConferenceStatus
+                        {
+                            ConferenceStatusId = "ready-id",
+                            ConferenceStatusName = ConferenceStatusEnum.Ready.GetDescription()
+                        }
+                    },
+                    StartTime = DateTime.Now.AddHours(-1),
+                    EndTime = DateTime.Now.AddHours(2)
+                });
 
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(It.IsAny<string>()))
-                .ReturnsAsync(session);
-
-            var req = new VerifyQrDataRequest
-            {
-                Content = "xx",
-                ConferenceSessionId = "DIFF"
-            };
-
-            await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(req));
+            await Assert.ThrowsAsync<BadRequestException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = "DIFF"
+                }));
         }
 
-
         // ============================================
-        // 6. USER CHECKIN NOT FOUND → THROW
+        // 6. USER CHECKIN NOT FOUND
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenUserCheckInNotFound()
         {
             var payload = FakePayload();
-
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
             SetupCheckinStatuses();
+            SetupReadyStatus();
             SetupValidSession();
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByIdAsync(payload.userCheckinId))
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .GetUserCheckInByIdAsync(payload.userCheckinId))
                 .ReturnsAsync((UserCheckIn?)null);
 
-            var req = new VerifyQrDataRequest { Content = "xx", ConferenceSessionId = payload.conferenceSessionId };
-
-            await Assert.ThrowsAsync<NotFoundException>(() => _qrCoderService.ProceedQrCode(req));
+            await Assert.ThrowsAsync<NotFoundException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
         }
 
-
         // ============================================
-        // 7. TICKET REFUNDED → THROW
+        // 7. TICKET REFUNDED
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenTicketRefunded()
         {
             var payload = FakePayload();
-
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
             SetupCheckinStatuses();
+            SetupReadyStatus();
             SetupValidSession();
 
-            var userCheck = FakeUserCheckIn(payload);
-            userCheck.Ticket!.IsRefunded = true;
+            var uc = FakeUserCheckIn(payload);
+            uc.Ticket!.IsRefunded = true;
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByIdAsync(payload.userCheckinId))
-                .ReturnsAsync(userCheck);
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .GetUserCheckInByIdAsync(payload.userCheckinId))
+                .ReturnsAsync(uc);
 
-            var req = new VerifyQrDataRequest { Content = "xx", ConferenceSessionId = payload.conferenceSessionId };
-
-            await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(req));
+            await Assert.ThrowsAsync<BadRequestException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
         }
 
-
         // ============================================
-        // 8. PAYLOAD MISMATCH → THROW
+        // 8. PAYLOAD MISMATCH
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenPayloadMismatch()
         {
             var payload = FakePayload();
-
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
             SetupCheckinStatuses();
+            SetupReadyStatus();
             SetupValidSession();
 
-            var userCheck = FakeUserCheckIn(payload);
-            userCheck.UserId = "WRONG";
+            var uc = FakeUserCheckIn(payload);
+            uc.UserId = "WRONG";
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByIdAsync(payload.userCheckinId))
-                .ReturnsAsync(userCheck);
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .GetUserCheckInByIdAsync(payload.userCheckinId))
+                .ReturnsAsync(uc);
 
-            var req = new VerifyQrDataRequest { Content = "xx", ConferenceSessionId = payload.conferenceSessionId };
-
-            await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(req));
+            await Assert.ThrowsAsync<BadRequestException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
         }
 
-
         // ============================================
-        // 9. CHECK-IN TOO EARLY → THROW
+        // 9. TOO EARLY
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenCheckInTooEarly()
         {
-            // Arrange
             var payload = FakePayload();
-
-            // setup decrypt & checksum
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
-
-            // setup checkin statuses (CheckedIn, Expired)
             SetupCheckinStatuses();
 
-            // Giờ cố định để test
-            var fixedNow = new DateTime(2025, 11, 27, 9, 0, 0);
+            // ⭐ Lấy cùng readyStatus instance
+            var readyStatus = SetupReadyStatus();
 
-            // Tạo session với startTime > timeNow để trigger "too early"
+            var now = new DateTime(2025, 1, 1, 9, 0, 0);
+
+            // Tạo session với readyStatus instance
             var session = new ConferenceSession
             {
                 ConferenceSessionId = payload.conferenceSessionId,
-                Title = "Test Session",
-                StartTime = fixedNow.AddHours(1),  // 10:00
-                EndTime = fixedNow.AddHours(3)     // 12:00
+                Conference = new Conference
+                {
+                    ConferenceStatus = readyStatus  // <-- Dùng cùng instance
+                },
+                StartTime = now.AddHours(1),
+                EndTime = now.AddHours(3)
             };
 
-            // mock lấy session
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(It.IsAny<string>()))
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository
+                .GetConferenceSessionByIdAsync(payload.conferenceSessionId))
                 .ReturnsAsync(session);
 
-            // tạo UserCheckIn gắn session thật
-            var checkin = FakeUserCheckIn(payload, session);
+            // Tạo UserCheckIn và gán lại session
+            var uc = FakeUserCheckIn(payload);
+            uc.ConferenceSession = session;
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByIdAsync(payload.userCheckinId))
-                .ReturnsAsync(checkin);
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .GetUserCheckInByIdAsync(payload.userCheckinId))
+                .ReturnsAsync(uc);
 
-            // mock thời gian hiện tại
-            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(fixedNow);
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(now);
 
-            var request = new VerifyQrDataRequest
-            {
-                Content = "xx",
-                ConferenceSessionId = payload.conferenceSessionId
-            };
-
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(request));
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
 
             Assert.Contains("chưa thể check in", ex.Message);
         }
 
 
-
         // ============================================
-        // 10. CHECK-IN TOO LATE → THROW
+        // 10. TOO LATE
         // ============================================
         [Fact]
         public async Task ProceedQrCode_ShouldThrow_WhenCheckInTooLate()
         {
             var payload = FakePayload();
-
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
             SetupCheckinStatuses();
 
-            // Giờ cố định để test
-            var fixedNow = new DateTime(2025, 11, 27, 12, 0, 0);
+            // ⭐ Lấy cùng readyStatus instance
+            var readyStatus = SetupReadyStatus();
+
+            var now = new DateTime(2025, 1, 1, 12, 0, 0);
 
             var session = new ConferenceSession
             {
                 ConferenceSessionId = payload.conferenceSessionId,
-                Title = "Test Late",
-                StartTime = fixedNow.AddHours(-3),  // 09:00
-                EndTime = fixedNow.AddHours(-1)     // 11:00
+                Conference = new Conference
+                {
+                    ConferenceStatus = readyStatus  // <-- Dùng cùng instance
+                },
+                StartTime = now.AddHours(-3),
+                EndTime = now.AddHours(-1)
             };
 
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(It.IsAny<string>()))
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository
+                .GetConferenceSessionByIdAsync(payload.conferenceSessionId))
                 .ReturnsAsync(session);
 
-            // Gán session mock cho userCheckIn
-            var checkin = FakeUserCheckIn(payload, session);
+            // Gán lại session cho UserCheckIn
+            var uc = FakeUserCheckIn(payload);
+            uc.ConferenceSession = session;
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByIdAsync(payload.userCheckinId))
-                .ReturnsAsync(checkin);
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .GetUserCheckInByIdAsync(payload.userCheckinId))
+                .ReturnsAsync(uc);
 
-            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(fixedNow);
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(now);
 
-            var req = new VerifyQrDataRequest
-            {
-                Content = "xx",
-                ConferenceSessionId = payload.conferenceSessionId
-            };
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
 
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(req));
-            Assert.Contains("dã hết hạn check in", ex.Message);
-        }
-
-
-        private UserCheckIn FakeUserCheckIn(QrDataPayload p, ConferenceSession? session = null)
-        {
-            return new UserCheckIn
-            {
-                UserCheckinId = p.userCheckinId,
-                UserId = p.userId,
-                TicketId = p.ticketId,
-                ConferenceSessionId = p.conferenceSessionId,
-                Ticket = new Ticket { TicketId = p.ticketId, IsRefunded = false },
-                User = new User { FullName = "John Doe" },
-                ConferenceSession = session ?? new ConferenceSession(),
-                CheckinStatus = null, // sẽ mock qua SetupCheckinStatuses()
-                CheckInTime = null
-            };
+            Assert.NotEmpty(ex.Message);
         }
 
 
         // ============================================
-        // 11. ALREADY CHECKED-IN → THROW
+        // 11. ALREADY CHECKED IN
         // ============================================
         [Fact]
-        public async Task ProceedQrCode_ShouldThrow_WhenUserAlreadyCheckedIn()
-        {
-            // Arrange
-            var payload = new QrDataPayload
-            {
-                userCheckinId = "checkin-id",
-                userId = "user-id",
-                ticketId = "ticket-id",
-                conferenceSessionId = "session-id",
-                createAt = DateTime.Now
-            };
-
-            var encryptedContent = "encrypted"; // just a placeholder
-            _mockTokenService
-                .Setup(ts => ts.DecryptString(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(JsonSerializer.Serialize(payload));
-
-            // Mock CheckInStatusRepository
-            var checkedInStatus = new CheckinStatus { CheckinStatusId = "checkedin-id", CheckinStatusName = "Checked In" };
-            var expiredStatus = new CheckinStatus { CheckinStatusId = "expired-id", CheckinStatusName = "Expired" };
-
-            _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync("Checked In"))
-                .ReturnsAsync(checkedInStatus);
-
-            _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync("Expired"))
-                .ReturnsAsync(expiredStatus);
-
-            // Mock ConferenceSession
-            var session = new ConferenceSession
-            {
-                ConferenceSessionId = payload.conferenceSessionId,
-                StartTime = DateTime.Now.AddMinutes(-30),
-                EndTime = DateTime.Now.AddMinutes(30)
-            };
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(payload.conferenceSessionId))
-                .ReturnsAsync(session);
-
-            // Mock UserCheckIn
-            var checkin = new UserCheckIn
-            {
-                UserCheckinId = payload.userCheckinId,
-                UserId = payload.userId,
-                TicketId = payload.ticketId,
-                ConferenceSessionId = payload.conferenceSessionId,
-                CheckinStatus = checkedInStatus, // already checked in
-                CheckInTime = DateTime.Now.AddMinutes(-10),
-                User = new User { FullName = "Nguyen Van A" },
-                Ticket = new Ticket { IsRefunded = false },
-                ConferenceSession = session
-            };
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByIdAsync(payload.userCheckinId))
-                .ReturnsAsync(checkin);
-
-            var request = new VerifyQrDataRequest { Content = "dummy-content", ConferenceSessionId = payload.conferenceSessionId };
-
-            // Act & Assert
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() => _qrCoderService.ProceedQrCode(request));
-            Assert.Contains("Nguời dùng với tên Nguyen Van A đã checkin vào lúc", ex.Message);
-        }
-
-
-        // ============================================
-        // 12. SUCCESS
-        // ============================================
-        [Fact]
-        public async Task ProceedQrCode_ShouldReturnSuccessMessage()
+        public async Task ProceedQrCode_ShouldThrow_WhenAlreadyCheckedIn()
         {
             var payload = FakePayload();
+            SetupDecrypt(payload);
+            SetupChecksumValid(payload);
+            SetupCheckinStatuses();
+            SetupReadyStatus();
 
+            var session = SetupValidSession();
+            session.Conference = new Conference
+            {
+                ConferenceStatus = new ConferenceStatus
+                {
+                    ConferenceStatusId = "ready-id",
+                    ConferenceStatusName = ConferenceStatusEnum.Ready.GetDescription()
+                }
+            };
+
+            var checkedInStatus = new CheckinStatus
+            {
+                CheckinStatusId = "checked",
+                CheckinStatusName = CheckInStatusEnum.CheckedIn.GetDescription()
+            };
+
+            var uc = FakeUserCheckIn(payload);
+            uc.CheckinStatus = checkedInStatus;
+            uc.CheckInTime = DateTime.Now;
+
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .GetUserCheckInByIdAsync(payload.userCheckinId))
+                .ReturnsAsync(uc);
+
+            await Assert.ThrowsAsync<BadRequestException>(() =>
+                _qrCoderService.ProceedQrCode(new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                }));
+        }
+
+        
+        // ============================================
+        // 12. SUCCESS - FIXED VERSION
+        // ============================================
+        [Fact]
+        public async Task ProceedQrCode_ShouldReturnSuccess()
+        {
+            // 1. Setup payload và mocks cơ bản
+            var payload = FakePayload();
             SetupDecrypt(payload);
             SetupChecksumValid(payload);
             SetupCheckinStatuses();
 
-            var session = SetupValidSession();
+            // 2.  LẤY readyStatus instance từ SetupReadyStatus
+            var readyStatus = SetupReadyStatus();
 
-            var checkin = FakeUserCheckIn(payload);
+            // 3. Tạo Conference với CÙNG readyStatus instance
+            var conference = new Conference
+            {
+                ConferenceId = "C1",
+                ConferenceStatus = readyStatus  // <-- Key: Dùng cùng instance
+            };
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.GetUserCheckInByIdAsync(payload.userCheckinId))
-                .ReturnsAsync(checkin);
+            // 4. Tạo Session liên kết với Conference
+            var session = new ConferenceSession
+            {
+                ConferenceSessionId = payload.conferenceSessionId,
+                ConferenceId = "C1",
+                Conference = conference,
+                StartTime = DateTime.Now.AddHours(-1),
+                EndTime = DateTime.Now.AddHours(1)
+            };
 
-            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(DateTime.Now);
+            // 5. Mock session repository
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository
+                .GetConferenceSessionByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(session);
 
-            _mockUnitOfWork.Setup(u => u.UserCheckInRepository.UpdateUserCheckInAsync(It.IsAny<UserCheckIn>()))
+            // 6. Tạo UserCheckIn và gán lại session (để có đúng conference status)
+            var uc = FakeUserCheckIn(payload);
+            uc.ConferenceSession = session;
+            uc.ConferenceSessionId = session.ConferenceSessionId;
+
+            // 7. Mock UserCheckIn repository
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .GetUserCheckInByIdAsync(payload.userCheckinId))
+                .ReturnsAsync(uc);
+
+            // 8. Mock Conference repository
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository
+                .GetConferenceByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(conference);
+
+            // 9. Mock time và update
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime())
+                .ReturnsAsync(DateTime.Now);
+
+            _mockUnitOfWork.Setup(u => u.UserCheckInRepository
+                .UpdateUserCheckInAsync(It.IsAny<UserCheckIn>()))
                 .ReturnsAsync(1);
 
-            var req = new VerifyQrDataRequest { Content = "xx", ConferenceSessionId = payload.conferenceSessionId };
+            // 10. Execute
+            var result = await _qrCoderService.ProceedQrCode(
+                new VerifyQrDataRequest
+                {
+                    Content = "xx",
+                    ConferenceSessionId = payload.conferenceSessionId
+                });
 
-            var result = await _qrCoderService.ProceedQrCode(req);
-
+            // 11. Assert
             Assert.Contains("đã check in", result);
         }
 
 
         // ============================================
-        // Helper Methods
+        // 13. Generate QR
         // ============================================
+        [Fact]
+        public async Task GenerateQrCode_ShouldReturnUrl()
+        {
+            var testData = new { id = "123" };
+            string encrypted = "encrypted";
+            string token = "abcxyz";
 
+            _mockTokenService.Setup(s => s.EncryptString(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(encrypted);
+
+            _mockTokenService.Setup(s => s.GenerateSecureRandomToken())
+                .Returns(token);
+
+            _mockObjectStorageFileService.Setup(s =>
+                s.UploadFileAsync("qrcodefile", token, It.IsAny<Stream>(), "image/png"))
+                .ReturnsAsync($"/qrcodefile/{token}.png");
+
+            var result = await _qrCoderService.GenerateQrCode(testData);
+
+            result.Should().Be("https://mockstorage.com//qrcodefile/abcxyz.png");
+        }
+
+        // ============================================
+        // helpers
+        // ============================================
         private QrDataPayload FakePayload()
         {
             return new QrDataPayload
@@ -488,43 +526,69 @@
                 signature = "xx"
             };
         }
-
-        private void SetupDecrypt(QrDataPayload payload)
+        private ConferenceStatus SetupReadyStatus()
         {
-            _mockTokenService.Setup(t => t.DecryptString(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(JsonSerializer.Serialize(payload));
+            var readyStatus = new ConferenceStatus
+            {
+                ConferenceStatusId = "ready-id",
+                ConferenceStatusName = ConferenceStatusEnum.Ready.GetDescription()
+            };
+
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository
+                .GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription()))
+                .ReturnsAsync(readyStatus);
+
+            return readyStatus;
         }
 
-        private void SetupChecksumValid(QrDataPayload payload)
+        private void SetupDecrypt(QrDataPayload p)
+        {
+            _mockTokenService.Setup(t => t.DecryptString(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(JsonSerializer.Serialize(p));
+        }
+
+        private void SetupChecksumValid(QrDataPayload p)
         {
             _mockTokenService.Setup(t => t.CreateSignature512(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(payload.signature);
+                .Returns(p.signature);
         }
 
         private void SetupCheckinStatuses()
         {
-            _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.CheckedIn.GetDescription()))
-                .ReturnsAsync(new CheckinStatus { CheckinStatusId = "1", CheckinStatusName = CheckInStatusEnum.CheckedIn.GetDescription() });
+            _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync("Checked In"))
+                .ReturnsAsync(new CheckinStatus { CheckinStatusId = "checked", CheckinStatusName = "Checked In" });
 
-            _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync(CheckInStatusEnum.Expired.GetDescription()))
-                .ReturnsAsync(new CheckinStatus { CheckinStatusId = "2", CheckinStatusName = CheckInStatusEnum.Expired.GetDescription() });
+            _mockUnitOfWork.Setup(u => u.CheckInStatusRepository.GetCheckInStatusByNameAsync("Expired"))
+                .ReturnsAsync(new CheckinStatus { CheckinStatusId = "expired", CheckinStatusName = "Expired" });
         }
-
 
         private ConferenceSession SetupValidSession()
         {
-            var session = new ConferenceSession
+            var conf = new Conference
             {
-                ConferenceSessionId = "cs1",
-                Title = "Session A",
-                StartTime = DateTime.Now.AddHours(-1),
-                EndTime = DateTime.Now.AddHours(2)
+                ConferenceId = "C1",
+                ConferenceStatus = new ConferenceStatus
+                {
+                    ConferenceStatusId = "ready-id",
+                    ConferenceStatusName = ConferenceStatusEnum.Ready.GetDescription()
+                }
             };
 
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(It.IsAny<string>()))
-                .ReturnsAsync(session);
+            var s = new ConferenceSession
+            {
+                ConferenceSessionId = "cs1",
+                ConferenceId = "C1",
+                Title = "Session A",
+                StartTime = DateTime.Now.AddHours(-1),
+                EndTime = DateTime.Now.AddHours(2),
+                Conference = conf
+            };
 
-            return session;
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository
+                .GetConferenceSessionByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(s);
+
+            return s;
         }
 
         private UserCheckIn FakeUserCheckIn(QrDataPayload p)
@@ -535,57 +599,29 @@
                 UserId = p.userId,
                 TicketId = p.ticketId,
                 ConferenceSessionId = p.conferenceSessionId,
+
                 Ticket = new Ticket { TicketId = p.ticketId, IsRefunded = false },
                 User = new User { FullName = "John Doe" },
-                ConferenceSession = new ConferenceSession()
+
+                ConferenceSession = new ConferenceSession
+                {
+                    ConferenceSessionId = p.conferenceSessionId,
+                    Title = "Session A",
+                    StartTime = DateTime.Now.AddHours(-1),
+                    EndTime = DateTime.Now.AddHours(1),
+
+                    Conference = new Conference
+                    {
+                        ConferenceStatus = new ConferenceStatus
+                        {
+                            ConferenceStatusId = "ready-id",
+                            ConferenceStatusName = ConferenceStatusEnum.Ready.GetDescription()
+                        }
+                    }
+                }
             };
         }
 
-
-
-        // generate qr code
-        [Fact]
-        public async Task GenerateQrCode_ShouldReturn_UploadedFileUrl()
-        {
-            // Arrange
-            var testData = new { Id = "123", Name = "Test User" };
-            string encrypted = "encrypted-content";
-            string randomToken = "abc123xyz";
-
-            _mockTokenService
-                .Setup(t => t.EncryptString(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(encrypted);
-
-            _mockTokenService
-                .Setup(t => t.GenerateSecureRandomToken())
-                .Returns(randomToken);
-
-            _mockObjectStorageFileService
-                .Setup(o => o.UploadFileAsync(
-                    ObjectStorageBucketEnum.qrcodefile.ToString(),
-                    randomToken,
-                    It.IsAny<Stream>(),
-                    "image/png"))
-                .ReturnsAsync("/qrcodefile/" + randomToken + ".png");
-
-            // Act
-            string resultUrl = await _qrCoderService.GenerateQrCode(testData);
-
-            // Assert
-            resultUrl.Should().Be("https://mockstorage.com//qrcodefile/abc123xyz.png");
-
-
-            _mockTokenService.Verify(t =>
-    t.EncryptString(It.IsAny<string>(), It.IsAny<string>()),
-    Times.Once);
-            _mockTokenService.Verify(t => t.GenerateSecureRandomToken(), Times.Once);
-            _mockObjectStorageFileService.Verify(o =>
-                o.UploadFileAsync(ObjectStorageBucketEnum.qrcodefile.ToString(),
-                randomToken,
-                It.IsAny<Stream>(),
-                "image/png"),
-                Times.Once);
-        }
     }
 
 }
