@@ -709,7 +709,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateResearchConferencePhasesRequest
     {
         [Required]
-        [MinLength(2, ErrorMessage = "Phải có ít nhất 2 phase: một phase chính và một phase waitlist.")]
+        [MinLength(1, ErrorMessage = "Phải có ít nhất 1 phase")]
         public List<CreateResearchConferencePhaseItemRequest> Phases { get; set; }
     }
 
@@ -756,7 +756,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? AuthorPaymentEnd { get; set; }
 
 
-        [Required(ErrorMessage = "Phải xác định đây có phải là phase waitlist hay không.")]
+        [Required(ErrorMessage = "Cần phải có revisionRound")]
         public List<CreateRevisionRoundDeadlineRequest>? RevisionRoundDeadlines { get; set; }
     }
 

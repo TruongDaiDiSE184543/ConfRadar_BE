@@ -14,12 +14,17 @@ namespace ConfRadar.Services.DTOs.Paper
 
     public class AssignReviewerToPaperRequest
     {
-        [Required(ErrorMessage = "User ID is required")]
+        [Required]
+        public List<ReviewerAssignment> Reviewers {  get; set; }
+        [Required]
+        public string PaperId { get; set; } 
+    }
+
+    public class ReviewerAssignment
+    {
+        [Required]
         public string UserId { get; set; }
-
-        [Required(ErrorMessage = "Paper ID is required")]
-        public string PaperId { get; set; }
-
-        public bool IsHeadReviewer { get; set; }
+        [Required]
+        public bool IsHeadReviewer { get; set; } = false;
     }
 }

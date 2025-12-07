@@ -40,7 +40,7 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> AssignReviewerToPaper([FromBody] AssignReviewerToPaperRequest request)
         {
-            var result = await _serviceManager.PaperAssignmentService.AssignReviewerToPaper(request);
+            var result = await _serviceManager.PaperAssignmentService.AssignReviewersToPaper(request);
             return Ok(ApiResponse<string>.SuccessResponse(result, "Reviewer assigned to paper successfully"));
         }
         [Authorize]
