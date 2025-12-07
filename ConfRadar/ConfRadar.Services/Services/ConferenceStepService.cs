@@ -1105,6 +1105,23 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException($"Cập nhật thất bại. Tổng số vé mới ({newConferenceTotalSlot}) sẽ vượt quá giới hạn {conference.TotalSlot} của hội nghị.");
                 }
+
+                if (price.IsAuthor == true && conference.IsResearchConference == true)
+                {
+                    var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(price.ConferenceId);
+                    if (researchDetail != null)
+                    {
+                        var otherAuthorPricesTotalSlot = allConferencePrices
+                            .Where(p => p.ConferencePriceId != priceId && p.IsAuthor == true)
+                            .Sum(p => p.TotalSlot ?? 0);
+                        var newTotalAuthorSlot = otherAuthorPricesTotalSlot + request.TotalSlot.Value;
+
+                        if (newTotalAuthorSlot > researchDetail.NumberPaperAccept)
+                        {
+                            throw new BadRequestException($"Cập nhật thất bại. Tổng số vé tác giả mới ({newTotalAuthorSlot}) sẽ vượt quá giới hạn {researchDetail.NumberPaperAccept} bài báo được chấp nhận.");
+                        }
+                    }
+                }
             }
 
             // 5. Ngan ch?n tên vé trùng l?p
@@ -1127,6 +1144,9 @@ namespace ConfRadar.Services.Services
                 price.TotalSlot = request.TotalSlot.Value;
                 price.AvailableSlot = (price.AvailableSlot.GetValueOrDefault() + slotDifference);
             }
+
+
+
 
             await _unitOfWork.ConferencePriceRepository.UpdateConferencePriceAsync(price);
 
@@ -2089,6 +2109,12 @@ namespace ConfRadar.Services.Services
             }
 
 
+            var lastPhase = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchConferencePhaseLastByConferenceIdAsync(conferenceId);
+            if (lastPhase != null && lastPhase.AuthorPaymentEnd >= finalStartDate.Value)
+            {
+                throw new BadRequestException($"Không thể cập nhật ngày bắt đầu hội nghị thành '{finalStartDate.Value:dd/MM/yyyy}' vì nó diễn ra trước hoặc bằng ngày kết thúc của giai đoạn nghiên cứu cuối cùng ({lastPhase.AuthorPaymentEnd:dd/MM/yyyy}).");
+            }
+
             if (request.TotalSlot.HasValue && request.TotalSlot.Value != conference.TotalSlot)
             {
                 int oldTotalSlot = conference.TotalSlot ?? 0;
@@ -2256,11 +2282,8 @@ namespace ConfRadar.Services.Services
                 if (await _unitOfWork.RankingCategoryRepository.GetRankingCategoryByIdAsync(request.RankingCategoryId) == null)
                     throw new NotFoundException($"Loại xếp hạng với ID '{request.RankingCategoryId}' không tồn tại.");
             }
-            if (request.NumberPaperAccept.HasValue)
-                if (conference.TotalSlot < request.NumberPaperAccept)
-                    throw new Exception($"Không thể có số bài báo có thể nhận lớn hơn totalslot của toàn hội nghị (numberPaperAccept{request.NumberPaperAccept} > conference totalslot{conference.TotalSlot})");
+           
             // *** G?I VALIDATION Ð?NG M?I ***
-            // Luôn g?i v?i các giá tr? cu?i cùng d? d?m b?o tính nh?t quán
             if (request.PaperFormat != null)
             {
                 await ValidatePaperFormat(request.PaperFormat);
@@ -2371,6 +2394,11 @@ namespace ConfRadar.Services.Services
                     throw new BadRequestException($"Ngày bắt đầu của một phase phải sau ngày kết thúc của phase trước đó. Cụ thể ngày kết thúc phase liền trước {lastPhaseEndDate.Value} > {phase.RegistrationStartDate.Value} ngày bắt đầu phase liền sau là sai");
                 }
                 lastPhaseEndDate = phase.AuthorPaymentEnd;
+            }
+
+            if (newPhases.Any() && newPhases.Last().AuthorPaymentEnd >= conference.StartDate)
+            {
+                throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả ({newPhases.Last().AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate.Value:dd/MM/yyyy}).");
             }
 
             await _unitOfWork.BeginTransactionAsync();
@@ -2530,6 +2558,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả trong phase mới ({newPhaseRequest.AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate:dd/MM/yyyy}).");
             }
+
+            if (newPhaseRequest.AuthorPaymentEnd >= conference.StartDate)
+            {
+                throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả trong phase mới ({newPhaseRequest.AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate.Value:dd/MM/yyyy}).");
+            }   
 
             // 2.3 Validate RevisionRoundDeadlines cho phase mới
             // (Tái sử dụng logic validate RevisionRoundDeadlines)
@@ -2779,6 +2812,11 @@ namespace ConfRadar.Services.Services
                 {
                     throw new BadRequestException($"Không thể cập nhật. Khoảng thời gian sửa đổi mới ({finalReviseStart:dd/MM/yyyy} - {finalReviseEnd:dd/MM/yyyy}) không còn chứa Revision Deadline Round {deadline.RoundNumber} ({deadline.StartSubmissionDate:dd/MM/yyyy} - {deadline.EndSubmissionDate:dd/MM/yyyy}). Vui lòng cập nhật các deadline trước.");
                 }
+            }
+
+            if (finalAuthorPaymentEnd >= conference.StartDate)
+            {
+                throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả sau khi cập nhật ({finalAuthorPaymentEnd:dd/MM/yyyy}) không được diễn ra sau hoặc bằng ngày bắt đầu hội nghị ({conference.StartDate.Value:dd/MM/yyyy}).");
             }
             #endregion
 
