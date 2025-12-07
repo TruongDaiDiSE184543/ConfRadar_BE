@@ -88,7 +88,7 @@ namespace ConfRadar.Repositories.Repositories
             var activeConferenceIds = await _context.Conferences
                  //.Include(c => c.ResearchConferencePhases)
                  //.Include(c => c.ConferencePrices)
-                 .Where(c => c.ResearchConferencePhases.Any(rcp => /*rcp.IsWaitlist == true &&*/ rcp.IsActive == true)
+                 .Where(c => c.ResearchConferencePhases.Any(rcp => rcp.IsActive == true)
                         && c.ConferencePrices.Any(cp => cp.AvailableSlot > 0 && cp.IsAuthor == true)
                         && c.ConferenceStatusId == readyConferenceStatusId).Select(c => c.ConferenceId).ToListAsync();
             var finalResult = 0;

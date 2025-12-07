@@ -2396,21 +2396,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Hội nghị id {conferenceId} không tồn tại");
             }
-            var conferencePhases = conference.ResearchConferencePhases;
-            var firstPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true /*&& cp.IsWaitlist == false */);
-            var waitListPhase = conferencePhases.FirstOrDefault(cp => cp.IsActive == true /*&& cp.IsWaitlist == true */);
-            if (firstPhase != null && waitListPhase != null)
-            {
-                throw new BadRequestException("Hiện tại hội nghị trong giai đoạn trùng nhau.");
-            }
-            if (firstPhase == null)
-            {
-                throw new BadRequestException("Bạn chưa thể vô hàng đợi trong giai đoạn đầu");
-            }
             var waitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferenceId);
             if (waitListFound != null)
             {
-                throw new BadRequestException($"Bạn đang trong hàng đợi");
+                throw new BadRequestException($"Bạn đang trong hàng đợi rồi");
             }
             var paperWaitListNotifiedStatus = await _unitOfWork.WaitListStatusRepository.GetWaitListStatusByNameAsync(WaitListStatusEnum.Notified.GetDescription());
             if (paperWaitListNotifiedStatus == null)
