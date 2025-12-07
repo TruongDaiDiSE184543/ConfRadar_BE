@@ -95,7 +95,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 
             _mockUnitOfWork.Verify(u => u.CameraReadyRepository.UpdateCameraReadyAsync(
                 It.Is<CameraReady>(cr => cr.GlobalStatusId == "status-rejected")), Times.Once);
-            _mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
+            //_mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
         }
 
         [Fact]

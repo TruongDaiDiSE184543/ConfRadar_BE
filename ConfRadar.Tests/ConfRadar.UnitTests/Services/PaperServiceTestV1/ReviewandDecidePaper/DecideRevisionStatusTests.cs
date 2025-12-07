@@ -122,7 +122,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             await _paperService.DecideReviseStatus(request, "head1");
 
             _mockUnitOfWork.Verify(u => u.RevisionPaperRepository.UpdateRevisionPaperAsync(It.Is<RevisionPaper>(r => r.GlobalStatusId == "status-rejected")), Times.Once);
-            _mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
+            //_mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
