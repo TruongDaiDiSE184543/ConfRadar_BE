@@ -125,12 +125,13 @@ namespace ConfRadar.Services.Services
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
             var auditLogPaper = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(AuditLogActionNameEnum.Paper.GetDescription());
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
             if (user == null)
             {
                 throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
             }
-            if (abstractPhase == null || pendingGlobalStatus == null || auditLogPaper == null)
+            if (abstractPhase == null || pendingGlobalStatus == null || auditLogPaper == null || readyConfStatus ==null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");
             }
@@ -138,6 +139,11 @@ namespace ConfRadar.Services.Services
             if (conference == null)
             {
                 throw new BadRequestException($"Hội nghị với id {request.ConferenceId} không tồn tại");
+
+            }
+            if (conference.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
 
             }
             var activeResearchPhase = conference.ResearchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
@@ -328,11 +334,12 @@ namespace ConfRadar.Services.Services
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
             var rejectedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+           
             var fullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.FullPaper.GetDescription());
             var abstractPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
 
-            if (abstractPaperPhase == null || pendingGlobalStatus == null || rejectedGlobalStatus == null || acceptedGlobalStatus == null || fullPaperPhase == null)
+            if (abstractPaperPhase == null || pendingGlobalStatus == null || rejectedGlobalStatus == null || acceptedGlobalStatus == null || fullPaperPhase == null||readyConfStatus==null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");
             }
@@ -341,6 +348,14 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy bài báo với id {request.PaperId} ");
             }
+            var conferenceStatus = basePaper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
             var activeCurrentPhase = basePaper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
@@ -464,7 +479,9 @@ namespace ConfRadar.Services.Services
         {
             var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
             var currentFullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.FullPaper.GetDescription());
-            if (pendingReviewStatus == null || currentFullPaperPhase == null)
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+
+            if (pendingReviewStatus == null || currentFullPaperPhase == null || readyConfStatus==null)
             {
                 throw new NotFoundException($"Không thấy trạng thái");
             }
@@ -472,6 +489,13 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new BadRequestException($"Không thấy paper với id: {request.PaperId} cho user {userId} hiện tại");
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
@@ -556,10 +580,16 @@ namespace ConfRadar.Services.Services
             var revisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobal = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+          
+
+
             var dateNow = await _timeProviderService.GetVietnamDate();
             var timeNow = await _timeProviderService.GetVietnamTime();
 
-            if (pendingReviewStatus == null || rejectedReviewStatus == null || acceptedReviewStatus == null || reviseStatus == null || currentFullPaperPhase == null || cameraReadyPhase == null || revisePhase == null || pendingGlobal == null)
+            if (pendingReviewStatus == null || rejectedReviewStatus == null || acceptedReviewStatus == null || reviseStatus == null 
+                || currentFullPaperPhase == null || cameraReadyPhase == null || revisePhase == null || pendingGlobal == null || readyConfStatus==null)
             {
                 throw new NotFoundException($"Không thấy các trạng thái");
             }
@@ -567,6 +597,14 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new BadRequestException($"Không tìm thấy paper với id {request.PaperId}.");
+            }
+
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
 
             var activeCurrentPhase = paper.ResearchConferencePhase;
@@ -696,7 +734,10 @@ namespace ConfRadar.Services.Services
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            if (currentRevisePhase == null || pendingGlobalStatus == null)
+
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+
+            if (currentRevisePhase == null || pendingGlobalStatus == null || readyConfStatus==null)
             {
                 throw new NotFoundException($"Không thấy trạng thái");
             }
@@ -704,6 +745,14 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new BadRequestException($"Paper id {request.PaperId} không tìm thấy trong hệ thống");
+            }
+
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
@@ -824,10 +873,23 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> CreateRevisionSubmissionFeedBack(CreateRevisionPaperSubmissionFeedback request, string userId)
         {
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
+
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
                 throw new NotFoundException($"Không tìm thấy paper với id {request.PaperId}");
+
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
 
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
@@ -884,6 +946,11 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> CreateRevisionSubmissionResponse(CreateRevisionPaperSubmissionResponse request, string userId)
         {
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
             if (request.Responses == null || !request.Responses.Any())
             {
                 throw new BadRequestException("Responses không được để trống");
@@ -892,6 +959,13 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId}");
+
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
 
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
@@ -945,13 +1019,14 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không thể chuyển trạng thái pending");
             }
+
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var rejectGlobalStautus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
 
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
-            if (acceptedGlobalStatus == null || currentRevisePhase == null || pendingGlobalStatus == null || rejectGlobalStautus == null)
+            if (acceptedGlobalStatus == null || currentRevisePhase == null || pendingGlobalStatus == null || rejectGlobalStautus == null || readyConfStatus==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái");
             }
@@ -960,6 +1035,13 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId}");
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
@@ -1042,12 +1124,17 @@ namespace ConfRadar.Services.Services
             var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
             var rejectGlobalStautus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
 
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+          
+
+
             var cameraReadyPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
             if (request.GlobalStatus == GlobalStatusEnum.Pending)
             {
                 throw new BadRequestException("Không thể chuyển pending");
             }
-            if (currentRevisePhase == null || pendingGlobalStatus == null || acceptedGlobalStatus == null || cameraReadyPaperPhase == null || rejectGlobalStautus == null)
+            if (currentRevisePhase == null || pendingGlobalStatus == null || acceptedGlobalStatus == null 
+                || cameraReadyPaperPhase == null || rejectGlobalStautus == null || readyConfStatus ==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
@@ -1056,6 +1143,14 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper {request.PaperId}");
             }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
@@ -1229,11 +1324,23 @@ namespace ConfRadar.Services.Services
 
         public async Task<string> CreateCameraReady(CreateCameraReadyRequest request, string userId)
         {
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
             // Validate that the paper exists
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
                 throw new BadRequestException($"Bài báo với id {request.PaperId} không tồn tại.");
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
@@ -1361,7 +1468,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Camera ready với id {request.CameraReadyId} không tồn tại.");
             }
-
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
             // Validate that the camera ready is in "Pending" status
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (cameraReady.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
@@ -1375,6 +1486,15 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Paper liên kết với camera ready ID {request.CameraReadyId} không tồn tại.");
             }
+            var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId); 
+            var conferenceStatus = basePaper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
             var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paper.PaperId);
             if (paperAuthors == null)
             {
@@ -1410,6 +1530,11 @@ namespace ConfRadar.Services.Services
 
         public async Task<string> SubmitReviewForFullPaper(CreateFullPaperReviewRequest request, string userId)
         {
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
             // Validate that the user exists and has reviewer role
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
             if (user == null)
@@ -1453,6 +1578,15 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Bài báo với full paper ID {request.FullPaperId} không tồn tại.");
             }
             var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
+            var conferenceStatus = basePaper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
+
             var activeCurrentPhase = basePaper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
@@ -1640,7 +1774,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Camera ready với id {request.CameraReadyId} không tồn tại.");
             }
-
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
             // Validate that the camera ready is in "Pending" status
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             if (pendingGlobalStatus == null)
@@ -1662,6 +1800,15 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Bài báo với camera id {request.CameraReadyId} không tồn tại hoặc liên kết với nhau.");
             }
             var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
+
+            var conferenceStatus = basePaper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
 
             var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paper.PaperId);
             if (paperReviewer == null)
@@ -2396,6 +2543,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Hội nghị id {conferenceId} không tồn tại");
             }
+            if (conference.IsResearchConference == false)
+            {
+                throw new BadRequestException($"Đây không phải hội nghị nghiên cứu nên không thể thêm bạn vào hàng đợi");
+
+            }
             var waitListFound = await _unitOfWork.PaperWaitListRepository.GetPaperWaitListByUserIdAndConferenceIdAsync(userId, conferenceId);
             if (waitListFound != null)
             {
@@ -2428,8 +2580,10 @@ namespace ConfRadar.Services.Services
         {
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+           
 
-            if (paperPhase == null || pendingGlobalStatus == null)
+            if (paperPhase == null || pendingGlobalStatus == null || readyConfStatus == null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");
             }
@@ -2438,6 +2592,15 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy bài báo với mã {request.PaperId}");
             }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
+
             if (paper.AbstractId == null)
             {
                 throw new NotFoundException($"Bài báo {paper.PaperId} chưa có abstract để chỉnh sửa");
@@ -2578,8 +2741,9 @@ namespace ConfRadar.Services.Services
         {
             var pendingFullPaperReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
             var fullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.FullPaper.GetDescription());
-
-            if (fullPaperPhase == null || pendingFullPaperReviewStatus == null)
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+           
+            if (fullPaperPhase == null || pendingFullPaperReviewStatus == null|| readyConfStatus == null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");
             }
@@ -2587,6 +2751,13 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new NotFoundException($"Không tìm thấy bài báo với mã {request.PaperId} ");
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             if (paper.FullPaperId == null)
             {
@@ -2641,7 +2812,9 @@ namespace ConfRadar.Services.Services
         {
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            if (currentRevisePhase == null || pendingGlobalStatus == null)
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+          
+            if (currentRevisePhase == null || pendingGlobalStatus == null || readyConfStatus == null)
             {
                 throw new NotFoundException($"Không thấy trạng thái");
             }
@@ -2649,6 +2822,13 @@ namespace ConfRadar.Services.Services
             if (paper == null)
             {
                 throw new BadRequestException($"Paper id {request.PaperId} không tìm thấy");
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             if (paper.RevisionPaperId == null)
             {
@@ -2743,7 +2923,10 @@ namespace ConfRadar.Services.Services
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            if (currentRevisePhase == null || pendingGlobalStatus == null)
+
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+          
+            if (currentRevisePhase == null || pendingGlobalStatus == null || readyConfStatus==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
@@ -2752,6 +2935,15 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper {request.PaperId}");
             }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+            }
+
+
             var activeCurrentPhase = paper.ResearchConferencePhase;
             if (activeCurrentPhase == null)
             {
@@ -2979,10 +3171,23 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> UpdatePaper(UpdatePaperRequest request, string userId)
         {
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+            }
+
             var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
             if (paper == null)
             {
                 throw new BadRequestException($"Bài báo với mã {request.PaperId} không tồn tại");
+            }
+            var conferenceStatus = paper.Conference?.ConferenceStatus;
+            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+            {
+                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
             }
             var paperAuthor = paper.PaperAuthors;
             var rootAuthorCheck = paperAuthor.FirstOrDefault(pa => pa.UserId == userId && pa.IsRootAuthor == true);
