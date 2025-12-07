@@ -63,6 +63,8 @@ namespace ConfRadar.Repositories.Repositories
                         .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
                 .Include(p => p.Conference)
                     .ThenInclude(c => c.ResearchConferenceDetail)
+                 .Include(p => p.Conference)
+                    .ThenInclude(c => c.ConferenceStatus)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
