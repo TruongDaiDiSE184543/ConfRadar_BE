@@ -14,7 +14,7 @@ namespace ConfRadar.Services.Mappers
                 ReviewerId = null, // Will be set in the service
                 ReviewStatusId = reviewStatusId,
                 Note = request.Note,
-                FeedbackToAuthor = request.FeedbackToAuthor,
+                //FeedbackToAuthor = request.FeedbackToAuthor,
                 FeedbackMaterialUrl = null, // Will be set in the service after file upload
                 CreatedAt = DateTime.UtcNow
             };
@@ -29,7 +29,7 @@ namespace ConfRadar.Services.Mappers
                 GlobalStatusName = model.ReviewStatus?.Name,
                 Note = model.Note,
                 CreatedAt = model.CreatedAt,
-                FeedbackToAuthor = model.FeedbackToAuthor,
+                //FeedbackToAuthor = model.FeedbackToAuthor,
                 FeedbackMaterialUrl = model.FeedbackMaterialUrl,
                 ReviewerId = model.ReviewerId,
                 ReviewerName = model.Reviewer?.FullName,

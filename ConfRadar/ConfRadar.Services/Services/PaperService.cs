@@ -1654,7 +1654,7 @@ namespace ConfRadar.Services.Services
                 ReviewerId = userId,
                 ReviewStatusId = decideStatus.ReviewStatusId,
                 Note = request.Note,
-                FeedbackToAuthor = request.FeedbackToAuthor,
+                //FeedbackToAuthor = request.FeedbackToAuthor,
                 FeedbackMaterialUrl = feedbackMaterialUrl,
                 CreatedAt = timeNow,
             };
@@ -1683,7 +1683,7 @@ namespace ConfRadar.Services.Services
                 GlobalStatusName = review.ReviewStatus?.Name,
                 Note = review.Note,
                 CreatedAt = review.CreatedAt,
-                FeedbackToAuthor = review.FeedbackToAuthor,
+                //FeedbackToAuthor = review.FeedbackToAuthor,
                 FeedbackMaterialUrl = review.FeedbackMaterialUrl,
                 ReviewerId = review.ReviewerId,
                 ReviewerName = review.Reviewer?.FullName,
@@ -2160,7 +2160,8 @@ namespace ConfRadar.Services.Services
                     Title = paper.CameraReady.Title,
                     Description = paper.CameraReady.Description,
                     Created = paper.CameraReady.CreatedAt,
-                    Updated = paper.CameraReady.ReviewAt
+                    Updated = paper.CameraReady.ReviewAt,
+                    Reason = paper.CameraReady.Reason,
                 } : null,
 
                 // Map the result from the parallel tasks
@@ -2172,7 +2173,8 @@ namespace ConfRadar.Services.Services
                     Title = abstractEntity.Title,
                     Description = abstractEntity.Description,
                     Created = abstractEntity.CreatedAt,
-                    Updated = abstractEntity.ReviewAt
+                    Updated = abstractEntity.ReviewAt,
+                    Reason = abstractEntity.Reason,
                 } : null,
 
                 FullPaper = fullPaperEntity != null ? new FullPaperDtoDetail
@@ -2183,7 +2185,8 @@ namespace ConfRadar.Services.Services
                     Title = fullPaperEntity.Title,
                     Description = fullPaperEntity.Description,
                     Created = fullPaperEntity.CreatedAt,
-                    Updated = fullPaperEntity.ReviewAt
+                    Updated = fullPaperEntity.ReviewAt,
+                    Reason = fullPaperEntity.Reason,
                 } : null,
                 revisionDeadline = roundDeadline?.Select(r => new RevisionDeadlineDetail
                 {
@@ -2214,6 +2217,7 @@ namespace ConfRadar.Services.Services
                 RevisionRoundDeadlineId = entity.RevisionRoundDeadlineId,
                 Created = entity.CreatedAt,
                 Updated = entity.ReviewAt,
+                Reason = entity.Reason,
                 OverallStatus = entity.GlobalStatus?.Name,
                 Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
                 {
