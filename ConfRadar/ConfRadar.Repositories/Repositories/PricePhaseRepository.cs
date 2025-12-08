@@ -94,6 +94,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(pp => pp.ConferencePrice.IsAuthor == true && pp.ConferencePrice.ConferenceId == conferenceId)
                 .ToListAsync();
         }
+
     }
 }
 
