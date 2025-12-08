@@ -442,6 +442,46 @@ namespace ConfRadar.Services.Services
                     };
                 }
 
+                paperDetail.paymentDetail = null;
+
+                if(paper.TicketId != null)
+                {
+                    //find ticket
+                    var ticket = await _unitOfWork.TicketRepository.GetTicketById(paper.TicketId);
+                    if (ticket != null)
+                    {
+                        //find price phase
+                        var pp =  await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(ticket.PricePhaseId);
+                        if (pp != null)
+                        {
+                            //find conferenceprice
+                            var cp = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(pp.ConferencePriceId);
+                            if (cp != null)
+                            {
+                                PurchasedPhaseInfo purchasedPhaseInfo = new PurchasedPhaseInfo
+                                {
+                                    PricePhaseId = pp.PricePhaseId,
+                                    PhaseName = pp.PhaseName,
+                                    StartDate = pp.StartDate,
+                                    EndDate = pp.EndDate,
+                                    ApplyPercent = pp.ApplyPercent,
+                                };
+                                PaymentDetail paymentDetail = new PaymentDetail
+                                {
+                                    ConferencePriceId = cp.ConferencePriceId,
+                                    TicketPrice = cp.TicketPrice,
+                                    TicketName = cp.TicketName,
+                                    TicketDescription = cp.TicketDescription,
+                                    IsAuthor = cp.IsAuthor,
+                                    purchasedPhaseInfo = purchasedPhaseInfo
+                                };
+                                paperDetail.paymentDetail = paymentDetail;
+                            }
+                        }
+                    }
+
+                }
+
                 paperDetails.Add(paperDetail);
             }
 

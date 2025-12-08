@@ -143,6 +143,34 @@
         public PaperFullPaperPhaseResponse? FullPaperPhase { get; set; }
         public PaperRevisionPhaseResponse? RevisionPhase { get; set; }
         public PaperCameraReadyPhaseResponse? CameraReadyPhase { get; set; }
+        public PaymentDetail paymentDetail { get; set; }
+    }
+
+    public class PaymentDetail
+    {
+        public string ConferencePriceId { get; set; } = null!;
+
+        public decimal? TicketPrice { get; set; }
+
+        public string? TicketName { get; set; }
+
+        public string? TicketDescription { get; set; }
+
+        public bool? IsAuthor { get; set; }
+        public PurchasedPhaseInfo? purchasedPhaseInfo { get; set; }
+    }
+
+    public class PurchasedPhaseInfo
+    {
+        public string PricePhaseId { get; set; } = null!;
+
+        public string? PhaseName { get; set; }
+
+        public DateOnly? StartDate { get; set; }
+
+        public DateOnly? EndDate { get; set; }
+
+        public decimal? ApplyPercent { get; set; }
     }
 
     public class Reviewer
