@@ -16,6 +16,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public DateTime? Created { get; set; }
         public Author RootAuthor { get; set; }
         public List<Author> CoAuthors { get; set; }
+        public string? TicketId { get; set; }
         public PaperPhaseDtoDetail? CurrentPhase { get; set; }
         public AbstractDtoDetail? Abstract { get; set; }
         public FullPaperDtoDetail? FullPaper { get; set; }
@@ -73,9 +74,14 @@ namespace ConfRadar.Services.DTOs.Paper
         public DateOnly? CameraReadyStartDate { get; set; }
         public DateOnly? CameraReadyEndDate { get; set; }
 
-        // 10. Camera Ready Decide (Mới thêm)
+        // 10. Camera Ready Decide 
         public DateOnly? CameraReadyDecideStatusStart { get; set; }
         public DateOnly? CameraReadyDecideStatusEnd { get; set; }
+
+        // 11. Author payment
+        public DateOnly? AuthorPaymentStart { get; set; }
+
+        public DateOnly? AuthorPaymentEnd { get; set; }
     }
 
     /// <summary>

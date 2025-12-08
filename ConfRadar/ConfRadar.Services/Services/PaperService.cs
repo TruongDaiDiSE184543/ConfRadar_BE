@@ -2093,6 +2093,7 @@ namespace ConfRadar.Services.Services
                     fullName = user.FullName,
                     avatarUrl = user.AvatarUrl
                 }).ToList(),
+                TicketId = paper.TicketId,
                 researchConferenceInfo = await _conferenceStepService.GetResearchConferenceBasicAsync(paper.ConferenceId),
                 ResearchPhase = paper.ResearchConferencePhase != null ? new ResearchPhaseDtoDetail
                 {
@@ -2137,7 +2138,11 @@ namespace ConfRadar.Services.Services
 
                     // 10. Camera Ready Decide
                     CameraReadyDecideStatusStart = paper.ResearchConferencePhase.CameraReadyDecideStatusStart,
-                    CameraReadyDecideStatusEnd = paper.ResearchConferencePhase.CameraReadyDecideStatusEnd
+                    CameraReadyDecideStatusEnd = paper.ResearchConferencePhase.CameraReadyDecideStatusEnd,
+
+                    // 11. Author payment
+                    AuthorPaymentStart = paper.ResearchConferencePhase.AuthorPaymentStart,
+                    AuthorPaymentEnd = paper.ResearchConferencePhase.AuthorPaymentEnd
                 } : null,
 
                 // Map properties we already have from the initial query
