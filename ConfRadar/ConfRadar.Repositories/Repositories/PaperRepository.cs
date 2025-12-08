@@ -104,6 +104,7 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.Papers
                 .Include(p => p.PaperPhase)
                 .Include(p => p.CameraReady)
+                    .ThenInclude(c => c.GlobalStatus)
                 .FirstOrDefaultAsync(p => p.PaperId == paperId);
         }
 

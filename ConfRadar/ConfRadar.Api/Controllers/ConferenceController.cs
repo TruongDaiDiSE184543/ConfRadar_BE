@@ -368,7 +368,7 @@ namespace ConfRadar.Api.Controllers
         }
 
 
-        [HttpPut("activate-waitlist")]
+        [HttpPut("activate-next-phase")]
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> WaitListBegin([FromQuery] string confId)
         {

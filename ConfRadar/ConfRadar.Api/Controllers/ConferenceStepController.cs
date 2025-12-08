@@ -644,7 +644,7 @@ namespace ConfRadar.Api.Controllers
             return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy giai đoạn giá vé"));
         }
 
-        [HttpPut("add-pricephase-for-waitlist")]
+        [HttpPut("add-pricephase-for-next-research-phase")]
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> AddWaitListPhase([FromQuery] string conferencePriceId, [FromBody] PhaseForWaitList request)
         {

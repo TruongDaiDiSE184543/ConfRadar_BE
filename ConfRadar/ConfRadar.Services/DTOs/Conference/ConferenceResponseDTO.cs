@@ -293,6 +293,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string FullpaperStatus { get; set; }
         public string RevisionStatus { get; set; }
         public string CameraReadyStatus { get; set; }
+        public string ResearchPhaseId {  get; set; }
     }
 
     public class PurchasedInfo

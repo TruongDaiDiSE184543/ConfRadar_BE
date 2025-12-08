@@ -1328,7 +1328,7 @@ namespace ConfRadar.Services.Services
 
 
 
-
+        //only customer to use this so only allow following status: ready, omhold,cancelled, complete
         public async Task<DTOs.Conference.ResearchConferenceDetailResponse> GetResearchConferenceDetailAsync(string conferenceId, string? userId)
         {
             string ticketId = "", pricePhaseId = "", conferencePriceId = "";
@@ -1371,7 +1371,8 @@ namespace ConfRadar.Services.Services
                         AbstractStatus = SubmittedPaper.Abstract?.GlobalStatus?.Name,
                         FullpaperStatus = SubmittedPaper.FullPaper?.ReviewStatus?.Name,
                         RevisionStatus = SubmittedPaper.RevisionPaper?.GlobalStatus?.Name,
-                        CameraReadyStatus = SubmittedPaper.CameraReady?.GlobalStatus?.Name
+                        CameraReadyStatus = SubmittedPaper.CameraReady?.GlobalStatus?.Name,
+                        ResearchPhaseId = SubmittedPaper.ResearchConferencePhaseId
                     };
                 }
             }
