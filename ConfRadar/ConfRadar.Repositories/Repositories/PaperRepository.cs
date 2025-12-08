@@ -148,6 +148,9 @@ namespace ConfRadar.Repositories.Repositories
                             //full paper
                             .Include(p => p.FullPaper)
                                 .ThenInclude(fp => fp.ReviewStatus)
+                           .Include(p => p.FullPaper)
+                                .ThenInclude(fp => fp.FullPaperReviews)
+                                    .ThenInclude(fpr=>fpr.Reviewer)
                             //revise
                             .Include(p => p.RevisionPaper)
                             .ThenInclude(rp => rp.GlobalStatus)
@@ -252,6 +255,23 @@ namespace ConfRadar.Repositories.Repositories
             int totalReviewerCount = paper.PaperReviewers.Count;
             if (paper.FullPaper != null)
             {
+                var fullPaperReviewsList = paper.FullPaper.FullPaperReviews;
+                var ownFullPaperReviews = fullPaperReviewsList.Where(fpr => fpr.ReviewerId == userId).Select(fpr => new FullPaperReviewForReviewerResponse()
+                {
+                    FullPaperReviewId = fpr.FullPaperReviewId,
+                    ReviewStatusId = fpr.ReviewStatusId,
+                    ReviewStatusName = fpr.ReviewStatus?.Name,
+                    Note = fpr.Note,
+                    CreatedAt = fpr.CreatedAt,
+                    //FeedbackToAuthor = fpr.FeedbackToAuthor,
+                    FeedbackMaterialUrl = fpr.FeedbackMaterialUrl,
+                    FullPaperId = fpr.FullPaperId,
+                    ReviewerId = fpr.Reviewer?.UserId,
+                    ReviewerName = fpr.Reviewer?.FullName,
+                    ReviewerAvatarUrl = fpr.Reviewer?.AvatarUrl,
+                    
+                }).ToList();
+                var isOwnSubmittedFullPaper = fullPaperReviewsList.FirstOrDefault(fpr => fpr.ReviewerId == userId);
                 paperDetailResponse.FullPaper = new FullPaperDetailForReviewerResponse
                 {
                     FullPaperId = paper.FullPaperId,
@@ -260,6 +280,7 @@ namespace ConfRadar.Repositories.Repositories
                     ReviewStatusName = paper.FullPaper.ReviewStatus?.Name,
                     Description = paper.FullPaper?.Description,
                     Title = paper.FullPaper?.Title,
+                    Reason = paper.FullPaper?.Reason,
 
                     FullPaperStartDate = currentActivePhase?.FullPaperStartDate,
                     FullPaperEndDate = currentActivePhase?.FullPaperEndDate,
@@ -267,7 +288,8 @@ namespace ConfRadar.Repositories.Repositories
                     ReviewEndDate = currentActivePhase?.ReviewEndDate,
                     FullPaperDecideStatusStart = currentActivePhase?.FullPaperDecideStatusStart,
                     FullPaperDecideStatusEnd = currentActivePhase?.FullPaperDecideStatusEnd,
-
+                    IsOwnSubmittedFullPaperReview = isOwnSubmittedFullPaper !=null ? true: false,
+                    OwnFullPaperReviews = ownFullPaperReviews
 
                 };
 
@@ -286,12 +308,13 @@ namespace ConfRadar.Repositories.Repositories
                         ReviewStatusName = fpr.ReviewStatus?.Name,
                         Note = fpr.Note,
                         CreatedAt = fpr.CreatedAt,
-                        FeedbackToAuthor = fpr.FeedbackToAuthor,
+                        //FeedbackToAuthor = fpr.FeedbackToAuthor,
                         FeedbackMaterialUrl = fpr.FeedbackMaterialUrl,
                         FullPaperId = fpr.FullPaperId,
                         ReviewerId = fpr.Reviewer?.UserId,
                         ReviewerName = fpr.Reviewer?.FullName,
                         ReviewerAvatarUrl = fpr.Reviewer?.AvatarUrl,
+                        
 
                     }).ToList();
                     var fullPaperReviewCount = fullPaperReviews.Select(f => f.ReviewerId).Distinct().Count();
@@ -300,6 +323,7 @@ namespace ConfRadar.Repositories.Repositories
             }
             if (paper.RevisionPaper != null)
             {
+               
                 paperDetailResponse.RevisionPaper = new RevisonPaperForReviewerResponse
                 {
                     RevisionPaperId = paper.RevisionPaper.RevisionPaperId,
@@ -307,6 +331,7 @@ namespace ConfRadar.Repositories.Repositories
                     GlobalStatusId = paper.RevisionPaper.GlobalStatusId,
                     GlobalStatusName = paper.RevisionPaper.GlobalStatus?.Name,
                     RevisionRoundDeadlineId = paper.RevisionPaper.RevisionRoundDeadlineId,
+                    Reason = paper.RevisionPaper?.Reason,
 
                     ReviseStartDate = currentActivePhase?.ReviseStartDate,
                     ReviseEndDate = currentActivePhase?.ReviseEndDate,
@@ -407,6 +432,7 @@ namespace ConfRadar.Repositories.Repositories
                     Description = paper.CameraReady?.Description,
                     CreatedAt = paper.CameraReady?.CreatedAt,
                     ReviewAt = paper.CameraReady?.ReviewAt,
+                    Reason = paper.CameraReady?.Reason,
 
                     CameraReadyStartDate = currentActivePhase?.CameraReadyStartDate,
                     CameraReadyEndDate = currentActivePhase?.CameraReadyEndDate,

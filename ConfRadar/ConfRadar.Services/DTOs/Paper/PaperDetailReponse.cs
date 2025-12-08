@@ -97,6 +97,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string Status { get; set; } // The name of the GlobalStatus, e.g., "Pending", "Approved"
         public string Title { get; set; }
         public string Description { get; set; }
+        public string? Reason { get; set; }
         public DateTime? Created { get; set; }
         public DateTime? Updated { get; set; }
     }
@@ -111,6 +112,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string ReviewStatus { get; set; } // The name of the ReviewStatus, e.g., "Under Review"
         public string RootPaperId { get; set; }
         public string Title { get; set; }
+        public string? Reason { get; set; }
         public string Description { get; set; }
         public DateTime? Created { get; set; }
         public DateTime? Updated { get; set; }
@@ -127,6 +129,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string RootPaperId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+        public string? Reason { get; set; }
         public DateTime? Created { get; set; }
         public DateTime? Updated { get; set; }
     }
@@ -139,6 +142,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public string RevisionPaperId { get; set; }
         public int? RevisionRound { get; set; }
         public string? RevisionRoundDeadlineId { get; set; }
+        public string? Reason { get; set; }
         public string OverallStatus { get; set; } // The name of the GlobalStatus for the revision
         public DateTime? Created { get; set; }
         public DateTime? Updated { get; set; }

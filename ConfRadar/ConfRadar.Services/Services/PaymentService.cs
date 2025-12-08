@@ -148,8 +148,8 @@ namespace ConfRadar.Services.Services
 
 
             var listTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId!);
-            var boughtTicketFound = listTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
-            if (boughtTicketFound != null)
+            //var boughtTicketFound = listTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (listTicketsFound.Any())
             {
                 throw new BadRequestException("Bạn đã mua vé cho sự kiện này rồi!");
             }
@@ -449,15 +449,15 @@ namespace ConfRadar.Services.Services
             }
 
             var listAttendeeTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
-            var validAttendeeTicketFound = listAttendeeTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
-            if (validAttendeeTicketFound != null)
+            //var validAttendeeTicketFound = listAttendeeTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (listAttendeeTicketsFound.Any())
             {
                 throw new BadRequestException("Chúng tôi phát hiện bạn đang có 1 vé là người tham dự hội nghị");
 
             }
             var listAuthorTicketsFound = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
-            var validAuthorTicktFound = listAuthorTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
-            if (validAuthorTicktFound != null)
+            //var validAuthorTicktFound = listAuthorTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (listAuthorTicketsFound.Any())
             {
                 throw new BadRequestException("Bạn chỉ có thể mua vé 1 lần cho research paper");
             }
@@ -702,15 +702,15 @@ namespace ConfRadar.Services.Services
 
 
             var listAttendeeTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
-            var validAttendeeTicketFound = listAttendeeTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
-            if (validAttendeeTicketFound != null)
+            //var validAttendeeTicketFound = listAttendeeTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (listAttendeeTicketsFound.Any())
             {
                 throw new BadRequestException("Bạn chỉ có thể mua vé 1 lần cho sự kiện research.");
 
             }
             var listAuthorTicketsFound = await _unitOfWork.TicketRepository.GetAuthorTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
-            var validAuthorTicktFound = listAuthorTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
-            if (validAuthorTicktFound != null)
+            //var validAuthorTicktFound = listAuthorTicketsFound.FirstOrDefault(t => t.IsRefunded == false);
+            if (listAuthorTicketsFound.Any())
             {
                 throw new BadRequestException("Chúng tôi phát hiện bạn đã có 1 vé là author cho sự kiện research.");
             }
