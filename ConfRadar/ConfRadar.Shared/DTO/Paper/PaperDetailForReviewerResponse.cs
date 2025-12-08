@@ -86,8 +86,11 @@
         public string? Title { get; set; }
 
         public string? Description { get; set; }
+        public string? Reason { get; set; }
         public string? ReviewStatusName { get; set; }
         public string? FullPaperUrl { get; set; }
+        public bool? IsOwnSubmittedFullPaperReview { get; set; }
+        public List<FullPaperReviewForReviewerResponse> OwnFullPaperReviews { get; set; } = new();
         public List<FullPaperReviewForReviewerResponse> FullPaperReviews { get; set; } = new();
         public bool? IsAllSubmittedFullPaperReview { get; set; }
 
@@ -124,8 +127,10 @@
         public string? GlobalStatusName { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? ReviewAt { get; set; }
+        public string? Reason { get; set; }
         public bool? IsAllSubmittedRevisionPaperReview { get; set; }
         public bool? IsAnsweredAllDiscussion { get; set; }
+        //public bool? IsOwnSubmittedRevisionPaperReview { get; set; }
         public string? RevisionRoundDeadlineId { get; set; }
         public DateOnly? ReviseStartDate { get; set; }
 
@@ -203,7 +208,7 @@
         public string? GlobalStatusId { get; set; }
         public string? GlobalStatusName { get; set; }
         public string? CameraReadyUrl { get; set; }
-
+        public string? Reason { get; set; }
         public string? Title { get; set; }
 
         public string? Description { get; set; }
