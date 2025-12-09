@@ -107,8 +107,8 @@ namespace ConfRadar.Services.Mappers
 
             string overallStatus = "Chưa tham gia";
             if (ticket.IsRefunded == true) overallStatus = "Đã hoàn tiền";
-            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription())) overallStatus = "Đã tham gia";
-            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.Expired.GetDescription())) overallStatus = "Vắng mặt (Hết hạn)";
+            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == checkedInStr)) overallStatus = "Đã tham gia";
+            else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == expiredStr)) overallStatus = "Vắng mặt (Hết hạn)";
 
             return new TicketHolderDetailResponse
             {
