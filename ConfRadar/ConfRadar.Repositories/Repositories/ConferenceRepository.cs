@@ -209,7 +209,7 @@ namespace ConfRadar.Repositories.Repositories
                                              _context.Tickets.Any(t => t.UserId == pau.UserId
                                              && t.IsRefunded == false
                                              && t.PricePhase != null && t.PricePhase.ConferencePrice != null
-                                             && t.PricePhase.ConferencePrice.IsAuthor == true
+                                             //&& t.PricePhase.ConferencePrice.IsAuthor == true
                                              && t.PricePhase.ConferencePrice.ConferenceId == pa.Paper.ConferenceId))
                                              .Select(pau => new PaperAuthorDetailForScheduleResponse()
                                              {

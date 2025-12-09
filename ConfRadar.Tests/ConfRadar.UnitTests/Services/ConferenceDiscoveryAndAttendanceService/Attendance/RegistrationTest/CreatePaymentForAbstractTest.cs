@@ -28,6 +28,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         private readonly Mock<IConferencePriceRepository> _mockConferencePriceRepo = new();
         private readonly Mock<IPaperRepository> _mockPaperRepo = new();
         private readonly Mock<ITransactionRepository> _mockTransactionRepo = new();
+        private readonly Mock<IConferenceStatusRepository> _mockConferenceStatusRepo = new();
 
         private readonly Mock<ICameraReadyRepository> _mockCameraReadyRepo = new();
         private readonly Mock<IGlobalStatusRepository> _mockGlobalStatusRepo = new();
@@ -56,6 +57,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             _mockUnitOfWork.Setup(u => u.CameraReadyRepository).Returns(_mockCameraReadyRepo.Object);
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository).Returns(_mockGlobalStatusRepo.Object);
             _mockUnitOfWork.Setup(u => u.PaperWaitListRepository).Returns(_mockPaperWaitListRepo.Object);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository).Returns(_mockConferenceStatusRepo.Object);
 
 
             // Create service AFTER setup
@@ -148,7 +150,16 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 PaperId = paperId,
                 CameraReadyId = "CR1",
                 PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = userId, IsRootAuthor = true } },
-                TicketId = null
+                TicketId = null,
+                ConferenceId = "C1",
+                Conference = new Conference { ConferenceId = "C1" ,
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusId = "CS_READY",
+                        ConferenceStatusName = "Ready"
+                    }
+                },
+
             };
             _mockPaperRepo.Setup(r => r.GetPaperByIdAsync(paperId)).ReturnsAsync(paper);
 
@@ -179,6 +190,76 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             // wallet default (not used unless Wallet path)
             _mockWalletRepo.Setup(r => r.GetWalletByUserIdAsync(userId)).ReturnsAsync(new Wallet { WalletId = "W1", Balance = 1000000 });
         }
+        [Fact]
+        public async Task ShouldThrow_WhenConferenceNotReady()
+        {
+            // Arrange
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks(); // giữ các mock cơ bản
+
+            // Override: make the paper's conference status NOT ready
+            var paper = new Paper
+            {
+                PaperId = "P1",
+                CameraReadyId = "CR1",
+                TicketId = null,
+                ConferenceId = "C1",
+                Conference = new Conference
+                {
+                    ConferenceId = "C1",
+                    ConferenceName = "ResearchConf",
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusId = "CS_NOT_READY", // khác với CS_READY
+                        ConferenceStatusName = "Preparing"
+                    },
+                    IsResearchConference = true,
+                    IsInternalHosted = true,
+                    ResearchConferenceDetail = new ResearchConferenceDetail { NumberPaperAccept = 10 },
+                    ConferenceSessions = new List<ConferenceSession> { new() { ConferenceSessionId = "S1" } }
+                },
+                PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "U1", IsRootAuthor = true } }
+            };
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1")).ReturnsAsync(paper);
+
+            // Ensure the repo that returns the "ready" status still returns CS_READY
+            _mockConferenceStatusRepo.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
+
+            // Act & Assert
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
+        [Fact]
+        public async Task ShouldThrow_WhenPaperNotBelongToConference()
+        {
+            // Arrange
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks(); // tạo mock mặc định (cp.ConferenceId = "C1")
+
+            // Override: trả về paper có ConferenceId khác (ví dụ "C_OTHER")
+            var paper = new Paper
+            {
+                PaperId = "P1",
+                CameraReadyId = "CR1",
+                TicketId = null,
+                ConferenceId = "C_OTHER", // khác với conferencePrice.ConferenceId = "C1"
+                Conference = new Conference
+                {
+                    ConferenceId = "C_OTHER",
+                    ConferenceName = "OtherConf",
+                    ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" }
+                },
+                PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "U1", IsRootAuthor = true } }
+            };
+            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1")).ReturnsAsync(paper);
+
+            // Ensure conference status repo still returns ready (nếu dùng)
+            _mockConferenceStatusRepo.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
+
+            // Act & Assert
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
+        }
 
         // -------------------------
         // 1. Payment method / GlobalStatus
@@ -190,7 +271,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
             MockDate("2025-02-01");
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync((PaymentMethod)null);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             // Act & Assert
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -202,7 +289,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             MockDate("2025-02-01");
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync(new PaymentMethod { PaymentMethodId = "PM1", MethodName = "MoMo" });
             _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync((GlobalStatus)null);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -215,7 +308,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
             SetupBaseValidMocks(); // other things valid
             _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1")).ReturnsAsync((Paper)null);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -227,7 +326,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             // override paper authors to not include U1 as root
             _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1"))
                 .ReturnsAsync(new Paper { PaperId = "P1", CameraReadyId = "CR1", PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "Other", IsRootAuthor = true } } });
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -238,7 +343,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             SetupBaseValidMocks();
             _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1"))
                 .ReturnsAsync(new Paper { PaperId = "P1", CameraReadyId = "CR1", PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "U1", IsRootAuthor = true } }, TicketId = "T1" });
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -249,7 +360,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             SetupBaseValidMocks();
             _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("P1"))
                 .ReturnsAsync(new Paper { PaperId = "P1", CameraReadyId = null, PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "U1", IsRootAuthor = true } } });
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -262,7 +379,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
             SetupBaseValidMocks();
             _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync((CameraReady)null);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -271,6 +394,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         {
             var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
             SetupBaseValidMocks();
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "NOT_ACCEPTED" });
             _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(new GlobalStatus { GlobalStatusId = "GS_ACCEPTED" });
 
@@ -286,7 +416,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
             SetupBaseValidMocks();
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync((ConferencePrice)null);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -298,7 +434,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.Conference.AvailableSlot = 0;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -310,7 +452,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.Conference.IsResearchConference = false;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -322,7 +470,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.IsAuthor = false;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -334,7 +488,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.Conference.IsInternalHosted = false;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -356,7 +516,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
             SetupBaseValidMocks();
             _mockPaperRepo.Setup(r => r.GetPaperCountByConference("C1")).ReturnsAsync(20); // exceeds
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -379,7 +545,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             // PaymentMethod in lock info
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1"))
                 .ReturnsAsync(new PaymentMethod { PaymentMethodId = "PM1", MethodName = "MoMo" });
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -388,6 +560,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         {
             var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
             SetupBaseValidMocks(paymentMethodId: "PM1", paymentMethodName: "MoMo");
+
+            _mockConferenceStatusRepo
+    .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+    .ReturnsAsync(new ConferenceStatus
+    {
+        ConferenceStatusId = "CS_READY",
+        ConferenceStatusName = "Ready"
+    });
 
             var lockKey = ExtensionHelper.GetPaymentConfereceLockKeyResult("U1", "C1");
             _mockRedis.Setup(r => r.KeyExistsAsync(lockKey)).ReturnsAsync(true);
@@ -411,7 +591,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.Conference.ResearchConferencePhases = null;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -423,7 +609,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.Conference.ResearchConferencePhases = new List<ResearchConferencePhase> { new ResearchConferencePhase { IsActive = false } };
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -436,7 +628,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             MockDate("2024-01-01");
             var cp = CreateValidConferencePrice();
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -449,7 +647,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             MockDate("2026-01-01");
             var cp = CreateValidConferencePrice();
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -463,7 +667,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             SetupBaseValidMocks();
             _mockTicketRepo.Setup(r => r.GetAttendeeTicketByUserIdAndConferenceId("U1", "C1"))
                 .ReturnsAsync(new List<Ticket> { new Ticket { TicketId = "T1", IsRefunded = false } });
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -474,7 +684,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             SetupBaseValidMocks();
             _mockTicketRepo.Setup(r => r.GetAuthorTicketByUserIdAndConferenceId("U1", "C1"))
                 .ReturnsAsync(new List<Ticket> { new Ticket { TicketId = "T2", IsRefunded = false } });
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -489,7 +705,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.PricePhases = new List<PricePhase>(); // empty
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -501,7 +723,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.PricePhases.First().AvailableSlot = 0;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -513,7 +741,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.PricePhases.First().ApplyPercent = -10;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+                        _mockConferenceStatusRepo
+            .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+            .ReturnsAsync(new ConferenceStatus
+            {
+            ConferenceStatusId = "CS_READY",
+            ConferenceStatusName = "Ready"
+            });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -524,7 +758,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             SetupBaseValidMocks();
             var cp = CreateValidConferencePrice(ticketPrice: 10000); // finalPrice <= 10000 when applyPercent 100%
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+   ConferenceStatusId = "CS_READY",
+   ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 

@@ -224,34 +224,54 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         public async Task CreatePayment_ShouldCreatePayOsPayment()
         {
             var req = new CreateTechPaymentRequest { PaymentMethodId = "PM01", ConferencePriceId = "CP01" };
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+    .ReturnsAsync(new ConferenceStatus
+    {
+        ConferenceStatusId = "CS_READY",
+        ConferenceStatusName = "Ready"
+    });
+   
+         
 
-            var pricePhase = new PricePhase
+            var conf = new Conference
             {
-                PricePhaseId = "PP01",
-                AvailableSlot = 10,
-                StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1)),
-                EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
-                ApplyPercent = 100
-            };
-
-            var confPrice = new ConferencePrice
-            {
-                TicketPrice = 200000,
-                PricePhases = new List<PricePhase> { pricePhase },
-                Conference = new Conference
+                ConferenceId = "C1",
+                ConferenceName = "Tech Conf",
+                AvailableSlot = 100,
+                TicketSaleStart = DateOnly.FromDateTime(DateTime.Now.AddDays(-1)),
+                TicketSaleEnd = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+                ConferenceStatus = new ConferenceStatus
                 {
-                    AvailableSlot = 10,
-                    TicketSaleStart = DateOnly.FromDateTime(DateTime.Now.AddDays(-5)),
-                    TicketSaleEnd = DateOnly.FromDateTime(DateTime.Now.AddDays(5)),
-                    ConferenceSessions = new List<ConferenceSession>()
-                }
+                    ConferenceStatusId = "CS_READY",
+                    ConferenceStatusName = "Ready"
+                },
+                ConferenceSessions = new List<ConferenceSession>()
             };
+
+            var cp = new ConferencePrice
+            {
+                ConferencePriceId = "CP1",
+                ConferenceId = "C1",
+                TicketPrice = 50000,
+                IsAuthor = false,
+                Conference = conf,
+                PricePhases = new List<PricePhase>() {
+        new PricePhase {
+            PricePhaseId = "PP1",
+            StartDate = DateOnly.FromDateTime(DateTime.Now.AddHours(-1)),
+            EndDate = DateOnly.FromDateTime(DateTime.Now.AddHours(1)),
+            ApplyPercent = 100,
+            AvailableSlot = 100,
+        }
+    }
+            };
+
 
             _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
                 .ReturnsAsync(new PaymentMethod { MethodName = "PayOs" });
 
             _mockUow.Setup(x => x.ConferencePriceRepository.GetConferencePriceByIdAsync("CP01"))
-                .ReturnsAsync(confPrice);
+                .ReturnsAsync(cp);
 
             _mockRedis.Setup(x => x.KeyExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
 
