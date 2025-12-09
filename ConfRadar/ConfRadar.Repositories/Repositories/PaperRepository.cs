@@ -463,7 +463,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
                 .Include(p => p.CameraReady)
-                .Where(p => p.CameraReady != null && p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId && p.ConferenceId == confId)
+                .Where(p => p.CameraReady != null && p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId && p.ConferenceId == confId && p.TicketId != null)
                 .ToListAsync();
         }
 

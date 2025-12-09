@@ -307,6 +307,12 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<Conference> GetResearchIncludedById(string researchId)
         {
             IQueryable<Conference> query = _context.Conferences
+                .Include(c => c.ResearchConferenceDetail)
+                    .ThenInclude(rcd => rcd.RankingCategory)
+                .Include(c => c.ResearchConferencePhases)
+                .Include(c => c.RankingFileUrls)
+                .Include(c => c.RankingReferenceUrls)
+                .Include(c => c.MaterialDownloads)
                 .Include(c => c.ConferenceStatus)
                 .Include(c => c.City)
                 .Include(c => c.CreatedByNavigation)
@@ -325,6 +331,10 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.ConferenceFeedbacks)
                         .ThenInclude(f => f.User)
+                .Include(c => c.ConferenceSessions)
+                    .ThenInclude(cs => cs.Room) 
+                         .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)
                 .Include(c => c.RefundPolicies)
                 .Where(c => c.ConferenceId == researchId)

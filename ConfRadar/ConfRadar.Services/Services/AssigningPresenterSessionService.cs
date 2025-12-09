@@ -4,6 +4,7 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.DTOs.PresenterSession;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Mappers;
 
 namespace ConfRadar.Services.Services
 {
@@ -34,6 +35,24 @@ namespace ConfRadar.Services.Services
             _tokenService = tokenService;
             _timeProviderService = timeProviderService;
         }
+
+        private async Task checkConference(Conference conf)
+        {
+            var today = await _timeProviderService.GetVietnamDate();
+            var statusComplete = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
+            var statusCancelled = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Cancelled.GetDescription());
+            if (conf.IsResearchConference != true)
+                throw new Exception("Thao tác chỉ dành cho hội nghị nghiên cứu");
+            if (today > conf.EndDate)
+            {
+                throw new BadRequestException("Không thể gán do đã kết thúc hội nghị rồi");
+            }
+
+            if (conf.ConferenceStatusId == statusComplete.ConferenceStatusId || conf.ConferenceStatusId == statusCancelled.ConferenceStatusId)
+                throw new BadRequestException("Không thể gán do hội nghị đã bị cancelled hoặc complete rồi");
+            return;
+        }
+
         public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId)
         {
             var acceptedStatus = _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription()).Result;
@@ -58,6 +77,11 @@ namespace ConfRadar.Services.Services
             }
 
             if (paper.CameraReadyId == null)
+            {
+                return false;
+            }
+
+            if(paper.TicketId == null)
             {
                 return false;
             }
@@ -89,6 +113,20 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Session với ID {sessionId} không tồn tại.");
             }
 
+            //check time need to be before end date
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(session.ConferenceId);
+            if (conference == null)
+            {
+                throw new BadRequestException("Không tìm thấy hội nghị nghiên cứu");
+            }
+
+            await checkConference(conference);
+
+            //check if session has room
+            if (session.RoomId == null)
+                throw new Exception("Không thể gán do session chưa có phòng");
+
+
             // Check if there is already a record for the paper
             var existingPresentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(paperId);
             if (existingPresentAuthor != null)
@@ -110,6 +148,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy người author nộp cũng là ngưởi presenter cho paper ID {paperId}.");
             }
+
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -235,6 +274,11 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"User với ID {request.NewUserId} không tồn tại.");
             }
 
+            var conf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(paper.ConferenceId);
+            if (conf == null)
+                throw new Exception("Hội nghị không tồn tại");
+
+            await checkConference(conf);
 
 
             // Check if user is author of paper in the PaperAuthor table
@@ -468,28 +512,41 @@ namespace ConfRadar.Services.Services
                 return new List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>();
             }
 
+            var conf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
+            if (conf == null)
+            {
+                throw new Exception("Hội nghị không tồn tại");
+            }
+
             var allChangeRequests = await _unitOfWork.PresenterChangeRequestRepository.GetAllPresenterChangeRequestsByConfIdAndStatusIdAsync(pendingStatus.GlobalStatusId, confId);
 
             var responseList = new List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>();
             foreach (var request in allChangeRequests)
             {
-                var requestedUser = await _unitOfWork.UserRepository.GetUserByUserId(request.RequestedById);
-                var newPresenterUser = await _unitOfWork.UserRepository.GetUserByUserId(request.NewPresenterId);
-                var globalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByIdAsync(request.GlobalStatusId);
 
                 responseList.Add(new ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest
                 {
                     PresenterChangeRequestId = request.PresenterChangeRequestId,
                     TicketId = request.TicketId,
                     RequestedById = request.RequestedById,
-                    RequestedByName = requestedUser?.FullName,
+                    RequestedByName = request.RequestedBy?.FullName,
                     NewPresenterId = request.NewPresenterId,
-                    NewPresenterName = newPresenterUser?.FullName,
+                    NewPresenterName = request.NewPresenter?.FullName,
                     GlobalStatusId = request.GlobalStatusId,
-                    GlobalStatusName = globalStatus?.Name,
+                    GlobalStatusName = request.GlobalStatus?.Name,
                     Reason = request.Reason,
                     RequestAt = request.RequestAt,
-                    ReviewedAt = request.ReviewedAt
+                    ReviewedAt = request.ReviewedAt,
+                    ConferenceName = conf.ConferenceName,
+                    ConferenceDescription = conf.Description,
+                    PaparTile = request.Paper?.Title,
+                    PaperDescription = request.Paper?.Description,
+                    PaperId = request.Paper?.PaperId,
+                    ConferenceId = conf.ConferenceId,
+                    SessionId = request.Paper?.PresentAuthors.FirstOrDefault(pa => pa.PaperId == request.PaperId)?.ConferenceSession.ConferenceSessionId,
+                    SessionTitle = request.Paper?.PresentAuthors.FirstOrDefault(pa => pa.PaperId == request.PaperId)?.ConferenceSession?.Title,
+                    SessionDate = request.Paper?.PresentAuthors.FirstOrDefault(pa => pa.PaperId == request.PaperId)?.ConferenceSession?.SessionDate,
+                    
                 });
             }
 
@@ -501,6 +558,14 @@ namespace ConfRadar.Services.Services
             // --- Các bước kiểm tra ban đầu của bạn đã rất tốt ---
             var paper = await _unitOfWork.PaperRepository.GetAllIncludeById(request.PaperId);
             if (paper == null) throw new BadRequestException($"Không tìm thấy paper với ID {request.PaperId}");
+
+
+            var conf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(paper.ConferenceId);
+            if (conf == null)
+                throw new Exception("Hội nghị không tồn tại");
+
+            await checkConference(conf);
+
 
             var newSession = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(request.NewSessionId);
             if (newSession == null) throw new BadRequestException($"Session mới với ID {request.NewSessionId} không tồn tại");
@@ -584,6 +649,10 @@ namespace ConfRadar.Services.Services
             //response dto list
             List<SessionChangeRequestResponse> sessionChangeRequestResponses = new List<SessionChangeRequestResponse>();
 
+            var conf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(confId);
+            if (conf == null)
+                throw new Exception("Không tìm thấy hội nghị");
+
             //get pending status
             var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
 
@@ -594,20 +663,31 @@ namespace ConfRadar.Services.Services
             foreach (var pendingRequest in PendingRequests)
             {
                 var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByPaperIdAsync(pendingRequest.PaperId);
-                var user = await _unitOfWork.UserRepository.GetUserByUserId(pendingRequest.CustomerId);
                 SessionChangeRequestResponse sessionChangeRequestResponse = new SessionChangeRequestResponse
                 {
+                    SessionChangeRequestId = pendingRequest.SessionChangeRequestId,
+                    
                     GlobalStatusId = pendingRequest.GlobalStatusId,
                     GlobalStatusName = pendingRequest.GlobalStatus.Name,
-                    NewSessionId = pendingRequest.NewConferenceSessionId,
-                    PaperId = pendingRequest.PaperId,
+                    
+                    CurrentSession = presentAuthor.ConferenceSession.ToResearchSessionWithMediaResponse(),
+
+                    NewSession = pendingRequest.NewConferenceSession.ToResearchSessionWithMediaResponse(),
+
+                    ConferenceId = conf.ConferenceId,
+                    
+                    ConferenceName = conf.ConferenceName,
+                    ConferencDescription = conf.Description,
+                    
+                    PaperId = presentAuthor.Paper?.PaperId,
+                    PaparTile = presentAuthor.Paper?.Title,
+                    PaperDescription = presentAuthor.Paper?.Description,
+
                     Reason = pendingRequest.Reason,
                     RequestAt = pendingRequest.RequestAt,
                     ReviewedAt = pendingRequest.ReviewedAt,
                     RequestedById = pendingRequest.CustomerId,
-                    RequestedByName = user.FullName,
-                    SessionChangeRequestId = pendingRequest.SessionChangeRequestId,
-                    CurrentSessionId = presentAuthor.ConferenceSessionId
+                    RequestedByName = pendingRequest.Customer?.FullName,
                 };
                 sessionChangeRequestResponses.Add(sessionChangeRequestResponse);
             }

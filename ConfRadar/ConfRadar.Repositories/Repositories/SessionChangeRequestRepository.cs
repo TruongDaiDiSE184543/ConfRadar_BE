@@ -62,7 +62,14 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<SessionChangeRequest>> GetAllSessionChangeRequestsByStatusIdAndConfIdAsync(string statusId, string confId)
         {
-            return await _context.SessionChangeRequests.Where(scr => scr.GlobalStatusId == statusId && scr.Paper.ConferenceId == confId).ToListAsync();
+            return await _context.SessionChangeRequests
+                .Include(r => r.Customer)
+                .Include(r => r.GlobalStatus)
+                .Include(r => r.NewConferenceSession)
+                    .ThenInclude(cs => cs.Room)
+                        .ThenInclude(r => r.Destination)
+                            .ThenInclude(d => d.City)
+                .Where(scr => scr.GlobalStatusId == statusId && scr.Paper.ConferenceId == confId).ToListAsync();
         }
     }
 }

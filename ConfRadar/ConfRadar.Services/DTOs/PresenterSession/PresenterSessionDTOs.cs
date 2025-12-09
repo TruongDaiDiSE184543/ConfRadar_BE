@@ -1,3 +1,4 @@
+using ConfRadar.Services.DTOs.Conference;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.PresenterSession
@@ -21,12 +22,19 @@ namespace ConfRadar.Services.DTOs.PresenterSession
         public string? RequestedByName { get; set; }
         public string? NewPresenterId { get; set; }
         public string? NewPresenterName { get; set; }
+        public string? ConferenceId { get; set; }
+        public string? ConferenceName { get; set; }
+        public string? ConferenceDescription{ get; set; }
+        public string? PaperId { get; set; }
+        public string? PaparTile { get; set; }
+        public string? PaperDescription { get; set; }
+        public string? SessionTitle { get; set; }
+        public DateOnly? SessionDate { get; set; }
         public string? GlobalStatusId { get; set; }
         public string? GlobalStatusName { get; set; }
         public string? Reason { get; set; }
         public DateTime? RequestAt { get; set; }
         public DateTime? ReviewedAt { get; set; }
-        public string? PaperId { get; set; }
         public string? SessionId { get; set; }
     }
 
@@ -86,8 +94,25 @@ namespace ConfRadar.Services.DTOs.PresenterSession
     {
         public string? SessionChangeRequestId { get; set; }
         public string? CurrentSessionId { get; set; }
+        public ResearchSessionWithMediaResponse? CurrentSession { get; set; }
         public string? NewSessionId { get; set; }
+
+
+
+        public ResearchSessionWithMediaResponse? NewSession { get; set; }
+
+
+        public string? ConferenceId {  get; set; }
+        public string? ConferenceName { get; set; }
+        public string? ConferencDescription { get; set; }
+
+
         public string? PaperId { get; set; }
+        public string? PaparTile {  get; set; }
+        public string? PaperDescription {  get; set; }
+
+
+
         public string? RequestedById { get; set; }
         public string? RequestedByName { get; set; }
         public string? GlobalStatusId { get; set; }
