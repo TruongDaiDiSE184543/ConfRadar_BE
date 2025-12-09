@@ -180,7 +180,7 @@ namespace ConfRadar.Services.Services
                     {
                         await ProcessingFromDisableToReady(conference, newStatus.ConferenceStatusId, currentStatus.ConferenceStatusId);
                     }
-                    if (currentStatus.ConferenceStatusName == "OnHold")
+                    else if (currentStatus.ConferenceStatusName == "OnHold")
                     {
                         await OnholdToReadyValidAsync(conference, newStatus.ConferenceStatusId, currentStatus.ConferenceStatusId);
                     }
