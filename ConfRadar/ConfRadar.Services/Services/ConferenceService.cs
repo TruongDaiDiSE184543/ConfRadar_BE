@@ -2276,11 +2276,22 @@ namespace ConfRadar.Services.Services
         public async Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId)
         {
             var readyStatusConference = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyStatusConference == null)
+            var completedStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
+            var canceledStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Cancelled.GetDescription());
+            var onHoldStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
+            if (readyStatusConference == null || completedStatusConf ==null || canceledStatusConf ==null || onHoldStatusConf==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái ready cho hội nghị");
             }
-            return await _unitOfWork.ConferenceRepository.GetListConferencesForScheduleByUserId(userId, await _timeProviderService.GetVietnamDate(), readyStatusConference.ConferenceStatusId);
+            var confStatuses = new List<string>()
+            {
+                readyStatusConference.ConferenceStatusId,
+                completedStatusConf.ConferenceStatusId,
+                canceledStatusConf.ConferenceStatusId,
+                onHoldStatusConf.ConferenceStatusId
+            };
+
+            return await _unitOfWork.ConferenceRepository.GetListConferencesForScheduleByUserId(userId, await _timeProviderService.GetVietnamDate(), confStatuses);
         }
 
         public async Task<List<ConferenceResponseDTO>> GetConferenceByAssignedPapers(string? userId)

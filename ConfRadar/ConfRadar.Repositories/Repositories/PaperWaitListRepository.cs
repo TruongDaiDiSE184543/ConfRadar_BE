@@ -107,7 +107,10 @@ namespace ConfRadar.Repositories.Repositories
                     && pwl.UserId != null
                     && pwl.User != null
                     && pwl.User.IsActive == true
-                    && pwl.User.IsEmailConfirmed==true)
+                    && pwl.User.IsEmailConfirmed==true
+                    && pwl.Conference !=null 
+                    && pwl.Conference.ConferencePrices.Any(cp=>cp.IsAuthor==true  && cp.PricePhases.Any(pp => pp.StartDate <= dateNow && dateNow <= pp.EndDate && pp.AvailableSlot>0))
+                    )
                     .AsSplitQuery()
                     .ToListAsync();
                 if (paperWaitListUser.Any())
@@ -126,7 +129,9 @@ namespace ConfRadar.Repositories.Repositories
                             UserId = user.UserId,
                             ConferenceId = user.ConferenceId,
                             ConferenceName = user.Conference?.ConferenceName,
-                            ConferencePriceDetailList = user.Conference?.ConferencePrices.Select(x => new NotifyConferencePriceDetailResponse()
+                            ConferencePriceDetailList = user.Conference?.ConferencePrices
+                            .Where(x => x.IsAuthor == true)
+                            .Select(x => new NotifyConferencePriceDetailResponse()
                             {
                                 ConferencePriceId = x.ConferencePriceId,
                                 AvailableSlot = x.AvailableSlot,

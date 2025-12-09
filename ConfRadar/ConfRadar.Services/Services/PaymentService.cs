@@ -538,7 +538,8 @@ namespace ConfRadar.Services.Services
                 PricePhaseId = currentPhase.PricePhaseId,
                 IsResearchConference = true,
                 IsResearchConferenceAuthor = true,
-                PaperId = request.PaperId
+                PaperId = request.PaperId,
+                
             };
             var transacJson = JsonSerializer.Serialize(transactionData);
 
