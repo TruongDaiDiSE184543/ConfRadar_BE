@@ -73,7 +73,7 @@ namespace ConfRadar.Services.Services
                     userNotification.Message = message;
                     notifionListObj.Add(userNotification);
                 }
-                if (notifionListObj.Count > 0)
+                if (notifionListObj.Any())
                 {
                     await _unitOfWork.NotificationRepository.CreateMutipleNotificationAsync(notifionListObj);
                 }

@@ -26,6 +26,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         private readonly Mock<ITicketRepository> _mockTicketRepo = new();
         private readonly Mock<IWalletRepository> _mockWalletRepo = new();
         private readonly Mock<IPaperWaitListRepository> _mockPaperWaitListRepo = new();
+        private readonly Mock<IConferenceStatusRepository> _mockConferenceStatusRepo = new();
 
         private PaymentService _service;
 
@@ -36,6 +37,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             _mockUnitOfWork.Setup(u => u.TicketRepository).Returns(_mockTicketRepo.Object);
             _mockUnitOfWork.Setup(u => u.WalletRepository).Returns(_mockWalletRepo.Object);
             _mockUnitOfWork.Setup(u => u.PaperWaitListRepository).Returns(_mockPaperWaitListRepo.Object);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository).Returns(_mockConferenceStatusRepo.Object);
 
             _service = new PaymentService(
                 _mockUnitOfWork.Object,
@@ -86,6 +88,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                     ConferenceSessions = new List<ConferenceSession>
                     {
                         new ConferenceSession { ConferenceSessionId = "S1" }
+                    },
+                    ConferenceStatusId = "CS_READY",
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusId = "CS_READY",
+                        ConferenceStatusName = "Ready"
                     }
                 },
                 PricePhases = new List<PricePhase>
@@ -123,7 +131,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var req = new CreateResearchAttendeePaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync(new PaymentMethod());
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync((ConferencePrice)null);
-
+            _mockConferenceStatusRepo.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+   .ReturnsAsync(new ConferenceStatus
+   {
+       ConferenceStatusId = "CS_READY",
+       ConferenceStatusName = "Ready"
+   });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForResearchAsAttendee(req, "U1"));
         }
 
@@ -135,7 +148,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             cp.Conference.AvailableSlot = 0;
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync(new PaymentMethod());
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+   .ReturnsAsync(new ConferenceStatus
+   {
+       ConferenceStatusId = "CS_READY",
+       ConferenceStatusName = "Ready"
+   });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForResearchAsAttendee(req, "U1"));
         }
 
@@ -147,7 +165,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             cp.Conference.ResearchConferenceDetail.AllowListener = false;
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync(new PaymentMethod());
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+   .ReturnsAsync(new ConferenceStatus
+   {
+       ConferenceStatusId = "CS_READY",
+       ConferenceStatusName = "Ready"
+   });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForResearchAsAttendee(req, "U1"));
         }
 
@@ -158,7 +181,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM2")).ReturnsAsync(new PaymentMethod { MethodName = "MoMo" });
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-
+            _mockConferenceStatusRepo.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+   .ReturnsAsync(new ConferenceStatus
+   {
+       ConferenceStatusId = "CS_READY",
+       ConferenceStatusName = "Ready"
+   });
             var lockData = new PaymentLockKeyDTO { PaymentMethodId = "PM1", OldCheckOutUrl = "urlOld" };
             _mockRedis.Setup(r => r.KeyExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
             _mockRedis.Setup(r => r.GetStringAsync(It.IsAny<string>())).ReturnsAsync(JsonSerializer.Serialize(lockData));
@@ -172,8 +200,16 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         {
             var req = new CreateResearchAttendeePaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1" };
             var cp = CreateValidConferencePrice();
-            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById("PM1")).ReturnsAsync(new PaymentMethod { MethodName = "MoMo" });
+            _mockPaymentMethodRepo.Setup(r => r.GetPaymentMethodById(It.IsAny<string>()))
+     .ReturnsAsync(new PaymentMethod { MethodName = "MoMo" });
+
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
+            _mockConferenceStatusRepo.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+    .ReturnsAsync(new ConferenceStatus
+    {
+        ConferenceStatusId = "CS_READY",
+        ConferenceStatusName = "Ready"
+    });
 
             var lockData = new PaymentLockKeyDTO { PaymentMethodId = "PM1", OldCheckOutUrl = "https://oldurl.com" };
             _mockRedis.Setup(r => r.KeyExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
@@ -185,6 +221,40 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("https://oldurl.com", result.CheckOutUrl);
         }
 
-        // TODO: Thêm các test cho happy path: PayOs, MoMo, VnPay, Wallet
+      
+
+        [Fact]
+        public async Task TaskShouldThrow_WhenConferenceStatusIsNotReady()
+        {
+            var req = new CreateResearchAttendeePaymentRequest
+            {
+                PaymentMethodId = "PM01",
+                ConferencePriceId = "CP01"
+            };
+
+            var confPrice = new ConferencePrice
+            {
+                Conference = new Conference
+                {
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusName = "Preparing"
+                    },
+                    TicketSaleStart = DateOnly.FromDateTime(DateTime.Now.AddDays(-1)),
+                    TicketSaleEnd = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+                    AvailableSlot = 5
+                }
+            };
+
+            _mockConferencePriceRepo.Setup(x => x.GetConferencePriceByIdAsync("CP01"))
+                .ReturnsAsync(confPrice);
+
+
+
+            await Assert.ThrowsAsync<BadRequestException>(async () =>
+                await _service.CreatePaymentForResearchAsAttendee(req, "U01")
+            );
+        }
+
     }
 }

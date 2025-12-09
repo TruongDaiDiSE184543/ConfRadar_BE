@@ -61,7 +61,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var req = new CreateTechPaymentRequest { PaymentMethodId = "PM01", ConferencePriceId = "CP01" };
             _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
                 .ReturnsAsync((PaymentMethod)null);
-
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
             // Act + Assert
             await Assert.ThrowsAsync<BadRequestException>(() =>
                 _service.CreatePaymentForTechConference(req, "U01"));
@@ -76,7 +77,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
             _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
                 .ReturnsAsync(new PaymentMethod());
-
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+       .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
             _mockUow.Setup(x => x.ConferencePriceRepository.GetConferencePriceByIdAsync("CP01"))
                 .ReturnsAsync((ConferencePrice)null);
 
@@ -93,11 +95,20 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
             _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
                 .ReturnsAsync(new PaymentMethod());
-
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+       .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
             _mockUow.Setup(x => x.ConferencePriceRepository.GetConferencePriceByIdAsync("CP01"))
                 .ReturnsAsync(new ConferencePrice
                 {
-                    Conference = new Conference { AvailableSlot = 0 }
+                    Conference = new Conference
+                    {
+                        AvailableSlot = 0,
+                        ConferenceStatus = new ConferenceStatus
+                        {
+                            ConferenceStatusId = "CS_READY",
+                            ConferenceStatusName = "Ready"
+                        }
+                    }
                 });
 
             await Assert.ThrowsAsync<BadRequestException>(() =>
@@ -116,14 +127,22 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 OldCheckOutUrl = "https://old",
                 PaymentMethodId = "PM01"
             };
-
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+        .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
             _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
                 .ReturnsAsync(new PaymentMethod());
 
             _mockUow.Setup(x => x.ConferencePriceRepository.GetConferencePriceByIdAsync("CP01"))
                 .ReturnsAsync(new ConferencePrice
                 {
-                    Conference = new Conference { AvailableSlot = 10 }
+                    Conference = new Conference
+                    { AvailableSlot = 10,
+                        ConferenceStatus = new ConferenceStatus
+                        {
+                            ConferenceStatusId = "CS_READY",
+                            ConferenceStatusName = "Ready"
+                        }
+                    }
                 });
 
             _mockRedis.Setup(x => x.KeyExistsAsync(It.IsAny<string>()))
@@ -147,11 +166,19 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
             _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
                 .ReturnsAsync(new PaymentMethod());
-
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
             _mockUow.Setup(x => x.ConferencePriceRepository.GetConferencePriceByIdAsync("CP01"))
                 .ReturnsAsync(new ConferencePrice
                 {
-                    Conference = new Conference { AvailableSlot = 10 }
+                    Conference = new Conference
+                    { AvailableSlot = 10,
+                        ConferenceStatus = new ConferenceStatus
+                        {
+                            ConferenceStatusId = "CS_READY",
+                            ConferenceStatusName = "Ready"
+                        }
+                    }
                 });
 
             _mockRedis.Setup(x => x.KeyExistsAsync(It.IsAny<string>()))
@@ -184,6 +211,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
             var confPrice = new ConferencePrice
             {
+                ConferencePriceId = "CP01",
                 TicketPrice = 200000,
                 PricePhases = new List<PricePhase> { phase },
                 Conference = new Conference
@@ -191,10 +219,16 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                     AvailableSlot = 10,
                     TicketSaleStart = DateOnly.FromDateTime(DateTime.Now.AddDays(-5)),
                     TicketSaleEnd = DateOnly.FromDateTime(DateTime.Now.AddDays(5)),
-                    ConferenceSessions = new List<ConferenceSession>()
+                    ConferenceSessions = new List<ConferenceSession>(),
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusId = "CS_READY",
+                        ConferenceStatusName = "Ready"
+                    }
                 }
             };
-
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+        .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "CS_READY", ConferenceStatusName = "Ready" });
             _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
                 .ReturnsAsync(new PaymentMethod { MethodName = "PayOs" });
 
@@ -230,8 +264,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         ConferenceStatusId = "CS_READY",
         ConferenceStatusName = "Ready"
     });
-   
-         
+
+
 
             var conf = new Conference
             {
@@ -293,5 +327,47 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("https://payos", result.CheckOutUrl);
         }
 
+    
+    [Fact]
+        public async Task CreatePayment_ShouldFail_WhenConferenceStatusIsNotReady()
+        {
+            var req = new CreateResearchAttendeePaymentRequest
+            {
+                PaymentMethodId = "PM01",
+                ConferencePriceId = "CP01"
+            };
+
+            var confPrice = new ConferencePrice
+            {
+                Conference = new Conference
+                {
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusName = "Preparing"
+                    },
+                    TicketSaleStart = DateOnly.FromDateTime(DateTime.Now.AddDays(-1)),
+                    TicketSaleEnd = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+                    AvailableSlot = 5
+                }
+            };
+            _mockUow.Setup(r => r.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+        .ReturnsAsync(new ConferenceStatus
+        {
+            ConferenceStatusId = "CS_READY",
+            ConferenceStatusName = "Ready"
+        });
+            _mockUow.Setup(x => x.ConferencePriceRepository.GetConferencePriceByIdAsync("CP01"))
+                .ReturnsAsync(confPrice);
+
+            _mockUow.Setup(x => x.PaymentMethodRepository.GetPaymentMethodById("PM01"))
+                .ReturnsAsync(new PaymentMethod());
+
+            await Assert.ThrowsAsync<BadRequestException>(async () =>
+                await _service.CreatePaymentForResearchAsAttendee(req, "U01")
+            );
+        }
     }
 }
+    
+
+    
