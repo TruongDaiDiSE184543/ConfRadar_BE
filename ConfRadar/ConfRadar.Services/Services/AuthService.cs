@@ -35,6 +35,7 @@ namespace ConfRadar.Services.Services
         Task<List<GetUsersForCollaboratorCreateResponse>> GetUsersForCollaboratorCreate();
 
         Task<List<ReviewerDetailResponse>> ListAllReviewer();
+        Task<List<ReviewerDetailResponse>> ListAllReviewerByConferenceId(string conferenceId);
 
         Task<int> SuspendExternalReviewerAccount(UserSuspendRequest request);
         Task<int> ActivateExternalReviewerAccount(UserActiveAccountRequest request);
@@ -745,6 +746,31 @@ namespace ConfRadar.Services.Services
             }
             var reviewerList = await _unitOfWork.UserRepository.GetReviewerList(localReviewerRole.RoleId);
             reviewerList = reviewerList.Where(u => u.IsActive == true && u.IsEmailConfirmed == true && u.UserRoles.All(ur => ur.IsActive == true)).ToList();
+            var result = reviewerList.Select(x => new ReviewerDetailResponse()
+            {
+                UserId = x.UserId,
+                Email = x.Email,
+                PhoneNumber = x.PhoneNumber,
+                AvatarUrl = x.AvatarUrl,
+                FullName = x.FullName,
+            }).ToList();
+            return result;
+        }
+        public async Task<List<ReviewerDetailResponse>> ListAllReviewerByConferenceId(string conferenceId)
+        {
+            var localReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName(SystemRoleEnum.LocalReviewer.GetDescription());
+            if (localReviewerRole == null)
+            {
+                throw new NotFoundException("Local reviewer role không tìm thấy trong hệ thống");
+            }
+            var reviewerList = await _unitOfWork.UserRepository.GetReviewerList(localReviewerRole.RoleId);
+            reviewerList = reviewerList.Where(u => u.IsActive == true
+            && u.IsEmailConfirmed == true
+            && u.UserRoles.All(ur => ur.IsActive == true)
+            && (
+                u.UserRoles.Any(ur => ur.RoleId == localReviewerRole.RoleId) ||
+                u.ReviewerContracts.Any(rc => rc.ConferenceId == conferenceId && rc.IsActive == true)
+            )).ToList();
             var result = reviewerList.Select(x => new ReviewerDetailResponse()
             {
                 UserId = x.UserId,
