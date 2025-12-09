@@ -638,10 +638,10 @@ namespace ConfRadar.Services.Services
 
 
             // A. Cập nhật Conference
+            conf.TicketSaleStart = Shift(conf.TicketSaleStart.Value);
+            conf.TicketSaleEnd = Shift(conf.TicketSaleEnd.Value);
             conf.StartDate = Shift(conf.StartDate);
             conf.EndDate = Shift(conf.EndDate);
-            conf.TicketSaleStart = Shift(conf.TicketSaleStart);
-            conf.TicketSaleEnd = Shift(conf.TicketSaleEnd);
             await _unitOfWork.ConferenceRepository.UpdateConferenceAsync(conf);
 
             // B. Cập nhật PricePhases (Conditional)
