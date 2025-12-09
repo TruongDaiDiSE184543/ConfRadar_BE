@@ -22,7 +22,7 @@ namespace ConfRadar.Repositories.Repositories
 
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
         Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId);
-        Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId);
+        Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, List<string> conferenceStatuses);
         //Task<List<Conference>> GetConferencesByUserId(string userId);
         Task<List<string>> GetTechnicalConferenceOrResearchConferenceIdsByUserId(string userId, bool isResearchConference);
         IQueryable<Conference> GetConferencesWithPrice(string readyStatusId);
@@ -138,7 +138,7 @@ namespace ConfRadar.Repositories.Repositories
             return await query.ToListAsync();
         }
 
-        public async Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, string conferenceStatusReadyId)
+        public async Task<List<ConferenceDetailForScheduleResponse>> GetListConferencesForScheduleByUserId(string userId, DateOnly dateNow, List<string> conferenceStatuses)
         {
             var conferenceList = await _context.Tickets
                                  .AsNoTracking()
@@ -147,8 +147,9 @@ namespace ConfRadar.Repositories.Repositories
                                  && t.PricePhase != null
                                  && t.PricePhase.ConferencePrice != null
                                  && t.PricePhase.ConferencePrice.Conference != null
-                                 && t.PricePhase.ConferencePrice.Conference.StartDate > dateNow
-                                 && t.PricePhase.ConferencePrice.Conference.ConferenceStatusId == conferenceStatusReadyId
+                                 && t.PricePhase.ConferencePrice.Conference.ConferenceStatus!=null
+                                 //&& t.PricePhase.ConferencePrice.Conference.StartDate > dateNow
+                                 && conferenceStatuses.Contains(t.PricePhase.ConferencePrice.Conference.ConferenceStatusId)
                                  )
                                  .Select(t => new ConferenceDetailForScheduleResponse()
                                  {
