@@ -109,7 +109,7 @@ namespace ConfRadar.Repositories.Repositories
                     && pwl.User.IsActive == true
                     && pwl.User.IsEmailConfirmed==true
                     && pwl.Conference !=null 
-                    && pwl.Conference.ConferencePrices.Any(cp=>cp.IsAuthor==true && cp.PricePhases.Any(pp => pp.StartDate <= dateNow && dateNow <= pp.EndDate))
+                    && pwl.Conference.ConferencePrices.Any(cp=>cp.IsAuthor==true  && cp.PricePhases.Any(pp => pp.StartDate <= dateNow && dateNow <= pp.EndDate && pp.AvailableSlot>0))
                     )
                     .AsSplitQuery()
                     .ToListAsync();
