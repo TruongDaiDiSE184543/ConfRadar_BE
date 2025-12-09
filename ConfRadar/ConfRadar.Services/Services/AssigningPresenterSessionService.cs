@@ -316,12 +316,14 @@ namespace ConfRadar.Services.Services
             var paperConferenceId = paper.ConferenceId;
             if (paperConferenceId != null)
             {
-                var userTicket = await _unitOfWork.TicketRepository.GetNotRefundAuthorTicketByUserIdAndConferenceId(request.NewUserId, paperConferenceId);
+                var userTicket = await _unitOfWork.TicketRepository.GetTicketByUserIdAndConferenceId(request.NewUserId, paperConferenceId);
 
+                if (userTicket == null)
+                    throw new BadRequestException($"Người dùng {newUser.FullName} không có vé của hội nghị:");
 
-                if (userTicket == null || userTicket.PricePhase?.ConferencePrice?.IsAuthor != true)
+                if (userTicket.IsRefunded == true)
                 {
-                    throw new BadRequestException($"Người dùng với ID {request.NewUserId} phải có vé loại 'author' chưa refund cho hội nghị này để được chỉ định làm người trình bày.");
+                    throw new BadRequestException($"Người dùng với ID {newUser.FullName} phải có vé của hội nghị và chưa refund để được chỉ định làm người trình bày.");
                 }
 
             }
