@@ -57,7 +57,14 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<List<PresenterChangeRequest>> GetAllPresenterChangeRequestsByConfIdAndStatusIdAsync(string statusId, string confId)
         {
-            return await _context.PresenterChangeRequests.Where(pcr => pcr.GlobalStatusId == statusId && pcr.Paper.ConferenceId == confId).ToListAsync();
+            return await _context.PresenterChangeRequests
+                .Include(req => req.NewPresenter)
+                .Include(req => req.RequestedBy)
+                .Include(req => req.GlobalStatus)
+                .Include(req => req.Paper)
+                    .ThenInclude(p => p.PresentAuthors)
+                        .ThenInclude(pa => pa.ConferenceSession)
+                .Where(pcr => pcr.GlobalStatusId == statusId && pcr.Paper.ConferenceId == confId).ToListAsync();
         }
     }
 }

@@ -104,6 +104,10 @@
         public decimal ActualPrice { get; set; }
         public DateOnly PurchaseDate { get; set; }
         public bool IsRefunded { get; set; }
+        public int HasCheckinTime { get; set; }
+        public int ExpireTime { get; set; }
+        public int NotcheckinTime {  get; set; }
+
 
         // Tổng quan Check-in
         public string OverallStatus { get; set; } // "Đã tham gia", "Chưa đến", "Hết hạn" (Tính dựa trên logic ưu tiên)

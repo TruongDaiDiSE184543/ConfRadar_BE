@@ -120,6 +120,10 @@ namespace ConfRadar.Services.Mappers
                 IsRefunded = ticket.IsRefunded ?? false,
 
                 OverallStatus = overallStatus,
+                HasCheckinTime = ticket.UserCheckIns.Count(us => us.CheckinStatus.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription()),
+                ExpireTime = ticket.UserCheckIns.Count(us => us.CheckinStatus.CheckinStatusName == CheckInStatusEnum.Expired.GetDescription()),
+                NotcheckinTime = ticket.UserCheckIns.Count(us => us.CheckinStatus.CheckinStatusName == CheckInStatusEnum.Pending.GetDescription()),
+                
 
                 // Gọi lại hàm map nhỏ ở trên
                 SessionCheckIns = ticket.UserCheckIns
