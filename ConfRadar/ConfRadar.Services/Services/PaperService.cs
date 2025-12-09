@@ -179,6 +179,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn không thể mua vé này vì bạn là reviewer trong hệ thống");
             }
+            var listTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, request.ConferenceId);
+            if (listTicketsFound.Any())
+            {
+                throw new BadRequestException("Bạn đã mua vé  dự thính cho sự kiện này rồi!");
+            }
             var paper = new Paper()
             {
                 PaperId = Guid.NewGuid().ToString(),

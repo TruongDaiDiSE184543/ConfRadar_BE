@@ -358,7 +358,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn không thể thanh toán do camera ready chưa được chấp nhận");
             }
-
+         
 
 
 
@@ -384,7 +384,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn chỉ có thể nộp abstract cho research conference tổ chức bởi confradar");
             }
-            var paperCount = await _unitOfWork.PaperRepository.GetPaperCountByConference(conferencePrice.ConferenceId);
+            if (paper.ConferenceId != conferencePrice.ConferenceId)
+            {
+                throw new BadRequestException($"Bài báo không thuộc về hội nghị này");
+            }
+                var paperCount = await _unitOfWork.PaperRepository.GetPaperCountByConference(conferencePrice.ConferenceId);
             var researchConfDetail = conferencePrice.Conference.ResearchConferenceDetail;
             if (researchConfDetail == null) throw new NotFoundException("Không tìm thấy research conference");
             if (paperCount >= researchConfDetail.NumberPaperAccept)
