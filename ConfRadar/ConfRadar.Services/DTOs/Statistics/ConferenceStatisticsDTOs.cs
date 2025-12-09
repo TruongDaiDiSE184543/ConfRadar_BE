@@ -104,9 +104,9 @@
         public decimal ActualPrice { get; set; }
         public DateOnly PurchaseDate { get; set; }
         public bool IsRefunded { get; set; }
-        public int HasCheckinTime { get; set; }
-        public int ExpireTime { get; set; }
-        public int NotcheckinTime {  get; set; }
+        public int CheckedInCount { get; set; }
+        public int ExpiredCount { get; set; }
+        public int PendingCount {  get; set; }
 
 
         // Tổng quan Check-in

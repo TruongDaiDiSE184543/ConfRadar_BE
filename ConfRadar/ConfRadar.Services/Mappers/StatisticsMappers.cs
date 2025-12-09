@@ -100,6 +100,11 @@ namespace ConfRadar.Services.Mappers
         public static TicketHolderDetailResponse ToTicketHolderDetailResponse(this Ticket ticket)
         {
             // Logic tính toán Overall Status
+
+            var checkedInStr = CheckInStatusEnum.CheckedIn.GetDescription();
+            var expiredStr = CheckInStatusEnum.Expired.GetDescription();
+            var pendingStr = CheckInStatusEnum.Pending.GetDescription();
+
             string overallStatus = "Chưa tham gia";
             if (ticket.IsRefunded == true) overallStatus = "Đã hoàn tiền";
             else if (ticket.UserCheckIns.Any(uc => uc.CheckinStatus?.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription())) overallStatus = "Đã tham gia";
@@ -120,10 +125,11 @@ namespace ConfRadar.Services.Mappers
                 IsRefunded = ticket.IsRefunded ?? false,
 
                 OverallStatus = overallStatus,
-                HasCheckinTime = ticket.UserCheckIns.Count(us => us.CheckinStatus.CheckinStatusName == CheckInStatusEnum.CheckedIn.GetDescription()),
-                ExpireTime = ticket.UserCheckIns.Count(us => us.CheckinStatus.CheckinStatusName == CheckInStatusEnum.Expired.GetDescription()),
-                NotcheckinTime = ticket.UserCheckIns.Count(us => us.CheckinStatus.CheckinStatusName == CheckInStatusEnum.Pending.GetDescription()),
-                
+                CheckedInCount = ticket.UserCheckIns.Count(uc => uc.CheckinStatus?.CheckinStatusName == checkedInStr),
+                ExpiredCount = ticket.UserCheckIns.Count(uc => uc.CheckinStatus?.CheckinStatusName == expiredStr),
+                PendingCount = ticket.UserCheckIns.Count(uc => uc.CheckinStatus?.CheckinStatusName == pendingStr),
+
+
 
                 // Gọi lại hàm map nhỏ ở trên
                 SessionCheckIns = ticket.UserCheckIns
