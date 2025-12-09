@@ -2530,7 +2530,7 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Hội nghị phải trong trạng thái ready mới có thể chuyển sang disabled");
 
             string ReasonForDisabling = !string.IsNullOrEmpty(reason) ? reason : $"Hội nghị {conf.ConferenceName} đã bị chuyển về trạng thái Disabled";
-            UpdateConferenceStatusAsync(confId, ConferenceStatusEnum.Disabled.GetDescription(), ReasonForDisabling);
+            await UpdateConferenceStatusAsync(confId, ConferenceStatusEnum.Disabled.GetDescription(), ReasonForDisabling);
             return true;
 
         }
@@ -2549,7 +2549,7 @@ namespace ConfRadar.Services.Services
                 throw new Exception("Hội nghị phải trong trạng thái disabled mới có thể chuyển sang ready");
 
             string ReasonForReady = !string.IsNullOrEmpty(reason) ? reason : $"Hội nghị {conf.ConferenceName} đã bị chuyển về trạng thái Disabled";
-            UpdateConferenceStatusAsync(confId, ConferenceStatusEnum.Ready.GetDescription(), ReasonForReady);
+            await UpdateConferenceStatusAsync(confId, ConferenceStatusEnum.Ready.GetDescription(), ReasonForReady);
 
             return true;
         }
