@@ -2504,6 +2504,9 @@ namespace ConfRadar.Services.Services
             if (conference.IsResearchConference != true)
                 throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
 
+            if (request.ApplyPercent < 0 || request.ApplyPercent > 100)
+                throw new Exception("Apply percent phải trong khoảng 0-100");
+
             // Kiểm tra trạng thái đặc biệt: Cho phép khi Preparing, Ready, hoặc OnHold
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
             var allowedStatuses = new HashSet<string>
@@ -2629,16 +2632,17 @@ namespace ConfRadar.Services.Services
                 foreach (var priceId in request.AuthorConferencePriceIds)
                 {
                     var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(priceId);
+                    string phaseName = !string.IsNullOrEmpty(request.PhaseName) ? request.PhaseName : $"Bán vé Giai đoạn {newPhaseOrder}";
 
                     var newPricePhase = new PricePhase
                     {
                         PricePhaseId = Guid.NewGuid().ToString(),
                         ConferencePriceId = priceId,
                         ResearchConferencePhaseId = newPhaseModel.ResearchConferencePhaseId,
-                        PhaseName = $"Bán vé Giai đoạn {newPhaseOrder}", // Tên tự động
+                        PhaseName = phaseName, // Tên tự động
                         StartDate = newPhaseModel.AuthorPaymentStart,
                         EndDate = newPhaseModel.AuthorPaymentEnd,
-                        ApplyPercent = 0, // Giả định không giảm giá
+                        ApplyPercent = request.ApplyPercent, // Giả định không giảm giá
                         TotalSlot = conferencePrice.AvailableSlot, // Gán toàn bộ số vé còn lại
                         AvailableSlot = conferencePrice.AvailableSlot
                     };
