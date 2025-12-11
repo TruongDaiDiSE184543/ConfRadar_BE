@@ -2092,7 +2092,7 @@ namespace ConfRadar.Services.Services
                 Description = paper.Description,
                 Created = paper.CreatedAt,
                 RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName, avatarUrl = RootAuthor.AvatarUrl } : null,
-                PublishingLink = paper.PublishingLink,
+                PublishingLink = paper.PublishingLink ?? "N/A",
                 CoAuthors = coAuthors?.Select(user => new Author
                 {
                     userId = user.UserId,

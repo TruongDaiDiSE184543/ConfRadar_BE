@@ -2381,7 +2381,27 @@ namespace ConfRadar.Services.Services
 
             var finalRankingCategoryId = request.RankingCategoryId ?? researchDetail.RankingCategoryId;
             var finalRankValue = request.RankValue ?? researchDetail.RankValue;
+            var finalSubmitPaperFee = request.SubmitPaperFee ?? researchDetail.SubmitPaperFee;
 
+
+
+            if (request.SubmitPaperFee.HasValue) // Chỉ kiểm tra nếu có sự thay đổi
+            {
+                var prices = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
+                var authorPrices = prices.Where(p => p.IsAuthor == true).ToList();
+
+                if (authorPrices.Any())
+                {
+                    // Tìm giá vé tác giả RẺ NHẤT
+                    var cheapestAuthorPrice = authorPrices.OrderBy(p => p.TicketPrice).First();
+
+                    // Logic đúng: Phí nộp bài không được vượt quá giá vé rẻ nhất của tác giả
+                    if (finalSubmitPaperFee > cheapestAuthorPrice.TicketPrice)
+                    {
+                        throw new BadRequestException($"Không thể tăng Phí nộp bài ({finalSubmitPaperFee}) cao hơn giá của loại vé tác giả rẻ nhất hiện có ('{cheapestAuthorPrice.TicketName}' - giá: {cheapestAuthorPrice.TicketPrice}).");
+                    }
+                }
+            }
             if (request.NumberPaperAccept.HasValue)
             {
                 var authorTickets = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(conferenceId);
@@ -2454,7 +2474,7 @@ namespace ConfRadar.Services.Services
             researchDetail.AllowListener = request.AllowListener ?? researchDetail.AllowListener;
             researchDetail.RankValue = request.RankValue ?? researchDetail.RankValue;
             researchDetail.RankYear = request.RankYear ?? researchDetail.RankYear;
-            researchDetail.SubmitPaperFee = request.ReviewFee ?? researchDetail.SubmitPaperFee;
+            researchDetail.SubmitPaperFee = request.SubmitPaperFee ?? researchDetail.SubmitPaperFee;
             researchDetail.RankingCategoryId = request.RankingCategoryId ?? researchDetail.RankingCategoryId;
 
             await _unitOfWork.ResearchConferenceDetailRepository.UpdateResearchConferenceDetailAsync(researchDetail);
