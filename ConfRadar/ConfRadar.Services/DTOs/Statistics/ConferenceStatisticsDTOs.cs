@@ -239,4 +239,38 @@
         public string PresenterName { get; set; }
         public string PaperTitle { get; set; }
     }
+
+
+    //transaction history
+    public class ConferenceTransactionHistoryResponse
+    {
+        // Danh sách các User có phát sinh giao dịch
+        public List<UserTransactionHistoryDto> UserHistories { get; set; } = new List<UserTransactionHistoryDto>();
+    }
+
+    public class UserTransactionHistoryDto
+    {
+        // Thông tin định danh User
+        public string UserId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+
+        // Chỉ liệt kê danh sách, không cần tính tổng tiền nếu không cần thiết
+        public List<TransactionItemDto> Transactions { get; set; } = new List<TransactionItemDto>();
+    }
+
+    public class TransactionItemDto
+    {
+        public string TransactionId { get; set; }
+        public string TransactionCode { get; set; } // Mã giao dịch (quan trọng để tra soát)
+        public decimal Amount { get; set; }
+        public DateTime Time { get; set; }
+
+        // Loại giao dịch: Mua vé hay Hoàn tiền
+        public string Type { get; set; } // "Payment" hoặc "Refund"
+        public string Status { get; set; } // "Success", "Refunded"
+
+        public string TicketType { get; set; } // Mua vé loại gì
+        public string PaymentMethod { get; set; } // Qua cổng nào
+    }
 }

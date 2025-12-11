@@ -21,6 +21,8 @@ public partial class ConferencePrice
 
     public string? ConferenceId { get; set; }
 
+    public bool? IsPublish { get; set; }
+
     public virtual Conference? Conference { get; set; }
 
     public virtual ICollection<PricePhase> PricePhases { get; set; } = new List<PricePhase>();

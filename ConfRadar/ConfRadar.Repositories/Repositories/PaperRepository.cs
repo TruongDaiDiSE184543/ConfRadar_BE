@@ -31,6 +31,9 @@ namespace ConfRadar.Repositories.Repositories
         Task<int> GetPaperCountByConference(string conferenceId);
         Task<List<Paper>> GetDetailPaperFromListId(List<string> paperIds);
         Task<List<User>> GetAvailableCoAuthorForInclude(string conferenceId, List<string> systemRoleIds);
+        Task UpdateMutiplePapersAsync(List<Paper> papers);
+        Task<List<Paper>> GetAcceptedPaperToPublish(string conferenceId, string acceptedGlobalStatusId);
+        Task UpdateMultiplePapersAsync (List<Paper> papers);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -49,6 +52,11 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<bool> DeletePaperAsync(Paper paper)
         {
             return await RemoveAsync(paper);
+        }
+
+        public async Task UpdateMutiplePapersAsync(List<Paper> papers)
+        {
+            _context.Papers.UpdateRange(papers);
         }
 
         public async Task<Paper?> GetPaperByIdAsync(string paperId)
@@ -137,6 +145,27 @@ namespace ConfRadar.Repositories.Repositories
                 PaperId = x.p.PaperId,
             }).ToList();
             return result;
+        }
+
+        public async Task<List<Paper>> GetAcceptedPaperToPublish(string conferenceId, string acceptedGlobalStatusId)
+        {
+            // Cấu trúc Include mới để lấy Publisher từ ResearchConferenceDetail
+            var query = _context.Papers
+                .Include(p => p.Conference) // Cần Include Conference để lấy được ResearchConferenceDetail
+                    .ThenInclude(c => c.ResearchConferenceDetail)
+                        .ThenInclude(rd => rd.Publisher) // <-- Lấy Publisher từ đây
+                .Include(p => p.CameraReady)
+                .Include(p => p.Ticket)
+                    .ThenInclude(t => t.PricePhase)
+                        .ThenInclude(pp => pp.ConferencePrice)
+                .Where(p => p.ConferenceId == conferenceId)
+                .Where(p => p.CameraReady != null && p.CameraReady.GlobalStatusId == acceptedGlobalStatusId)
+                // Điều kiện IsPublish vẫn nằm ở ConferencePrice, điều này đúng
+                .Where(p => p.Ticket != null && p.Ticket.PricePhase.ConferencePrice.IsPublish == true)
+                // Chỉ lấy những paper chưa có link
+                .Where(p => string.IsNullOrEmpty(p.PublishingLink));
+
+            return await query.ToListAsync();
         }
 
         public async Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId)
@@ -573,6 +602,24 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(p =>p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
                 .AsNoTracking().AsSplitQuery();
             return await query.FirstOrDefaultAsync();
+        }
+
+        public Task UpdateMultiplePapersAsync(List<Paper> papers)
+        {
+            // Kiểm tra đầu vào để tránh lỗi không cần thiết
+            if (papers == null || !papers.Any())
+            {
+                return Task.CompletedTask; // Không có gì để làm, trả về một task đã hoàn thành
+            }
+
+            // Sử dụng UpdateRange để thông báo cho EF Core rằng tất cả các thực thể trong danh sách
+            // đã bị thay đổi và cần được cập nhật khi SaveChangesAsync() được gọi.
+            _context.Papers.UpdateRange(papers);
+
+            // Trả về một task đã hoàn thành. Hàm này không cần 'await' vì
+            // UpdateRange chỉ thay đổi trạng thái của các thực thể trong bộ nhớ (in-memory).
+            // Hành động I/O thực sự chỉ xảy ra khi _unitOfWork.CommitAsync() được gọi ở tầng Service.
+            return Task.CompletedTask;
         }
     }
 

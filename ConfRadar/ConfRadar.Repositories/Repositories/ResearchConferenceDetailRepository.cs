@@ -37,6 +37,7 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<ResearchConferenceDetail?> GetResearchConferenceDetailByConferenceIdAsync(string conferenceId)
         {
             return await _context.ResearchConferenceDetails
+                .Include(r => r.Publisher)
                 .Include(r => r.RankingCategory) // Include the RankingCategory for related data
                 .FirstOrDefaultAsync(r => r.ConferenceId == conferenceId);
         }

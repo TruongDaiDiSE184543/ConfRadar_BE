@@ -217,6 +217,7 @@ namespace ConfRadar.Services.Mappers
                 TicketName = model.TicketName,
                 TicketDescription = model.TicketDescription,
                 IsAuthor = model.IsAuthor,
+                IsPublish = model.IsPublish,
                 TotalSlot = model.TotalSlot,
                 AvailableSlot = model.AvailableSlot,
                 PricePhases = model.PricePhases?.Select(pp => pp.ToPricePhaseResponse()).ToList()
@@ -295,13 +296,13 @@ namespace ConfRadar.Services.Mappers
             {
                 AllowListener = model.AllowListener,
                 NumberPaperAccept = model.NumberPaperAccept,
-                PaperFormat = model.PaperFormat,
+                PaperFormat = model.Publisher.PaperFormat,
                 RankingCategoryId = model.RankingCategoryId,
                 RankingCategoryName = model.RankingCategory.RankName,
                 RankingDescription = model.RankingDescription,
                 RankValue = model.RankValue,
                 RankYear = model.RankYear,
-                ReviewFee = model.ReviewFee,
+                SubmitPaperFee = model.SubmitPaperFee,
                 RevisionAttemptAllowed = model.RevisionAttemptAllowed
             };
         }

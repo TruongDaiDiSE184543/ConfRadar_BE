@@ -43,6 +43,8 @@ namespace ConfRadar.Services.Mappers
                 TicketPrice = model.TicketPrice,
                 TicketName = model.TicketName,
                 TicketDescription = model.TicketDescription,
+                IsPublish = model.IsPublish,
+                IsAuthor = model.IsAuthor,
                 PricePhases = phases?.Select(p => p.ToResponse()).ToList()
             };
         }
@@ -441,14 +443,14 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetail
             {
                 ConferenceId = conferenceId,
-                PaperFormat = request.PaperFormat,
+                PublisherId = request.PublisherId,
                 NumberPaperAccept = request.NumberPaperAccept,
                 RevisionAttemptAllowed = request.RevisionAttemptAllowed,
                 RankingDescription = request.RankingDescription,
                 AllowListener = request.AllowListener,
                 RankValue = request.RankValue,
                 RankYear = request.RankYear,
-                ReviewFee = request.ReviewFee,
+                SubmitPaperFee = request.SubmitPaperFee,
                 RankingCategoryId = request.RankingCategoryId
             };
         }
@@ -458,14 +460,16 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetailResponse
             {
                 ConferenceId = model.ConferenceId,
-                PaperFormat = model.PaperFormat,
+                PublisherId= model.Publisher.PublisherId,
+                PublisherName = model.Publisher.Name,
+                PaperFormat = model.Publisher.PaperFormat,
                 NumberPaperAccept = model.NumberPaperAccept,
                 RevisionAttemptAllowed = model.RevisionAttemptAllowed,
                 RankingDescription = model.RankingDescription,
                 AllowListener = model.AllowListener,
                 RankValue = model.RankValue,
                 RankYear = model.RankYear,
-                ReviewFee = model.ReviewFee,
+                SubmitPaperFee = model.SubmitPaperFee,
                 RankingCategoryId = model.RankingCategoryId,
                 RankingCategoryName = model.RankingCategory?.RankName // Include related RankingCategory name
             };
@@ -730,6 +734,20 @@ namespace ConfRadar.Services.Mappers
             {
                 Name = request.Name,
                 Description = request.Description
+            };
+        }
+
+        public static PublisherResponse FromModel(this Publisher publisher)
+        {
+            return new PublisherResponse
+            {
+                PublisherId = publisher.PublisherId,
+                Name = publisher.Name,
+                PaperFormat = publisher.PaperFormat, 
+                Description = publisher.Description,
+                WebsiteUrl = publisher.WebsiteUrl,
+                LogoUrl = publisher.LogoUrl,
+                LinkTemplate = publisher.LinkTemplate 
             };
         }
 

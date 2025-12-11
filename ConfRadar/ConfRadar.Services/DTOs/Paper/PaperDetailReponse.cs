@@ -15,6 +15,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public ResearchConferenceBasicStepResponse researchConferenceInfo { get; set; }
         public DateTime? Created { get; set; }
         public Author RootAuthor { get; set; }
+        public string PublishingLink { get; set; }
         public List<Author> CoAuthors { get; set; }
         public string? TicketId { get; set; }
         public PaperPhaseDtoDetail? CurrentPhase { get; set; }

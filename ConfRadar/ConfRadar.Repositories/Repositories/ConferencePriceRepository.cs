@@ -21,8 +21,8 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<ConferencePrice>> GetNumberOfIsAuthorByConferenceId(string confId);
         Task<ConferencePrice> AnyConferencePriceWithAtLeastOnePricePhase(string confId);
         Task<List<ConferencePrice>> GetPricesWithDetailsByConferenceIdAsync(string confId);
-        
-
+        Task<List<ConferencePrice>> GetListenerPricesByConferenceIdAsync(string conferenceId);
+        Task<bool> AnyPublishedPricesExistAsync(string conferenceId);
     }
 
     public class ConferencePriceRepository : GenericRepository<ConferencePrice>, IConferencePriceRepository
@@ -77,6 +77,14 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
+
+        public async Task<List<ConferencePrice>> GetListenerPricesByConferenceIdAsync(string conferenceId)
+        {
+            return await _context.ConferencePrices
+                .Where(p => p.ConferenceId == conferenceId && p.IsAuthor == false)
+                .ToListAsync();
+        }
+
         public async Task<List<ConferencePrice>> GetPricesByConferenceIdAsync(string conferenceId)
         {
             return await _context.ConferencePrices
@@ -122,7 +130,10 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.ConferencePrices.Include(cp => cp.PricePhases).ThenInclude(pp => pp.RefundPolicies).Where(cp => cp.ConferenceId == confId).ToListAsync();
         }
 
-       
+        public async Task<bool> AnyPublishedPricesExistAsync(string conferenceId)
+        {
+            return await _context.ConferencePrices.AnyAsync(cp => cp.IsPublish == true && cp.ConferenceId == conferenceId);
+        }
     }
 }
 

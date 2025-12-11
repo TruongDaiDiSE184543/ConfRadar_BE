@@ -2,6 +2,7 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Shared.DTO.Conference;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
@@ -18,7 +19,7 @@ namespace ConfRadar.Repositories.Repositories
         IQueryable<Conference> GetAllTechnicalIncludedConference();
         Task<Conference> GetTechnicalIncludedById(string technicalId, string? statusId = null);
         Task<Conference> GetResearchIncludedById(string researchId);
-        IQueryable<Conference> GetAllResearchIncludedConference();
+        IQueryable<Conference> GetAllResearchIncludedConference(string? userId = null);
 
         Task<Dictionary<string, Conference>> GetConferencesByIdsAsync(List<string> conferenceIds);
         Task<List<Conference>> GetConferencesByUserIdAndStatusAsync(string userId, string? statusId);
@@ -82,6 +83,8 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(c => c.ConferenceStatus)
                 .Include(c => c.ResearchConferenceDetail)
                     .ThenInclude(rcd => rcd.RankingCategory)
+                .Include(c => c.ResearchConferenceDetail)
+                    .ThenInclude(r => r.Publisher)
                 .Include(c => c.TechnicalConferenceDetail)
                 .Where(c => c.ConferenceStatusId == readyStatusId);
         }
@@ -310,6 +313,8 @@ namespace ConfRadar.Repositories.Repositories
             IQueryable<Conference> query = _context.Conferences
                 .Include(c => c.ResearchConferenceDetail)
                     .ThenInclude(rcd => rcd.RankingCategory)
+                .Include(c => c.ResearchConferenceDetail)
+                    .ThenInclude(r => r.Publisher)
                 .Include(c => c.ResearchConferencePhases)
                 .Include(c => c.RankingFileUrls)
                 .Include(c => c.RankingReferenceUrls)
@@ -343,9 +348,51 @@ namespace ConfRadar.Repositories.Repositories
             return await query.FirstAsync();
         }
 
-        public IQueryable<Conference> GetAllResearchIncludedConference()
+        public IQueryable<Conference> GetAllResearchIncludedConference(string? userId = null)
         {
-            throw new NotImplementedException();
+            IQueryable<Conference> query = _context.Conferences
+               .Include(c => c.ResearchConferenceDetail)
+                   .ThenInclude(rcd => rcd.RankingCategory)
+               .Include(c => c.ResearchConferenceDetail)
+                   .ThenInclude(r => r.Publisher)
+               .Include(c => c.ResearchConferencePhases)
+                    .ThenInclude(rcp => rcp.RevisionRoundDeadlines)
+               .Include(c => c.RankingFileUrls)
+               .Include(c => c.RankingReferenceUrls)
+               .Include(c => c.MaterialDownloads)
+               .Include(c => c.ConferenceStatus)
+               .Include(c => c.City)
+               .Include(c => c.CreatedByNavigation)
+               .Include(c => c.ConferenceCategory)
+               .Include(c => c.ConferenceMedia)
+               .Include(c => c.Policies)
+               .Include(c => c.ConferencePrices)
+                   .ThenInclude(cp => cp.PricePhases)
+                       .ThenInclude(pp => pp.RefundPolicies)
+               .Include(c => c.ConferenceSessions)
+                   .ThenInclude(cs => cs.ConferenceSessionMedia)
+               .Include(c => c.ConferenceSessions)
+                   .ThenInclude(cs => cs.Room)
+                        .ThenInclude(r => r.Destination)
+                           .ThenInclude(d => d.City)
+               .Include(c => c.ConferenceSessions)
+                   .ThenInclude(cs => cs.ConferenceFeedbacks)
+                       .ThenInclude(f => f.User)
+               .Include(c => c.ConferenceSessions)
+                   .ThenInclude(cs => cs.Room)
+                        .ThenInclude(r => r.Destination)
+                           .ThenInclude(d => d.City)
+               .Include(c => c.Sponsors)
+               .Include(c => c.RefundPolicies)
+               .AsQueryable();
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(c => c.CreatedBy == userId);
+            }
+            query = query.Where(c => c.IsResearchConference == true);
+            return query;
+
         }
 
         //public Task<List<Conference>> GetConferencesByUserId(string userId)

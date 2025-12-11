@@ -20,6 +20,7 @@ namespace ConfRadar.Services.Services
         //Task SeedReviewStatusAsync();
         Task SeedWaitListStatusesAsync();
         Task SeedAuditLogCategoriesAsync();
+        Task SeedPublishersAsync();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -245,6 +246,84 @@ namespace ConfRadar.Services.Services
                     CategoryId = Guid.NewGuid().ToString(),
                     Name = name
                 });
+        }
+
+        // 1. Data định nghĩa sẵn Publisher
+        private readonly List<Publisher> _publisherData = new List<Publisher>
+        {
+            new Publisher
+            {
+                Name = "Institute of Electrical and Electronics Engineers",
+                Description = "Tổ chức chuyên môn kỹ thuật lớn nhất thế giới.",
+                WebsiteUrl = "https://www.ieee.org",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/IEEE_logo.svg/1200px-IEEE_logo.svg.png",
+                PaperFormat = "ieee",
+                LinkTemplate = "https://ieeexplore.ieee.org/document/{RANDOM_ID_7}" // IEEE thường dùng ID 7 chữ số
+            },
+            new Publisher
+            {
+                Name = "Association for Computing Machinery",
+                Description = "Hiệp hội máy tính lớn nhất thế giới.",
+                WebsiteUrl = "https://www.acm.org",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Association_for_Computing_Machinery_%28ACM%29_logo.svg/1024px-Association_for_Computing_Machinery_%28ACM%29_logo.svg.png",
+                PaperFormat = "acm",
+                LinkTemplate = "https://dl.acm.org/doi/10.1145/{RANDOM_ID_7}.{RANDOM_ID_7}"
+            },
+            new Publisher
+            {
+                Name = "Springer Nature (General)",
+                Description = "Nhà xuất bản học thuật toàn cầu, định dạng Springer chung.",
+                WebsiteUrl = "https://www.springer.com",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Springer_Nature_Logo.svg/2560px-Springer_Nature_Logo.svg.png",
+                PaperFormat = "springer",
+                LinkTemplate = "https://link.springer.com/chapter/10.1007/978-3-030-{RANDOM_ID_5}-6_{RANDOM_ID_2}"
+            },
+            new Publisher
+            {
+                Name = "Springer (LNCS Series)",
+                Description = "Chuỗi Lecture Notes in Computer Science của Springer.",
+                WebsiteUrl = "https://www.springer.com/gp/computer-science/lncs",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Springer_Nature_Logo.svg/2560px-Springer_Nature_Logo.svg.png",
+                PaperFormat = "lncs",
+                // LNCS cũng dùng format link tương tự Springer, chỉ khác về nội dung
+                LinkTemplate = "https://link.springer.com/chapter/10.1007/978-3-030-{RANDOM_ID_5}-6_{RANDOM_ID_2}"
+            },
+            new Publisher
+            {
+                Name = "Elsevier",
+                Description = "Doanh nghiệp xuất bản thông tin Hà Lan.",
+                WebsiteUrl = "https://www.elsevier.com",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Elsevier_logo.svg/2560px-Elsevier_logo.svg.png",
+                PaperFormat = "elsevier",
+                LinkTemplate = "https://www.sciencedirect.com/science/article/pii/S{RANDOM_ID_8}X"
+            }
+        };
+
+
+        public async Task SeedPublishersAsync()
+        {
+            var publisherNames = _publisherData.Select(p => p.Name).ToList();
+
+            await SeedEntityAsync<Publisher>(
+                publisherNames,
+                _unitOfWork.PublisherRepository.GetPublisherByNameAsync,
+                _unitOfWork.PublisherRepository.CreateMultiplePublishersAsync,
+                name =>
+                {
+                    var data = _publisherData.First(p => p.Name == name);
+
+                    return new Publisher
+                    {
+                        PublisherId = Guid.NewGuid().ToString(),
+                        Name = data.Name,
+                        PaperFormat = data.PaperFormat,
+                        Description = data.Description,
+                        WebsiteUrl = data.WebsiteUrl,
+                        LinkTemplate = data.LinkTemplate,
+                        LogoUrl = data.LogoUrl
+                    };
+                }
+            );
         }
 
     }

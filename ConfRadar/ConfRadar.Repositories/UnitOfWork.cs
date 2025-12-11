@@ -86,6 +86,7 @@ namespace ConfRadar.Repositories
         ICollaboratorContractRepository CollaboratorContractRepository { get; }
         IUserSuspendHistoryRepository UserSuspendHistoryRepository { get; }
         IAuditLogCategoryRepository AuditLogCategoryRepository { get; }
+        IPublisherRepository PublisherRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -177,6 +178,7 @@ namespace ConfRadar.Repositories
         private ICollaboratorContractRepository _CollaboratorContractRepository;
         private IUserSuspendHistoryRepository _UserSuspendHistoryRepository;
         private IAuditLogCategoryRepository _AuditLogCategoryRepository;
+        private IPublisherRepository _PublisherRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -316,6 +318,8 @@ namespace ConfRadar.Repositories
         public IUserSuspendHistoryRepository UserSuspendHistoryRepository => _UserSuspendHistoryRepository ??= new UserSuspendHistoryRepository(_context);
 
         public IAuditLogCategoryRepository AuditLogCategoryRepository => _AuditLogCategoryRepository ??= new AuditLogCategoryRepository(_context);
+
+        public IPublisherRepository PublisherRepository => _PublisherRepository ??= new PublisherRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

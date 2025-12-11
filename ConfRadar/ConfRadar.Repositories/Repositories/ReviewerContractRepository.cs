@@ -121,14 +121,14 @@ namespace ConfRadar.Repositories.Repositories
                     ResearchConferenceDetail = c.ResearchConferenceDetail != null ? new ResearchConferenceDetailForReviewContract()
                     {
                         ConferenceId = c.ConferenceId,
-                        PaperFormat = c.ResearchConferenceDetail.PaperFormat,
+                        PaperFormat = c.ResearchConferenceDetail.Publisher.PaperFormat,
                         NumberPaperAccept = c.ResearchConferenceDetail.NumberPaperAccept,
                         RevisionAttemptAllowed = c.ResearchConferenceDetail.RevisionAttemptAllowed,
                         RankingDescription = c.ResearchConferenceDetail.RankingDescription,
                         AllowListener = c.ResearchConferenceDetail.AllowListener,
                         RankValue = c.ResearchConferenceDetail.RankValue,
                         RankYear = c.ResearchConferenceDetail.RankYear,
-                        ReviewFee = c.ResearchConferenceDetail.ReviewFee,
+                        SubmitPaperFee = c.ResearchConferenceDetail.SubmitPaperFee,
                         RankingCategoryId = c.ResearchConferenceDetail.RankingCategoryId,
                         RankCategoryName = c.ResearchConferenceDetail.RankingCategory != null ? c.ResearchConferenceDetail.RankingCategory.RankName : null,
                         RankCategoryDescription = c.ResearchConferenceDetail.RankingCategory != null ? c.ResearchConferenceDetail.RankingCategory.RankDescription : null,

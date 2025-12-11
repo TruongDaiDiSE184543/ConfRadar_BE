@@ -20,6 +20,7 @@ namespace ConfRadar.Services.Services
         Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.ReviewerAssignmentResponse>> GetReviewersByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.SessionWithPresentersResponse>> GetSessionsWithPresentersByConferenceIdAsync(string conferenceId);
+        Task<ConferenceTransactionHistoryResponse> GetTransactionHistoryAsync(string conferenceId);
         #endregion
         #region export to excel
         //Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
@@ -569,10 +570,59 @@ namespace ConfRadar.Services.Services
         }
 
 
+        public async Task<ConferenceTransactionHistoryResponse> GetTransactionHistoryAsync(string conferenceId)
+        {
+            // 1. Query phẳng (Flat data)
+            var query = _unitOfWork.TransactionRepository.TransactionHistory(conferenceId);
+
+            // 2. Lấy về RAM và Sắp xếp theo thời gian giảm dần (Mới nhất lên đầu)
+            var transactions = await query
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            // 3. Group by User
+            var groupedHistories = transactions
+                .GroupBy(t => t.UserId)
+                .Select(g => new UserTransactionHistoryDto
+                {
+                    UserId = g.Key ?? "Guest", // Xử lý khách vãng lai
+                    FullName = g.First().User?.FullName ?? "Unknown User",
+                    Email = g.First().User?.Email ?? "N/A",
+
+                    // Map chi tiết từng dòng giao dịch
+                    Transactions = g.Select(t => new TransactionItemDto
+                    {
+                        TransactionId = t.TransactionId,
+                        TransactionCode = t.TransactionCode,
+                        Amount = t.Amount ?? 0,
+                        Time = t.CreatedAt ?? DateTime.MinValue,
+
+                        // Logic hiển thị trạng thái đơn giản
+                        Status = (t.IsRefunded == true) ? "Đã hoàn tiền" : "Thành công",
+                        Type = (t.IsRefunded == true) ? "Hoàn tiền" : "Thanh toán",
+
+                        TicketType = t.Ticket?.PricePhase?.ConferencePrice?.TicketName ?? "Unknown Ticket",
+                        PaymentMethod = t.PaymentMethod?.MethodName ?? "Unknown"
+                    })
+                    // Trong mỗi User, giao dịch mới nhất cũng phải nằm đầu
+                    .OrderByDescending(x => x.Time)
+                    .ToList()
+                })
+                // Sắp xếp danh sách User: User nào vừa giao dịch xong thì đẩy lên đầu list
+                .OrderByDescending(u => u.Transactions.FirstOrDefault()?.Time)
+                .ToList();
+
+            return new ConferenceTransactionHistoryResponse
+            {
+                UserHistories = groupedHistories
+            };
+        }
+
+
 
         #endregion
 
-        #region Unnecessary
+            #region Unnecessary
 
         public async Task<ExportStatisticsResponse> ExportConferenceStatisticsAsync(string conferenceId, string exportFormat)
         {
@@ -899,7 +949,6 @@ namespace ConfRadar.Services.Services
                 return await package.GetAsByteArrayAsync();
             }
         }
-
 
 
 
