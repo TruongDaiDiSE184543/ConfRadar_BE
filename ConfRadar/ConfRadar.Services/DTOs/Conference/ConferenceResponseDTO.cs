@@ -226,7 +226,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public bool? AllowListener { get; set; }
         public string? RankValue { get; set; }
         public int? RankYear { get; set; }
-        public decimal? ReviewFee { get; set; }
+        public decimal? SubmitPaperFee { get; set; }
         public string? RankingCategoryId { get; set; }
         public string? RankingCategoryName { get; set; }
     }

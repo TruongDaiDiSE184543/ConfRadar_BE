@@ -19,7 +19,7 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS
         // Endpoint 1: Get all conferences with their price phases (with pagination/filtering)
-        Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noReviewerFee = null, int? totalRevisionRound = 0, string? targetAudience = null);
+        Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noSubmitFee = null, int? totalRevisionRound = 0, string? targetAudience = null);
 
         // Endpoint 2: Get detailed technical conference data
         Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId, string? userId);
@@ -771,7 +771,7 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS IMPLEMENTATION
 
-        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noReviewerFee = null, int? totalRevisionRound = null, string? targetAudience = null)
+        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noSubmitFee = null, int? totalRevisionRound = null, string? targetAudience = null)
         {
             var readyStatus = await _unitOfWork.ConferenceStatusRepository
        .GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
@@ -823,14 +823,14 @@ namespace ConfRadar.Services.Services
                                          c.ResearchConferenceDetail.RevisionAttemptAllowed == totalRevisionRound.Value);
             }
 
-            if (noReviewerFee.HasValue)
+            if (noSubmitFee.HasValue)
             {
-                if (noReviewerFee.Value) // Muốn tìm cái ReviewFee = 0
+                if (noSubmitFee.Value) // Muốn tìm cái ReviewFee = 0
                     query = query.Where(c => c.ResearchConferenceDetail != null &&
-                                             c.ResearchConferenceDetail.ReviewFee == 0);
+                                             c.ResearchConferenceDetail.SubmitPaperFee == 0);
                 else // Muốn tìm cái có phí
                     query = query.Where(c => c.ResearchConferenceDetail != null &&
-                                             c.ResearchConferenceDetail.ReviewFee > 0);
+                                             c.ResearchConferenceDetail.SubmitPaperFee > 0);
             }
 
             // 5. Filter Chi tiết Technical
@@ -1412,7 +1412,7 @@ namespace ConfRadar.Services.Services
                 AllowListener = conference?.ResearchConferenceDetail?.AllowListener,
                 RankValue = conference?.ResearchConferenceDetail?.RankValue,
                 RankYear = conference?.ResearchConferenceDetail?.RankYear,
-                ReviewFee = conference?.ResearchConferenceDetail?.ReviewFee,
+                ReviewFee = conference?.ResearchConferenceDetail?.SubmitPaperFee,
                 RankingCategoryId = conference?.ResearchConferenceDetail?.RankingCategoryId,
                 RankingCategoryName = conference?.ResearchConferenceDetail?.RankingCategory?.RankName,
 
@@ -1488,7 +1488,7 @@ namespace ConfRadar.Services.Services
                 AllowListener = conference?.ResearchConferenceDetail?.AllowListener,
                 RankValue = conference?.ResearchConferenceDetail?.RankValue,
                 RankYear = conference?.ResearchConferenceDetail?.RankYear,
-                ReviewFee = conference?.ResearchConferenceDetail?.ReviewFee,
+                ReviewFee = conference?.ResearchConferenceDetail?.SubmitPaperFee,
                 RankingCategoryId = conference?.ResearchConferenceDetail?.RankingCategoryId,
                 RankingCategoryName = conference?.ResearchConferenceDetail?.RankingCategory?.RankName,
 
@@ -1919,7 +1919,7 @@ namespace ConfRadar.Services.Services
                     AllowListener = researchDetail?.AllowListener,
                     RankValue = researchDetail?.RankValue,
                     RankYear = researchDetail?.RankYear,
-                    ReviewFee = researchDetail?.ReviewFee,
+                    ReviewFee = researchDetail?.SubmitPaperFee,
                     RankingCategoryId = researchDetail?.RankingCategoryId,
                     RankingCategoryName = researchDetail?.RankingCategory?.RankName,
 

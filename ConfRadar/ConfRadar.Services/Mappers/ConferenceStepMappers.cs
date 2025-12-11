@@ -448,7 +448,7 @@ namespace ConfRadar.Services.Mappers
                 AllowListener = request.AllowListener,
                 RankValue = request.RankValue,
                 RankYear = request.RankYear,
-                ReviewFee = request.ReviewFee,
+                SubmitPaperFee = request.SubmitPaperFee,
                 RankingCategoryId = request.RankingCategoryId
             };
         }
@@ -465,7 +465,7 @@ namespace ConfRadar.Services.Mappers
                 AllowListener = model.AllowListener,
                 RankValue = model.RankValue,
                 RankYear = model.RankYear,
-                ReviewFee = model.ReviewFee,
+                SubmitPaperFee = model.SubmitPaperFee,
                 RankingCategoryId = model.RankingCategoryId,
                 RankingCategoryName = model.RankingCategory?.RankName // Include related RankingCategory name
             };
@@ -730,6 +730,18 @@ namespace ConfRadar.Services.Mappers
             {
                 Name = request.Name,
                 Description = request.Description
+            };
+        }
+
+        public static PublisherResponse FromModel(this Publisher publisher)
+        {
+            return new PublisherResponse
+            {
+                PublisherId = publisher.PublisherId,
+                Name = publisher.Name,
+                Description = publisher.Description,
+                WebsiteUrl = publisher.WebsiteUrl,
+                LogoUrl = publisher.LogoUrl
             };
         }
 

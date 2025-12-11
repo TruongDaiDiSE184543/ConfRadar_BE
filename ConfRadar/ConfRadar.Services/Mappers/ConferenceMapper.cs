@@ -301,7 +301,7 @@ namespace ConfRadar.Services.Mappers
                 RankingDescription = model.RankingDescription,
                 RankValue = model.RankValue,
                 RankYear = model.RankYear,
-                ReviewFee = model.ReviewFee,
+                SubmitPaperFee = model.SubmitPaperFee,
                 RevisionAttemptAllowed = model.RevisionAttemptAllowed
             };
         }

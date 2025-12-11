@@ -128,7 +128,7 @@ namespace ConfRadar.Repositories.Repositories
                         AllowListener = c.ResearchConferenceDetail.AllowListener,
                         RankValue = c.ResearchConferenceDetail.RankValue,
                         RankYear = c.ResearchConferenceDetail.RankYear,
-                        ReviewFee = c.ResearchConferenceDetail.ReviewFee,
+                        SubmitPaperFee = c.ResearchConferenceDetail.SubmitPaperFee,
                         RankingCategoryId = c.ResearchConferenceDetail.RankingCategoryId,
                         RankCategoryName = c.ResearchConferenceDetail.RankingCategory != null ? c.ResearchConferenceDetail.RankingCategory.RankName : null,
                         RankCategoryDescription = c.ResearchConferenceDetail.RankingCategory != null ? c.ResearchConferenceDetail.RankingCategory.RankDescription : null,

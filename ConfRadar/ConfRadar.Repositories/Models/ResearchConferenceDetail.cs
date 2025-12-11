@@ -23,7 +23,7 @@ public partial class ResearchConferenceDetail
 
     public int? RankYear { get; set; }
 
-    public decimal? ReviewFee { get; set; }
+    public decimal? SubmitPaperFee { get; set; }
 
     public string? RankingCategoryId { get; set; }
 

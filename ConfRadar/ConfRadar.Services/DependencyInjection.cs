@@ -67,6 +67,7 @@ namespace ConfRadar.Services
             services.AddScoped<IServiceManager, ServiceManager>();
             services.AddScoped<IReviewerService, ReviewerService>();
             services.AddScoped<IAuditLogService, AuditLogService>();
+            services.AddScoped<IPublisherService, PublisherService>();
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>
             new Minio.MinioClient().WithEndpoint(objectStorageSettings!.EndPointAccess)

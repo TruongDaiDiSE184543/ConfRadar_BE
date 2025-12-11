@@ -36,6 +36,7 @@ using (var scope = app.Services.CreateScope())
     await seedDataService.SeedCheckInStatusAsync();
     await seedDataService.SeedWaitListStatusesAsync();
     await seedDataService.SeedAuditLogCategoriesAsync();
+    await seedDataService.SeedPublishersAsync();
 }
 app.UseCors("AllowAll");
 app.UseSwagger();

@@ -93,6 +93,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Đây có phải là vé cho vai trò tác giả?")]
 
         public Boolean isAuthor { get; set; }
+        public Boolean? isPublish {  get; set; }
+        public string? PublisherId { get; set; }
         [Required(ErrorMessage = "Tổng số lượng là bắt buộc")]
         public int TotalSlot { get; set; }
         [Required]
@@ -273,6 +275,13 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? TicketDescription { get; set; }
 
         public int? TotalSlot { get; set; }
+        public bool? IsPublish { get; set; }
+    }
+
+    public class UpdateConferencePublisherRequest
+    {
+        [Required(ErrorMessage = "PublisherId là bắt buộc.")]
+        public string PublisherId { get; set; }
     }
 
     public class UpdateConferenceSessionRequest
@@ -431,6 +440,30 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     }
 
 
+    public class PublisherResponse
+    {
+        public string PublisherId { get; set; } = null!;
+
+        public string? Name { get; set; }
+
+        public string? Description { get; set; }
+
+        public string? WebsiteUrl { get; set; }
+
+        public string? LogoUrl { get; set; }
+
+    }
+
+    public class PublisherRequest
+    {
+        public string? Name { get; set; }
+
+        public string? Description { get; set; }
+
+        public string? WebsiteUrl { get; set; }
+
+        public string? LogoUrl { get; set; }
+    }
 
     public class ConferencePriceListWithPhasesResponse
     {
@@ -650,8 +683,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         // Có thể không bắt buộc (nếu miễn phí), nhưng nếu có thì không được âm.
         [Required]
-        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí review không được là số âm.")]
-        public decimal ReviewFee { get; set; }
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí submit paper không được là số âm.")]
+        public decimal SubmitPaperFee { get; set; }
 
         [Required(ErrorMessage = "Loại xếp hạng (Ranking Category) là bắt buộc.")]
         [MaxLength(50)]
@@ -700,7 +733,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public bool? AllowListener { get; set; }
         public string? RankValue { get; set; }
         public int? RankYear { get; set; }
-        public decimal? ReviewFee { get; set; }
+        public decimal? SubmitPaperFee { get; set; }
         public string? RankingCategoryId { get; set; }
         public string? RankingCategoryName { get; set; }
     }

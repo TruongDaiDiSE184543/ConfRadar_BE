@@ -1,8 +1,7 @@
-﻿using ConfRadar.Repositories.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using ConfRadar.Repositories.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -91,6 +90,8 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<PricePhase> PricePhases { get; set; }
 
+    public virtual DbSet<Publisher> Publishers { get; set; }
+
     public virtual DbSet<RankingCategory> RankingCategories { get; set; }
 
     public virtual DbSet<RankingFileUrl> RankingFileUrls { get; set; }
@@ -155,18 +156,9 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
-    public static string GetConnectionString(string connectionStringName)
-    {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        string connectionString = config.GetConnectionString(connectionStringName);
-        return connectionString;
-    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -374,6 +366,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferencePrices)
                 .HasForeignKey(d => d.ConferenceId)
                 .HasConstraintName("FK_ConferencePrice_ConferenceId");
+
+            entity.HasOne(d => d.Publisher).WithMany(p => p.ConferencePrices)
+                .HasForeignKey(d => d.PublisherId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<ConferenceSession>(entity =>
@@ -834,6 +830,11 @@ public partial class ConfRadarDbContext : DbContext
                 .HasConstraintName("FK_PricePhase_ResearchConferencePhaseId");
         });
 
+        modelBuilder.Entity<Publisher>(entity =>
+        {
+            entity.ToTable("Publisher");
+        });
+
         modelBuilder.Entity<RankingCategory>(entity =>
         {
             entity.HasKey(e => e.RankingCategoryId).HasName("RankingCategories_pkey");
@@ -961,7 +962,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.PaperFormat).HasMaxLength(255);
             entity.Property(e => e.RankValue).HasMaxLength(255);
             entity.Property(e => e.RankingCategoryId).HasMaxLength(50);
-            entity.Property(e => e.ReviewFee).HasPrecision(10, 2);
+            entity.Property(e => e.SubmitPaperFee).HasPrecision(10, 2);
 
             entity.HasOne(d => d.Conference).WithOne(p => p.ResearchConferenceDetail)
                 .HasForeignKey<ResearchConferenceDetail>(d => d.ConferenceId)

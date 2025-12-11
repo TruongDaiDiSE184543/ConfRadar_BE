@@ -20,6 +20,7 @@ namespace ConfRadar.Services.Services
         //Task SeedReviewStatusAsync();
         Task SeedWaitListStatusesAsync();
         Task SeedAuditLogCategoriesAsync();
+        Task SeedPublishersAsync();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -245,6 +246,66 @@ namespace ConfRadar.Services.Services
                     CategoryId = Guid.NewGuid().ToString(),
                     Name = name
                 });
+        }
+
+        // 1. Data định nghĩa sẵn Publisher
+        private readonly List<Publisher> _publisherData = new List<Publisher>
+        {
+            new Publisher
+            {
+                Name = "Institute of Electrical and Electronics Engineers",
+                Description = "Tổ chức chuyên môn kỹ thuật lớn nhất thế giới.",
+                WebsiteUrl = "https://www.ieee.org",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/IEEE_logo.svg/1200px-IEEE_logo.svg.png"
+            },
+            new Publisher
+            {
+                Name = "Association for Computing Machinery",
+                Description = "Hiệp hội máy tính lớn nhất thế giới.",
+                WebsiteUrl = "https://www.acm.org",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Association_for_Computing_Machinery_%28ACM%29_logo.svg/1024px-Association_for_Computing_Machinery_%28ACM%29_logo.svg.png"
+            },
+            new Publisher
+            {
+                Name = "Springer Nature",
+                Description = "Nhà xuất bản học thuật toàn cầu.",
+                WebsiteUrl = "https://www.springer.com",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Springer_Nature_Logo.svg/2560px-Springer_Nature_Logo.svg.png"
+            },
+            new Publisher
+            {
+                Name = "Elsevier",
+                Description = "Doanh nghiệp xuất bản thông tin Hà Lan.",
+                WebsiteUrl = "https://www.elsevier.com",
+                LogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Elsevier_logo.svg/2560px-Elsevier_logo.svg.png"
+            }
+        };
+
+ 
+        public async Task SeedPublishersAsync()
+        {
+            var publisherNames = _publisherData.Select(p => p.Name).ToList();
+
+            await SeedEntityAsync<Publisher>(
+                publisherNames,
+                _unitOfWork.PublisherRepository.GetPublisherByNameAsync,
+                _unitOfWork.PublisherRepository.CreateMultiplePublishersAsync,
+                name =>
+                {
+                    var data = _publisherData.First(p => p.Name == name);
+
+                    return new Publisher
+                    {
+                        PublisherId = Guid.NewGuid().ToString(),
+                        Name = data.Name,
+                        // Acronym = data.Acronym,  <-- BỎ
+                        Description = data.Description,
+                        WebsiteUrl = data.WebsiteUrl,
+                        // BrandColor = data.BrandColor, <-- BỎ
+                        LogoUrl = data.LogoUrl
+                    };
+                }
+            );
         }
 
     }

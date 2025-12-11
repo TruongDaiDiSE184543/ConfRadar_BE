@@ -39,6 +39,7 @@ namespace ConfRadar.Services
         public IDashboardService DashboardService { get; }
         public IReviewerService ReviewerService { get; }
         public IAuditLogService AuditLogService { get; }
+        public IPublisherService PublisherService { get; }
 
     }
 
@@ -80,6 +81,7 @@ namespace ConfRadar.Services
         private readonly IDashboardService _dashboardService;
         private readonly IReviewerService _reviewerService;
         private readonly IAuditLogService _auditLogService;
+        private readonly IPublisherService _publisherService;
         public ServiceManager(IAuthService authService,
             IMomoService momoService,
             ITicketService ticketService,
@@ -118,7 +120,8 @@ namespace ConfRadar.Services
 
             IReviewerService reviewerService
             ,
-            IAuditLogService auditLogService
+            IAuditLogService auditLogService,
+            IPublisherService publisherService
 
            )
         {
@@ -158,6 +161,7 @@ namespace ConfRadar.Services
             _notificationService = notificationService;
             _dashboardService = dashboardService;
             _auditLogService = auditLogService;
+            _publisherService = publisherService;
         }
 
         public IAuthService AuthService => _authService;
@@ -209,6 +213,7 @@ namespace ConfRadar.Services
         public IReviewerService ReviewerService => _reviewerService;
 
         public IAuditLogService AuditLogService => _auditLogService;
+        public IPublisherService PublisherService => _publisherService;
     }
 
 }
