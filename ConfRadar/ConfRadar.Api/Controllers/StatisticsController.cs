@@ -58,5 +58,12 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.StatisticsService.GetSessionsWithPresentersByConferenceIdAsync(confId);
             return Ok(ApiResponse<List<ConfRadar.Services.DTOs.Statistics.SessionWithPresentersResponse>>.SuccessResponse(result, "Lấy thành công danh sách session và presenter"));
         }
+
+        [HttpGet("transaction-history")]
+        public async Task<IActionResult> getTransactionHistory([FromQuery]string confId)
+        {
+            var result = await _serviceManager.StatisticsService.GetTransactionHistoryAsync(confId);
+            return Ok((ApiResponse<ConferenceTransactionHistoryResponse>.SuccessResponse(result, "success")));
+        }
     }
 }

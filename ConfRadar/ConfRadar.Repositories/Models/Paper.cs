@@ -29,6 +29,8 @@ public partial class Paper
 
     public string? Description { get; set; }
 
+    public string? PublishingLink { get; set; }
+
     public virtual Abstract? Abstract { get; set; }
 
     public virtual CameraReady? CameraReady { get; set; }
