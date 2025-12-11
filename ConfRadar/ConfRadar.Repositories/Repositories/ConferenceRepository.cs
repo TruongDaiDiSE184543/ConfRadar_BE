@@ -59,6 +59,8 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Conferences
                 .Include(c => c.ConferenceStatus)
+                .Include(c => c.ResearchConferenceDetail)
+                    .ThenInclude(r => r.Publisher)
                 .Include(c => c.CreatedByNavigation)
                 .Include(c => c.ResearchConferencePhases)
                 .FirstOrDefaultAsync(c => c.ConferenceId == conferenceId);

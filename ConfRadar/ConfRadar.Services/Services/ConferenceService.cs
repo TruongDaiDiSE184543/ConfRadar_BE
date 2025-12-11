@@ -1400,13 +1400,13 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 createdBy = conference.CreatedBy,
-                UserNameCreator = conference.CreatedByNavigation.FullName,
+                UserNameCreator = conference.CreatedByNavigation?.FullName,
                 CategoryName = conference.ConferenceCategory?.ConferenceCategoryName ?? "N/A",
                 CityName = conference.City?.CityName ?? "N/A",
                 StatusName = conference.ConferenceStatus?.ConferenceStatusName ?? "N/A",
                 
                 // Research Conference Detail specific fields
-                PaperFormat = conference.ResearchConferenceDetail.Publisher?.PaperFormat,
+                PaperFormat = conference.ResearchConferenceDetail?.Publisher?.PaperFormat,
                 NumberPaperAccept = conference.ResearchConferenceDetail?.NumberPaperAccept,
                 RevisionAttemptAllowed = conference?.ResearchConferenceDetail?.RevisionAttemptAllowed,
                 RankingDescription = conference?.ResearchConferenceDetail?.RankingDescription,
@@ -1475,10 +1475,10 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 createdBy = conference.CreatedBy,
-                UserNameCreator = conference.CreatedByNavigation.FullName,
+                UserNameCreator = conference.CreatedByNavigation?.FullName,
                 CategoryName = conference.ConferenceCategory.ConferenceCategoryName,
-                CityName = conference.City.CityName,
-                StatusName = conference.ConferenceStatus.ConferenceStatusName,
+                CityName = conference.City?.CityName,
+                StatusName = conference.ConferenceStatus?.ConferenceStatusName,
 
                 // Research Conference Detail specific fields
 

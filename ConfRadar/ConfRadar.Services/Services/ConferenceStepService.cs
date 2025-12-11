@@ -1050,7 +1050,9 @@ namespace ConfRadar.Services.Services
                             ApplyPercent = createPricePhaseRequest.ApplyPercent,
                             TotalSlot = createPricePhaseRequest.Totalslot,
                             PricePhaseId = CreatedPricePhase.PricePhaseId,
-                            RefundPolicy = refundPolicyResponses
+                            RefundPolicy = refundPolicyResponses,
+                            AvailableSlot = createPricePhaseRequest.Totalslot,
+                            ResearchConferencePhaseId = researchPhase.ResearchConferencePhaseId
                         });
 
                     }
@@ -1060,7 +1062,9 @@ namespace ConfRadar.Services.Services
                         TicketDescription = CreatedConferencePrice.TicketDescription,
                         TicketName = CreatedConferencePrice.TicketName,
                         PricePhases = pricePhaseResponses,
-                        TicketPrice = CreatedConferencePrice.TicketPrice
+                        TicketPrice = CreatedConferencePrice.TicketPrice,
+                        IsPublish = CreatedConferencePrice.IsPublish,
+                        IsAuthor = CreatedConferencePrice.IsAuthor
                     });
                 }
                 await _unitOfWork.CommitAsync();
