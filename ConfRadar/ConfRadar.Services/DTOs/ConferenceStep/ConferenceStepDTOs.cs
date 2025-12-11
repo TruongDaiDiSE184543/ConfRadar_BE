@@ -93,7 +93,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Đây có phải là vé cho vai trò tác giả?")]
 
         public Boolean isAuthor { get; set; }
-        public Boolean? isPublish {  get; set; }
+        public Boolean? isPublish { get; set; } = false;
         [Required(ErrorMessage = "Tổng số lượng là bắt buộc")]
         public int TotalSlot { get; set; }
         [Required]
@@ -724,7 +724,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Range(2000, 2025, ErrorMessage = "Năm xếp hạng không hợp lệ (2000-2025).")]
         public int? RankYear { get; set; }
 
-        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí review không được là số âm.")]
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí nộp paper không được là số âm.")]
         public decimal? SubmitPaperFee { get; set; }
 
         [MaxLength(50)]

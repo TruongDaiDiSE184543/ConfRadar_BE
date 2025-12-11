@@ -18,7 +18,7 @@ namespace ConfRadar.Services.Mappers
                 TotalSlot = request.TotalSlot,
                 AvailableSlot = request.TotalSlot, // Initialize available slot to total slot
                 ConferenceId = conferenceId,
-
+                IsPublish = request.isPublish
             };
         }
 

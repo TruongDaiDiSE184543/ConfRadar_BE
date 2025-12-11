@@ -3241,8 +3241,8 @@ namespace ConfRadar.Services.Services
             if (conference.CreatedBy != userId)
                 throw new Exception("Chỉ người tổ chức hội nghị mới có thể thực hiện hành động này.");
 
-            if (conference.ConferenceStatusId != completedConfStatus.ConferenceStatusId)
-                throw new BadRequestException("Hội nghị phải ở trạng thái 'Completed' mới có thể công bố link xuất bản.");
+            //if (conference.ConferenceStatusId != completedConfStatus.ConferenceStatusId)
+            //    throw new BadRequestException("Hội nghị phải ở trạng thái 'Completed' mới có thể công bố link xuất bản.");
 
             // Kiểm tra xem hội nghị có nhà xuất bản không
             var publisher = conference.ResearchConferenceDetail?.Publisher;
@@ -3257,35 +3257,37 @@ namespace ConfRadar.Services.Services
                 return true; // Không có bài báo nào cần xử lý, coi như thành công.
             }
 
-            if (string.IsNullOrWhiteSpace(publisher.LinkTemplate))
-            {
-                foreach (var paper in papersToPublish)
-                {
-                    paper.PublishingLink = GenerateDefaultLink();
-                }
-            }
-            else
-            {
-                // Xử lý sinh link từ template
-                foreach (var paper in papersToPublish)
-                {
-                    paper.PublishingLink = GenerateLinkFromTemplate(publisher.LinkTemplate);
-                }
-            }
+           
 
             // === BƯỚC 5: LƯU THAY ĐỔI VÀ TRẢ VỀ KẾT QUẢ ===
 
-            // Sử dụng Unit of Work để đảm bảo tất cả được lưu trong một transaction
+            
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                await _unitOfWork.PaperRepository.UpdateMultiplePapersAsync(papersToPublish); // Giả sử bạn có hàm này
-                _unitOfWork.CommitAsync();
+                if (string.IsNullOrWhiteSpace(publisher.LinkTemplate))
+                {
+                    foreach (var paper in papersToPublish)
+                    {
+                        paper.PublishingLink = GenerateDefaultLink();
+                        await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+                    }
+                }
+                else
+                {
+                    // Xử lý sinh link từ template
+                    foreach (var paper in papersToPublish)
+                    {
+                        paper.PublishingLink = GenerateLinkFromTemplate(publisher.LinkTemplate);
+                        await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+                    }
+                }
+                await _unitOfWork.CommitAsync();
                 return true;
             }
             catch(Exception ex)
             {
-                _unitOfWork.RollbackAsync();
+                await _unitOfWork.RollbackAsync();
                 throw ex;
             }
             
