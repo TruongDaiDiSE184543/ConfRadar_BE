@@ -368,7 +368,8 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ReviewerWorkItemResponse>>.SuccessResponse(result, "Đã lấy chi tiết trạng thái và việc cần làm cho danh sách paper được phân công trong hội nghị"));
         }
 
-        //[Authorize(Roles="")]
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPut("publish-research-paper")]
         public async Task<IActionResult> PublishPaper([FromQuery] string conferenceId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
