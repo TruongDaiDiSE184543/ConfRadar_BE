@@ -20,6 +20,7 @@ namespace ConfRadar.Services.Services
         Task<DTOs.Statistics.PaperStatisticsResponse> GetPaperStatisticsByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.ReviewerAssignmentResponse>> GetReviewersByConferenceIdAsync(string conferenceId);
         Task<List<DTOs.Statistics.SessionWithPresentersResponse>> GetSessionsWithPresentersByConferenceIdAsync(string conferenceId);
+        Task<ConferenceTransactionResponse> GetConferenceTransactionsAsync(string conferenceId);
         #endregion
         #region export to excel
         //Task<byte[]> ExportTicketHoldersListAsync(string conferenceId);
@@ -569,6 +570,69 @@ namespace ConfRadar.Services.Services
         }
 
 
+        public async Task<ConferenceTransactionResponse> GetConferenceTransactionsAsync(string conferenceId)
+        {
+            // 1. Query: Lấy tất cả Transaction thuộc về ConferenceId này
+            var query = _unitOfWork.TransactionRepository.TransactionHistory(conferenceId);
+
+            // Sắp xếp tổng thể theo ngày tạo giảm dần trước khi Group
+            var transactions = await query
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            // 3. Xử lý Grouping và Mapping
+            var userGroups = transactions
+                .GroupBy(t => t.UserId) // Group key là UserId (có thể null)
+                .Select(g => new UserTransactionGroupDto
+                {
+                    UserId = g.Key ?? "Guest",
+                    // Lấy thông tin User từ item đầu tiên trong nhóm (nếu có)
+                    UserName = g.First().User?.FullName ?? "Khách vãng lai",
+                    Email = g.First().User?.Email ?? "N/A",
+                    PhoneNumber = g.First().User?.PhoneNumber ?? "N/A",
+
+                    // Tính tổng tiền thực chi (Total - Refunded)
+                    TotalNetSpent = g.Where(t => t.IsRefunded != true).Sum(t => t.Amount ?? 0),
+
+                    // Map danh sách Transaction chi tiết
+                    Transactions = g.Select(t => {
+                        // Lấy Refund Request được chấp thuận (nếu có) để lấy lý do
+                        // Giả sử logic là lấy cái mới nhất
+                        var refundInfo = t.RefundRequests
+                                          .OrderByDescending(r => r.CreatedAt)
+                                          .FirstOrDefault();
+
+                        return new TransactionDetailDto
+                        {
+                            TransactionId = t.TransactionId,
+                            TransactionCode = t.TransactionCode,
+                            Amount = t.Amount ?? 0,
+                            Currency = t.Currency ?? "VND",
+                            TransactionDate = t.CreatedAt ?? DateTime.MinValue,
+
+                            TicketId = t.TicketId,
+                            TicketType = t.Ticket?.PricePhase?.ConferencePrice?.TicketName ?? "Unknown",
+
+                            PaymentMethod = t.PaymentMethod?.MethodName ?? "Unknown",
+                            IsRefunded = t.IsRefunded ?? false,
+                            Status = (t.IsRefunded == true) ? "Đã hoàn tiền" : "Thành công",
+
+                            // Nếu đã hoàn tiền, hiển thị lý do
+                            RefundReason = (t.IsRefunded == true) ? refundInfo?.Reason : null
+                        };
+                    })
+                    .OrderByDescending(detail => detail.TransactionDate) // Sắp xếp trong nhóm
+                    .ToList()
+                })
+                .ToList();
+
+            return new ConferenceTransactionResponse
+            {
+                UserGroups = userGroups
+            };
+        }
+
+
 
         #endregion
 
@@ -899,7 +963,6 @@ namespace ConfRadar.Services.Services
                 return await package.GetAsByteArrayAsync();
             }
         }
-
 
 
 

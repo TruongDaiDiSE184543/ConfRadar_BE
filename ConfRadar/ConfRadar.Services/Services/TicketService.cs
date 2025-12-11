@@ -28,7 +28,7 @@ namespace ConfRadar.Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITimeProviderService _timeProviderService;
-        public TicketService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService)
+        public TicketService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService, IMomoService @object)
         {
             _unitOfWork = unitOfWork;
             _timeProviderService = timeProviderService;
