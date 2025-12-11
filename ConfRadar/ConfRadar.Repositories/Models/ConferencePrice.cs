@@ -23,11 +23,7 @@ public partial class ConferencePrice
 
     public bool? IsPublish { get; set; }
 
-    public string? PublisherId { get; set; }
-
     public virtual Conference? Conference { get; set; }
 
     public virtual ICollection<PricePhase> PricePhases { get; set; } = new List<PricePhase>();
-
-    public virtual Publisher? Publisher { get; set; }
 }

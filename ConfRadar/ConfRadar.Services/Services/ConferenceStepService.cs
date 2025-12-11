@@ -21,7 +21,7 @@ namespace ConfRadar.Services.Services
         Task<ConferencePriceListWithPhasesResponse> AddConferencePricesAsync(string conferenceId, AddConferencePricesRequest request, string userId);
         Task<List<ConferencePriceWithPhasesResponse>> GetConferencePricesAsync(string conferenceId);
         Task<ConferencePriceWithPhasesResponse> UpdateConferencePriceAsync(string priceId, UpdateConferencePriceRequest request, string user);
-        Task<bool> UpdatePublisherForAllPricesAsync(string conferenceId, UpdateConferencePublisherRequest request, string userId);
+        //Task<bool> UpdatePublisherForAllPricesAsync(string conferenceId, UpdateConferencePublisherRequest request, string userId);
         Task<bool> DeleteConferencePriceAsync(string priceId, string userId);
 
         // Step 3: Add Conference Sessions
@@ -172,7 +172,7 @@ namespace ConfRadar.Services.Services
         {
             if (!isResearchConference)
             {
-                if (priceRequest.isAuthor == true || priceRequest.isPublish == true || !string.IsNullOrEmpty(priceRequest.PublisherId))
+                if (priceRequest.isAuthor == true || priceRequest.isPublish == true)
                 {
                     throw new BadRequestException($"Với hội nghị Kỹ thuật, không thể tạo hoặc cập nhật vé để có các thuộc tính 'isAuthor', 'IsPublish', hoặc 'PublisherId'.");
                 }
@@ -274,73 +274,69 @@ namespace ConfRadar.Services.Services
         //price check for research conf
         private async Task<ResearchConferencePhase> ValidateAndGetResearchConferencePrerequisitesAsync(string conferenceId, AddConferencePricesRequest request)
         {
-
+            // === BƯỚC 1: LẤY DỮ LIỆU CẦN THIẾT ===
             var researchDetail = await _unitOfWork.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(conferenceId);
             var activePhase = await _unitOfWork.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(conferenceId);
+
             if (researchDetail == null || activePhase == null)
             {
                 throw new BadRequestException("Hội nghị nghiên cứu cần hoàn thành bước 'chi tiết' và 'giai đoạn' trước khi thêm giá vé.");
             }
 
-            if (!request.TypeOfTicket.Any(tot => tot.isAuthor == true))
+            var authorTicketsInRequest = request.TypeOfTicket.Where(tot => tot.isAuthor == true).ToList();
+
+            // === BƯỚC 2: KIỂM TRA CÁC YÊU CẦU CƠ BẢN CỦA VÉ ===
+            if (!authorTicketsInRequest.Any())
             {
                 throw new BadRequestException("Hội nghị nghiên cứu cần có ít nhất một loại vé dành cho tác giả.");
             }
 
-
-            //price must be larger than review fee
-            if (request.TypeOfTicket.Any(tot => tot.TicketPrice < researchDetail.SubmitPaperFee && tot.isAuthor == true))
-                throw new Exception($"Không thể để giá của vé isauthor bé hơn submit fee {researchDetail.SubmitPaperFee} của conference {conferenceId}");
-
-
-            var publishedTicketsInRequest = request.TypeOfTicket.Where(t =>t.isAuthor ==true && t.isPublish == true).ToList();
-            if (publishedTicketsInRequest.Any())
+            // Kiểm tra giá vé so với phí nộp bài (SubmitPaperFee)
+            var invalidPriceTicket = authorTicketsInRequest.FirstOrDefault(tot => tot.TicketPrice < researchDetail.SubmitPaperFee);
+            if (invalidPriceTicket != null)
             {
-                // 4a. Kiểm tra bên trong request
-                var ticketMissingPublisher = publishedTicketsInRequest.FirstOrDefault(t => string.IsNullOrWhiteSpace(t.PublisherId));
-                if (ticketMissingPublisher != null)
-                {
-                    throw new BadRequestException($"Vé '{ticketMissingPublisher.TicketName}' được đánh dấu có xuất bản nhưng thiếu thông tin nhà xuất bản (PublisherId).");
-                }
+                throw new BadRequestException($"Giá vé '{invalidPriceTicket.TicketName}' ({invalidPriceTicket.TicketPrice}) không được thấp hơn phí nộp bài là {researchDetail.SubmitPaperFee}.");
+            }
 
-                var distinctPublisherIdsInRequest = publishedTicketsInRequest.Select(t => t.PublisherId).Distinct().ToList();
-                if (distinctPublisherIdsInRequest.Count > 1)
-                {
-                    throw new BadRequestException("Tất cả các loại vé có xuất bản trong cùng một yêu cầu phải sử dụng chung một nhà xuất bản.");
-                }
+            // === BƯỚC 3: VALIDATION LOGIC XUẤT BẢN (ĐÃ ĐƠN GIẢN HÓA) ===
 
-                string requestPublisherId = distinctPublisherIdsInRequest.First();
+            // Kiểm tra xem có vé nào trong request yêu cầu xuất bản không
+            bool requestHasPublishedTickets = request.TypeOfTicket.Any(t => t.isPublish == true);
 
-                // 4b. Kiểm tra với dữ liệu đã có trong DB
-                var existingPublishedPrices = await _unitOfWork.ConferencePriceRepository.GetPublishedPricesByConferenceIdAsync(conferenceId); 
-                if (existingPublishedPrices.Any())
+            if (requestHasPublishedTickets)
+            {
+                // Nếu có vé yêu cầu xuất bản, thì hội nghị BẮT BUỘC phải được cấu hình nhà xuất bản trước đó.
+                if (string.IsNullOrWhiteSpace(researchDetail.PublisherId))
                 {
-                    string dbPublisherId = existingPublishedPrices.First().PublisherId;
-                    if (dbPublisherId != requestPublisherId)
-                    {
-                        throw new BadRequestException($"Hội nghị này đã được cấu hình để xuất bản bởi nhà xuất bản khác (ID: {dbPublisherId}). Không thể thêm vé với nhà xuất bản (ID: {requestPublisherId}).");
-                    }
+                    throw new BadRequestException("Không thể tạo vé có xuất bản. Vui lòng thiết lập Nhà xuất bản cho hội nghị tại bước 'Chi tiết Hội nghị' trước.");
                 }
             }
 
-            var IsAuthorConferencePrice = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(conferenceId);
-            var sumOfExistingIssAuthor = IsAuthorConferencePrice.Sum(cp => cp.TotalSlot);
-            var sumOfRequestIsAuthor = request.TypeOfTicket.Where(cp => cp.isAuthor == true).Sum(cp => cp.TotalSlot);
+            // === BƯỚC 4: VALIDATION SỐ LƯỢNG ===
 
-            //existing isAuthor + request sum of isAuthor must net exceed numberOfAcceptedPaper in researchDetail
-            if (sumOfExistingIssAuthor + sumOfRequestIsAuthor > researchDetail.NumberPaperAccept)
-                throw new Exception($"Tổng vé IsAuthor đã có {sumOfExistingIssAuthor} và các vé trong request loại IsAuthor {sumOfRequestIsAuthor} không thể vượt NumberOfAccepted in ResearchDetail {researchDetail.NumberPaperAccept}");
+            // 4a. Kiểm tra giới hạn số lượng bài báo được chấp nhận
+            var existingAuthorPrices = await _unitOfWork.ConferencePriceRepository.GetNumberOfIsAuthorByConferenceId(conferenceId);
+            var sumOfExistingAuthorSlots = existingAuthorPrices.Sum(cp => cp.TotalSlot ?? 0);
+            var sumOfRequestAuthorSlots = authorTicketsInRequest.Sum(cp => cp.TotalSlot);
 
+            if (sumOfExistingAuthorSlots + sumOfRequestAuthorSlots > researchDetail.NumberPaperAccept)
+            {
+                throw new BadRequestException($"Tổng số vé tác giả ({sumOfExistingAuthorSlots + sumOfRequestAuthorSlots}) không thể vượt quá số lượng bài báo được chấp nhận ({researchDetail.NumberPaperAccept}).");
+            }
+
+            // 4b. Kiểm tra vé người nghe (nếu có)
             if (researchDetail.AllowListener == true)
             {
-                if (!request.TypeOfTicket.Any(tot => tot.isAuthor == false))
+                var existingListenerPrices = await _unitOfWork.ConferencePriceRepository.GetListenerPricesByConferenceIdAsync(conferenceId);
+                // Chỉ yêu cầu tạo vé người nghe nếu trong DB chưa có và trong request hiện tại cũng không có.
+                if (!existingListenerPrices.Any() && !request.TypeOfTicket.Any(tot => tot.isAuthor == false))
                 {
-                    throw new BadRequestException("Hội nghị nghiên cứu này cho phép thính giả, do đó cần có ít nhất một loại vé không dành cho tác giả.");
+                    throw new BadRequestException("Hội nghị này cho phép thính giả, do đó cần có ít nhất một loại vé không dành cho tác giả.");
                 }
             }
+
             return activePhase;
         }
-
 
         private async Task checkEachDateHasConferenceSession(Conference conference, List<DateOnly> newSessionDates, bool checkOnlyBoundaries = false)
         {
@@ -1212,69 +1208,69 @@ namespace ConfRadar.Services.Services
         }
 
 
-        public async Task<bool> UpdatePublisherForAllPricesAsync(string conferenceId, UpdateConferencePublisherRequest request, string userId)
-        {
-            // === BƯỚC 1: LẤY DỮ LIỆU CỐT LÕI VÀ KIỂM TRA QUYỀN ===
+        //public async Task<bool> UpdatePublisherForAllPricesAsync(string conferenceId, UpdateConferencePublisherRequest request, string userId)
+        //{
+        //    // === BƯỚC 1: LẤY DỮ LIỆU CỐT LÕI VÀ KIỂM TRA QUYỀN ===
 
-            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null)
-                throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}.");
+        //    var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+        //    if (conference == null)
+        //        throw new NotFoundException($"Không tìm thấy hội nghị với ID {conferenceId}.");
 
-            // 1a. Kiểm tra quyền sở hữu
-            if (conference.CreatedBy != userId)
-                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này cho hội nghị.");
+        //    // 1a. Kiểm tra quyền sở hữu
+        //    if (conference.CreatedBy != userId)
+        //        throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này cho hội nghị.");
 
-            // 1b. Chỉ cho phép với hội nghị nghiên cứu
-            if (conference.IsResearchConference != true)
-                throw new BadRequestException("Chức năng cập nhật nhà xuất bản chỉ áp dụng cho hội nghị nghiên cứu.");
+        //    // 1b. Chỉ cho phép với hội nghị nghiên cứu
+        //    if (conference.IsResearchConference != true)
+        //        throw new BadRequestException("Chức năng cập nhật nhà xuất bản chỉ áp dụng cho hội nghị nghiên cứu.");
 
-            // 1c. Kiểm tra trạng thái cho phép chỉnh sửa
-            await EnsureConferenceIsEditable(conference);
+        //    // 1c. Kiểm tra trạng thái cho phép chỉnh sửa
+        //    await EnsureConferenceIsEditable(conference);
 
-            // === BƯỚC 2: VALIDATION NGHIỆP VỤ ===
+        //    // === BƯỚC 2: VALIDATION NGHIỆP VỤ ===
 
-            // 2a. Kiểm tra xem PublisherId mới có tồn tại trong hệ thống không
-            var newPublisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
-            if (newPublisher == null)
-                throw new NotFoundException($"Không tìm thấy nhà xuất bản với ID '{request.PublisherId}'.");
+        //    // 2a. Kiểm tra xem PublisherId mới có tồn tại trong hệ thống không
+        //    var newPublisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
+        //    if (newPublisher == null)
+        //        throw new NotFoundException($"Không tìm thấy nhà xuất bản với ID '{request.PublisherId}'.");
 
-            // 2b. Lấy tất cả các loại vé (ConferencePrice) của hội nghị này
-            var allPricesInConference = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
+        //    // 2b. Lấy tất cả các loại vé (ConferencePrice) của hội nghị này
+        //    var allPricesInConference = await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId);
 
-            // 2c. Kiểm tra xem hội nghị đã có vé nào được đánh dấu 'IsPublish' chưa
-            // Lấy tất cả vé tác giả của hội nghị
-            var allAuthorPrices = (await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId))
-                                    .Where(p => p.IsAuthor == true).ToList();
+        //    // 2c. Kiểm tra xem hội nghị đã có vé nào được đánh dấu 'IsPublish' chưa
+        //    // Lấy tất cả vé tác giả của hội nghị
+        //    var allAuthorPrices = (await _unitOfWork.ConferencePriceRepository.GetPricesByConferenceIdAsync(conferenceId))
+        //                            .Where(p => p.IsAuthor == true).ToList();
 
-            if (!allAuthorPrices.Any())
-            {
-                throw new BadRequestException("Không thể thực hiện. Hội nghị này chưa có bất kỳ loại vé nào dành cho tác giả.");
-            }
+        //    if (!allAuthorPrices.Any())
+        //    {
+        //        throw new BadRequestException("Không thể thực hiện. Hội nghị này chưa có bất kỳ loại vé nào dành cho tác giả.");
+        //    }
 
-            // === BƯỚC 3: THỰC THI TRONG TRANSACTION ===
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                // Lặp qua TẤT CẢ các vé tác giả
-                foreach (var price in allAuthorPrices)
-                {
-                    // Chỉ cập nhật PublisherId cho những vé ĐÃ ĐƯỢC đánh dấu là có xuất bản
-                    if (price.IsPublish == true)
-                    {
-                        price.PublisherId = request.PublisherId;
-                        await _unitOfWork.ConferencePriceRepository.UpdateConferencePriceAsync(price);
-                    }
-                }
+        //    // === BƯỚC 3: THỰC THI TRONG TRANSACTION ===
+        //    await _unitOfWork.BeginTransactionAsync();
+        //    try
+        //    {
+        //        // Lặp qua TẤT CẢ các vé tác giả
+        //        foreach (var price in allAuthorPrices)
+        //        {
+        //            // Chỉ cập nhật PublisherId cho những vé ĐÃ ĐƯỢC đánh dấu là có xuất bản
+        //            if (price.IsPublish == true)
+        //            {
+        //                price.PublisherId = request.PublisherId;
+        //                await _unitOfWork.ConferencePriceRepository.UpdateConferencePriceAsync(price);
+        //            }
+        //        }
 
-                await _unitOfWork.CommitAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackAsync();
-                throw;
-            }
-        }
+        //        await _unitOfWork.CommitAsync();
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await _unitOfWork.RollbackAsync();
+        //        throw;
+        //    }
+        //}
 
 
         public async Task<bool> DeleteConferencePriceAsync(string priceId, string userId)
@@ -2327,7 +2323,18 @@ namespace ConfRadar.Services.Services
 
 
             // 6. Xác th?c s? t?n t?i c?a RankingCategoryId (d?a trên hình ?nh b?n cung c?p)
-            await ValidatePaperFormat(request.PaperFormat);
+            //await ValidatePaperFormat(request.PaperFormat);
+
+            if(!string.IsNullOrWhiteSpace(request.PublisherId))
+            {
+                // Nếu người dùng có cung cấp PublisherId, kiểm tra xem nó có tồn tại trong DB không
+                var publisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
+                if (publisher == null)
+                {
+                    throw new NotFoundException($"Không tìm thấy Nhà xuất bản với ID '{request.PublisherId}'.");
+                }
+            }
+
             await ValidateRankValueAsync(request.RankingCategoryId, request.RankValue);
             if (conference.TotalSlot < request.NumberPaperAccept)
                 throw new Exception($"Không thể có số bài báo có thể nhận lớn hơn totalslot của toàn hội nghị (numberPaperAccept{request.NumberPaperAccept} > conference totalslot{conference.TotalSlot})");
@@ -2406,15 +2413,41 @@ namespace ConfRadar.Services.Services
             }
            
             // *** G?I VALIDATION Ð?NG M?I ***
-            if (request.PaperFormat != null)
-            {
-                await ValidatePaperFormat(request.PaperFormat);
-            }
+            //if (request.PaperFormat != null)
+            //{
+            //    await ValidatePaperFormat(request.PaperFormat);
+            //}
+
+
+
             await ValidateRankValueAsync(finalRankingCategoryId, finalRankValue);
             await EnsureConferenceIsEditable(conference);
 
+            if (request.PublisherId != null) // Chỉ xử lý nếu request có chứa trường PublisherId
+            {
+                if (!string.IsNullOrWhiteSpace(request.PublisherId))
+                {
+                    // Nếu PublisherId mới không rỗng, kiểm tra xem nó có tồn tại không
+                    var publisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
+                    if (publisher == null)
+                    {
+                        throw new NotFoundException($"Không tìm thấy Nhà xuất bản với ID '{request.PublisherId}'.");
+                    }
+                }
+                // Nếu request.PublisherId là chuỗi rỗng "", có nghĩa là người dùng muốn gỡ bỏ nhà xuất bản.
 
-            researchDetail.PaperFormat = request.PaperFormat ?? researchDetail.PaperFormat;
+                // **VALIDATION CỰC KỲ QUAN TRỌNG:**
+                // Nếu đã có vé nào được đánh dấu IsPublish = true, không cho phép thay đổi hoặc gỡ bỏ PublisherId.
+                // Người dùng phải tắt cờ IsPublish ở tất cả các vé trước.
+                var hasPublishedPrices = await _unitOfWork.ConferencePriceRepository.AnyPublishedPricesExistAsync(conferenceId); 
+                if (hasPublishedPrices && request.PublisherId != researchDetail.PublisherId)
+                {
+                    throw new BadRequestException("Không thể thay đổi hoặc gỡ bỏ Nhà xuất bản vì đã có loại vé được cấu hình để xuất bản. Vui lòng tắt cờ 'IsPublish' ở các loại vé liên quan trước.");
+                }
+            }
+
+            //researchDetail.PaperFormat = request.PaperFormat ?? researchDetail.PaperFormat;
+            researchDetail.PublisherId = request.PublisherId ?? researchDetail.PublisherId;
             researchDetail.NumberPaperAccept = request.NumberPaperAccept ?? researchDetail.NumberPaperAccept;
             researchDetail.RevisionAttemptAllowed = request.RevisionAttemptAllowed ?? researchDetail.RevisionAttemptAllowed;
             researchDetail.RankingDescription = request.RankingDescription ?? researchDetail.RankingDescription;

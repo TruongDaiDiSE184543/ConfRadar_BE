@@ -60,7 +60,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<bool> IsPublisherBeingUsedAsync(string publisherId)
         {
-            return await _context.ConferencePrices.AnyAsync(cp => cp.PublisherId == publisherId);
+            return await _context.ResearchConferenceDetails.AnyAsync(cp => cp.PublisherId == publisherId);
         }
     }
 }

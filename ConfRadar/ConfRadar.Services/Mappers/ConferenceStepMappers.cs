@@ -43,6 +43,8 @@ namespace ConfRadar.Services.Mappers
                 TicketPrice = model.TicketPrice,
                 TicketName = model.TicketName,
                 TicketDescription = model.TicketDescription,
+                IsPublish = model.IsPublish,
+                IsAuthor = model.IsAuthor,
                 PricePhases = phases?.Select(p => p.ToResponse()).ToList()
             };
         }
@@ -441,7 +443,7 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetail
             {
                 ConferenceId = conferenceId,
-                PaperFormat = request.PaperFormat,
+                PublisherId = request.PublisherId,
                 NumberPaperAccept = request.NumberPaperAccept,
                 RevisionAttemptAllowed = request.RevisionAttemptAllowed,
                 RankingDescription = request.RankingDescription,
@@ -458,7 +460,9 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetailResponse
             {
                 ConferenceId = model.ConferenceId,
-                PaperFormat = model.PaperFormat,
+                PublisherId= model.Publisher.PublisherId,
+                PublisherName = model.Publisher.Name,
+                PaperFormat = model.Publisher.PaperFormat,
                 NumberPaperAccept = model.NumberPaperAccept,
                 RevisionAttemptAllowed = model.RevisionAttemptAllowed,
                 RankingDescription = model.RankingDescription,
@@ -739,9 +743,11 @@ namespace ConfRadar.Services.Mappers
             {
                 PublisherId = publisher.PublisherId,
                 Name = publisher.Name,
+                PaperFormat = publisher.PaperFormat, 
                 Description = publisher.Description,
                 WebsiteUrl = publisher.WebsiteUrl,
-                LogoUrl = publisher.LogoUrl
+                LogoUrl = publisher.LogoUrl,
+                LinkTemplate = publisher.LinkTemplate 
             };
         }
 

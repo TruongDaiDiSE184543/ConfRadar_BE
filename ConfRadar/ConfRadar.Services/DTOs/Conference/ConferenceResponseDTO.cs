@@ -111,6 +111,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? TicketName { get; set; }
         public string? TicketDescription { get; set; }
         public bool? IsAuthor { get; set; }
+        public bool? IsPublish{ get; set; }
         public int? TotalSlot { get; set; }
         public int? AvailableSlot { get; set; }
         public List<PricePhaseResponse>? PricePhases { get; set; }

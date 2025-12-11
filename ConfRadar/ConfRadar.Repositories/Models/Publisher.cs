@@ -15,5 +15,9 @@ public partial class Publisher
 
     public string? LogoUrl { get; set; }
 
-    public virtual ICollection<ConferencePrice> ConferencePrices { get; set; } = new List<ConferencePrice>();
+    public string PaperFormat { get; set; } = null!;
+
+    public string? LinkTemplate { get; set; }
+
+    public virtual ICollection<ResearchConferenceDetail> ResearchConferenceDetails { get; set; } = new List<ResearchConferenceDetail>();
 }

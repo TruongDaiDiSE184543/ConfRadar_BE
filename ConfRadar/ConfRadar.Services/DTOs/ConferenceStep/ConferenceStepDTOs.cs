@@ -94,7 +94,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         public Boolean isAuthor { get; set; }
         public Boolean? isPublish {  get; set; }
-        public string? PublisherId { get; set; }
         [Required(ErrorMessage = "Tổng số lượng là bắt buộc")]
         public int TotalSlot { get; set; }
         [Required]
@@ -278,11 +277,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public bool? IsPublish { get; set; }
     }
 
-    public class UpdateConferencePublisherRequest
-    {
-        [Required(ErrorMessage = "PublisherId là bắt buộc.")]
-        public string PublisherId { get; set; }
-    }
+    //public class UpdateConferencePublisherRequest
+    //{
+    //    [Required(ErrorMessage = "PublisherId là bắt buộc.")]
+    //    public string PublisherId { get; set; }
+    //}
 
     public class UpdateConferenceSessionRequest
     {
@@ -442,27 +441,36 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class PublisherResponse
     {
-        public string PublisherId { get; set; } = null!;
-
-        public string? Name { get; set; }
-
+        public string PublisherId { get; set; }
+        public string Name { get; set; }
+        public string PaperFormat { get; set; } 
         public string? Description { get; set; }
-
         public string? WebsiteUrl { get; set; }
-
         public string? LogoUrl { get; set; }
-
+        public string? LinkTemplate { get; set; } 
     }
 
     public class PublisherRequest
     {
-        public string? Name { get; set; }
+        [Required(ErrorMessage = "Tên nhà xuất bản là bắt buộc")]
+        [MaxLength(255)]
+        public string Name { get; set; }
 
+        [Required(ErrorMessage = "Định dạng bài báo (Paper Format) là bắt buộc")]
+        [MaxLength(50)]
+        public string PaperFormat { get; set; } 
+
+        [MaxLength(500)]
         public string? Description { get; set; }
 
+        [Url(ErrorMessage = "Website URL không hợp lệ")]
         public string? WebsiteUrl { get; set; }
 
+        [Url(ErrorMessage = "Logo URL không hợp lệ")]
         public string? LogoUrl { get; set; }
+
+        [MaxLength(500)]
+        public string? LinkTemplate { get; set; } // <-- THÊM VÀO
     }
 
     public class ConferencePriceListWithPhasesResponse
@@ -476,6 +484,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public decimal? TicketPrice { get; set; }
         public string? TicketName { get; set; }
         public string? TicketDescription { get; set; }
+        public bool? IsAuthor { get; set; }
+        public bool? IsPublish {  get; set; }
         public List<PricePhaseResponse>? PricePhases { get; set; }
     }
 
@@ -655,8 +665,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
 
         [Required(ErrorMessage = "Định dạng bài báo là bắt buộc.")]
-        [MaxLength(255, ErrorMessage = "Định dạng bài báo không được vượt quá 255 ký tự.")]
-        public string PaperFormat { get; set; }
+        [MaxLength(255, ErrorMessage = "Nhà xuất bản bài báo là bắt buộc")]
+        public string PublisherId { get; set; }
 
         // `int` không phải nullable, nên [Required] chỉ để làm rõ. Quan trọng là Range.
         [Required(ErrorMessage = "Số lượng bài báo dự kiến chấp nhận là bắt buộc.")]
@@ -694,8 +704,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class UpdateResearchConferenceDetailRequest
     {
 
-        [MaxLength(255, ErrorMessage = "Định dạng bài báo không được vượt quá 255 ký tự.")]
-        public string? PaperFormat { get; set; }
+        [MaxLength(255, ErrorMessage = "Nhà xuất bản bài báo là bắt buộc.")]
+        public string? PublisherId { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng bài báo chấp nhận phải là một số dương.")]
         public int? NumberPaperAccept { get; set; }
@@ -725,7 +735,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class ResearchConferenceDetailResponse
     {
         public string? ConferenceId { get; set; }
-        public string? Name { get; set; }
+        public string? PublisherId { get; set; }
+        public string? PublisherName {  get; set; }
         public string? PaperFormat { get; set; }
         public int? NumberPaperAccept { get; set; }
         public int? RevisionAttemptAllowed { get; set; }

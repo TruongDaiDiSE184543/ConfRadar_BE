@@ -366,10 +366,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferencePrices)
                 .HasForeignKey(d => d.ConferenceId)
                 .HasConstraintName("FK_ConferencePrice_ConferenceId");
-
-            entity.HasOne(d => d.Publisher).WithMany(p => p.ConferencePrices)
-                .HasForeignKey(d => d.PublisherId)
-                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<ConferenceSession>(entity =>
@@ -958,8 +954,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("ResearchConferenceDetail");
 
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
-            entity.Property(e => e.Name).HasMaxLength(255);
-            entity.Property(e => e.PaperFormat).HasMaxLength(255);
+            entity.Property(e => e.PublisherId).HasMaxLength(50);
             entity.Property(e => e.RankValue).HasMaxLength(255);
             entity.Property(e => e.RankingCategoryId).HasMaxLength(50);
             entity.Property(e => e.SubmitPaperFee).HasPrecision(10, 2);
@@ -968,6 +963,10 @@ public partial class ConfRadarDbContext : DbContext
                 .HasForeignKey<ResearchConferenceDetail>(d => d.ConferenceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ResearchConferenceDetail_ConferenceId");
+
+            entity.HasOne(d => d.Publisher).WithMany(p => p.ResearchConferenceDetails)
+                .HasForeignKey(d => d.PublisherId)
+                .HasConstraintName("FK_ResearchDetail_Publisher");
 
             entity.HasOne(d => d.RankingCategory).WithMany(p => p.ResearchConferenceDetails)
                 .HasForeignKey(d => d.RankingCategoryId)

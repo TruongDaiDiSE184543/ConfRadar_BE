@@ -24,31 +24,25 @@ namespace ConfRadar.Services.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<string> CreatePublisherAsync(PublisherRequest request) // Đổi tên để rõ ràng hơn
+        public async Task<string> CreatePublisherAsync(PublisherRequest request)
         {
-            // VALIDATION 1: Kiểm tra các giá trị đầu vào
-            if (request == null)
-                throw new BadRequestException("Dữ liệu đầu vào không được để trống.");
+            // Validation được xử lý bởi DataAnnotations, nhưng kiểm tra lại cho chắc
+            if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.PaperFormat))
+                throw new BadRequestException("Tên và Định dạng bài báo là bắt buộc.");
 
-            if (string.IsNullOrWhiteSpace(request.Name))
-                throw new BadRequestException("Tên nhà xuất bản là bắt buộc.");
-
-            ValidateUrlFormat(request.WebsiteUrl, "Website URL");
-            ValidateUrlFormat(request.LogoUrl, "Logo URL");
-
-            // VALIDATION 2: Kiểm tra tên trùng lặp
+            // Kiểm tra tên trùng lặp
             if (await _unitOfWork.PublisherRepository.GetPublisherByNameAsync(request.Name) != null)
-            {
                 throw new BadRequestException($"Tên nhà xuất bản '{request.Name}' đã tồn tại.");
-            }
 
             var publisherObj = new Publisher
             {
                 PublisherId = Guid.NewGuid().ToString(),
-                Name = request.Name.Trim(), // Trim() để loại bỏ khoảng trắng thừa
+                Name = request.Name.Trim(),
+                PaperFormat = request.PaperFormat.Trim().ToLower(), 
                 Description = request.Description,
                 WebsiteUrl = request.WebsiteUrl,
                 LogoUrl = request.LogoUrl,
+                LinkTemplate = request.LinkTemplate
             };
 
             await _unitOfWork.PublisherRepository.CreatePublisher(publisherObj);
@@ -57,24 +51,15 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> UpdatePublisherAsync(string publisherId, PublisherRequest request)
         {
-            // Lấy đối tượng cần cập nhật
             var publisherFound = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(publisherId);
             if (publisherFound == null)
-            {
                 throw new NotFoundException("Nhà xuất bản không tìm thấy.");
-            }
 
-            // VALIDATION 1: Kiểm tra các giá trị đầu vào
-            if (request == null)
-                throw new BadRequestException("Dữ liệu đầu vào không được để trống.");
+            // Validation đầu vào
+            if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.PaperFormat))
+                throw new BadRequestException("Tên và Định dạng bài báo là bắt buộc.");
 
-            if (string.IsNullOrWhiteSpace(request.Name))
-                throw new BadRequestException("Tên nhà xuất bản là bắt buộc.");
-
-            ValidateUrlFormat(request.WebsiteUrl, "Website URL");
-            ValidateUrlFormat(request.LogoUrl, "Logo URL");
-
-            // VALIDATION 2: Kiểm tra tên trùng lặp (phức tạp hơn)
+            // Kiểm tra tên trùng lặp khi tên thay đổi
             if (!publisherFound.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
             {
                 var existingPublisher = await _unitOfWork.PublisherRepository.GetPublisherByNameAsync(request.Name);
@@ -86,9 +71,11 @@ namespace ConfRadar.Services.Services
 
             // Cập nhật các trường
             publisherFound.Name = request.Name.Trim();
+            publisherFound.PaperFormat = request.PaperFormat.Trim().ToLower(); // Chuẩn hóa
             publisherFound.Description = request.Description;
             publisherFound.WebsiteUrl = request.WebsiteUrl;
             publisherFound.LogoUrl = request.LogoUrl;
+            publisherFound.LinkTemplate = request.LinkTemplate;
 
             return await _unitOfWork.PublisherRepository.UpdatePublisherAsync(publisherFound);
         }

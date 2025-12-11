@@ -86,21 +86,21 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<ConferencePriceWithPhasesResponse>.SuccessResponse(price, "Giá vé được cập nhật thành công"));
         }
 
-        [HttpPut("prices/update-publisherid-for-ispublish")]
-        [Authorize(Roles = "Conference Organizer")]
-        public async Task<IActionResult> UpdateConferencePricePublisherId(string conferenceId, [FromBody] UpdateConferencePublisherRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.ConferenceStepService.UpdatePublisherForAllPricesAsync(conferenceId, request, userId);
-            if (result)
-            {
-                return Ok(ApiResponse<bool>.SuccessResponse(result, "PublisherId được cập nhật thành công"));
-            }
-            else
-            {
-                return Ok(ApiResponse<bool>.FailResponse("PublisherId được cập nhật thất bại"));
-            }
-        }
+        //[HttpPut("prices/update-publisherid-for-ispublish")]
+        //[Authorize(Roles = "Conference Organizer")]
+        //public async Task<IActionResult> UpdateConferencePricePublisherId(string conferenceId, [FromBody] UpdateConferencePublisherRequest request)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var result = await _serviceManager.ConferenceStepService.UpdatePublisherForAllPricesAsync(conferenceId, request, userId);
+        //    if (result)
+        //    {
+        //        return Ok(ApiResponse<bool>.SuccessResponse(result, "PublisherId được cập nhật thành công"));
+        //    }
+        //    else
+        //    {
+        //        return Ok(ApiResponse<bool>.FailResponse("PublisherId được cập nhật thất bại"));
+        //    }
+        //}
 
         [HttpDelete("prices/{priceId}")]
         [Authorize(Roles = "Conference Organizer, Collaborator")]

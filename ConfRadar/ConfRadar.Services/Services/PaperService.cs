@@ -91,7 +91,7 @@ namespace ConfRadar.Services.Services
         Task<List<AvailableCoAuthorResponse>> GetAvailableCoAuthorForInclude(string conferenceId, string userId);
         #endregion
 
-
+        Task<bool> AutoGeneratePublishingLinks(string conferenceId, string userId);
 
     }
     public class PaperService : IPaperService
@@ -2092,6 +2092,7 @@ namespace ConfRadar.Services.Services
                 Description = paper.Description,
                 Created = paper.CreatedAt,
                 RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName, avatarUrl = RootAuthor.AvatarUrl } : null,
+                PublishingLink = paper.PublishingLink,
                 CoAuthors = coAuthors?.Select(user => new Author
                 {
                     userId = user.UserId,
@@ -3220,6 +3221,105 @@ namespace ConfRadar.Services.Services
             }
             return await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
 
+        }
+
+        public async Task<bool> AutoGeneratePublishingLinks(string conferenceId, string userId)
+        {
+            // === BƯỚC 1: LẤY CÁC THÔNG TIN CẦN THIẾT ===
+            var completedConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
+            var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+
+            if (completedConfStatus == null || acceptedGlobalStatus == null)
+                throw new NotFoundException("Không tìm thấy các trạng thái hệ thống cần thiết (Completed hoặc Accepted).");
+
+            // Lấy thông tin hội nghị, bao gồm cả ResearchDetail và Publisher
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId); 
+            if (conference == null)
+                throw new BadRequestException($"Hội nghị với ID {conferenceId} không tồn tại.");
+
+            // === BƯỚC 2: VALIDATION QUYỀN VÀ TRẠNG THÁI ===
+            if (conference.CreatedBy != userId)
+                throw new Exception("Chỉ người tổ chức hội nghị mới có thể thực hiện hành động này.");
+
+            if (conference.ConferenceStatusId != completedConfStatus.ConferenceStatusId)
+                throw new BadRequestException("Hội nghị phải ở trạng thái 'Completed' mới có thể công bố link xuất bản.");
+
+            // Kiểm tra xem hội nghị có nhà xuất bản không
+            var publisher = conference.ResearchConferenceDetail?.Publisher;
+            if (publisher == null)
+                throw new BadRequestException("Hội nghị này chưa được cấu hình nhà xuất bản.");
+
+            // === BƯỚC 3: LẤY CÁC BÀI BÁO CẦN XUẤT BẢN ===
+            var papersToPublish = await _unitOfWork.PaperRepository.GetAcceptedPaperToPublish(conferenceId, acceptedGlobalStatus.GlobalStatusId);
+
+            if (!papersToPublish.Any())
+            {
+                return true; // Không có bài báo nào cần xử lý, coi như thành công.
+            }
+
+            if (string.IsNullOrWhiteSpace(publisher.LinkTemplate))
+            {
+                foreach (var paper in papersToPublish)
+                {
+                    paper.PublishingLink = GenerateDefaultLink();
+                }
+            }
+            else
+            {
+                // Xử lý sinh link từ template
+                foreach (var paper in papersToPublish)
+                {
+                    paper.PublishingLink = GenerateLinkFromTemplate(publisher.LinkTemplate);
+                }
+            }
+
+            // === BƯỚC 5: LƯU THAY ĐỔI VÀ TRẢ VỀ KẾT QUẢ ===
+
+            // Sử dụng Unit of Work để đảm bảo tất cả được lưu trong một transaction
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _unitOfWork.PaperRepository.UpdateMultiplePapersAsync(papersToPublish); // Giả sử bạn có hàm này
+                _unitOfWork.CommitAsync();
+                return true;
+            }
+            catch(Exception ex)
+            {
+                _unitOfWork.RollbackAsync();
+                throw ex;
+            }
+            
+        }
+
+
+        private string GenerateDefaultLink()
+        {
+            var random = new Random();
+            return $"https://scholar.google.com/scholar?cluster={random.Next(100000, 999999)}&hl=en&as_sdt=0,5";
+        }
+
+        private string GenerateLinkFromTemplate(string template)
+        {
+            var random = new Random();
+            string result = template;
+
+            // Sử dụng Regex để tìm tất cả các placeholder dạng {RANDOM_ID_...}
+            var matches = System.Text.RegularExpressions.Regex.Matches(template, @"{RANDOM_ID_(\d+)}");
+
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                int digitCount = int.Parse(match.Groups[1].Value);
+                long min = (long)Math.Pow(10, digitCount - 1);
+                long max = (long)Math.Pow(10, digitCount) - 1;
+
+                string randomValue = random.NextInt64(min, max).ToString();
+
+                // Replace the first occurrence of the placeholder
+                result = new System.Text.RegularExpressions.Regex(System.Text.RegularExpressions.Regex.Escape(match.Value))
+                    .Replace(result, randomValue, 1);
+            }
+
+            return result;
         }
     }
 }
