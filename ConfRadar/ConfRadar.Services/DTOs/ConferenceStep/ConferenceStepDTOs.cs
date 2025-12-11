@@ -725,7 +725,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public int? RankYear { get; set; }
 
         [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí review không được là số âm.")]
-        public decimal? ReviewFee { get; set; }
+        public decimal? SubmitPaperFee { get; set; }
 
         [MaxLength(50)]
         public string? RankingCategoryId { get; set; }
