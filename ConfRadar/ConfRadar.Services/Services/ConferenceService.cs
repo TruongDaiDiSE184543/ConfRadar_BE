@@ -1475,10 +1475,10 @@ namespace ConfRadar.Services.Services
                 ConferenceCategoryId = conference.ConferenceCategoryId,
                 ConferenceStatusId = conference.ConferenceStatusId,
                 createdBy = conference.CreatedBy,
-                UserNameCreator = conference.CreatedByNavigation.FullName,
+                UserNameCreator = conference.CreatedByNavigation?.FullName,
                 CategoryName = conference.ConferenceCategory.ConferenceCategoryName,
-                CityName = conference.City.CityName,
-                StatusName = conference.ConferenceStatus.ConferenceStatusName,
+                CityName = conference.City?.CityName,
+                StatusName = conference.ConferenceStatus?.ConferenceStatusName,
 
                 // Research Conference Detail specific fields
 
