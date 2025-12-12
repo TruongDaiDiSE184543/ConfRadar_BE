@@ -168,7 +168,7 @@ public partial class ConfRadarDbContext : DbContext
         return connectionString;
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
