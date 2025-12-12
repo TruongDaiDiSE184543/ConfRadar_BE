@@ -12,6 +12,9 @@ namespace ConfRadar.Services.Services
         Task SendAuthenticationTemplateEmailAsync(string toEmail, string userName, string link, string subject, string templateFileName);
         Task SendCreateAccountEmail(string toEmail, string userName, string link, string subject, string templateFileName);
         Task SendSuspendTemplateEmailAsync(string toEmail, string userName, string reason, string subject, string templateFileName);
+        Task SendDecidePaperAcceptedTemplateEmailAsync(string toEmail, string userName,string subject,string paperId,string coAuthor,string submissionDate,string decideReason,string
+            nextPhaseStartDate, string nextPhaseEndDate, string nextPhaseDescription, string templateFileName);
+        Task SendDecidePaperRejectedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string templateFileName);
     }
     public class SmtpEmailService : IEmailService
     {
@@ -92,6 +95,43 @@ namespace ConfRadar.Services.Services
     };
             var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", templateFileName);
             string body = LoadTemplate(templatePath, replacements);
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
+        public async Task SendDecidePaperAcceptedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string nextPhaseStartDate, string nextPhaseEndDate, string nextPhaseDescription, string templateFileName)
+        {
+            var replacements = new Dictionary<string, string>
+    {
+        { "{{AuthorName}}", userName },
+        { "{{PaperId}}", paperId },
+        { "{{CoAuthor}}", coAuthor },
+        { "{{SubmissionDate}}", submissionDate },
+        { "{{Reason}}", decideReason },
+        { "{{NextPhaseStartDate}}", nextPhaseStartDate },
+        { "{{NextPhaseEndDate}}", nextPhaseEndDate },
+        { "{{NextPhaseDescription}}", nextPhaseDescription }
+    };
+
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", templateFileName);
+            string body = LoadTemplate(templatePath, replacements);
+
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
+        public async Task SendDecidePaperRejectedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string templateFileName)
+        {
+            var replacements = new Dictionary<string, string>
+    {
+        { "{{AuthorName}}", userName },
+        { "{{PaperId}}", paperId },
+        { "{{CoAuthor}}", coAuthor },
+        { "{{SubmissionDate}}", submissionDate },
+        { "{{Reason}}", decideReason }
+    };
+
+            var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", templateFileName);
+            string body = LoadTemplate(templatePath, replacements);
+
             await SendEmailAsync(toEmail, subject, body);
         }
     }

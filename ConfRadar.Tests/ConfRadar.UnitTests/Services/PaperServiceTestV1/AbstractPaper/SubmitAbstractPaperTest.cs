@@ -27,6 +27,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         private readonly IOptions<ObjectStorageSettings> _options;
         private readonly Mock<IRedisService> _mockRedis = new();
         private readonly PaperService _service;
+        private readonly Mock<IEmailService> _mockEmailService = new();
         public SubmitAbstractPaperTest()
         {
             _options = Options.Create(new ObjectStorageSettings { EndPoint = "https://minio/" });
@@ -40,7 +41,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 Mock.Of<ITicketService>(),
                 _mockTime.Object,
                 _mockNoti.Object,
-                _mockConfStep.Object
+                _mockConfStep.Object,
+                _mockEmailService.Object
                 
             );
         }

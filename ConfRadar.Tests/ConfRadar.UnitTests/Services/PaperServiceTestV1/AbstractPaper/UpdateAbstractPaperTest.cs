@@ -22,7 +22,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly Mock<IConferenceStepService> _mockConferenceStepService;
         private readonly PaperService _paperService;
-
+        private readonly Mock<IEmailService> _mockEmailService;
         public UpdateAbstractPaperTest()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -34,6 +34,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             _mockTimeProviderService = new Mock<ITimeProviderService>();
             _mockNotificationService = new Mock<INotificationService>();
             _mockConferenceStepService = new Mock<IConferenceStepService>();
+            _mockEmailService = new Mock<IEmailService>();
             _mockObjectStorageSettings.SetupGet(x => x.Value)
     .Returns(new ObjectStorageSettings
     {
@@ -48,7 +49,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 _mockTicketService.Object,
                 _mockTimeProviderService.Object,
                 _mockNotificationService.Object,
-                _mockConferenceStepService.Object
+                _mockConferenceStepService.Object,
+                _mockEmailService.Object
             );
         }
 

@@ -99,13 +99,17 @@ namespace ConfRadar.Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMomoService _momoService;
         private readonly ITokenService _tokenService;
+        private readonly IEmailService _emailService;
         private readonly IOptions<ObjectStorageSettings> _objectStorageSettings;
         private readonly IObjectStorageFileService _objectStorageFileService;
         private readonly ITicketService _ticketService;
         private readonly ITimeProviderService _timeProviderService;
         private readonly INotificationService _notificationService;
         private readonly IConferenceStepService _conferenceStepService;
-        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService, ITicketService ticketService, ITimeProviderService timeProviderService, INotificationService notificationService, IConferenceStepService conferenceStepService)
+        public PaperService(IUnitOfWork unitOfWork, IMomoService momoService, ITokenService tokenService, 
+            IOptions<ObjectStorageSettings> objectStorageSettings, IObjectStorageFileService objectStorageFileService,
+            ITicketService ticketService, ITimeProviderService timeProviderService,
+            INotificationService notificationService, IConferenceStepService conferenceStepService,IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _momoService = momoService;
@@ -116,6 +120,7 @@ namespace ConfRadar.Services.Services
             _timeProviderService = timeProviderService;
             _notificationService = notificationService;
             _conferenceStepService = conferenceStepService;
+            _emailService = emailService;
         }
 
         public async Task<int> SubmitAbstract(CreateAbstractRequest request, string userId)
@@ -388,7 +393,32 @@ namespace ConfRadar.Services.Services
             string notiTitle = "Kết quả bài báo";
             string notiMessage = string.Empty;
             int result = 0;
-            await _unitOfWork.BeginTransactionAsync();
+            if (rootAuthor == null) throw new NotFoundException("Không tìm thấy author chính");
+            var rootAuthorEntity = rootAuthor.User;
+
+            string subject = "Kết quả quyết định bài báo";
+            string coAuthorListName = string.Empty;
+            var coAuthors = basePaper.PaperAuthors.Where(pa => pa.IsRootAuthor == false);
+            if (coAuthors.Any())
+            {
+                coAuthorListName = string.Join(", ",coAuthors.Select(ca => ca.User.FullName));
+            }
+            else
+            {
+                coAuthorListName = "Không có";
+            }
+
+            string submissionDate = string.Empty;
+            
+            if (basePaper.CreatedAt != null)
+            {
+                submissionDate = basePaper.CreatedAt?.ToString();
+            }
+            else
+            {
+                submissionDate = "null";
+            }
+                await _unitOfWork.BeginTransactionAsync();
             try
             {
                 switch (request.GlobalStatus)
@@ -400,13 +430,26 @@ namespace ConfRadar.Services.Services
                         basePaper.PaperPhaseId = fullPaperPhase.PaperPhaseId;
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận ở phase abstract vào lúc {timeNow.ToString()}";
-
+                        await _emailService.SendDecidePaperAcceptedTemplateEmailAsync(rootAuthorEntity.Email, rootAuthorEntity.FullName,
+                            subject, basePaper.PaperId, coAuthorListName, submissionDate, request.Reason,
+                            basePaper.ResearchConferencePhase.FullPaperStartDate.ToString(),
+                            basePaper.ResearchConferencePhase.FullPaperEndDate.ToString(),
+                            "Giai đoạn fullPaper", "EmailDecideAcceptedStatus.html");
                         break;
                     case GlobalStatusEnum.Rejected:
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
                         abstractPaper.ReviewAt = timeNow;
                         abstractPaper.Reason = request.Reason;
-                        
+                        await _emailService.SendDecidePaperRejectedTemplateEmailAsync(
+                         rootAuthorEntity.Email,
+                         rootAuthorEntity.FullName,
+                         subject,
+                         basePaper.PaperId,
+                         coAuthorListName,
+                         submissionDate,
+                         request.Reason,
+                         "EmailDecideRejectedStatus.html"
+);
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối ở phase abstract vào lúc {timeNow.ToString()}";
 
@@ -655,10 +698,38 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Cần ít nhất 1 review từ các reviewer để quyết định trạng thái.");
 
             }
+
+            var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+            var rootAuthorEntity = rootAuthor.User;
+
+            string subject = "Kết quả quyết định bài báo";
+            string coAuthorListName = string.Empty;
+            var coAuthors = paper.PaperAuthors.Where(pa => pa.IsRootAuthor == false);
+            if (coAuthors.Any())
+            {
+                coAuthorListName = string.Join(", ", coAuthors.Select(ca => ca.User.FullName));
+            }
+            else
+            {
+                coAuthorListName = "Không có";
+            }
+
+            string submissionDate = string.Empty;
+
+            if (paper.CreatedAt != null)
+            {
+                submissionDate = paper.CreatedAt?.ToString();
+            }
+            else
+            {
+                submissionDate = "null";
+            }
+
+
+
             int result = 0;
             string notiTitle = "Kết quả bài báo";
             string notiMessage = string.Empty;
-            var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
             await _unitOfWork.BeginTransactionAsync();
             try
             {
@@ -670,6 +741,16 @@ namespace ConfRadar.Services.Services
                         fullPaper.ReviewAt = timeNow;
                         fullPaper.Reason = request.Reason;
                         paper.PaperPhaseId = cameraReadyPhase.PaperPhaseId;
+                        await _emailService.SendDecidePaperAcceptedTemplateEmailAsync(
+                rootAuthorEntity.Email,
+                rootAuthorEntity.FullName,
+                subject, paper.PaperId, coAuthorListName, submissionDate, request.Reason,
+                paper.ResearchConferencePhase.CameraReadyStartDate.ToString(),
+                paper.ResearchConferencePhase.CameraReadyEndDate.ToString(),
+                "Giai đoạn camera ready", "EmailDecideAcceptedStatus.html");
+
+
+
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase fullpaper vào lúc {timeNow.ToString()}";
 
 
@@ -680,7 +761,15 @@ namespace ConfRadar.Services.Services
                         fullPaper.ReviewStatusId = rejectedReviewStatus.ReviewStatusId;
                         fullPaper.ReviewAt = timeNow;
                         fullPaper.Reason = request.Reason;
-
+                        await _emailService.SendDecidePaperRejectedTemplateEmailAsync(
+                        rootAuthorEntity.Email,
+                        rootAuthorEntity.FullName,
+                        subject,
+                        paper.PaperId,
+                        coAuthorListName,
+                        submissionDate,
+                        request.Reason,
+                        "EmailDecideRejectedStatus.html");
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase fullpaper vào lúc {timeNow.ToString()}";
 
                         break;
@@ -692,6 +781,13 @@ namespace ConfRadar.Services.Services
                         fullPaper.ReviewAt = timeNow;
                         fullPaper.Reason = request.Reason;
                         paper.PaperPhaseId = revisePhase.PaperPhaseId;
+                        await _emailService.SendDecidePaperAcceptedTemplateEmailAsync(
+                rootAuthorEntity.Email,
+                rootAuthorEntity.FullName,
+                subject, paper.PaperId, coAuthorListName, submissionDate, request.Reason,
+                paper.ResearchConferencePhase.ReviseStartDate.ToString(),
+                paper.ResearchConferencePhase.ReviseEndDate.ToString(),
+                "Giai đoạn Revise", "EmailDecideAcceptedStatus.html");
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chuyển sang phase revise vào lúc {timeNow.ToString()}";
 
                         break;
@@ -1218,6 +1314,31 @@ namespace ConfRadar.Services.Services
 
 
             var rootAuthor = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+            var rootAuthorEntity = rootAuthor.User;
+
+            string subject = "Kết quả quyết định bài báo";
+            string coAuthorListName = string.Empty;
+            var coAuthors = paper.PaperAuthors.Where(pa => pa.IsRootAuthor == false);
+            if (coAuthors.Any())
+            {
+                coAuthorListName = string.Join(", ", coAuthors.Select(ca => ca.User.FullName));
+            }
+            else
+            {
+                coAuthorListName = "Không có";
+            }
+
+            string submissionDate = string.Empty;
+
+            if (paper.CreatedAt != null)
+            {
+                submissionDate = paper.CreatedAt?.ToString();
+            }
+            else
+            {
+                submissionDate = "null";
+            }
+
             var timeNow = await _timeProviderService.GetVietnamTime();
             string notiTitle = "Kết quả bài báo";
             string notiMessage = string.Empty;
@@ -1233,7 +1354,11 @@ namespace ConfRadar.Services.Services
                         revisionPaper.ReviewAt = timeNow;
                         revisionPaper.Reason = request.Reason;
                         paper.PaperPhaseId = cameraReadyPaperPhase.PaperPhaseId;
-
+                        await _emailService.SendDecidePaperAcceptedTemplateEmailAsync(rootAuthorEntity.Email, rootAuthorEntity.FullName,
+                 subject, paper.PaperId, coAuthorListName, submissionDate, request.Reason,
+                paper.ResearchConferencePhase.CameraReadyStartDate.ToString(),
+                paper.ResearchConferencePhase.CameraReadyEndDate.ToString(),
+    "Giai đoạn Camera Ready", "EmailDecideAcceptedStatus.html");
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
@@ -1244,7 +1369,15 @@ namespace ConfRadar.Services.Services
                         revisionPaper.GlobalStatusId = rejectGlobalStautus.GlobalStatusId;
                         revisionPaper.ReviewAt = timeNow;
                         revisionPaper.Reason = request.Reason;
-
+                        await _emailService.SendDecidePaperRejectedTemplateEmailAsync(
+                         rootAuthorEntity.Email,
+                         rootAuthorEntity.FullName,
+                         subject,
+                         paper.PaperId,
+                         coAuthorListName,
+                         submissionDate,
+                         request.Reason,
+                         "EmailDecideRejectedStatus.html");
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
                         break;
@@ -1838,20 +1971,60 @@ namespace ConfRadar.Services.Services
             string notiTitle = "Kết quả bài báo";
             string notiMessage = string.Empty;
             var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+            var rootAuthorEntity = rootAuthor.User;
+
+            string subject = "Kết quả quyết định bài báo";
+            string coAuthorListName = string.Empty;
+            var coAuthors = basePaper.PaperAuthors.Where(pa => pa.IsRootAuthor == false);
+            if (coAuthors.Any())
+            {
+                coAuthorListName = string.Join(", ", coAuthors.Select(ca => ca.User.FullName));
+            }
+            else
+            {
+                coAuthorListName = "Không có";
+            }
+
+            string submissionDate = string.Empty;
+
+            if (basePaper.CreatedAt != null)
+            {
+                submissionDate = basePaper.CreatedAt?.ToString();
+            }
+            else
+            {
+                submissionDate = "null";
+            }
+
+
+
+
             GlobalStatus? newGlobalStatus = null;
             switch (request.GlobalStatus)
             {
                 case GlobalStatusEnum.Accepted:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-                    
+                    await _emailService.SendDecidePaperAcceptedTemplateEmailAsync(rootAuthorEntity.Email, rootAuthorEntity.FullName,
+                    subject, basePaper.PaperId, coAuthorListName, submissionDate, request.Reason,
+                    basePaper.ResearchConferencePhase.AuthorPaymentStart.ToString(),
+                    basePaper.ResearchConferencePhase.AuthorPaymentEnd.ToString(),
+    "Giai đoạn fullPaper", "EmailDecideAcceptedStatus.html");
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
                     break;
                 case GlobalStatusEnum.Rejected:
                     newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+                    await _emailService.SendDecidePaperRejectedTemplateEmailAsync(
+                     rootAuthorEntity.Email,
+                     rootAuthorEntity.FullName,
+                     subject,
+                     basePaper.PaperId,
+                     coAuthorListName,
+                     submissionDate,
+                     request.Reason,
+                     "EmailDecideRejectedStatus.html");
 
-                    
 
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
