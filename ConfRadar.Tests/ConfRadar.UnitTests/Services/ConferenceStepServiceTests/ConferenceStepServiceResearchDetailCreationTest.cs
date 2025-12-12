@@ -67,14 +67,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         {
             return new CreateResearchConferenceDetailRequest
             {
-                PaperFormat = "ieee",
+                //PaperFormat = "ieee",
                 NumberPaperAccept = 50,
                 RevisionAttemptAllowed = 3,
                 RankingDescription = "This conference is ranked A in computer science",
                 AllowListener = true,
                 RankValue = "A",
                 RankYear = 2024,
-                ReviewFee = 100.50m,
+                //ReviewFee = 100.50m,
                 RankingCategoryId = "ranking-cat-123"
             };
         }
@@ -210,7 +210,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // ARRANGE
             var request = CreateValidRequest();
             SetupValidMocks();
-            request.ReviewFee = -10.50m; // Invalid: negative fee
+            //request.ReviewFee = -10.50m; // Invalid: negative fee
 
             // ACT & ASSERT
             await Assert.ThrowsAsync<BadRequestException>(
@@ -343,14 +343,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 .ReturnsAsync(new ResearchConferenceDetail
                 {
                     ConferenceId = conferenceId,
-                    PaperFormat = request.PaperFormat,
+                    //PaperFormat = request.PaperFormat,
                     NumberPaperAccept = request.NumberPaperAccept,
                     RevisionAttemptAllowed = request.RevisionAttemptAllowed.Value,
                     RankingDescription = request.RankingDescription,
                     AllowListener = request.AllowListener.Value,
                     RankValue = request.RankValue,
                     RankYear = request.RankYear,
-                    ReviewFee = request.ReviewFee,
+                    //ReviewFee = request.ReviewFee,
                     RankingCategoryId = request.RankingCategoryId
                 }); // Second call for final response
 
@@ -360,14 +360,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             // ASSERT
             result.Should().NotBeNull();
             result.ConferenceId.Should().Be(conferenceId);
-            result.PaperFormat.Should().Be(request.PaperFormat);
+            //result.PaperFormat.Should().Be(request.PaperFormat);
             result.NumberPaperAccept.Should().Be(request.NumberPaperAccept);
             result.RevisionAttemptAllowed.Should().Be(request.RevisionAttemptAllowed);
             result.RankingDescription.Should().Be(request.RankingDescription);
             result.AllowListener.Should().Be(request.AllowListener);
             result.RankValue.Should().Be(request.RankValue);
             result.RankYear.Should().Be(request.RankYear);
-            result.ReviewFee.Should().Be(request.ReviewFee);
+            //result.ReviewFee.Should().Be(request.ReviewFee);
             result.RankingCategoryId.Should().Be(request.RankingCategoryId);
 
             // Verify that all repository methods were called
@@ -410,7 +410,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         {
             // ARRANGE
             var request = CreateValidRequest();
-            request.ReviewFee = 0; // Zero fee is valid (free conference)
+            //request.ReviewFee = 0; // Zero fee is valid (free conference)
             SetupValidMocks();
 
             // Mock the response
@@ -424,14 +424,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
                 .ReturnsAsync(new ResearchConferenceDetail
                 {
                     ConferenceId = "conf-123",
-                    PaperFormat = request.PaperFormat,
+                    //PaperFormat = request.PaperFormat,
                     NumberPaperAccept = request.NumberPaperAccept,
                     RevisionAttemptAllowed = request.RevisionAttemptAllowed.Value,
                     RankingDescription = request.RankingDescription,
                     AllowListener = request.AllowListener.Value,
                     RankValue = request.RankValue,
                     RankYear = request.RankYear,
-                    ReviewFee = 0,
+                    //ReviewFee = 0,
                     RankingCategoryId = request.RankingCategoryId
                 }); // Second call for final response
 
@@ -440,7 +440,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
 
             // ASSERT
             result.Should().NotBeNull();
-            result.ReviewFee.Should().Be(0);
+            //result.ReviewFee.Should().Be(0);
 
             // Verify creation was called
             _mockUnitOfWork.Verify(u => u.ResearchConferenceDetailRepository.CreateResearchConferenceDetailAsync(It.IsAny<ResearchConferenceDetail>()), Times.Once);

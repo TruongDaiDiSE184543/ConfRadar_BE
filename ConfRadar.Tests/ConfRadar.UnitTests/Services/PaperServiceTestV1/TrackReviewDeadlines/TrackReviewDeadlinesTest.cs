@@ -28,7 +28,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackReviewDeadlines
         private readonly Mock<ITimeProviderService> _mockTime;
 
         private readonly PaperService _paperService;
-
+        private readonly Mock<IEmailService> _mockEmailService;
         public TrackReviewDeadlinesTest()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -54,6 +54,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackReviewDeadlines
             _mockTicket = new Mock<ITicketService>();
             _mockNoti = new Mock<INotificationService>();
             _mockStep = new Mock<IConferenceStepService>();
+            _mockEmailService = new Mock<IEmailService>();
             var options = Options.Create(new ObjectStorageSettings());
 
             _paperService = new PaperService(
@@ -65,7 +66,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackReviewDeadlines
                 _mockTicket.Object,
                 _mockTime.Object, // Inject Time Mock
                 _mockNoti.Object,
-                _mockStep.Object
+                _mockStep.Object,
+                _mockEmailService.Object
             );
         }
 

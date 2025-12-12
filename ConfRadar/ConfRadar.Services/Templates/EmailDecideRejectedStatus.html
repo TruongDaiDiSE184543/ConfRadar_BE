@@ -1,0 +1,434 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Báo Kết Quả Bài Báo</title>
+    <style>
+        body {
+            font-family: 'Georgia', 'Palatino Linotype', 'Times New Roman', serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background-color: #ecf0f1;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 680px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border: 1px solid #d5d8dc;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f2557 0%, #1e3c72 50%, #2a5298 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            text-align: center;
+            border-bottom: 5px solid #b8860b;
+            position: relative;
+        }
+
+            .header::after {
+                content: '';
+                position: absolute;
+                bottom: -5px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(to right, transparent, #ffd700, transparent);
+            }
+
+            .header h1 {
+                margin: 0 0 8px 0;
+                font-size: 26px;
+                font-weight: 700;
+                letter-spacing: 1px;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+
+            .header p {
+                margin: 5px 0 0 0;
+                font-size: 14px;
+                opacity: 0.95;
+                font-weight: 300;
+                letter-spacing: 0.3px;
+            }
+
+        .content {
+            padding: 40px 40px;
+        }
+
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+
+            .greeting strong {
+                color: #1e3c72;
+            }
+
+        .decision-box {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%);
+            border-left: 6px solid #c62828;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(198, 40, 40, 0.1);
+        }
+
+            .decision-box h2 {
+                margin: 0 0 15px 0;
+                font-size: 22px;
+                color: #c62828;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+            }
+
+            .decision-box p {
+                margin: 0;
+                line-height: 1.8;
+                color: #34495e;
+            }
+
+        .paper-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #b8860b;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+            .paper-info h3 {
+                margin: 0 0 20px 0;
+                font-size: 15px;
+                color: #1e3c72;
+                text-transform: uppercase;
+                letter-spacing: 1.2px;
+                font-weight: 700;
+                border-bottom: 2px solid #b8860b;
+                padding-bottom: 10px;
+            }
+
+        .info-row {
+            margin: 14px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: #2c3e50;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            color: #34495e;
+            flex: 1;
+        }
+
+        .section {
+            margin: 30px 0;
+        }
+
+            .section h3 {
+                color: #1e3c72;
+                font-size: 17px;
+                margin-bottom: 15px;
+                border-bottom: 3px solid #b8860b;
+                padding-bottom: 8px;
+                font-weight: 700;
+                letter-spacing: 0.3px;
+            }
+
+            .section p {
+                color: #34495e;
+                line-height: 1.8;
+                margin: 12px 0;
+            }
+
+        .reason-content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 3px solid #c62828;
+            margin-top: 15px;
+            color: #495057;
+        }
+
+        .encouragement-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
+            border-left: 4px solid #1976d2;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 25px;
+            box-shadow: 0 2px 6px rgba(25, 118, 210, 0.1);
+        }
+
+            .encouragement-box h3 {
+                margin-top: 0;
+                color: #1976d2;
+                font-size: 17px;
+                font-weight: 700;
+                border-bottom: 2px solid #1976d2;
+                padding-bottom: 8px;
+            }
+
+            .encouragement-box ul {
+                margin: 15px 0;
+                padding-left: 20px;
+            }
+
+            .encouragement-box li {
+                margin: 10px 0;
+                color: #34495e;
+                line-height: 1.7;
+            }
+
+        .next-opportunities {
+            background: linear-gradient(135deg, #fff9e6 0%, #fffef8 100%);
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border: 1px solid #ffd966;
+            box-shadow: 0 2px 6px rgba(255, 217, 102, 0.15);
+        }
+
+            .next-opportunities h4 {
+                margin: 0 0 15px 0;
+                color: #856404;
+                font-size: 16px;
+                font-weight: 700;
+            }
+
+            .next-opportunities ul {
+                margin: 10px 0;
+                padding-left: 20px;
+            }
+
+            .next-opportunities li {
+                margin: 10px 0;
+                color: #5a6c7d;
+                line-height: 1.7;
+            }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: #ffffff;
+            padding: 14px 35px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 5px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+            .cta-button:hover {
+                background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+                box-shadow: 0 6px 15px rgba(108, 117, 125, 0.4);
+                transform: translateY(-2px);
+            }
+
+            .cta-button.primary {
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            }
+
+                .cta-button.primary:hover {
+                    background: linear-gradient(135deg, #2a5298 0%, #3a62b8 100%);
+                    box-shadow: 0 6px 15px rgba(30, 60, 114, 0.4);
+                }
+
+        .footer {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 30px 40px;
+            border-top: 4px solid #b8860b;
+            font-size: 13px;
+            color: #5a6c7d;
+        }
+
+            .footer p {
+                margin: 8px 0;
+            }
+
+            .footer a {
+                color: #1e3c72;
+                text-decoration: none;
+                font-weight: 600;
+            }
+
+                .footer a:hover {
+                    text-decoration: underline;
+                }
+
+        .footer-brand {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .signature {
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+            .signature p {
+                margin: 5px 0;
+                color: #34495e;
+            }
+
+            .signature strong {
+                color: #1e3c72;
+                font-size: 15px;
+            }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #b8860b, transparent);
+            margin: 30px 0;
+            opacity: 0.5;
+        }
+
+        .academic-seal {
+            text-align: center;
+            padding: 15px 0;
+            font-size: 12px;
+            color: #7f8c8d;
+            font-style: italic;
+            border-top: 1px solid #ecf0f1;
+            margin-top: 15px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+            }
+
+            .content {
+                padding: 30px 25px;
+            }
+
+            .info-row {
+                flex-direction: column;
+            }
+
+            .info-label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>CONFRADAR</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                <p>Kính gửi <strong>{{AuthorName}}</strong>,</p>
+            </div>
+
+            <!-- Paper Information -->
+            <div class="paper-info">
+                <h3>Thông Tin Bài Báo</h3>
+                <div class="info-row">
+                    <span class="info-label">Mã bài báo:</span>
+                    <span class="info-value">{{PaperId}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tiêu đề:</span>
+                    <span class="info-value">{{PaperTitle}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Đồng tác giả:</span>
+                    <span class="info-value">{{CoAuthor}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ngày nộp:</span>
+                    <span class="info-value">{{SubmissionDate}}</span>
+                </div>
+            </div>
+
+            <!-- Decision Box - REJECT -->
+            <div class="decision-box">
+                <h2>✗ KHÔNG CHẤP NHẬN (NOT ACCEPTED)</h2>
+                <p>Chúng tôi rất tiếc thông báo rằng sau quá trình phản biện kỹ lưỡng bởi các chuyên gia trong lĩnh vực, bài báo của quý tác giả không được chấp nhận để trình bày tại hội nghị lần này. Quyết định này được đưa ra dựa trên các tiêu chí nghiêm ngặt nhằm đảm bảo chất lượng khoa học của hội nghị.</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Reason Section -->
+            <div class="section">
+                <h3>Lý Do Quyết Định</h3>
+                <p>Quyết định này được đưa ra sau khi ban phản biện xem xét kỹ lưỡng các tiêu chí sau:</p>
+                <div class="reason-content">
+                    {{Reason}}
+                </div>
+                <p style="margin-top: 15px; font-size: 13px; color: #7f8c8d;">
+                    <em>Báo cáo chi tiết của phản biện có thể được truy cập qua hệ thống quản lý bài báo.</em>
+                </p>
+            </div>
+
+            <div class="divider"></div>
+
+
+
+
+
+            <div class="divider"></div>
+
+            <!-- Contact Information -->
+            <p style="margin-top: 30px; color: #34495e;">
+                Nếu quý tác giả có bất kỳ câu hỏi nào về kết quả phản biện hoặc cần làm rõ các nhận xét, vui lòng liên hệ:
+            </p>
+            <p style="margin-left: 20px; color: #2c3e50;">
+                <strong>Email hỗ trợ:</strong> <a href="mailto:confradarsupport@gmail.com" style="color: #1e3c72; text-decoration: none;">confradarsupport@gmail.com</a><br>
+                <strong>Website:</strong> <a href="https://confradar.vercel.app/" style="color: #1e3c72; text-decoration: none;">confradar.vercel.app</a>
+            </p>
+
+            <p style="margin-top: 20px; color: #34495e;">
+                Chúng tôi trân trọng sự quan tâm của quý tác giả đối với hội nghị và mong được đón nhận những đóng góp khoa học của quý vị trong tương lai.
+            </p>
+
+            <div class="signature">
+                <p>Trân trọng,</p>
+                <p>
+                    <strong>Ban Tổ Chức ConfRadar</strong><br>
+                    <span style="font-size: 13px; color: #7f8c8d;">Program Committee Chair</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p class="footer-brand">CONFRADAR</p>
+           
+            <p style="margin-top: 15px;">
+                <strong>Liên hệ:</strong>
+                Email: <a href="mailto:confradarsupport@gmail.com">confradarsupport@gmail.com</a> |
+                Website: <a href="https://confradar.vercel.app/">confradar.vercel.app</a>
+            </p>
+
+            <div class="academic-seal">
+                Email này được gửi tự động.<br>
+                Vui lòng không trả lời trực tiếp email này.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

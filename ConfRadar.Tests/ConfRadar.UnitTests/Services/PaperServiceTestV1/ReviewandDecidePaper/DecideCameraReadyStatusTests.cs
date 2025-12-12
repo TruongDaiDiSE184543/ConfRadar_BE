@@ -33,13 +33,15 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 
             var mockMomo = new Mock<IMomoService>();
             var mockToken = new Mock<ITokenService>();
+            var mockEmail = new Mock<IEmailService>();
             var mockFile = new Mock<IObjectStorageFileService>();
             var mockStep = new Mock<IConferenceStepService>();
             var options = Options.Create(new ObjectStorageSettings());
 
             _paperService = new PaperService(
                 _mockUnitOfWork.Object, mockMomo.Object, mockToken.Object, options,
-                mockFile.Object, _mockTicket.Object, _mockTime.Object, _mockNoti.Object, mockStep.Object
+                mockFile.Object, _mockTicket.Object, _mockTime.Object, _mockNoti.Object, mockStep.Object,
+                mockEmail.Object
             );
         }
 

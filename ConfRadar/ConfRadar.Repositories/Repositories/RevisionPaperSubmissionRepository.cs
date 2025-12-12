@@ -13,6 +13,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<RevisionPaperSubmission?> GetRevisionPaperSubmissionByRevisionPaperIdAndDeadlineId(string revisionPaperId, string deadlineId);
         Task<int> UpdateRevisionPaperSubmissionAsync(RevisionPaperSubmission submission);
         Task<List<RevisionPaperSubmission>> GetRevisionPaperSubmissionByDeadlineId(string deadlineId);
+        Task<List<RevisionPaperSubmission>> GetRevisionPaperSubmissionByRevisionId(string revisionId);
     }
     public class RevisionPaperSubmissionRepository : GenericRepository<RevisionPaperSubmission>, IRevisionPaperSubmissionRepository
     {
@@ -53,6 +54,13 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<RevisionPaperSubmission>> GetRevisionPaperSubmissionByDeadlineId(string deadlineId)
         {
             return await _context.RevisionPaperSubmissions.Where(rps => rps.RevisionDeadlineRoundId == deadlineId).ToListAsync();
+        }
+
+        public async Task<List<RevisionPaperSubmission>> GetRevisionPaperSubmissionByRevisionId(string revisionId)
+        {
+            return await _context.RevisionPaperSubmissions
+                .Include(rps=>rps.RevisionDeadlineRound)
+                .Where(rps => rps.RevisionPaperId == revisionId).ToListAsync();
         }
     }
 

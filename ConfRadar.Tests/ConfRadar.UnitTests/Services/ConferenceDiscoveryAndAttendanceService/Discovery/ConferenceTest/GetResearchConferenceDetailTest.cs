@@ -193,8 +193,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
             var mockList = new List<Conference> { conf }.AsQueryable().BuildMock();
             _mockConferenceRepo.Setup(r => r.GetAllConferences()).Returns(mockList);
 
-            _mockResearchDetailRepo.Setup(r => r.GetResearchConferenceDetailByConferenceIdAsync("C1"))
-                .ReturnsAsync(new ResearchConferenceDetail { PaperFormat = "PDF" });
+            //_mockResearchDetailRepo.Setup(r => r.GetResearchConferenceDetailByConferenceIdAsync("C1"))
+            //    .ReturnsAsync(new ResearchConferenceDetail { PaperFormat = "PDF" });
 
             _mockResearchPhaseRepo.Setup(r => r.GetResearchPhaseByConfId("C1"))
                 .ReturnsAsync(new List<ResearchConferencePhase>

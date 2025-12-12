@@ -28,7 +28,7 @@ namespace ConfRadar.Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITimeProviderService _timeProviderService;
-        public TicketService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService, IMomoService @object)
+        public TicketService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
             _timeProviderService = timeProviderService;
@@ -89,10 +89,10 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Vé với mã {request.TicketId} đã được hoàn tiền. Không thể yêu cầu hoàn tiền nữa");
             }
             var transactionList = ticket.Transactions;
-            if (transactionList.Count > 1)
-            {
-                throw new BadRequestException($"Bạn đã refund trước đó rồi");
-            }
+            //if (transactionList.Count > 1)
+            //{
+            //    throw new BadRequestException($"Bạn đã refund trước đó rồi");
+            //}
             var transaction = transactionList.FirstOrDefault(t => t.TransactionId == request.TransactionId);
             if (transaction == null)
             {
