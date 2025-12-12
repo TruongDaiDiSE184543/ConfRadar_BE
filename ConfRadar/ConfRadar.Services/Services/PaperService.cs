@@ -2008,7 +2008,7 @@ namespace ConfRadar.Services.Services
                     subject, basePaper.PaperId, coAuthorListName, submissionDate, request.Reason,
                     basePaper.ResearchConferencePhase.AuthorPaymentStart.ToString(),
                     basePaper.ResearchConferencePhase.AuthorPaymentEnd.ToString(),
-    "Giai đoạn fullPaper", "EmailDecideAcceptedStatus.html");
+    "Giai đoạn thanh toán", "EmailDecideAcceptedStatus.html");
                     notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
