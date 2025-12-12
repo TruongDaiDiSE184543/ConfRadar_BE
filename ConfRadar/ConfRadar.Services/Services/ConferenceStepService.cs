@@ -1122,7 +1122,7 @@ namespace ConfRadar.Services.Services
             // Nếu là hội nghị Kỹ thuật, không được phép cập nhật các thuộc tính của hội nghị Nghiên cứu
             if (conference.IsResearchConference != true)
             {
-                if (request.IsPublish.HasValue )
+                if (request.IsPublish.HasValue)
                 {
                     throw new BadRequestException("Với hội nghị Kỹ thuật, không thể cập nhật thuộc tính 'IsPublish' .");
                 }
@@ -2329,7 +2329,7 @@ namespace ConfRadar.Services.Services
             // 6. Xác th?c s? t?n t?i c?a RankingCategoryId (d?a trên hình ?nh b?n cung c?p)
             //await ValidatePaperFormat(request.PaperFormat);
 
-            if(!string.IsNullOrWhiteSpace(request.PublisherId))
+            if (!string.IsNullOrWhiteSpace(request.PublisherId))
             {
                 // Nếu người dùng có cung cấp PublisherId, kiểm tra xem nó có tồn tại trong DB không
                 var publisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
@@ -2435,7 +2435,7 @@ namespace ConfRadar.Services.Services
                 if (await _unitOfWork.RankingCategoryRepository.GetRankingCategoryByIdAsync(request.RankingCategoryId) == null)
                     throw new NotFoundException($"Loại xếp hạng với ID '{request.RankingCategoryId}' không tồn tại.");
             }
-           
+
             // *** G?I VALIDATION Ð?NG M?I ***
             //if (request.PaperFormat != null)
             //{
@@ -2463,7 +2463,7 @@ namespace ConfRadar.Services.Services
                 // **VALIDATION CỰC KỲ QUAN TRỌNG:**
                 // Nếu đã có vé nào được đánh dấu IsPublish = true, không cho phép thay đổi hoặc gỡ bỏ PublisherId.
                 // Người dùng phải tắt cờ IsPublish ở tất cả các vé trước.
-                var hasPublishedPrices = await _unitOfWork.ConferencePriceRepository.AnyPublishedPricesExistAsync(conferenceId); 
+                var hasPublishedPrices = await _unitOfWork.ConferencePriceRepository.AnyPublishedPricesExistAsync(conferenceId);
                 if (hasPublishedPrices && request.PublisherId != researchDetail.PublisherId)
                 {
                     throw new BadRequestException("Không thể thay đổi hoặc gỡ bỏ Nhà xuất bản vì đã có loại vé được cấu hình để xuất bản. Vui lòng tắt cờ 'IsPublish' ở các loại vé liên quan trước.");
@@ -2744,7 +2744,7 @@ namespace ConfRadar.Services.Services
             if (newPhaseRequest.AuthorPaymentEnd >= conference.StartDate)
             {
                 throw new BadRequestException($"Ngày kết thúc thanh toán của tác giả trong phase mới ({newPhaseRequest.AuthorPaymentEnd:dd/MM/yyyy}) phải diễn ra trước ngày bắt đầu hội nghị ({conference.StartDate.Value:dd/MM/yyyy}).");
-            }   
+            }
 
             // 2.3 Validate RevisionRoundDeadlines cho phase mới
             // (Tái sử dụng logic validate RevisionRoundDeadlines)

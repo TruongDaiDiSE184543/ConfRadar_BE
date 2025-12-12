@@ -322,7 +322,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("Tất cả các vé hoàn tiền đã quá hạn", ex.Message);
         }
 
-       
+
 
         [Fact]
         public async Task CreateRefundTicketRequest_ShouldThrow_WhenWalletNotFound()

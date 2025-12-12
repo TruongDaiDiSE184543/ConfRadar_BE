@@ -19,7 +19,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Paper>> getAllAssignedPapers(string userId);
         Task<List<PaperReviewer>> GetPaperReviewersByConferenceIdAsync(string conferenceId);
         Task<List<Paper>> GetTotalPapersBelongToReviewer(string userId);
-        Task<int> DeleteMultiplePaperReviewersAsync (List<PaperReviewer> paperReviewers);
+        Task<int> DeleteMultiplePaperReviewersAsync(List<PaperReviewer> paperReviewers);
         Task<int> CreateMultiplePaperReviewersAsync(List<PaperReviewer> paperReviewers);
     }
     public class PaperReviewerRepository : GenericRepository<PaperReviewer>, IPaperReviewerRepository

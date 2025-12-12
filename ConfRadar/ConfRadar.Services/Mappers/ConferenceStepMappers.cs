@@ -460,7 +460,7 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetailResponse
             {
                 ConferenceId = model.ConferenceId,
-                PublisherId= model.Publisher.PublisherId,
+                PublisherId = model.Publisher.PublisherId,
                 PublisherName = model.Publisher.Name,
                 PaperFormat = model.Publisher.PaperFormat,
                 NumberPaperAccept = model.NumberPaperAccept,
@@ -743,11 +743,11 @@ namespace ConfRadar.Services.Mappers
             {
                 PublisherId = publisher.PublisherId,
                 Name = publisher.Name,
-                PaperFormat = publisher.PaperFormat, 
+                PaperFormat = publisher.PaperFormat,
                 Description = publisher.Description,
                 WebsiteUrl = publisher.WebsiteUrl,
                 LogoUrl = publisher.LogoUrl,
-                LinkTemplate = publisher.LinkTemplate 
+                LinkTemplate = publisher.LinkTemplate
             };
         }
 

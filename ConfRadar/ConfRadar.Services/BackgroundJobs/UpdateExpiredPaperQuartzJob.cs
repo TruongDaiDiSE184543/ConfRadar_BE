@@ -4,11 +4,6 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.Services.BackgroundJobs
 {
@@ -39,8 +34,8 @@ namespace ConfRadar.Services.BackgroundJobs
             var readyConfStatus = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             var cancelConfStatus = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Cancelled.GetDescription());
 
-            if (pendingReviewStatus == null || readyConfStatus == null || cancelConfStatus == null 
-                || pendingGlobalStatus == null || rejectedReviewStatus == null||rejectedGlobalStatus==null) 
+            if (pendingReviewStatus == null || readyConfStatus == null || cancelConfStatus == null
+                || pendingGlobalStatus == null || rejectedReviewStatus == null || rejectedGlobalStatus == null)
             {
                 return;
             }
@@ -53,7 +48,7 @@ namespace ConfRadar.Services.BackgroundJobs
             var expiredFullPaper = await unitOfWork.FullPaperRepository.GetExpiredFullPaper(dateNow, pendingReviewStatus, confStatusesList);
             var expiredCamReadies = await unitOfWork.CameraReadyRepository.GetExpiredCameraReadies(dateNow, pendingGlobalStatus, confStatusesList);
 
-           
+
             if (expiredFullPaper.Any())
             {
                 foreach (var fp in expiredFullPaper)
@@ -68,7 +63,7 @@ namespace ConfRadar.Services.BackgroundJobs
             {
                 foreach (var cr in expiredCamReadies)
                 {
-                    cr.GlobalStatusId= rejectedGlobalStatus.GlobalStatusId;
+                    cr.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
                     cr.ReviewAt = timeNow;
                     cr.Reason = "Camera Ready đã quá hạn nộp, hệ thống auto reject";
                 }

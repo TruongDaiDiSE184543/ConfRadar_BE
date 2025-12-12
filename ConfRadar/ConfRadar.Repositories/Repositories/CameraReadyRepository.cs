@@ -60,14 +60,14 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(c => c.GlobalStatusId == status.GlobalStatusId
                 && c.Papers.Any(p => p.ResearchConferencePhase != null
                 && p.ResearchConferencePhase.RegistrationEndDate < dateNow
-                && p.Conference != null 
-                && p.Conference.ConferenceStatus !=null
+                && p.Conference != null
+                && p.Conference.ConferenceStatus != null
                 && confStatusIds.Contains(p.Conference.ConferenceStatusId))).ToListAsync();
         }
 
         public async Task<int> UpdateMutipleCameraReadiesAsync(List<CameraReady> cameraReadies)
         {
-           _context.CameraReadies.UpdateRange(cameraReadies);
+            _context.CameraReadies.UpdateRange(cameraReadies);
             return await _context.SaveChangesAsync();
         }
     }

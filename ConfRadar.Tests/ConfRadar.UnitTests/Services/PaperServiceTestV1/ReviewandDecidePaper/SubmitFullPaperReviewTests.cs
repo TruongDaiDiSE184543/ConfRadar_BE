@@ -30,12 +30,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             var mockTicket = new Mock<ITicketService>();
             var mockNoti = new Mock<INotificationService>();
             var mockStep = new Mock<IConferenceStepService>();
-            
+
             var options = Options.Create(new ObjectStorageSettings { EndPoint = "http://test.com" });
 
             _paperService = new PaperService(
                 _mockUnitOfWork.Object, mockMomo.Object, mockToken.Object, options,
-                mockFile.Object, mockTicket.Object, _mockTime.Object, mockNoti.Object, mockStep.Object,_mockEmail.Object
+                mockFile.Object, mockTicket.Object, _mockTime.Object, mockNoti.Object, mockStep.Object, _mockEmail.Object
 
             );
         }
@@ -149,7 +149,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
         public async Task SubmitReviewForFullPaper_Should_Throw_When_FullPaperIsNotInPendingStatus()
         {
             var request = new CreateFullPaperReviewRequest { FullPaperId = "fp1", reviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("reviewer1", "p1", "fp1", DateTime.Now);    
+            SetupHappyPathMocks("reviewer1", "p1", "fp1", DateTime.Now);
 
             var fullPaper = new FullPaper { FullPaperId = "fp1", ReviewStatusId = "status-accepted" }; // Not pending
             _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync("fp1")).ReturnsAsync(fullPaper);

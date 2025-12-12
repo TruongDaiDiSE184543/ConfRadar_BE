@@ -24,7 +24,7 @@ namespace ConfRadar.Services.DTOs.PresenterSession
         public string? NewPresenterName { get; set; }
         public string? ConferenceId { get; set; }
         public string? ConferenceName { get; set; }
-        public string? ConferenceDescription{ get; set; }
+        public string? ConferenceDescription { get; set; }
         public string? PaperId { get; set; }
         public string? PaparTile { get; set; }
         public string? PaperDescription { get; set; }
@@ -102,14 +102,14 @@ namespace ConfRadar.Services.DTOs.PresenterSession
         public ResearchSessionWithMediaResponse? NewSession { get; set; }
 
 
-        public string? ConferenceId {  get; set; }
+        public string? ConferenceId { get; set; }
         public string? ConferenceName { get; set; }
         public string? ConferencDescription { get; set; }
 
 
         public string? PaperId { get; set; }
-        public string? PaparTile {  get; set; }
-        public string? PaperDescription {  get; set; }
+        public string? PaparTile { get; set; }
+        public string? PaperDescription { get; set; }
 
 
 

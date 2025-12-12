@@ -12,7 +12,7 @@ namespace ConfRadar.Services.Services
         Task SendAuthenticationTemplateEmailAsync(string toEmail, string userName, string link, string subject, string templateFileName);
         Task SendCreateAccountEmail(string toEmail, string userName, string link, string subject, string templateFileName);
         Task SendSuspendTemplateEmailAsync(string toEmail, string userName, string reason, string subject, string templateFileName);
-        Task SendDecidePaperAcceptedTemplateEmailAsync(string toEmail, string userName,string subject,string paperId,string coAuthor,string submissionDate,string decideReason,string
+        Task SendDecidePaperAcceptedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string
             nextPhaseStartDate, string nextPhaseEndDate, string nextPhaseDescription, string templateFileName);
         Task SendDecidePaperRejectedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string templateFileName);
     }

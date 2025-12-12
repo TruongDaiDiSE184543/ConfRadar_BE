@@ -230,7 +230,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         private void SetupConferenceMock(Conference conference)
         {
             _mockConferenceRepo
-                .Setup(r => r.GetTechnicalIncludedById(conference.ConferenceId,null))
+                .Setup(r => r.GetTechnicalIncludedById(conference.ConferenceId, null))
                 .ReturnsAsync(conference);
 
             _mockConferenceStatusRepo
@@ -331,7 +331,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
         {
             // Arrange
             _mockConferenceRepo
-                .Setup(r => r.GetTechnicalIncludedById("NONEXISTENT",null))
+                .Setup(r => r.GetTechnicalIncludedById("NONEXISTENT", null))
                 .ReturnsAsync((Conference)null);
 
             _mockConferenceStatusRepo

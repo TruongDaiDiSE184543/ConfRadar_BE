@@ -15,9 +15,9 @@ namespace ConfRadar.Services.DTOs.Paper
     public class AssignReviewerToPaperRequest
     {
         [Required]
-        public List<ReviewerAssignment> Reviewers {  get; set; }
+        public List<ReviewerAssignment> Reviewers { get; set; }
         [Required]
-        public string PaperId { get; set; } 
+        public string PaperId { get; set; }
     }
 
     public class ReviewerAssignment

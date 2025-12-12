@@ -358,7 +358,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bạn không thể thanh toán do camera ready chưa được chấp nhận");
             }
-         
+
 
 
 
@@ -388,7 +388,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bài báo không thuộc về hội nghị này");
             }
-                var paperCount = await _unitOfWork.PaperRepository.GetPaperCountByConference(conferencePrice.ConferenceId);
+            var paperCount = await _unitOfWork.PaperRepository.GetPaperCountByConference(conferencePrice.ConferenceId);
             var researchConfDetail = conferencePrice.Conference.ResearchConferenceDetail;
             if (researchConfDetail == null) throw new NotFoundException("Không tìm thấy research conference");
             if (paperCount >= researchConfDetail.NumberPaperAccept)
@@ -442,7 +442,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Giai đoạn hội nghị nghiên cứu không khả dụng. Xin vui lòng liên hệ ban tổ chức");
             }
-           
+
             if (activeResearchConferencePhase.AuthorPaymentStart > dateNow)
             {
                 throw new BadRequestException($"Chưa đến thời hạn mua vé. Thời hạn nằm trong khoảng từ {activeResearchConferencePhase.AuthorPaymentStart} đến {activeResearchConferencePhase.AuthorPaymentEnd}");
@@ -539,7 +539,7 @@ namespace ConfRadar.Services.Services
                 IsResearchConference = true,
                 IsResearchConferenceAuthor = true,
                 PaperId = request.PaperId,
-                
+
             };
             var transacJson = JsonSerializer.Serialize(transactionData);
 

@@ -931,7 +931,7 @@ namespace ConfRadar.Services.Services
             if (conference.IsResearchConference == true)
                 throw new Exception("chức năng chỉ dành cho tech");
 
-            if(
+            if (
                 conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Ready.GetDescription() &&
                 conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.OnHold.GetDescription() &&
                 conference.ConferenceStatus.ConferenceStatusName != ConferenceStatusEnum.Cancelled.GetDescription() &&
@@ -1404,7 +1404,7 @@ namespace ConfRadar.Services.Services
                 CategoryName = conference.ConferenceCategory?.ConferenceCategoryName ?? "N/A",
                 CityName = conference.City?.CityName ?? "N/A",
                 StatusName = conference.ConferenceStatus?.ConferenceStatusName ?? "N/A",
-                
+
                 // Research Conference Detail specific fields
                 PaperFormat = conference.ResearchConferenceDetail?.Publisher?.PaperFormat,
                 NumberPaperAccept = conference.ResearchConferenceDetail?.NumberPaperAccept,
@@ -1874,7 +1874,7 @@ namespace ConfRadar.Services.Services
             foreach (var conference in pagedConferences)
             {
                 // For each conference, get the detailed research conference data
-              
+
 
                 var response = new DTOs.Conference.ResearchConferenceDetailResponse
                 {
@@ -2265,7 +2265,7 @@ namespace ConfRadar.Services.Services
             var completedStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
             var canceledStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Cancelled.GetDescription());
             var onHoldStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.OnHold.GetDescription());
-            if (readyStatusConference == null || completedStatusConf ==null || canceledStatusConf ==null || onHoldStatusConf==null)
+            if (readyStatusConference == null || completedStatusConf == null || canceledStatusConf == null || onHoldStatusConf == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái ready cho hội nghị");
             }
@@ -2400,8 +2400,8 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Không thể kích hoạt phase tiếp theo. Vui lòng tạo ít nhất một 'Giai đoạn bán vé' (Price Phase) cho loại vé 'IsAuthor' có khoảng thời gian nằm trong giai đoạn payment {nextphase.AuthorPaymentStart:dd/MM/yyyy} - {nextphase.AuthorPaymentEnd:dd/MM/yyyy} của waitlist.");
             //2.4 kiểm tra xem phase tiếp theo có đầy đủ revision round chưa
             int allowedAttempts = researchDetail.RevisionAttemptAllowed ?? 0;
-            var deadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(nextphase.ResearchConferencePhaseId); 
-            if (deadlines == null ||  allowedAttempts != deadlines.Count())
+            var deadlines = await _unitOfWork.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(nextphase.ResearchConferencePhaseId);
+            if (deadlines == null || allowedAttempts != deadlines.Count())
             {
                 throw new BadRequestException($"Không thể kích hoạt. Giai đoạn tiếp theo chưa được cấu hình đủ số vòng sửa bài. Yêu cầu: {allowedAttempts}, Hiện có: {deadlines.Count()}.");
             }

@@ -134,7 +134,7 @@ namespace ConfRadar.Services.Services
 
             var readyStatusConf = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
 
-            if (checkedInStatus == null || expiredCheckInStatus == null || readyStatusConf ==null)
+            if (checkedInStatus == null || expiredCheckInStatus == null || readyStatusConf == null)
             {
                 throw new NotFoundException("Không tìm thấy các trạng thái tương ứng");
             }

@@ -73,7 +73,7 @@
 //        private CreateResearchConferencePhasesRequest CreateValidRequest()
 //        {
 //            var today = DateOnly.FromDateTime(DateTime.Now);
-            
+
 //            return new CreateResearchConferencePhasesRequest
 //            {
 //                Phases = new List<CreateResearchConferencePhaseItemRequest>
