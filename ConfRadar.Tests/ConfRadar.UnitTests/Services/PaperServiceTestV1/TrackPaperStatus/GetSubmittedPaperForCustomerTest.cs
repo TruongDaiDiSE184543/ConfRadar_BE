@@ -16,7 +16,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly Mock<IConferenceStepService> _mockConferenceStepService;
         private readonly Mock<ITicketService> _mockTicketService;
-
+        private readonly Mock<IEmailService> _mockEmailService;
         private readonly PaperService _paperService;
 
         public GetSubmittedPaperForCustomerTest()
@@ -28,6 +28,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
             _mockNotificationService = new Mock<INotificationService>();
             _mockConferenceStepService = new Mock<IConferenceStepService>();
             _mockTicketService = new Mock<ITicketService>();
+            _mockEmailService = new Mock<IEmailService>(); 
 
             var objStorage = Options.Create(new AppSettingConfig.ObjectStorageSettings
             {
@@ -43,7 +44,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
                 _mockTicketService.Object,
                 _mockTimeProviderService.Object,
                 _mockNotificationService.Object,
-                _mockConferenceStepService.Object
+                _mockConferenceStepService.Object,
+                _mockEmailService.Object
             );
         }
 

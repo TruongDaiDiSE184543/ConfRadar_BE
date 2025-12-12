@@ -22,6 +22,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
         private readonly Mock<ITimeProviderService> _mockTime;
         private readonly Mock<ITicketService> _mockTicket;
         private readonly Mock<INotificationService> _mockNoti;
+        private readonly Mock<IEmailService> _mockEmail;
         private readonly PaperService _paperService;
 
         public DecideRevisionStatusTests()
@@ -35,11 +36,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             var mockToken = new Mock<ITokenService>();
             var mockFile = new Mock<IObjectStorageFileService>();
             var mockStep = new Mock<IConferenceStepService>();
+             _mockEmail = new Mock<IEmailService>();
             var options = Options.Create(new ObjectStorageSettings());
 
             _paperService = new PaperService(
                 _mockUnitOfWork.Object, mockMomo.Object, mockToken.Object, options,
-                mockFile.Object, _mockTicket.Object, _mockTime.Object, _mockNoti.Object, mockStep.Object
+                mockFile.Object, _mockTicket.Object, _mockTime.Object, _mockNoti.Object, mockStep.Object, _mockEmail.Object
             );
         }
 

@@ -18,6 +18,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         private readonly Mock<IObjectStorageFileService> _mockObjectStorageFileService;
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly PaperService _paperService;
+        private readonly Mock<IEmailService> _mockEmailService;
         private readonly IOptions<ObjectStorageSettings> _objectStorageSettings;
 
         public ListAvailableCoAuthorTest()
@@ -27,6 +28,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             _mockTokenService = new Mock<ITokenService>();
             _mockObjectStorageFileService = new Mock<IObjectStorageFileService>();
             _mockNotificationService = new Mock<INotificationService>();
+            _mockEmailService = new Mock<IEmailService>();
             _objectStorageSettings = Options.Create(new ObjectStorageSettings { EndPoint = "https://mockstorage.com" });
 
             _paperService = new PaperService(
@@ -38,7 +40,9 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 Mock.Of<ITicketService>(),
                 _mockTimeProviderService.Object,
                 _mockNotificationService.Object,
-                Mock.Of<IConferenceStepService>()
+                Mock.Of<IConferenceStepService>(),
+                _mockEmailService.Object
+                
             );
         }
 

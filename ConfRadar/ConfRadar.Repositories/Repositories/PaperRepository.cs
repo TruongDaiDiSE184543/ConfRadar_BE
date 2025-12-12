@@ -66,6 +66,7 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(t => t.Transactions)
                 .Include(p => p.ResearchConferencePhase)
                 .Include(p => p.PaperAuthors)
+                    .ThenInclude(p => p.User)
                 .Include(p => p.PaperPhase)
                 .Include(p => p.Conference)
                     .ThenInclude(c => c.ResearchConferencePhases)

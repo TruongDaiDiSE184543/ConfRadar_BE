@@ -25,7 +25,9 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly Mock<INotificationRepository> _mockNotificationRepo;
         private readonly Mock<IConferenceStepService> _mockConferenceStepService;
+        private readonly Mock<IEmailService> _mockEmailService;
         private readonly PaperService _paperService;
+
 
         public DecideAbstractPaperStatusTest()
         {
@@ -37,6 +39,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             _mockTimeProviderService = new Mock<ITimeProviderService>();
             _mockNotificationService = new Mock<INotificationService>();
             _mockConferenceStepService = new Mock<IConferenceStepService>();
+            _mockEmailService = new Mock<IEmailService>();
 
             // --- SỬA Ở ĐÂY: Khởi tạo và gắn NotificationRepo vào UnitOfWork ---
             _mockNotificationRepo = new Mock<INotificationRepository>();
@@ -54,7 +57,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 _mockTicketService.Object,
                 _mockTimeProviderService.Object,
                 _mockNotificationService.Object,
-                _mockConferenceStepService.Object
+                _mockConferenceStepService.Object,
+                _mockEmailService.Object
             );
         }
 
