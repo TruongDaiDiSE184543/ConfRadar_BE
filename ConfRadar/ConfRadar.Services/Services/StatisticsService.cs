@@ -445,14 +445,14 @@ namespace ConfRadar.Services.Services
 
                 paperDetail.paymentDetail = null;
 
-                if(paper.TicketId != null)
+                if (paper.TicketId != null)
                 {
                     //find ticket
                     var ticket = await _unitOfWork.TicketRepository.GetTicketById(paper.TicketId);
                     if (ticket != null)
                     {
                         //find price phase
-                        var pp =  await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(ticket.PricePhaseId);
+                        var pp = await _unitOfWork.PricePhaseRepository.GetPricePhaseByIdAsync(ticket.PricePhaseId);
                         if (pp != null)
                         {
                             //find conferenceprice
@@ -622,7 +622,7 @@ namespace ConfRadar.Services.Services
 
         #endregion
 
-            #region Unnecessary
+        #region Unnecessary
 
         public async Task<ExportStatisticsResponse> ExportConferenceStatisticsAsync(string conferenceId, string exportFormat)
         {

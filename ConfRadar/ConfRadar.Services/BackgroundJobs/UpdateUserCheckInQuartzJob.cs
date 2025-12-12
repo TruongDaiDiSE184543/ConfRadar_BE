@@ -27,7 +27,7 @@ namespace ConfRadar.Services.BackgroundJobs
             var readyStatusConf = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             var canceledStatusConf = await unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Cancelled.GetDescription());
 
-            if (pendingCheckInStatus == null || expiredCheckInStatus == null || completedStatusConf==null || readyStatusConf==null || canceledStatusConf ==null)
+            if (pendingCheckInStatus == null || expiredCheckInStatus == null || completedStatusConf == null || readyStatusConf == null || canceledStatusConf == null)
             {
                 return;
             }

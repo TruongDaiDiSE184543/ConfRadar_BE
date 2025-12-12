@@ -4,11 +4,9 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.FullPaper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
+using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
-using ConfRadar.Services.Exceptions;
-using Microsoft.Extensions.Options;
-using ConfRadar.Repositories.Repositories;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
@@ -38,7 +36,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 
             _paperService = new PaperService(
                _mockUnitOfWork.Object, mockMomo.Object, mockToken.Object, options,
-               mockFile.Object, _mockTicket.Object, _mockTime.Object, _mockNoti.Object, mockStep.Object,_mockEmail.Object
+               mockFile.Object, _mockTicket.Object, _mockTime.Object, _mockNoti.Object, mockStep.Object, _mockEmail.Object
            );
         }
 

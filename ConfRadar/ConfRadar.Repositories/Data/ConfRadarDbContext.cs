@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ConfRadar.Repositories.Models;
+﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 

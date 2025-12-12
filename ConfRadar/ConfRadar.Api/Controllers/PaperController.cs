@@ -373,7 +373,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> PublishPaper([FromQuery] string conferenceId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.AutoGeneratePublishingLinks(conferenceId,userId);
+            var result = await _serviceManager.PaperService.AutoGeneratePublishingLinks(conferenceId, userId);
             if (result)
             {
                 return Ok(ApiResponse<bool>.SuccessResponse(result, "Đã publish những bài báo trả phí xuất bản thành công"));

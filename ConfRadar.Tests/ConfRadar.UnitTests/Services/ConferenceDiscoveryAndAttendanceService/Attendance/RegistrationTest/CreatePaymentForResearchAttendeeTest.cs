@@ -221,7 +221,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("https://oldurl.com", result.CheckOutUrl);
         }
 
-      
+
 
         [Fact]
         public async Task TaskShouldThrow_WhenConferenceStatusIsNotReady()

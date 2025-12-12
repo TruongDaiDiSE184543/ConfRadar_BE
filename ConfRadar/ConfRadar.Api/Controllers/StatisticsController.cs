@@ -60,7 +60,7 @@ namespace ConfRadar.Api.Controllers
         }
 
         [HttpGet("transaction-history")]
-        public async Task<IActionResult> getTransactionHistory([FromQuery]string confId)
+        public async Task<IActionResult> getTransactionHistory([FromQuery] string confId)
         {
             var result = await _serviceManager.StatisticsService.GetTransactionHistoryAsync(confId);
             return Ok((ApiResponse<ConferenceTransactionHistoryResponse>.SuccessResponse(result, "success")));

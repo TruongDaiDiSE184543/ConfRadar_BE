@@ -443,11 +443,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
         public string PublisherId { get; set; }
         public string Name { get; set; }
-        public string PaperFormat { get; set; } 
+        public string PaperFormat { get; set; }
         public string? Description { get; set; }
         public string? WebsiteUrl { get; set; }
         public string? LogoUrl { get; set; }
-        public string? LinkTemplate { get; set; } 
+        public string? LinkTemplate { get; set; }
     }
 
     public class PublisherRequest
@@ -458,7 +458,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
         [Required(ErrorMessage = "Định dạng bài báo (Paper Format) là bắt buộc")]
         [MaxLength(50)]
-        public string PaperFormat { get; set; } 
+        public string PaperFormat { get; set; }
 
         [MaxLength(500)]
         public string? Description { get; set; }
@@ -485,7 +485,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? TicketName { get; set; }
         public string? TicketDescription { get; set; }
         public bool? IsAuthor { get; set; }
-        public bool? IsPublish {  get; set; }
+        public bool? IsPublish { get; set; }
         public List<PricePhaseResponse>? PricePhases { get; set; }
     }
 
@@ -736,7 +736,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
         public string? ConferenceId { get; set; }
         public string? PublisherId { get; set; }
-        public string? PublisherName {  get; set; }
+        public string? PublisherName { get; set; }
         public string? PaperFormat { get; set; }
         public int? NumberPaperAccept { get; set; }
         public int? RevisionAttemptAllowed { get; set; }
@@ -816,7 +816,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required]
         public List<string> AuthorConferencePriceIds { get; set; }
         public int ApplyPercent { get; set; } = 100;
-        public string PhaseName { get; set; } 
+        public string PhaseName { get; set; }
     }
 
     public class addRevisionRequest

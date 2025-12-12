@@ -1,5 +1,4 @@
 using ConfRadar.Services.Mappers;
-using ConfRadar.Shared.DTO.Paper;
 using System.ComponentModel.DataAnnotations;
 
 namespace ConfRadar.Services.DTOs.Conference
@@ -111,7 +110,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? TicketName { get; set; }
         public string? TicketDescription { get; set; }
         public bool? IsAuthor { get; set; }
-        public bool? IsPublish{ get; set; }
+        public bool? IsPublish { get; set; }
         public int? TotalSlot { get; set; }
         public int? AvailableSlot { get; set; }
         public List<PricePhaseResponse>? PricePhases { get; set; }
@@ -177,9 +176,9 @@ namespace ConfRadar.Services.DTOs.Conference
         public string? createdBy { get; set; }
         public string? UserNameCreator { get; set; }
         public string? Organization { get; set; }
-        public string? StatusName {  get; set; }
-        public string? CategoryName {  get; set; }
-        public string? CityName {  get; set; }
+        public string? StatusName { get; set; }
+        public string? CategoryName { get; set; }
+        public string? CityName { get; set; }
         public CollaboratorContractResponseForConferenceDetail Contract { get; set; }
         public List<ConferenceMediaResponse>? ConferenceMedia { get; set; }
         public List<ConferencePolicyResponse>? Policies { get; set; }
@@ -282,19 +281,19 @@ namespace ConfRadar.Services.DTOs.Conference
         public List<ConferencePriceWithPhasesResponse>? ConferencePrices { get; set; }
         public List<ConferenceTimelineResponse>? ConferenceTimelines { get; set; }
         public PurchasedInfo? purchasedInfo { get; set; }
-        public SubmittedPaperInfo? submittedPaper {  get; set; }
+        public SubmittedPaperInfo? submittedPaper { get; set; }
     }
 
     public class SubmittedPaperInfo
     {
         public string PaperId { get; set; }
-        public string Title {  get; set; }
+        public string Title { get; set; }
         public string Description { get; set; }
         public string AbstractStatus { get; set; }
         public string FullpaperStatus { get; set; }
         public string RevisionStatus { get; set; }
         public string CameraReadyStatus { get; set; }
-        public string ResearchPhaseId {  get; set; }
+        public string ResearchPhaseId { get; set; }
     }
 
     public class PurchasedInfo
@@ -484,7 +483,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public DateOnly? AuthorPaymentEnd { get; set; }
         public bool? IsActive { get; set; }
         public int? PhaseOrder { get; set; }
-      
+
         public List<RevisionRoundDeadlineResponse>? RevisionRoundDeadlines { get; set; }
     }
 

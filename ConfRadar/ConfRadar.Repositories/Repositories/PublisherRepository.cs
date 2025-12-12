@@ -16,7 +16,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<Publisher>> GetAllPublishersAsync();
         Task<bool> IsPublisherBeingUsedAsync(string publisherId);
     }
-    
+
     public class PublisherRepository : GenericRepository<Publisher>, IPublisherRepository
     {
         public PublisherRepository(ConfRadarDbContext context) : base(context)
@@ -27,7 +27,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Publishers.FirstOrDefaultAsync(x => x.Name == publisherName);
         }
-        
+
         public async Task<int> CreateMultiplePublishersAsync(IEnumerable<Publisher> publishers)
         {
             await _context.Publishers.AddRangeAsync(publishers);
@@ -38,22 +38,22 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await CreateAsync(publisher);
         }
-        
+
         public async Task<Publisher?> GetPublisherByIdAsync(string publisherId)
         {
             return await _context.Publishers.FirstOrDefaultAsync(x => x.PublisherId == publisherId);
         }
-        
+
         public async Task<int> UpdatePublisherAsync(Publisher publisher)
         {
             return await UpdateAsync(publisher);
         }
-        
+
         public async Task<bool> DeletePublisherAsync(Publisher publisher)
         {
             return await RemoveAsync(publisher);
         }
-        
+
         public async Task<List<Publisher>> GetAllPublishersAsync()
         {
             return await GetAllAsync();

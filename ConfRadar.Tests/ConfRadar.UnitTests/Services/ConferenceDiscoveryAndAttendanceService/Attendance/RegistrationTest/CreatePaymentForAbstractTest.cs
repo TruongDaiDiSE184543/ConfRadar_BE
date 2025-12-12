@@ -152,7 +152,9 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = userId, IsRootAuthor = true } },
                 TicketId = null,
                 ConferenceId = "C1",
-                Conference = new Conference { ConferenceId = "C1" ,
+                Conference = new Conference
+                {
+                    ConferenceId = "C1",
                     ConferenceStatus = new ConferenceStatus
                     {
                         ConferenceStatusId = "CS_READY",
@@ -275,8 +277,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             // Act & Assert
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
@@ -293,8 +295,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -312,8 +314,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -330,8 +332,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -347,8 +349,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -364,8 +366,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -383,8 +385,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -398,8 +400,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "NOT_ACCEPTED" });
             _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(new GlobalStatus { GlobalStatusId = "GS_ACCEPTED" });
@@ -420,8 +422,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -438,8 +440,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -456,8 +458,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -474,8 +476,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -492,8 +494,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -520,8 +522,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -549,8 +551,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -595,8 +597,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -613,8 +615,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -632,8 +634,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -651,8 +653,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -671,8 +673,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -688,8 +690,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -709,8 +711,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -727,8 +729,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
@@ -741,13 +743,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             var cp = CreateValidConferencePrice();
             cp.PricePhases.First().ApplyPercent = -10;
             _mockConferencePriceRepo.Setup(r => r.GetConferencePriceByIdAsync("CP1")).ReturnsAsync(cp);
-                        _mockConferenceStatusRepo
-            .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
-            .ReturnsAsync(new ConferenceStatus
-            {
-            ConferenceStatusId = "CS_READY",
-            ConferenceStatusName = "Ready"
-            });
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
+});
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
@@ -762,13 +764,13 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 .Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
 .ReturnsAsync(new ConferenceStatus
 {
-   ConferenceStatusId = "CS_READY",
-   ConferenceStatusName = "Ready"
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
 });
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
         }
 
-        
+
 
         // end of tests
     }

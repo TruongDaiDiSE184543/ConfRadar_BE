@@ -140,7 +140,7 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ReviewerDetailResponse>>.SuccessResponse(result, $"Danh sách reviewer"));
         }
         [HttpGet("list-all-reviewers-by-conference")]
-        public async Task<IActionResult> ListAllReviewerByConference([FromQuery]string conferenceId)
+        public async Task<IActionResult> ListAllReviewerByConference([FromQuery] string conferenceId)
         {
             var result = await _serviceManager.AuthService.ListAllReviewerByConferenceId(conferenceId);
             return Ok(ApiResponse<List<ReviewerDetailResponse>>.SuccessResponse(result, $"Danh sách reviewer theo conference"));

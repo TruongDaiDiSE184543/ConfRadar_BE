@@ -906,6 +906,6 @@ namespace ConfRadar.Repositories.Repositories
                   .AsSplitQuery();
         }
 
-      
+
     }
 }

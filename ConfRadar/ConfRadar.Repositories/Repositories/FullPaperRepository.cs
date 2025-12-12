@@ -31,7 +31,7 @@ namespace ConfRadar.Repositories.Repositories
         }
         public async Task<int> UpdateMutipleFullPaperAsync(List<FullPaper> fullPapers)
         {
-             _context.FullPapers.UpdateRange(fullPapers);
+            _context.FullPapers.UpdateRange(fullPapers);
             return await _context.SaveChangesAsync();
         }
         public async Task<bool> DeleteFullPaperAsync(FullPaper fullPaper)
@@ -65,8 +65,8 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(fp => fp.ReviewStatusId == status.ReviewStatusId
                 && fp.Papers.Any(p => p.ResearchConferencePhase != null
                 && p.ResearchConferencePhase.FullPaperEndDate < dateNow
-                && p.Conference != null 
-                && p.Conference.ConferenceStatus!=null
+                && p.Conference != null
+                && p.Conference.ConferenceStatus != null
                 && confStatusIds.Contains(p.Conference.ConferenceStatusId)))
                 .ToListAsync();
         }
