@@ -116,7 +116,8 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.CameraReady)
                     .ThenInclude(c => c.GlobalStatus)
                 .FirstOrDefaultAsync(p => p.PaperId == paperId);
-        }
+        }  
+
 
 
         public async Task<Paper?> GetPaperByRootUserAndConference(string conferenceId, string userId)
