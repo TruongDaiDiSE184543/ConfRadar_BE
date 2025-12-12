@@ -136,7 +136,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 .ReturnsAsync(new ConferencePrice
                 {
                     Conference = new Conference
-                    { AvailableSlot = 10,
+                    {
+                        AvailableSlot = 10,
                         ConferenceStatus = new ConferenceStatus
                         {
                             ConferenceStatusId = "CS_READY",
@@ -172,7 +173,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 .ReturnsAsync(new ConferencePrice
                 {
                     Conference = new Conference
-                    { AvailableSlot = 10,
+                    {
+                        AvailableSlot = 10,
                         ConferenceStatus = new ConferenceStatus
                         {
                             ConferenceStatusId = "CS_READY",
@@ -327,8 +329,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("https://payos", result.CheckOutUrl);
         }
 
-    
-    [Fact]
+
+        [Fact]
         public async Task CreatePayment_ShouldFail_WhenConferenceStatusIsNotReady()
         {
             var req = new CreateResearchAttendeePaymentRequest
@@ -368,6 +370,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
         }
     }
 }
-    
 
-    
+
+

@@ -127,7 +127,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Tất cả các vé hoàn tiền đã quá hạn");
             }
-           
+
             refundRequestReason = $"Hoàn tiền theo refund policy {validPolicy.PercentRefund}% theo refund deadline: {validPolicy.RefundDeadline}";
             refundAmount = (decimal)(transaction.Amount * validPolicy.PercentRefund / 100);
             int result = 0;

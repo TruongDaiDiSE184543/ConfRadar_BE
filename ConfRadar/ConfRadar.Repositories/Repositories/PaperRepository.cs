@@ -33,7 +33,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<User>> GetAvailableCoAuthorForInclude(string conferenceId, List<string> systemRoleIds);
         Task UpdateMutiplePapersAsync(List<Paper> papers);
         Task<List<Paper>> GetAcceptedPaperToPublish(string conferenceId, string acceptedGlobalStatusId);
-        Task UpdateMultiplePapersAsync (List<Paper> papers);
+        Task UpdateMultiplePapersAsync(List<Paper> papers);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -128,7 +128,7 @@ namespace ConfRadar.Repositories.Repositories
                .Include(p => p.PaperPhase)
                .Include(p => p.Abstract)
                     .ThenInclude(a => a.GlobalStatus)
-               .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == userId && pa.IsRootAuthor==true));
+               .FirstOrDefaultAsync(p => p.ConferenceId == conferenceId && p.PaperAuthors.Any(pa => pa.UserId == userId && pa.IsRootAuthor == true));
         }
 
         public async Task<List<UnAssignAbstractResponse>> GetUnAssignAbstract()
@@ -183,7 +183,7 @@ namespace ConfRadar.Repositories.Repositories
                                 .ThenInclude(fp => fp.ReviewStatus)
                            .Include(p => p.FullPaper)
                                 .ThenInclude(fp => fp.FullPaperReviews)
-                                    .ThenInclude(fpr=>fpr.Reviewer)
+                                    .ThenInclude(fpr => fpr.Reviewer)
                             //revise
                             .Include(p => p.RevisionPaper)
                             .ThenInclude(rp => rp.GlobalStatus)
@@ -302,7 +302,7 @@ namespace ConfRadar.Repositories.Repositories
                     ReviewerId = fpr.Reviewer?.UserId,
                     ReviewerName = fpr.Reviewer?.FullName,
                     ReviewerAvatarUrl = fpr.Reviewer?.AvatarUrl,
-                    
+
                 }).ToList();
                 var isOwnSubmittedFullPaper = fullPaperReviewsList.FirstOrDefault(fpr => fpr.ReviewerId == userId);
                 paperDetailResponse.FullPaper = new FullPaperDetailForReviewerResponse
@@ -321,7 +321,7 @@ namespace ConfRadar.Repositories.Repositories
                     ReviewEndDate = currentActivePhase?.ReviewEndDate,
                     FullPaperDecideStatusStart = currentActivePhase?.FullPaperDecideStatusStart,
                     FullPaperDecideStatusEnd = currentActivePhase?.FullPaperDecideStatusEnd,
-                    IsOwnSubmittedFullPaperReview = isOwnSubmittedFullPaper !=null ? true: false,
+                    IsOwnSubmittedFullPaperReview = isOwnSubmittedFullPaper != null ? true : false,
                     OwnFullPaperReviews = ownFullPaperReviews
 
                 };
@@ -347,7 +347,7 @@ namespace ConfRadar.Repositories.Repositories
                         ReviewerId = fpr.Reviewer?.UserId,
                         ReviewerName = fpr.Reviewer?.FullName,
                         ReviewerAvatarUrl = fpr.Reviewer?.AvatarUrl,
-                        
+
 
                     }).ToList();
                     var fullPaperReviewCount = fullPaperReviews.Select(f => f.ReviewerId).Distinct().Count();
@@ -356,7 +356,7 @@ namespace ConfRadar.Repositories.Repositories
             }
             if (paper.RevisionPaper != null)
             {
-               
+
                 paperDetailResponse.RevisionPaper = new RevisonPaperForReviewerResponse
                 {
                     RevisionPaperId = paper.RevisionPaper.RevisionPaperId,
@@ -602,7 +602,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.CameraReady)
                     .ThenInclude(c => c.GlobalStatus)
                 .Include(p => p.PaperAuthors)
-                .Where(p =>p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
+                .Where(p => p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
                 .AsNoTracking().AsSplitQuery();
             return await query.FirstOrDefaultAsync();
         }

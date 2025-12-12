@@ -2,7 +2,6 @@
 using ConfRadar.Repositories.Data;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Shared.DTO.Conference;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Repositories.Repositories
@@ -152,7 +151,7 @@ namespace ConfRadar.Repositories.Repositories
                                  && t.PricePhase != null
                                  && t.PricePhase.ConferencePrice != null
                                  && t.PricePhase.ConferencePrice.Conference != null
-                                 && t.PricePhase.ConferencePrice.Conference.ConferenceStatus!=null
+                                 && t.PricePhase.ConferencePrice.Conference.ConferenceStatus != null
                                  //&& t.PricePhase.ConferencePrice.Conference.StartDate > dateNow
                                  && conferenceStatuses.Contains(t.PricePhase.ConferencePrice.Conference.ConferenceStatusId)
                                  )
@@ -331,16 +330,16 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(cp => cp.PricePhases)
                         .ThenInclude(pp => pp.RefundPolicies)
                 .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.ConferenceSessionMedia) 
+                    .ThenInclude(cs => cs.ConferenceSessionMedia)
                 .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Room) 
+                    .ThenInclude(cs => cs.Room)
                          .ThenInclude(r => r.Destination)
                             .ThenInclude(d => d.City)
                 .Include(c => c.ConferenceSessions)
                     .ThenInclude(cs => cs.ConferenceFeedbacks)
                         .ThenInclude(f => f.User)
                 .Include(c => c.ConferenceSessions)
-                    .ThenInclude(cs => cs.Room) 
+                    .ThenInclude(cs => cs.Room)
                          .ThenInclude(r => r.Destination)
                             .ThenInclude(d => d.City)
                 .Include(c => c.Sponsors)

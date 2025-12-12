@@ -74,7 +74,7 @@ namespace ConfRadar.Repositories.Repositories
             return result;
         }
 
-       
+
     }
 
 }

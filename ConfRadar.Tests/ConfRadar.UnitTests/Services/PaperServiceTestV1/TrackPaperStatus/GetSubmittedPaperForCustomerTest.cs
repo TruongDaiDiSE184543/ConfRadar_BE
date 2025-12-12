@@ -28,7 +28,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackPaperStatus
             _mockNotificationService = new Mock<INotificationService>();
             _mockConferenceStepService = new Mock<IConferenceStepService>();
             _mockTicketService = new Mock<ITicketService>();
-            _mockEmailService = new Mock<IEmailService>(); 
+            _mockEmailService = new Mock<IEmailService>();
 
             var objStorage = Options.Create(new AppSettingConfig.ObjectStorageSettings
             {

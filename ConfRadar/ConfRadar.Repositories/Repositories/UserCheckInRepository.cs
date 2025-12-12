@@ -16,7 +16,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<List<UserCheckIn>> GetUserCheckinByPhaseId(string phaseId);
         Task<UserCheckIn?> GetPresenterByTicket(string ticketId);
         Task<List<UserCheckIn>> GetUserCheckinsByTicketIdsAsync(List<string> allTicketIds);
-        Task<List<UserCheckIn>> GetUserCheckInByCheckInStatusAndConfStatuses(CheckinStatus status,List<ConferenceStatus> conferenceStatuses);
+        Task<List<UserCheckIn>> GetUserCheckInByCheckInStatusAndConfStatuses(CheckinStatus status, List<ConferenceStatus> conferenceStatuses);
         Task<int> UpdateMutipleUserCheckInAsync(List<UserCheckIn> userCheckIns);
     }
 
@@ -51,8 +51,8 @@ namespace ConfRadar.Repositories.Repositories
             return await _context.UserCheckIns
                 .Include(uci => uci.CheckinStatus)
                 .Include(uci => uci.ConferenceSession)
-                    .ThenInclude(uci=> uci.Conference)
-                        .ThenInclude(uci=> uci.ConferenceStatus)
+                    .ThenInclude(uci => uci.Conference)
+                        .ThenInclude(uci => uci.ConferenceStatus)
                 .Include(uci => uci.Ticket)
                 .Include(uci => uci.User)
                 .FirstOrDefaultAsync(uci => uci.UserCheckinId == userCheckInId);
@@ -87,14 +87,14 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.UserCheckIns.Where(uc => uc.TicketId != null && allTicketIds.Contains(uc.TicketId)).ToListAsync();
         }
-        public async Task<List<UserCheckIn>> GetUserCheckInByCheckInStatusAndConfStatuses(CheckinStatus status,List<ConferenceStatus> conferenceStatuses)
+        public async Task<List<UserCheckIn>> GetUserCheckInByCheckInStatusAndConfStatuses(CheckinStatus status, List<ConferenceStatus> conferenceStatuses)
         {
             return await _context.UserCheckIns
                 .Include(uci => uci.ConferenceSession)
-                .Where(uci => uci.CheckinStatus == status 
-                && uci.ConferenceSession!=null 
+                .Where(uci => uci.CheckinStatus == status
+                && uci.ConferenceSession != null
                 && uci.ConferenceSession.Conference != null
-                && uci.ConferenceSession.Conference.ConferenceStatus !=null
+                && uci.ConferenceSession.Conference.ConferenceStatus != null
                 && conferenceStatuses.Contains(uci.ConferenceSession.Conference.ConferenceStatus)
                 )
                 .ToListAsync();

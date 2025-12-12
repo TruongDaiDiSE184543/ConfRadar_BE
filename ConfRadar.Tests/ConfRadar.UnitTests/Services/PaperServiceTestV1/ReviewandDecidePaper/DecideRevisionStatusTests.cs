@@ -1,18 +1,13 @@
-﻿using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories;
+﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.RevisionPaper;
-using ConfRadar.Services.Services;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static ConfRadar.Services.Common.AppSettingConfig;
-using Microsoft.Extensions.Options;
 using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
+using Moq;
+using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
@@ -36,7 +31,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             var mockToken = new Mock<ITokenService>();
             var mockFile = new Mock<IObjectStorageFileService>();
             var mockStep = new Mock<IConferenceStepService>();
-             _mockEmail = new Mock<IEmailService>();
+            _mockEmail = new Mock<IEmailService>();
             var options = Options.Create(new ObjectStorageSettings());
 
             _paperService = new PaperService(

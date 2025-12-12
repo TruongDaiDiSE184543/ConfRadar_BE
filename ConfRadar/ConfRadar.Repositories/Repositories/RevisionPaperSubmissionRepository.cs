@@ -59,7 +59,8 @@ namespace ConfRadar.Repositories.Repositories
         public async Task<List<RevisionPaperSubmission>> GetRevisionPaperSubmissionByRevisionId(string revisionId)
         {
             return await _context.RevisionPaperSubmissions
-                .Include(rps=>rps.RevisionDeadlineRound)
+                .Include(rps => rps.RevisionDeadlineRound)
+                .Include(rps => rps.RevisionSubmissionFeedbacks)
                 .Where(rps => rps.RevisionPaperId == revisionId).ToListAsync();
         }
     }

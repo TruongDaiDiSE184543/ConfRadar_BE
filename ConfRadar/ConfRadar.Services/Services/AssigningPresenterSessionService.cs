@@ -81,7 +81,7 @@ namespace ConfRadar.Services.Services
                 return false;
             }
 
-            if(paper.TicketId == null)
+            if (paper.TicketId == null)
             {
                 return false;
             }
@@ -548,7 +548,7 @@ namespace ConfRadar.Services.Services
                     SessionId = request.Paper?.PresentAuthors.FirstOrDefault(pa => pa.PaperId == request.PaperId)?.ConferenceSession.ConferenceSessionId,
                     SessionTitle = request.Paper?.PresentAuthors.FirstOrDefault(pa => pa.PaperId == request.PaperId)?.ConferenceSession?.Title,
                     SessionDate = request.Paper?.PresentAuthors.FirstOrDefault(pa => pa.PaperId == request.PaperId)?.ConferenceSession?.SessionDate,
-                    
+
                 });
             }
 
@@ -668,19 +668,19 @@ namespace ConfRadar.Services.Services
                 SessionChangeRequestResponse sessionChangeRequestResponse = new SessionChangeRequestResponse
                 {
                     SessionChangeRequestId = pendingRequest.SessionChangeRequestId,
-                    
+
                     GlobalStatusId = pendingRequest.GlobalStatusId,
                     GlobalStatusName = pendingRequest.GlobalStatus.Name,
-                    
+
                     CurrentSession = presentAuthor.ConferenceSession.ToResearchSessionWithMediaResponse(),
 
                     NewSession = pendingRequest.NewConferenceSession.ToResearchSessionWithMediaResponse(),
 
                     ConferenceId = conf.ConferenceId,
-                    
+
                     ConferenceName = conf.ConferenceName,
                     ConferencDescription = conf.Description,
-                    
+
                     PaperId = presentAuthor.Paper?.PaperId,
                     PaparTile = presentAuthor.Paper?.Title,
                     PaperDescription = presentAuthor.Paper?.Description,

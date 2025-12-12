@@ -18,7 +18,7 @@ namespace ConfRadar.Services.Services
     public class PublisherService : IPublisherService
     {
         private readonly IUnitOfWork _unitOfWork;
-        
+
         public PublisherService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
@@ -38,7 +38,7 @@ namespace ConfRadar.Services.Services
             {
                 PublisherId = Guid.NewGuid().ToString(),
                 Name = request.Name.Trim(),
-                PaperFormat = request.PaperFormat.Trim().ToLower(), 
+                PaperFormat = request.PaperFormat.Trim().ToLower(),
                 Description = request.Description,
                 WebsiteUrl = request.WebsiteUrl,
                 LogoUrl = request.LogoUrl,

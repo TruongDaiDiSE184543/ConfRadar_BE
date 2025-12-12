@@ -2,7 +2,6 @@
 {
     using ConfRadar.Repositories;
     using ConfRadar.Repositories.Models;
-    using ConfRadar.Repositories.Repositories;
     using ConfRadar.Services.Common;
     using ConfRadar.Services.Exceptions;
     using ConfRadar.Services.Services;
@@ -61,7 +60,7 @@
             );
         }
 
-     
+
 
         // ============================================
         // 1. INVALID JSON
@@ -412,7 +411,7 @@
                 }));
         }
 
-        
+
         // ============================================
         // 12. SUCCESS - FIXED VERSION
         // ============================================

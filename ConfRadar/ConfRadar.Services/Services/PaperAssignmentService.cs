@@ -2,7 +2,6 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.Exceptions;
-using ConfRadar.Services.Mappers;
 
 namespace ConfRadar.Services.Services
 {

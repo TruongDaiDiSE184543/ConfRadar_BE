@@ -1,6 +1,3 @@
-using ConfRadar.Repositories.Models;
-using ConfRadar.Services.DTOs.Paper;
-
 namespace ConfRadar.Services.Mappers
 {
     public static class PaperAssignmentMapper

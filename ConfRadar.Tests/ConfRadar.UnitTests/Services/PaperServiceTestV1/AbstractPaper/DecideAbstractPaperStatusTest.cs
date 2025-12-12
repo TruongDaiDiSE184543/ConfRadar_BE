@@ -306,7 +306,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             ex.Message.Should().Contain("abstract không trong quá trình pending");
         }
 
-       
+
 
         #endregion
     }

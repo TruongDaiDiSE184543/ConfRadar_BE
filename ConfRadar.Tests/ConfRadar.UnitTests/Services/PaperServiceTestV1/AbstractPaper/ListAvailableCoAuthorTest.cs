@@ -42,7 +42,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 _mockNotificationService.Object,
                 Mock.Of<IConferenceStepService>(),
                 _mockEmailService.Object
-                
+
             );
         }
 
@@ -167,7 +167,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             Assert.Single(result);
             Assert.Equal("u3", result[0].UserId);
 
-           
+
         }
 
         [Fact]
@@ -195,7 +195,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             new User { UserId = "u3", IsActive = true, IsEmailConfirmed = true }
         };
 
-         
+
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetAvailableCoAuthorForInclude("conf1", It.IsAny<List<string>>()))
                 .ReturnsAsync(users);
 
@@ -233,7 +233,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             new User { UserId = "u2", IsActive = true, IsEmailConfirmed = true, UserRoles = new List<UserRole>() }
         };
 
-           
+
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetAvailableCoAuthorForInclude("conf1", It.IsAny<List<string>>()))
                 .ReturnsAsync(users);
 
