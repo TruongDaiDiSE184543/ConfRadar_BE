@@ -354,10 +354,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Không tìm thấy camera ready");
             }
-            if (cameraReady.GlobalStatusId != globalStatusAccepted.GlobalStatusId)
-            {
-                throw new BadRequestException($"Bạn không thể thanh toán do camera ready chưa được chấp nhận");
-            }
+            //if (cameraReady.GlobalStatusId != globalStatusAccepted.GlobalStatusId)
+            //{
+            //    throw new BadRequestException($"Bạn không thể thanh toán do camera ready chưa được chấp nhận");
+            //}
 
 
 

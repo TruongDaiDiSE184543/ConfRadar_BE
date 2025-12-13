@@ -517,10 +517,10 @@ namespace ConfRadar.Services.Services
                         paper.RevisionPaper.GlobalStatus = rejectGlobalStatus;
                     }
 
-                    if (paper.CameraReady != null)
-                    {
-                        paper.CameraReady.GlobalStatus = rejectGlobalStatus;
-                    }
+                    //if (paper.CameraReady != null)
+                    //{
+                    //    paper.CameraReady.GlobalStatus = rejectGlobalStatus;
+                    //}
 
                 }
 

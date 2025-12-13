@@ -111,7 +111,7 @@ namespace ConfRadar.Repositories.Repositories
 
        .Include(pa => pa.Paper)
            .ThenInclude(p => p.CameraReady)
-               .ThenInclude(c => c.GlobalStatus)
+               //.ThenInclude(c => c.GlobalStatus)
 
        .Include(pa => pa.Paper)
            .ThenInclude(p => p.PaperPhase)

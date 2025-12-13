@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class RevisionPaper
 {
@@ -19,8 +22,6 @@ public partial class RevisionPaper
     public virtual GlobalStatus? GlobalStatus { get; set; }
 
     public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
-
-    public virtual ICollection<RevisionPaperReview> RevisionPaperReviews { get; set; } = new List<RevisionPaperReview>();
 
     public virtual ICollection<RevisionPaperSubmission> RevisionPaperSubmissions { get; set; } = new List<RevisionPaperSubmission>();
 

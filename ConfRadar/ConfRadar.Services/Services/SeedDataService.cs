@@ -20,7 +20,7 @@ namespace ConfRadar.Services.Services
         //Task SeedReviewStatusAsync();
         Task SeedWaitListStatusesAsync();
         Task SeedAuditLogCategoriesAsync();
-        Task SeedPublishersAsync();
+        //Task SeedPublishersAsync();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -300,31 +300,31 @@ namespace ConfRadar.Services.Services
         };
 
 
-        public async Task SeedPublishersAsync()
-        {
-            var publisherNames = _publisherData.Select(p => p.Name).ToList();
+        //public async Task SeedPublishersAsync()
+        //{
+        //    var publisherNames = _publisherData.Select(p => p.Name).ToList();
 
-            await SeedEntityAsync<Publisher>(
-                publisherNames,
-                _unitOfWork.PublisherRepository.GetPublisherByNameAsync,
-                _unitOfWork.PublisherRepository.CreateMultiplePublishersAsync,
-                name =>
-                {
-                    var data = _publisherData.First(p => p.Name == name);
+        //    await SeedEntityAsync<Publisher>(
+        //        publisherNames,
+        //        _unitOfWork.PublisherRepository.GetPublisherByNameAsync,
+        //        _unitOfWork.PublisherRepository.CreateMultiplePublishersAsync,
+        //        name =>
+        //        {
+        //            var data = _publisherData.First(p => p.Name == name);
 
-                    return new Publisher
-                    {
-                        PublisherId = Guid.NewGuid().ToString(),
-                        Name = data.Name,
-                        PaperFormat = data.PaperFormat,
-                        Description = data.Description,
-                        WebsiteUrl = data.WebsiteUrl,
-                        LinkTemplate = data.LinkTemplate,
-                        LogoUrl = data.LogoUrl
-                    };
-                }
-            );
-        }
+        //            return new Publisher
+        //            {
+        //                PublisherId = Guid.NewGuid().ToString(),
+        //                Name = data.Name,
+        //                PaperFormat = data.PaperFormat,
+        //                Description = data.Description,
+        //                WebsiteUrl = data.WebsiteUrl,
+        //                LinkTemplate = data.LinkTemplate,
+        //                LogoUrl = data.LogoUrl
+        //            };
+        //        }
+        //    );
+        //}
 
     }
 

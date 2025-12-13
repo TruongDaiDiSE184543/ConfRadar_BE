@@ -94,7 +94,7 @@ namespace ConfRadar.Services.Services
 
             var acceptedStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
 
-            return cameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId;
+            return cameraReady != null;
         }
 
         public async Task<PresenterSessionResponse> AssignPresenterToSession(string paperId, string sessionId)

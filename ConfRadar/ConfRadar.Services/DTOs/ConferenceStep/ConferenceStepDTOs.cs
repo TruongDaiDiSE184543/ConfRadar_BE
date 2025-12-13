@@ -665,8 +665,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
 
         [Required(ErrorMessage = "Định dạng bài báo là bắt buộc.")]
-        [MaxLength(255, ErrorMessage = "Nhà xuất bản bài báo là bắt buộc")]
-        public string PublisherId { get; set; }
+        [MaxLength(255, ErrorMessage ="")]
+        public string PaperFormat { get; set; }
 
         // `int` không phải nullable, nên [Required] chỉ để làm rõ. Quan trọng là Range.
         [Required(ErrorMessage = "Số lượng bài báo dự kiến chấp nhận là bắt buộc.")]
@@ -704,8 +704,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class UpdateResearchConferenceDetailRequest
     {
 
-        [MaxLength(255, ErrorMessage = "Nhà xuất bản bài báo là bắt buộc.")]
-        public string? PublisherId { get; set; }
+        [MaxLength(255, ErrorMessage = "Định dạng bài báo là bắt buộc.")]
+        public string? PaperFormat { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng bài báo chấp nhận phải là một số dương.")]
         public int? NumberPaperAccept { get; set; }
@@ -789,10 +789,10 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? CameraReadyStartDate { get; set; }
         [Required]
         public DateOnly? CameraReadyEndDate { get; set; }
-        [Required]
-        public DateOnly? CameraReadyDecideStatusStart { get; set; }
-        [Required]
-        public DateOnly? CameraReadyDecideStatusEnd { get; set; }
+        //[Required]
+        //public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        //[Required]
+        //public DateOnly? CameraReadyDecideStatusEnd { get; set; }
 
         [Required]
         public DateOnly? AuthorPaymentStart { get; set; }
@@ -852,8 +852,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public DateOnly? RevisionPaperDecideStatusEnd { get; set; }
         public DateOnly? CameraReadyStartDate { get; set; }
         public DateOnly? CameraReadyEndDate { get; set; }
-        public DateOnly? CameraReadyDecideStatusStart { get; set; }
-        public DateOnly? CameraReadyDecideStatusEnd { get; set; }
+        //public DateOnly? CameraReadyDecideStatusStart { get; set; }
+        //public DateOnly? CameraReadyDecideStatusEnd { get; set; }
         public DateOnly? AuthorPaymentStart { get; set; }
         public DateOnly? AuthorPaymentEnd { get; set; }
     }
