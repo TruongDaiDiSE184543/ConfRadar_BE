@@ -96,62 +96,62 @@ namespace ConfRadar.Services
 
             services.AddQuartz(q =>
             {
-                var notifyJobKey = new JobKey("NotifyWaitListQuartzJob");
-                q.AddJob<NotifyWaitListQuartzJob>(opts => opts.WithIdentity(notifyJobKey));
+                //var notifyJobKey = new JobKey("NotifyWaitListQuartzJob");
+                //q.AddJob<NotifyWaitListQuartzJob>(opts => opts.WithIdentity(notifyJobKey));
 
-                q.AddTrigger(opts => opts
-                    .ForJob(notifyJobKey)
-                    .WithIdentity("NotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(15).RepeatForever()));
-
-
-
-                var resetWLJobKey = new JobKey("ResetNotifyWaitListQuartzJob");
-                q.AddJob<ResetNotifyWaitListQuartzJob>(opts => opts.WithIdentity(resetWLJobKey));
-
-                q.AddTrigger(opts => opts
-                    .ForJob(resetWLJobKey)
-                    .WithIdentity("ResetNotifyWaitListTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(60).RepeatForever()));
+                //q.AddTrigger(opts => opts
+                //    .ForJob(notifyJobKey)
+                //    .WithIdentity("NotifyWaitListTrigger")
+                //    .WithSimpleSchedule(x => x.WithIntervalInMinutes(15).RepeatForever()));
 
 
 
-                var updateRVCJobKey = new JobKey("UpdateReviewerContractQuartzJob");
-                q.AddJob<UpdateReviewerContractQuartzJob>(opts => opts.WithIdentity(updateRVCJobKey));
+                //var resetWLJobKey = new JobKey("ResetNotifyWaitListQuartzJob");
+                //q.AddJob<ResetNotifyWaitListQuartzJob>(opts => opts.WithIdentity(resetWLJobKey));
 
-                q.AddTrigger(opts => opts
-                    .ForJob(updateRVCJobKey)
-                    .WithIdentity("UpdateReviewerContractQuartzTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
-
-
-
-                var updateUCIJobKey = new JobKey("UpdateUserCheckInQuartzJob");
-                q.AddJob<UpdateUserCheckInQuartzJob>(opts => opts.WithIdentity(updateUCIJobKey));
-
-                q.AddTrigger(opts => opts
-                    .ForJob(updateUCIJobKey)
-                    .WithIdentity("UpdateUserCheckInQuartzTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
+                //q.AddTrigger(opts => opts
+                //    .ForJob(resetWLJobKey)
+                //    .WithIdentity("ResetNotifyWaitListTrigger")
+                //    .WithSimpleSchedule(x => x.WithIntervalInMinutes(60).RepeatForever()));
 
 
 
-                var updateConfCompletedJobKey = new JobKey("AutoUpdateConferenceStatusQuartzJob");
-                q.AddJob<AutoUpdateConferenceStatusQuartzJob>(opts => opts.WithIdentity(updateConfCompletedJobKey));
+                //var updateRVCJobKey = new JobKey("UpdateReviewerContractQuartzJob");
+                //q.AddJob<UpdateReviewerContractQuartzJob>(opts => opts.WithIdentity(updateRVCJobKey));
 
-                q.AddTrigger(opts => opts
-                    .ForJob(updateConfCompletedJobKey)
-                    .WithIdentity("AutoUpdateConferenceStatusQuartzTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
+                //q.AddTrigger(opts => opts
+                //    .ForJob(updateRVCJobKey)
+                //    .WithIdentity("UpdateReviewerContractQuartzTrigger")
+                //    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
 
 
-                var updateExpiredPaperJobKey = new JobKey("UpdateExpiredPaperQuartzJob");
-                //q.AddJob<UpdateExpiredPaperQuartzJob>(opts => opts.WithIdentity(updateExpiredPaperJobKey));
 
-                q.AddTrigger(opts => opts
-                    .ForJob(updateExpiredPaperJobKey)
-                    .WithIdentity("UpdateExpiredPaperQuartzTrigger")
-                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(60).RepeatForever()));
+                //var updateUCIJobKey = new JobKey("UpdateUserCheckInQuartzJob");
+                //q.AddJob<UpdateUserCheckInQuartzJob>(opts => opts.WithIdentity(updateUCIJobKey));
+
+                //q.AddTrigger(opts => opts
+                //    .ForJob(updateUCIJobKey)
+                //    .WithIdentity("UpdateUserCheckInQuartzTrigger")
+                //    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
+
+
+
+                //var updateConfCompletedJobKey = new JobKey("AutoUpdateConferenceStatusQuartzJob");
+                //q.AddJob<AutoUpdateConferenceStatusQuartzJob>(opts => opts.WithIdentity(updateConfCompletedJobKey));
+
+                //q.AddTrigger(opts => opts
+                //    .ForJob(updateConfCompletedJobKey)
+                //    .WithIdentity("AutoUpdateConferenceStatusQuartzTrigger")
+                //    .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever()));
+
+
+                //var updateExpiredPaperJobKey = new JobKey("UpdateExpiredPaperQuartzJob");
+                ////q.AddJob<UpdateExpiredPaperQuartzJob>(opts => opts.WithIdentity(updateExpiredPaperJobKey));
+
+                //q.AddTrigger(opts => opts
+                //    .ForJob(updateExpiredPaperJobKey)
+                //    .WithIdentity("UpdateExpiredPaperQuartzTrigger")
+                //    .WithSimpleSchedule(x => x.WithIntervalInMinutes(60).RepeatForever()));
 
 
             });
