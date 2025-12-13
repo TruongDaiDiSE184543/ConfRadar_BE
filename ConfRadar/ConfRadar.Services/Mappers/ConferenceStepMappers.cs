@@ -443,7 +443,7 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetail
             {
                 ConferenceId = conferenceId,
-                PublisherId = request.PublisherId,
+                PaperFormat = request.PaperFormat,
                 NumberPaperAccept = request.NumberPaperAccept,
                 RevisionAttemptAllowed = request.RevisionAttemptAllowed,
                 RankingDescription = request.RankingDescription,
@@ -460,9 +460,7 @@ namespace ConfRadar.Services.Mappers
             return new ResearchConferenceDetailResponse
             {
                 ConferenceId = model.ConferenceId,
-                PublisherId = model.Publisher.PublisherId,
-                PublisherName = model.Publisher.Name,
-                PaperFormat = model.Publisher.PaperFormat,
+                PaperFormat = model.PaperFormat,
                 NumberPaperAccept = model.NumberPaperAccept,
                 RevisionAttemptAllowed = model.RevisionAttemptAllowed,
                 RankingDescription = model.RankingDescription,
@@ -513,8 +511,8 @@ namespace ConfRadar.Services.Mappers
                 CameraReadyStartDate = request.CameraReadyStartDate,
                 CameraReadyEndDate = request.CameraReadyEndDate,
 
-                CameraReadyDecideStatusStart = request.CameraReadyDecideStatusStart,
-                CameraReadyDecideStatusEnd = request.CameraReadyDecideStatusEnd,
+                //CameraReadyDecideStatusStart = request.CameraReadyDecideStatusStart,
+                //CameraReadyDecideStatusEnd = request.CameraReadyDecideStatusEnd,
 
                 AuthorPaymentStart = request.AuthorPaymentStart,
                 AuthorPaymentEnd = request.AuthorPaymentEnd,
@@ -566,8 +564,8 @@ namespace ConfRadar.Services.Mappers
                 CameraReadyEndDate = model.CameraReadyEndDate,
 
                 // 10. Camera Ready Decide Status (Đã thêm mới)
-                CameraReadyDecideStatusStart = model.CameraReadyDecideStatusStart,
-                CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
+                //CameraReadyDecideStatusStart = model.CameraReadyDecideStatusStart,
+                //CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
 
                 // Các trường khác
                 PhaseOrder = model.PhaseOrder,

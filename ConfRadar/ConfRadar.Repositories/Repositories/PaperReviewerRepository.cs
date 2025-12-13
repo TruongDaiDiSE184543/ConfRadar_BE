@@ -132,13 +132,12 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(fp => fp.ReviewStatus)
                 // revision
                 .Include(p => p.RevisionPaper)
-                    .ThenInclude(rp => rp.RevisionPaperReviews)
+                    //.ThenInclude(rp => rp.RevisionPaperReviews)
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rp => rp.GlobalStatus)
 
                 // camera ready
                 .Include(p => p.CameraReady)
-                    .ThenInclude(c => c.GlobalStatus)
 
                 .Where(p => p.PaperReviewers.Any(pa => pa.UserId == userId))
                 .AsSplitQuery()

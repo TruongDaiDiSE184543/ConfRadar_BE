@@ -67,7 +67,7 @@ namespace ConfRadar.Services
             services.AddScoped<IServiceManager, ServiceManager>();
             services.AddScoped<IReviewerService, ReviewerService>();
             services.AddScoped<IAuditLogService, AuditLogService>();
-            services.AddScoped<IPublisherService, PublisherService>();
+            //services.AddScoped<IPublisherService, PublisherService>();
             var objectStorageSettings = configs.GetSection("ObjectStorageSettings").Get<ObjectStorageSettings>();
             services.AddSingleton<IMinioClient>(sp =>
             new Minio.MinioClient().WithEndpoint(objectStorageSettings!.EndPointAccess)
@@ -146,7 +146,7 @@ namespace ConfRadar.Services
 
 
                 var updateExpiredPaperJobKey = new JobKey("UpdateExpiredPaperQuartzJob");
-                q.AddJob<UpdateExpiredPaperQuartzJob>(opts => opts.WithIdentity(updateExpiredPaperJobKey));
+                //q.AddJob<UpdateExpiredPaperQuartzJob>(opts => opts.WithIdentity(updateExpiredPaperJobKey));
 
                 q.AddTrigger(opts => opts
                     .ForJob(updateExpiredPaperJobKey)

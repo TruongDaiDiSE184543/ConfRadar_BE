@@ -300,17 +300,17 @@ namespace ConfRadar.Services.Services
 
             // === BƯỚC 3: VALIDATION LOGIC XUẤT BẢN (ĐÃ ĐƠN GIẢN HÓA) ===
 
-            // Kiểm tra xem có vé nào trong request yêu cầu xuất bản không
-            bool requestHasPublishedTickets = request.TypeOfTicket.Any(t => t.isPublish == true);
+            //// Kiểm tra xem có vé nào trong request yêu cầu xuất bản không
+            //bool requestHasPublishedTickets = request.TypeOfTicket.Any(t => t.isPublish == true);
 
-            if (requestHasPublishedTickets)
-            {
-                // Nếu có vé yêu cầu xuất bản, thì hội nghị BẮT BUỘC phải được cấu hình nhà xuất bản trước đó.
-                if (string.IsNullOrWhiteSpace(researchDetail.PublisherId))
-                {
-                    throw new BadRequestException("Không thể tạo vé có xuất bản. Vui lòng thiết lập Nhà xuất bản cho hội nghị tại bước 'Chi tiết Hội nghị' trước.");
-                }
-            }
+            //if (requestHasPublishedTickets)
+            //{
+            //    // Nếu có vé yêu cầu xuất bản, thì hội nghị BẮT BUỘC phải được cấu hình nhà xuất bản trước đó.
+            //    if (string.IsNullOrWhiteSpace(researchDetail.PublisherId))
+            //    {
+            //        throw new BadRequestException("Không thể tạo vé có xuất bản. Vui lòng thiết lập Nhà xuất bản cho hội nghị tại bước 'Chi tiết Hội nghị' trước.");
+            //    }
+            //}
 
             // === BƯỚC 4: VALIDATION SỐ LƯỢNG ===
 
@@ -2327,17 +2327,8 @@ namespace ConfRadar.Services.Services
 
 
             // 6. Xác th?c s? t?n t?i c?a RankingCategoryId (d?a trên hình ?nh b?n cung c?p)
-            //await ValidatePaperFormat(request.PaperFormat);
+            await ValidatePaperFormat(request.PaperFormat);
 
-            if (!string.IsNullOrWhiteSpace(request.PublisherId))
-            {
-                // Nếu người dùng có cung cấp PublisherId, kiểm tra xem nó có tồn tại trong DB không
-                var publisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
-                if (publisher == null)
-                {
-                    throw new NotFoundException($"Không tìm thấy Nhà xuất bản với ID '{request.PublisherId}'.");
-                }
-            }
 
             await ValidateRankValueAsync(request.RankingCategoryId, request.RankValue);
             if (conference.TotalSlot < request.NumberPaperAccept)
@@ -2437,41 +2428,41 @@ namespace ConfRadar.Services.Services
             }
 
             // *** G?I VALIDATION Ð?NG M?I ***
-            //if (request.PaperFormat != null)
-            //{
-            //    await ValidatePaperFormat(request.PaperFormat);
-            //}
+            if (request.PaperFormat != null)
+            {
+                await ValidatePaperFormat(request.PaperFormat);
+            }
 
 
 
             await ValidateRankValueAsync(finalRankingCategoryId, finalRankValue);
             await EnsureConferenceIsEditable(conference);
 
-            if (request.PublisherId != null) // Chỉ xử lý nếu request có chứa trường PublisherId
-            {
-                if (!string.IsNullOrWhiteSpace(request.PublisherId))
-                {
-                    // Nếu PublisherId mới không rỗng, kiểm tra xem nó có tồn tại không
-                    var publisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
-                    if (publisher == null)
-                    {
-                        throw new NotFoundException($"Không tìm thấy Nhà xuất bản với ID '{request.PublisherId}'.");
-                    }
-                }
-                // Nếu request.PublisherId là chuỗi rỗng "", có nghĩa là người dùng muốn gỡ bỏ nhà xuất bản.
+            //if (request.PublisherId != null) // Chỉ xử lý nếu request có chứa trường PublisherId
+            //{
+            //    if (!string.IsNullOrWhiteSpace(request.PublisherId))
+            //    {
+            //        // Nếu PublisherId mới không rỗng, kiểm tra xem nó có tồn tại không
+            //        var publisher = await _unitOfWork.PublisherRepository.GetPublisherByIdAsync(request.PublisherId);
+            //        if (publisher == null)
+            //        {
+            //            throw new NotFoundException($"Không tìm thấy Nhà xuất bản với ID '{request.PublisherId}'.");
+            //        }
+            //    }
+            //    // Nếu request.PublisherId là chuỗi rỗng "", có nghĩa là người dùng muốn gỡ bỏ nhà xuất bản.
 
-                // **VALIDATION CỰC KỲ QUAN TRỌNG:**
-                // Nếu đã có vé nào được đánh dấu IsPublish = true, không cho phép thay đổi hoặc gỡ bỏ PublisherId.
-                // Người dùng phải tắt cờ IsPublish ở tất cả các vé trước.
-                var hasPublishedPrices = await _unitOfWork.ConferencePriceRepository.AnyPublishedPricesExistAsync(conferenceId);
-                if (hasPublishedPrices && request.PublisherId != researchDetail.PublisherId)
-                {
-                    throw new BadRequestException("Không thể thay đổi hoặc gỡ bỏ Nhà xuất bản vì đã có loại vé được cấu hình để xuất bản. Vui lòng tắt cờ 'IsPublish' ở các loại vé liên quan trước.");
-                }
-            }
+            //    // **VALIDATION CỰC KỲ QUAN TRỌNG:**
+            //    // Nếu đã có vé nào được đánh dấu IsPublish = true, không cho phép thay đổi hoặc gỡ bỏ PublisherId.
+            //    // Người dùng phải tắt cờ IsPublish ở tất cả các vé trước.
+            //    var hasPublishedPrices = await _unitOfWork.ConferencePriceRepository.AnyPublishedPricesExistAsync(conferenceId);
+            //    if (hasPublishedPrices && request.PublisherId != researchDetail.PublisherId)
+            //    {
+            //        throw new BadRequestException("Không thể thay đổi hoặc gỡ bỏ Nhà xuất bản vì đã có loại vé được cấu hình để xuất bản. Vui lòng tắt cờ 'IsPublish' ở các loại vé liên quan trước.");
+            //    }
+            //}
 
             //researchDetail.PaperFormat = request.PaperFormat ?? researchDetail.PaperFormat;
-            researchDetail.PublisherId = request.PublisherId ?? researchDetail.PublisherId;
+            researchDetail.PaperFormat = request.PaperFormat ?? researchDetail.PaperFormat;
             researchDetail.NumberPaperAccept = request.NumberPaperAccept ?? researchDetail.NumberPaperAccept;
             researchDetail.RevisionAttemptAllowed = request.RevisionAttemptAllowed ?? researchDetail.RevisionAttemptAllowed;
             researchDetail.RankingDescription = request.RankingDescription ?? researchDetail.RankingDescription;
@@ -2558,9 +2549,9 @@ namespace ConfRadar.Services.Services
                     phase.RevisionPaperDecideStatusStart > phase.RevisionPaperDecideStatusEnd ||
                     phase.RevisionPaperDecideStatusEnd > phase.CameraReadyStartDate ||
                     phase.CameraReadyStartDate > phase.CameraReadyEndDate ||
-                    phase.CameraReadyEndDate > phase.CameraReadyDecideStatusStart ||
-                    phase.CameraReadyDecideStatusStart > phase.CameraReadyDecideStatusEnd ||
-                    phase.CameraReadyDecideStatusEnd > phase.AuthorPaymentStart ||
+                    //phase.CameraReadyEndDate > phase.CameraReadyDecideStatusStart ||
+                    //phase.CameraReadyDecideStatusStart > phase.CameraReadyDecideStatusEnd ||
+                    phase.CameraReadyEndDate > phase.AuthorPaymentStart ||
                     phase.AuthorPaymentStart > phase.AuthorPaymentEnd
                     )
                 {
@@ -2727,9 +2718,9 @@ namespace ConfRadar.Services.Services
                 newPhaseRequest.RevisionPaperDecideStatusStart > newPhaseRequest.RevisionPaperDecideStatusEnd ||
                 newPhaseRequest.RevisionPaperDecideStatusEnd > newPhaseRequest.CameraReadyStartDate ||
                 newPhaseRequest.CameraReadyStartDate > newPhaseRequest.CameraReadyEndDate ||
-                newPhaseRequest.CameraReadyEndDate > newPhaseRequest.CameraReadyDecideStatusStart ||
-                newPhaseRequest.CameraReadyDecideStatusStart > newPhaseRequest.CameraReadyDecideStatusEnd ||
-                newPhaseRequest.CameraReadyDecideStatusEnd > newPhaseRequest.AuthorPaymentStart ||
+                //newPhaseRequest.CameraReadyEndDate > newPhaseRequest.CameraReadyDecideStatusStart ||
+                //newPhaseRequest.CameraReadyDecideStatusStart > newPhaseRequest.CameraReadyDecideStatusEnd ||
+                newPhaseRequest.CameraReadyEndDate > newPhaseRequest.AuthorPaymentStart ||
                 newPhaseRequest.AuthorPaymentStart > newPhaseRequest.AuthorPaymentEnd
                 )
             {
@@ -2912,8 +2903,8 @@ namespace ConfRadar.Services.Services
             var finalCameraEnd = request.CameraReadyEndDate ?? phaseToUpdate.CameraReadyEndDate;
 
             // Giai đoạn 10: Camera Ready Decide
-            var finalCameraDecideStart = request.CameraReadyDecideStatusStart ?? phaseToUpdate.CameraReadyDecideStatusStart;
-            var finalCameraDecideEnd = request.CameraReadyDecideStatusEnd ?? phaseToUpdate.CameraReadyDecideStatusEnd;
+            //var finalCameraDecideStart = request.CameraReadyDecideStatusStart ?? phaseToUpdate.CameraReadyDecideStatusStart;
+            //var finalCameraDecideEnd = request.CameraReadyDecideStatusEnd ?? phaseToUpdate.CameraReadyDecideStatusEnd;
 
             //giai đoạn 11: authorpayment (lastest change)
 
@@ -2960,14 +2951,14 @@ namespace ConfRadar.Services.Services
 
                 // 9. Camera Ready
                 finalCameraStart > finalCameraEnd ||
-                finalCameraEnd > finalCameraDecideStart ||
+                //finalCameraEnd > finalCameraDecideStart ||
 
-                // 10. Camera Ready Decide
-                finalCameraDecideStart > finalCameraDecideEnd ||
+                //// 10. Camera Ready Decide
+                //finalCameraDecideStart > finalCameraDecideEnd ||
 
                 //11. Author payment
 
-                finalCameraDecideEnd > finalAuthorPaymentStart ||
+                finalCameraEnd > finalAuthorPaymentStart ||
                 finalAuthorPaymentStart > finalAuthorPaymentEnd
             )
             {
@@ -3046,8 +3037,8 @@ namespace ConfRadar.Services.Services
                 phaseToUpdate.CameraReadyEndDate = finalCameraEnd;
 
                 // 10. Camera Ready Decide (Thêm mới)
-                phaseToUpdate.CameraReadyDecideStatusStart = finalCameraDecideStart;
-                phaseToUpdate.CameraReadyDecideStatusEnd = finalCameraDecideEnd;
+                //phaseToUpdate.CameraReadyDecideStatusStart = finalCameraDecideStart;
+                //phaseToUpdate.CameraReadyDecideStatusEnd = finalCameraDecideEnd;
 
                 phaseToUpdate.AuthorPaymentStart = finalAuthorPaymentStart;
                 phaseToUpdate.AuthorPaymentEnd = finalAuthorPaymentEnd;

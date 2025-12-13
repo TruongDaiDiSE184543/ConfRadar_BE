@@ -176,14 +176,14 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.PaperService.DecideReviseStatus(request, userId);
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công status thành công cho giai đoạn revise"));
         }
-        [Authorize]
-        [HttpGet("list-revision-paper-review")]
-        public async Task<IActionResult> ListRevisionPaperReview([FromQuery] ListRevisionPaperReviewRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.ListRevisionPaperReview(request, userId);
-            return Ok(ApiResponse<List<RevisionPaperReviewResponse>>.SuccessResponse(result, "Danh sách paper reviewer trong revise phase"));
-        }
+        //[Authorize]
+        //[HttpGet("list-revision-paper-review")]
+        //public async Task<IActionResult> ListRevisionPaperReview([FromQuery] ListRevisionPaperReviewRequest request)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var result = await _serviceManager.PaperService.ListRevisionPaperReview(request, userId);
+        //    return Ok(ApiResponse<List<RevisionPaperReviewResponse>>.SuccessResponse(result, "Danh sách paper reviewer trong revise phase"));
+        //}
 
         [HttpPost("submit-camera-ready")]
         [Authorize]
@@ -247,12 +247,12 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã update status của camera ready thành công"));
         }
 
-        [HttpGet("get-pending-cameraready")]
-        public async Task<IActionResult> GetPendingCameraReady()
-        {
-            var result = await _serviceManager.PaperService.ListPendingCameraReady();
-            return Ok(ApiResponse<List<CameraReadyDtoDetail>>.SuccessResponse(result, "Lấy thành công pending cameraready"));
-        }
+        //[HttpGet("get-pending-cameraready")]
+        //public async Task<IActionResult> GetPendingCameraReady()
+        //{
+        //    var result = await _serviceManager.PaperService.ListPendingCameraReady();
+        //    return Ok(ApiResponse<List<CameraReadyDtoDetail>>.SuccessResponse(result, "Lấy thành công pending cameraready"));
+        //}
 
 
         //[HttpGet("get-assigned-papers-by-conferenceId")]
@@ -368,20 +368,20 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<ReviewerWorkItemResponse>>.SuccessResponse(result, "Đã lấy chi tiết trạng thái và việc cần làm cho danh sách paper được phân công trong hội nghị"));
         }
 
-        [Authorize(Roles = "Conference Organizer")]
-        [HttpPut("publish-research-paper")]
-        public async Task<IActionResult> PublishPaper([FromQuery] string conferenceId)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.AutoGeneratePublishingLinks(conferenceId, userId);
-            if (result)
-            {
-                return Ok(ApiResponse<bool>.SuccessResponse(result, "Đã publish những bài báo trả phí xuất bản thành công"));
-            }
-            else
-            {
-                return Ok(ApiResponse<bool>.FailResponse("Đã publish những bài báo trả phí xuất bản thất bại"));
-            }
-        }
+        //[Authorize(Roles = "Conference Organizer")]
+        //[HttpPut("publish-research-paper")]
+        //public async Task<IActionResult> PublishPaper([FromQuery] string conferenceId)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var result = await _serviceManager.PaperService.AutoGeneratePublishingLinks(conferenceId, userId);
+        //    if (result)
+        //    {
+        //        return Ok(ApiResponse<bool>.SuccessResponse(result, "Đã publish những bài báo trả phí xuất bản thành công"));
+        //    }
+        //    else
+        //    {
+        //        return Ok(ApiResponse<bool>.FailResponse("Đã publish những bài báo trả phí xuất bản thất bại"));
+        //    }
+        //}
     }
 }

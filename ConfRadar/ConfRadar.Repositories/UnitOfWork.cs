@@ -59,7 +59,7 @@ namespace ConfRadar.Repositories
         ICameraReadyRepository CameraReadyRepository { get; }
         IRevisionPaperSubmissionRepository RevisionPaperSubmissionRepository { get; }
         IRevisionSubmissionFeedbackRepository RevisionSubmissionFeedbackRepository { get; }
-        IRevisionPaperReviewRepository RevisionPaperReviewRepository { get; }
+        //IRevisionPaperReviewRepository RevisionPaperReviewRepository { get; }
         IFullPaperReviewRepository FullPaperReviewRepository { get; }
         IReviewerContractRepository ReviewerContractRepository { get; }
         IWaitListStatusRepository WaitListStatusRepository { get; }
@@ -86,7 +86,7 @@ namespace ConfRadar.Repositories
         ICollaboratorContractRepository CollaboratorContractRepository { get; }
         IUserSuspendHistoryRepository UserSuspendHistoryRepository { get; }
         IAuditLogCategoryRepository AuditLogCategoryRepository { get; }
-        IPublisherRepository PublisherRepository { get; }
+        //IPublisherRepository PublisherRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -151,7 +151,7 @@ namespace ConfRadar.Repositories
         private IRevisionRoundDeadlineRepository _RevisionRoundDeadlineRepository;
         private IPaperAuthorRepository _PaperAuthorRepository;
 
-        private IRevisionPaperReviewRepository _RevisionPaperReviewRepository;
+        //private IRevisionPaperReviewRepository _RevisionPaperReviewRepository;
         private IFullPaperReviewRepository _FullPaperReviewRepository;
         private IReviewerContractRepository _ReviewerContractRepository;
         private IWaitListStatusRepository _WaitListStatusRepository;
@@ -178,7 +178,7 @@ namespace ConfRadar.Repositories
         private ICollaboratorContractRepository _CollaboratorContractRepository;
         private IUserSuspendHistoryRepository _UserSuspendHistoryRepository;
         private IAuditLogCategoryRepository _AuditLogCategoryRepository;
-        private IPublisherRepository _PublisherRepository;
+        //private IPublisherRepository _PublisherRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -275,7 +275,7 @@ namespace ConfRadar.Repositories
         public IRevisionRoundDeadlineRepository RevisionRoundDeadlineRepository => _RevisionRoundDeadlineRepository ??= new RevisionRoundDeadlineRepository(_context);
 
         public IPaperAuthorRepository PaperAuthorRepository => _PaperAuthorRepository ??= new PaperAuthorRepository(_context);
-        public IRevisionPaperReviewRepository RevisionPaperReviewRepository => _RevisionPaperReviewRepository ??= new RevisionPaperReviewRepository(_context);
+        //public IRevisionPaperReviewRepository RevisionPaperReviewRepository => _RevisionPaperReviewRepository ??= new RevisionPaperReviewRepository(_context);
 
         public IFullPaperReviewRepository FullPaperReviewRepository => _FullPaperReviewRepository ??= new FullPaperReviewRepository(_context);
 
@@ -319,7 +319,7 @@ namespace ConfRadar.Repositories
 
         public IAuditLogCategoryRepository AuditLogCategoryRepository => _AuditLogCategoryRepository ??= new AuditLogCategoryRepository(_context);
 
-        public IPublisherRepository PublisherRepository => _PublisherRepository ??= new PublisherRepository(_context);
+        //public IPublisherRepository PublisherRepository => _PublisherRepository ??= new PublisherRepository(_context);
 
         public async Task BeginTransactionAsync()
         {

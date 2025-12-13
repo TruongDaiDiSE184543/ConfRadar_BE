@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class Paper
 {
@@ -27,6 +30,8 @@ public partial class Paper
     public string? Description { get; set; }
 
     public string? PublishingLink { get; set; }
+
+    public string? ConferenceSessionId { get; set; }
 
     public virtual Abstract? Abstract { get; set; }
 

@@ -56,8 +56,8 @@ namespace ConfRadar.Services.Mappers
 
                 CameraReadyStartDate = model.CameraReadyStartDate,
                 CameraReadyEndDate = model.CameraReadyEndDate,
-                CameraReadyDecideStatusStart = model.CameraReadyDecideStatusStart,
-                CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
+                //CameraReadyDecideStatusStart = model.CameraReadyDecideStatusStart,
+                //CameraReadyDecideStatusEnd = model.CameraReadyDecideStatusEnd,
                 AuthorPaymentStart = model.AuthorPaymentStart,
                 AuthorPaymentEnd = model.AuthorPaymentEnd,
 
@@ -296,7 +296,7 @@ namespace ConfRadar.Services.Mappers
             {
                 AllowListener = model.AllowListener,
                 NumberPaperAccept = model.NumberPaperAccept,
-                PaperFormat = model.Publisher.PaperFormat,
+                PaperFormat = model.PaperFormat,
                 RankingCategoryId = model.RankingCategoryId,
                 RankingCategoryName = model.RankingCategory.RankName,
                 RankingDescription = model.RankingDescription,

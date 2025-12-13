@@ -59,7 +59,7 @@ public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisi
                 .ThenInclude(rps => rps.RevisionDeadlineRound)
             .Include(rvp => rvp.RevisionPaperSubmissions)
                 .ThenInclude(rps => rps.RevisionSubmissionFeedbacks)
-            .Include(rvp => rvp.RevisionPaperReviews)
+            //.Include(rvp => rvp.RevisionPaperReviews)
             .Include(rp => rp.GlobalStatus)
             .FirstOrDefaultAsync(rvp => rvp.RevisionPaperId == revisionPaperId);
     }
