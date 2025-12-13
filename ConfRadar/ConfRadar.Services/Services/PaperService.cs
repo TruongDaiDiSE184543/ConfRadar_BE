@@ -1054,7 +1054,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            if (dateNow > activeCurrentPhase.ReviseEndDate)
             {
                 throw new BadRequestException($"Giai đoạn gửi feedback revise diễn ra hạn chót đến {activeCurrentPhase.ReviseEndDate}");
             }
