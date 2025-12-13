@@ -13,6 +13,7 @@ using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.User;
 using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.Extensions.Options;
+using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -551,9 +552,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.FullPaperStartDate || dateNow > activeCurrentPhase.FullPaperEndDate)
+            if ( dateNow > activeCurrentPhase.FullPaperEndDate)
             {
-                throw new BadRequestException($"Giai đoạn fullpaper diễn ra từ {activeCurrentPhase.FullPaperStartDate} đến {activeCurrentPhase.FullPaperEndDate}");
+                throw new BadRequestException($"Hạn chót giai đoạn fullpaper diễn ra từ đến {activeCurrentPhase.FullPaperEndDate}");
             }
             if (paper.PaperPhaseId != currentFullPaperPhase.PaperPhaseId)
             {
@@ -1540,9 +1541,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.CameraReadyStartDate || dateNow > activeCurrentPhase.CameraReadyEndDate)
+            if ( dateNow > activeCurrentPhase.CameraReadyEndDate)
             {
-                throw new BadRequestException($"Giai đoạn {activeCurrentPhase.CameraReadyStartDate} đến {activeCurrentPhase.CameraReadyEndDate}");
+                throw new BadRequestException($"Hạn chót nộp camera ready đến {activeCurrentPhase.CameraReadyEndDate}");
             }
 
             // Check if paper already has a camera ready
@@ -1673,11 +1674,15 @@ namespace ConfRadar.Services.Services
             //}
 
             // Find the paper associated with this camera ready
+            var dateNow = await _timeProviderService.GetVietnamDate();
             var paper = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(request.CameraReadyId);
             if (paper == null)
             {
                 throw new BadRequestException($"Paper liên kết với camera ready ID {request.CameraReadyId} không tồn tại.");
             }
+
+
+
             var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
             var conferenceStatus = basePaper.Conference?.ConferenceStatus;
             if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
@@ -1686,7 +1691,12 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
 
             }
-
+            var activeCurrentPhase = basePaper.ResearchConferencePhase;
+            if (activeCurrentPhase == null) throw new NotFoundException("Không tìm thấy giai đoạn khả dụng");
+            if (dateNow > activeCurrentPhase.CameraReadyEndDate)
+            {
+                throw new BadRequestException($"Hạn chót sửa camera ready đến {activeCurrentPhase.CameraReadyEndDate}");
+            }
             var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paper.PaperId);
             if (paperAuthors == null)
             {
@@ -2858,9 +2868,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy các giai đoạn {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
+            if (dateNow > activeCurrentPhase.RegistrationEndDate)
             {
-                throw new BadRequestException($"Giai đoạn sửa abstract diễn ra từ {activeCurrentPhase.RegistrationStartDate} đến {activeCurrentPhase.RegistrationEndDate}");
+                throw new BadRequestException($"Hạn chót sửa abstract diễn ra  đến {activeCurrentPhase.RegistrationEndDate}");
             }
 
             if (paper.PaperPhaseId != paperPhase.PaperPhaseId)
@@ -3016,9 +3026,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.FullPaperStartDate || dateNow > activeCurrentPhase.FullPaperEndDate)
+            if ( dateNow > activeCurrentPhase.FullPaperEndDate)
             {
-                throw new BadRequestException($"Giai đoạn fullpaper diễn ra từ {activeCurrentPhase.FullPaperStartDate} đến {activeCurrentPhase.FullPaperEndDate}");
+                throw new BadRequestException($"Hạn chót giai đoạn fullpaper diễn ra đến {activeCurrentPhase.FullPaperEndDate}");
             }
 
             if (paper.PaperPhaseId != fullPaperPhase.PaperPhaseId)
@@ -3120,9 +3130,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("Không tìm thấy thông tin deadline của revision submission này");
             }
-            if (dateNow < currentRevisionPaperSubmissionDeadline!.StartSubmissionDate || dateNow > currentRevisionPaperSubmissionDeadline!.EndSubmissionDate)
+            if (dateNow > currentRevisionPaperSubmissionDeadline!.EndSubmissionDate)
             {
-                throw new BadRequestException($"Bạn không thể chỉnh sửa vì deadline revision submission này từ {currentRevisionPaperSubmissionDeadline.StartSubmissionDate} đến {currentRevisionPaperSubmissionDeadline.EndSubmissionDate}");
+                throw new BadRequestException($"Bạn không thể chỉnh sửa vì deadline revision submission này hạn chót đến {currentRevisionPaperSubmissionDeadline.EndSubmissionDate}");
             }
             var revisionSubmissionFeedbackList = currentRevisionPaperSubmission.RevisionSubmissionFeedbacks;
             if (revisionSubmissionFeedbackList.Any())

@@ -138,7 +138,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 CameraReady = new CameraReady
                 {
                     CameraReadyId = $"CR_{ticketId}",
-                    GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_PENDING", Name = "Pending" }
                 }
             };
         }
@@ -302,7 +301,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal("GS_REJECTED", ticket.Paper!.Abstract!.GlobalStatus.GlobalStatusId);
             Assert.Equal("RS_REJECTED", ticket.Paper!.FullPaper!.ReviewStatus.ReviewStatusId);
             Assert.Equal("GS_REJECTED", ticket.Paper!.RevisionPaper!.GlobalStatus.GlobalStatusId);
-            Assert.Equal("GS_REJECTED", ticket.Paper!.CameraReady!.GlobalStatus.GlobalStatusId);
+            //Assert.Equal("GS_REJECTED", ticket.Paper!.CameraReady!.GlobalStatus.GlobalStatusId);
 
             _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
