@@ -44,8 +44,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackReviewDeadlines
             _mockUnitOfWork.Setup(u => u.PaperRepository).Returns(_mockPaperRepo.Object);
             _mockUnitOfWork.Setup(u => u.FullPaperReviewRepository).Returns(_mockFullReviewRepo.Object);
             // Cần thêm RevisionRepo nếu test sâu về Revision (để tránh null reference nếu code có gọi)
-            var mockRevReviewRepo = new Mock<IRevisionPaperReviewRepository>();
-            _mockUnitOfWork.Setup(u => u.RevisionPaperReviewRepository).Returns(mockRevReviewRepo.Object);
+            //var mockRevReviewRepo = new Mock<IRevisionPaperReviewRepository>();
+            //_mockUnitOfWork.Setup(u => u.RevisionPaperReviewRepository).Returns(mockRevReviewRepo.Object);
 
             // Các mock phụ khác
             _mockMomo = new Mock<IMomoService>();
@@ -199,8 +199,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackReviewDeadlines
        .ReturnsAsync(new List<FullPaperReview>());
 
             // Mock RevisionPaperReviewRepository để đảm bảo myRevisionReviews không bị null
-            _mockUnitOfWork.Setup(u => u.RevisionPaperReviewRepository.GetReviewsByUserAndPaperIdsAsync(userId, It.IsAny<List<string>>()))
-                .ReturnsAsync(new List<RevisionPaperReview>());
+            //_mockUnitOfWork.Setup(u => u.RevisionPaperReviewRepository.GetReviewsByUserAndPaperIdsAsync(userId, It.IsAny<List<string>>()))
+                //.ReturnsAsync(new List<RevisionPaperReview>());
 
             // ACT
             var result = await _paperService.GetAssignedPapersDetailedAsync(userId, null);

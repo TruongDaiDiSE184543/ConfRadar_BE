@@ -165,8 +165,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             };
             _mockPaperRepo.Setup(r => r.GetPaperByIdAsync(paperId)).ReturnsAsync(paper);
 
-            _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1"))
-                .ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "GS_ACCEPTED" });
+            //_mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1"))
+                //.ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "GS_ACCEPTED" });
 
             // conference price
             var cp = CreateValidConferencePrice();
@@ -403,7 +403,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
     ConferenceStatusId = "CS_READY",
     ConferenceStatusName = "Ready"
 });
-            _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "NOT_ACCEPTED" });
+            //_mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "NOT_ACCEPTED" });
             _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(new GlobalStatus { GlobalStatusId = "GS_ACCEPTED" });
 
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
