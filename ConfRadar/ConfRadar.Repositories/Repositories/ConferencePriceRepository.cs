@@ -58,12 +58,17 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.ConferencePrices
                 .Include(cp => cp.PricePhases)
+                    .ThenInclude(pp=>pp.ResearchConferencePhase)
+
                 .Include(c => c.Conference)
                     .ThenInclude(c => c.ResearchConferencePhases)
+
                 .Include(c => c.Conference)
                     .ThenInclude(c => c.ConferenceSessions)
+
                 .Include(c => c.Conference)
                     .ThenInclude(c => c.ResearchConferenceDetail)
+
                  .Include(c => c.Conference)
                     .ThenInclude(c => c.ConferenceStatus)
                 .AsSplitQuery()
