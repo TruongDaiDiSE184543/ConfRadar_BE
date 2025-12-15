@@ -39,6 +39,8 @@ public partial class Paper
 
     public virtual Conference? Conference { get; set; }
 
+    public virtual ConferenceSession? ConferenceSession { get; set; }
+
     public virtual FullPaper? FullPaper { get; set; }
 
     public virtual ICollection<PaperAuthor> PaperAuthors { get; set; } = new List<PaperAuthor>();

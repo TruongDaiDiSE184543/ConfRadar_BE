@@ -20,6 +20,10 @@ namespace ConfRadar.Services.DTOs.Abstract
         public string ConferenceId { get; set; }
 
         public List<string>? CoAuthorId { get; set; }
+
+        [Required(ErrorMessage = "Mã phiên là bắt buộc")]
+
+        public string ConferenceSessionId { get; set; }
     }
 
 

@@ -88,6 +88,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Vé với mã {request.TicketId} đã được hoàn tiền. Không thể yêu cầu hoàn tiền nữa");
             }
+           
             var transactionList = ticket.Transactions;
             //if (transactionList.Count > 1)
             //{
@@ -101,6 +102,11 @@ namespace ConfRadar.Services.Services
             if (ticket.PricePhase == null)
             {
                 throw new BadRequestException("Không tìm thấy các giai đoạn cho vé này");
+            }
+            if (ticket.PricePhase!.ConferencePrice!.IsAuthor == true)
+            {
+                throw new BadRequestException($"Vé này là vé tác giả nên không thể hoàn tiền");
+
             }
             var refundRequestAlreadyExisted = await _unitOfWork.RefundRequestRepository.GetRefundRequestByTicketIdAsync(request.TicketId);
             if (refundRequestAlreadyExisted != null)
