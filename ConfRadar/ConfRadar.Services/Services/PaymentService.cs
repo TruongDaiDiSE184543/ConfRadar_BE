@@ -486,8 +486,10 @@ namespace ConfRadar.Services.Services
             decimal applyPercent = 0;
 
             var validPhases = conferencePrice.PricePhases
-            .Where(p => p.StartDate <= dateNow && p.EndDate >= dateNow)
-            .OrderBy(p => p.StartDate)
+            .Where(p => /*p.StartDate <= dateNow &&*/ p.EndDate >= dateNow&& 
+            p.ResearchConferencePhase!=null &&
+            p.ResearchConferencePhase.IsActive==true)
+            .OrderBy(p => p.EndDate)
             .ToList();
 
             if (!validPhases.Any())

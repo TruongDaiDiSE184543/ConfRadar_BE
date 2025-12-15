@@ -237,15 +237,15 @@ namespace ConfRadar.Api.Controllers
         //    var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request, userId);
         //    return Ok(ApiResponse<int>.SuccessResponse(result, "Full paper review status decided successfully"));
         //}
-        [Authorize]
-        [HttpPut("decide-camera-ready-status")]
+        //[Authorize]
+        //[HttpPut("decide-camera-ready-status")]
 
-        public async Task<IActionResult> DecideCameraReadyStatus([FromBody] UpdateCameraReadyStatusRequest request)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideCameraReadyStatus(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã update status của camera ready thành công"));
-        }
+        //public async Task<IActionResult> DecideCameraReadyStatus([FromBody] UpdateCameraReadyStatusRequest request)
+        //{
+        //    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    var result = await _serviceManager.PaperService.DecideCameraReadyStatus(request, userId);
+        //    return Ok(ApiResponse<int>.SuccessResponse(result, "Đã update status của camera ready thành công"));
+        //}
 
         //[HttpGet("get-pending-cameraready")]
         //public async Task<IActionResult> GetPendingCameraReady()
