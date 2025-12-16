@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class ConferenceSession
 {
@@ -23,6 +26,8 @@ public partial class ConferenceSession
     public virtual ICollection<ConferenceFeedback> ConferenceFeedbacks { get; set; } = new List<ConferenceFeedback>();
 
     public virtual ICollection<ConferenceSessionMedium> ConferenceSessionMedia { get; set; } = new List<ConferenceSessionMedium>();
+
+    public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
 
     public virtual ICollection<PresentAuthor> PresentAuthors { get; set; } = new List<PresentAuthor>();
 

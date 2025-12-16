@@ -709,8 +709,8 @@ namespace ConfRadar.Services.Services
                     phase.CameraReadyStartDate = Shift(phase.CameraReadyStartDate);
                     phase.CameraReadyEndDate = Shift(phase.CameraReadyEndDate);
 
-                    phase.CameraReadyDecideStatusStart = Shift(phase.CameraReadyDecideStatusStart);
-                    phase.CameraReadyDecideStatusEnd = Shift(phase.CameraReadyDecideStatusEnd);
+                    //phase.CameraReadyDecideStatusStart = Shift(phase.CameraReadyDecideStatusStart);
+                    //phase.CameraReadyDecideStatusEnd = Shift(phase.CameraReadyDecideStatusEnd);
 
                     await _unitOfWork.ResearchConferencePhaseRepository.UpdateResearchConferencePhaseAsync(phase);
 
@@ -1372,7 +1372,7 @@ namespace ConfRadar.Services.Services
                         AbstractStatus = SubmittedPaper.Abstract?.GlobalStatus?.Name,
                         FullpaperStatus = SubmittedPaper.FullPaper?.ReviewStatus?.Name,
                         RevisionStatus = SubmittedPaper.RevisionPaper?.GlobalStatus?.Name,
-                        CameraReadyStatus = SubmittedPaper.CameraReady?.GlobalStatus?.Name,
+                        //CameraReadyStatus = SubmittedPaper.CameraReady?.GlobalStatus?.Name,
                         ResearchPhaseId = SubmittedPaper.ResearchConferencePhaseId
                     };
                 }
@@ -1406,7 +1406,7 @@ namespace ConfRadar.Services.Services
                 StatusName = conference.ConferenceStatus?.ConferenceStatusName ?? "N/A",
 
                 // Research Conference Detail specific fields
-                PaperFormat = conference.ResearchConferenceDetail?.Publisher?.PaperFormat,
+                PaperFormat = conference.ResearchConferenceDetail?.PaperFormat,
                 NumberPaperAccept = conference.ResearchConferenceDetail?.NumberPaperAccept,
                 RevisionAttemptAllowed = conference?.ResearchConferenceDetail?.RevisionAttemptAllowed,
                 RankingDescription = conference?.ResearchConferenceDetail?.RankingDescription,
@@ -1482,7 +1482,7 @@ namespace ConfRadar.Services.Services
 
                 // Research Conference Detail specific fields
 
-                PaperFormat = conference.ResearchConferenceDetail?.Publisher?.PaperFormat,
+                PaperFormat = conference.ResearchConferenceDetail?.PaperFormat,
                 NumberPaperAccept = conference.ResearchConferenceDetail?.NumberPaperAccept,
                 RevisionAttemptAllowed = conference?.ResearchConferenceDetail?.RevisionAttemptAllowed,
                 RankingDescription = conference?.ResearchConferenceDetail?.RankingDescription,
@@ -1898,7 +1898,7 @@ namespace ConfRadar.Services.Services
                     createdBy = conference.CreatedBy,
 
                     // Research Conference Detail specific fields
-                    PaperFormat = conference.ResearchConferenceDetail?.Publisher?.PaperFormat,
+                    PaperFormat = conference.ResearchConferenceDetail?.PaperFormat,
                     NumberPaperAccept = conference.ResearchConferenceDetail?.NumberPaperAccept,
                     RevisionAttemptAllowed = conference.ResearchConferenceDetail?.RevisionAttemptAllowed,
                     RankingDescription = conference.ResearchConferenceDetail?.RankingDescription,

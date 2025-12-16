@@ -114,9 +114,10 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.PaperPhase)
                 .Include(p => p.ResearchConferencePhase)
                 .Include(p => p.CameraReady)
-                    .ThenInclude(c => c.GlobalStatus)
+                    //.ThenInclude(c => c.GlobalStatus)
                 .FirstOrDefaultAsync(p => p.PaperId == paperId);
-        }
+        }  
+
 
 
         public async Task<Paper?> GetPaperByRootUserAndConference(string conferenceId, string userId)
@@ -155,13 +156,13 @@ namespace ConfRadar.Repositories.Repositories
             var query = _context.Papers
                 .Include(p => p.Conference) // Cần Include Conference để lấy được ResearchConferenceDetail
                     .ThenInclude(c => c.ResearchConferenceDetail)
-                        .ThenInclude(rd => rd.Publisher) // <-- Lấy Publisher từ đây
+                        
                 .Include(p => p.CameraReady)
                 .Include(p => p.Ticket)
                     .ThenInclude(t => t.PricePhase)
                         .ThenInclude(pp => pp.ConferencePrice)
                 .Where(p => p.ConferenceId == conferenceId)
-                .Where(p => p.CameraReady != null && p.CameraReady.GlobalStatusId == acceptedGlobalStatusId)
+                .Where(p => p.CameraReady != null)
                 // Điều kiện IsPublish vẫn nằm ở ConferencePrice, điều này đúng
                 .Where(p => p.Ticket != null && p.Ticket.PricePhase.ConferencePrice.IsPublish == true)
                 // Chỉ lấy những paper chưa có link
@@ -188,7 +189,7 @@ namespace ConfRadar.Repositories.Repositories
                             .ThenInclude(rp => rp.GlobalStatus)
                             //camera ready
                             .Include(p => p.CameraReady)
-                                .ThenInclude(cr => cr.GlobalStatus)
+                                //.ThenInclude(cr => cr.GlobalStatus)
 
                             .Include(p => p.Conference)
 
@@ -261,8 +262,7 @@ namespace ConfRadar.Repositories.Repositories
 
                     CameraReadyStartDate = currentActivePhase.CameraReadyStartDate,
                     CameraReadyEndDate = currentActivePhase.CameraReadyEndDate,
-                    CameraReadyDecideStatusStart = currentActivePhase.CameraReadyDecideStatusStart,
-                    CameraReadyDecideStatusEnd = currentActivePhase.CameraReadyDecideStatusEnd,
+                  
 
 
                     IsActive = currentActivePhase.IsActive,
@@ -407,30 +407,30 @@ namespace ConfRadar.Repositories.Repositories
                 }).ToList();
                 if (isHeadReviewer)
                 {
-                    var revisionPaperReviews = await _context.RevisionPaperReviews
-                        .Include(rpr => rpr.GlobalStatus)
-                        .Include(rpr => rpr.Reviewer)
-                        .Where(rpr => rpr.RevisionPaperId == paper.RevisionPaperId)
-                        .ToListAsync();
+                    //var revisionPaperReviews = await _context.RevisionPaperReviews
+                    //    .Include(rpr => rpr.GlobalStatus)
+                    //    .Include(rpr => rpr.Reviewer)
+                    //    .Where(rpr => rpr.RevisionPaperId == paper.RevisionPaperId)
+                    //    .ToListAsync();
 
-                    paperDetailResponse.RevisionPaper.RevisionPaperReviews = revisionPaperReviews.Select(rpr => new RevisionPaperReviewForReviewerResponse()
-                    {
-                        RevisionPaperReviewId = rpr.RevisionPaperReviewId,
-                        GlobalStatusId = rpr.GlobalStatusId,
-                        GlobalStatusName = rpr.GlobalStatus?.Name,
-                        Note = rpr.Note,
-                        CreatedAt = rpr.CreatedAt,
-                        //FeedbackToAuthor = rpr.FeedbackToAuthor,
-                        FeedbackMaterialUrl = rpr.FeedbackMaterialUrl,
-                        ReviewerId = rpr.ReviewerId,
-                        ReviewerName = rpr.Reviewer?.FullName,
-                        ReviewerAvatarUrl = rpr.Reviewer?.AvatarUrl,
-                        RevisionPaperId = rpr.RevisionPaperId,
-                    }).ToList();
+                    //paperDetailResponse.RevisionPaper.RevisionPaperReviews = revisionPaperReviews.Select(rpr => new RevisionPaperReviewForReviewerResponse()
+                    //{
+                    //    RevisionPaperReviewId = rpr.RevisionPaperReviewId,
+                    //    GlobalStatusId = rpr.GlobalStatusId,
+                    //    GlobalStatusName = rpr.GlobalStatus?.Name,
+                    //    Note = rpr.Note,
+                    //    CreatedAt = rpr.CreatedAt,
+                    //    //FeedbackToAuthor = rpr.FeedbackToAuthor,
+                    //    FeedbackMaterialUrl = rpr.FeedbackMaterialUrl,
+                    //    ReviewerId = rpr.ReviewerId,
+                    //    ReviewerName = rpr.Reviewer?.FullName,
+                    //    ReviewerAvatarUrl = rpr.Reviewer?.AvatarUrl,
+                    //    RevisionPaperId = rpr.RevisionPaperId,
+                    //}).ToList();
 
 
-                    var revisionPaperReviewCount = revisionPaperReviews.Select(f => f.ReviewerId).Distinct().Count();
-                    paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview = revisionPaperReviewCount == totalReviewerCount;
+                    //var revisionPaperReviewCount = revisionPaperReviews.Select(f => f.ReviewerId).Distinct().Count();
+                    //paperDetailResponse.RevisionPaper.IsAllSubmittedRevisionPaperReview = revisionPaperReviewCount == totalReviewerCount;
 
                     var revisionPaperSubmissionIds = revisionPaperSubmission.Select(rps => rps.RevisionPaperSubmissionId);
                     var revisionPaperFeedbacks = await _context.RevisionSubmissionFeedbacks.Where(rsf => revisionPaperSubmissionIds.Contains(rsf.RevisionPaperSubmissionId)).ToListAsync();
@@ -457,19 +457,19 @@ namespace ConfRadar.Repositories.Repositories
                 {
                     PaperId = paper.PaperId,
                     CameraReadyId = paper.CameraReadyId,
-                    GlobalStatusId = paper.CameraReady?.GlobalStatusId,
-                    GlobalStatusName = paper.CameraReady?.GlobalStatus?.Name,
+                    //GlobalStatusId = paper.CameraReady?.GlobalStatusId,
+                    //GlobalStatusName = paper.CameraReady?.GlobalStatus?.Name,
                     CameraReadyUrl = paper.CameraReady?.CameraReadyUrl,
                     Title = paper.CameraReady?.Title,
                     Description = paper.CameraReady?.Description,
                     CreatedAt = paper.CameraReady?.CreatedAt,
                     ReviewAt = paper.CameraReady?.ReviewAt,
-                    Reason = paper.CameraReady?.Reason,
+                    //Reason = paper.CameraReady?.Reason,
 
                     CameraReadyStartDate = currentActivePhase?.CameraReadyStartDate,
                     CameraReadyEndDate = currentActivePhase?.CameraReadyEndDate,
-                    CameraReadyDecideStatusStart = currentActivePhase?.CameraReadyDecideStatusStart,
-                    CameraReadyDecideStatusEnd = currentActivePhase?.CameraReadyDecideStatusEnd,
+                    //CameraReadyDecideStatusStart = currentActivePhase?.CameraReadyDecideStatusStart,
+                    //CameraReadyDecideStatusEnd = currentActivePhase?.CameraReadyDecideStatusEnd,
                 };
             }
             return totalPaperDetailResponse;
@@ -494,7 +494,7 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
                 .Include(p => p.CameraReady)
-                .Where(p => p.CameraReady != null && p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId && p.ConferenceId == confId && p.TicketId != null)
+                .Where(p => p.CameraReady != null /*&& p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId */ && p.ConferenceId == confId && p.TicketId != null)
                 .ToListAsync();
         }
 
@@ -513,7 +513,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rp => rp.GlobalStatus)
                 .Include(p => p.CameraReady)
-                    .ThenInclude(cr => cr.GlobalStatus)
+                    //.ThenInclude(cr => cr.GlobalStatus)
                 .Where(p => p.ConferenceId == confId)
                 .ToListAsync();
         }
@@ -527,8 +527,8 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(p =>
                     p.Abstract != null && p.Abstract.GlobalStatus != rejectedGlobalStatus &&
                     p.FullPaper != null && p.FullPaper.ReviewStatus != rejectedFullPaperStatus &&
-                    p.RevisionPaper != null && p.RevisionPaper.GlobalStatus != rejectedGlobalStatus &&
-                    p.CameraReady != null && p.CameraReady.GlobalStatus != rejectedGlobalStatus
+                    p.RevisionPaper != null && p.RevisionPaper.GlobalStatus != rejectedGlobalStatus
+                    //p.CameraReady != null && p.CameraReady.GlobalStatus != rejectedGlobalStatus
                  )
                  .ToListAsync();
         }
@@ -557,11 +557,11 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(rvp => rvp.RevisionPaperSubmissions)
                         .ThenInclude(sub => sub.RevisionSubmissionFeedbacks)
                 .Include(p => p.RevisionPaper)
-                    .ThenInclude(rvp => rvp.RevisionPaperReviews)
+                    //.ThenInclude(rvp => rvp.RevisionPaperReviews)
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rvp => rvp.GlobalStatus)
                 .Include(p => p.CameraReady)
-                    .ThenInclude(c => c.GlobalStatus)
+                    //.ThenInclude(c => c.GlobalStatus)
                 .Where(p => paperIds.Contains(p.PaperId));
             List<Paper> response = await query.ToListAsync();
 
@@ -599,7 +599,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rvp => rvp.GlobalStatus)
                 .Include(p => p.CameraReady)
-                    .ThenInclude(c => c.GlobalStatus)
+                    //.ThenInclude(c => c.GlobalStatus)
                 .Include(p => p.PaperAuthors)
                 .Where(p => p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
                 .AsNoTracking().AsSplitQuery();

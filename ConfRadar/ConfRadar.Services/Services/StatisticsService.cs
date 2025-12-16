@@ -437,7 +437,7 @@ namespace ConfRadar.Services.Services
                     paperDetail.CameraReadyPhase = new DTOs.Statistics.PaperCameraReadyPhaseResponse
                     {
                         Id = paper.CameraReady.CameraReadyId,
-                        Status = paper.CameraReady.GlobalStatus?.Name ?? "Chưa xác định",
+                        //Status = paper.CameraReady.GlobalStatus?.Name ?? "Chưa xác định",
                         Title = paper.CameraReady.Title,
                         Description = paper.CameraReady.Description
                     };

@@ -310,12 +310,15 @@ namespace ConfRadar.Services.Services
             var dateNow = await _timeProviderService.GetVietnamDate();
             var paymentMethod = await _unitOfWork.PaymentMethodRepository.GetPaymentMethodById(request.PaymentMethodId);
             var globalStatusAccepted = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+
+            var reviewStatusAccepted = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Accepted.GetDescription());
+
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null)
+            if (readyConfStatus == null|| reviewStatusAccepted== null|| globalStatusAccepted == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
-            if (paymentMethod == null || globalStatusAccepted == null)
+            if (paymentMethod == null )
             {
                 throw new BadRequestException($"Không tìm thấy phuong thúc thanh toán nào với mã {request.PaymentMethodId}");
             }
@@ -344,21 +347,34 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Bài báo đã được thanh toán rồi");
 
             }
-            if (paper.CameraReadyId == null)
+            bool canPurchase = false;
+
+            if (paper.FullPaperId !=null)
             {
-                throw new BadRequestException($"Bạn chưa thể thanh toán vì camera ready không tồn tại");
+                var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId);
+                if (fullPaper == null) throw new NotFoundException("Không tìm thấy full paper");
+                if (fullPaper.ReviewStatusId == reviewStatusAccepted.ReviewStatusId)
+                {
+                    canPurchase = true;
+                }
 
             }
-            var cameraReady = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(paper.CameraReadyId);
-            if (cameraReady == null)
+            if (paper.RevisionPaperId != null)
             {
-                throw new BadRequestException($"Không tìm thấy camera ready");
+                var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
+                if (revisionPaper==null) throw new NotFoundException("Không tìm thấy revision paper");
+                if (revisionPaper.GlobalStatusId == globalStatusAccepted.GlobalStatusId)
+                {
+                    canPurchase = true;
+                }
             }
-            if (cameraReady.GlobalStatusId != globalStatusAccepted.GlobalStatusId)
+            if (!canPurchase)
             {
-                throw new BadRequestException($"Bạn không thể thanh toán do camera ready chưa được chấp nhận");
+                throw new BadRequestException("Bạn phải có fullpaper được chấp nhận hoặc revision được chấp nhận để thực hiện thanh toán cho bài báo");
             }
 
+           
+         
 
 
 
@@ -443,13 +459,10 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Giai đoạn hội nghị nghiên cứu không khả dụng. Xin vui lòng liên hệ ban tổ chức");
             }
 
-            if (activeResearchConferencePhase.AuthorPaymentStart > dateNow)
-            {
-                throw new BadRequestException($"Chưa đến thời hạn mua vé. Thời hạn nằm trong khoảng từ {activeResearchConferencePhase.AuthorPaymentStart} đến {activeResearchConferencePhase.AuthorPaymentEnd}");
-            }
+           
             if (activeResearchConferencePhase.AuthorPaymentEnd < dateNow)
             {
-                throw new BadRequestException("Ðã hết thời hạn mua vé.");
+                throw new BadRequestException($"Ðã hết thời hạn mua vé. Hạn chót {activeResearchConferencePhase.AuthorPaymentEnd}");
             }
 
             var listAttendeeTicketsFound = await _unitOfWork.TicketRepository.GetAttendeeTicketByUserIdAndConferenceId(userId, conferencePrice.ConferenceId);
@@ -473,8 +486,10 @@ namespace ConfRadar.Services.Services
             decimal applyPercent = 0;
 
             var validPhases = conferencePrice.PricePhases
-            .Where(p => p.StartDate <= dateNow && p.EndDate >= dateNow)
-            .OrderBy(p => p.StartDate)
+            .Where(p => /*p.StartDate <= dateNow &&*/ p.EndDate >= dateNow&& 
+            p.ResearchConferencePhase!=null &&
+            p.ResearchConferencePhase.IsActive==true)
+            .OrderBy(p => p.EndDate)
             .ToList();
 
             if (!validPhases.Any())

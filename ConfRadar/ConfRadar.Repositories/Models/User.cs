@@ -1,4 +1,7 @@
-﻿namespace ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ConfRadar.Repositories.Models;
 
 public partial class User
 {
@@ -79,8 +82,6 @@ public partial class User
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 
     public virtual ICollection<ReviewerContract> ReviewerContracts { get; set; } = new List<ReviewerContract>();
-
-    public virtual ICollection<RevisionPaperReview> RevisionPaperReviews { get; set; } = new List<RevisionPaperReview>();
 
     public virtual ICollection<RevisionSubmissionFeedback> RevisionSubmissionFeedbacks { get; set; } = new List<RevisionSubmissionFeedback>();
 

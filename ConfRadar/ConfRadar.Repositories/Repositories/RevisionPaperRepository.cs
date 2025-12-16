@@ -40,6 +40,7 @@ public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisi
         return await _context.RevisionPapers
             .AsSplitQuery()
             .Include(rp => rp.RevisionRoundDeadline)
+            .Include(rp=>rp.GlobalStatus)
             .Include(rp => rp.RevisionPaperSubmissions)
                 .ThenInclude(rps => rps.RevisionDeadlineRound)
             .Include(rp => rp.RevisionPaperSubmissions)
@@ -59,7 +60,7 @@ public class RevisionPaperRepository : GenericRepository<RevisionPaper>, IRevisi
                 .ThenInclude(rps => rps.RevisionDeadlineRound)
             .Include(rvp => rvp.RevisionPaperSubmissions)
                 .ThenInclude(rps => rps.RevisionSubmissionFeedbacks)
-            .Include(rvp => rvp.RevisionPaperReviews)
+            //.Include(rvp => rvp.RevisionPaperReviews)
             .Include(rp => rp.GlobalStatus)
             .FirstOrDefaultAsync(rvp => rvp.RevisionPaperId == revisionPaperId);
     }

@@ -13,6 +13,7 @@ using ConfRadar.Shared.DTO.Paper;
 using ConfRadar.Shared.DTO.User;
 using ConfRadar.Shared.DTO.WaitList;
 using Microsoft.Extensions.Options;
+using System.Data;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.Services.Services
@@ -30,7 +31,7 @@ namespace ConfRadar.Services.Services
         Task<int> CreateRevisionSubmissionFeedBack(CreateRevisionPaperSubmissionFeedback request, string userId);//
         Task<int> CreateRevisionSubmissionResponse(CreateRevisionPaperSubmissionResponse request, string userId);//
         //dùng revise review start -end
-        Task<int> CreateRevisionReview(CreateRevisionPaperReviewRequest request, string userId);//
+        //Task<int> CreateRevisionReview(CreateRevisionPaperReviewRequest request, string userId);//
         Task<string> CreateCameraReady(CreateCameraReadyRequest request, string userId);//
 
         #endregion
@@ -50,7 +51,7 @@ namespace ConfRadar.Services.Services
         Task<int> DecideAbstractPaperStatus(UpdateAbstractPaperStatusRequest request, string userId); //
         Task<int> DecideFullPaperFinalStatus(UpdateFullPaperStatusRequest request, string userId);//
         Task<int> DecideReviseStatus(UpdateRevisionStatusRequest request, string userId);//
-        Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);//
+        //Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);//
         Task<int> MarkCompleteRevise(MarkCompleteReviseRequest request, string userId);
         #endregion
 
@@ -67,7 +68,7 @@ namespace ConfRadar.Services.Services
         Task<List<FullPaperReviewResponse>> GetFullPaperReviewsByFullPaperId(string fullPaperId);
 
 
-        Task<List<RevisionPaperReviewResponse>> ListRevisionPaperReview(ListRevisionPaperReviewRequest request, string userId);
+        //Task<List<RevisionPaperReviewResponse>> ListRevisionPaperReview(ListRevisionPaperReviewRequest request, string userId);
         Task<List<PapersAssignedToReviewerResponse>> GetAllAssignedPapersToAReviewer(string userId, string conferenceId);
 
         Task<List<UserSubmittedPaperDetailResponse>> GetSubmittedPaper(string userId, string? confId);
@@ -76,7 +77,7 @@ namespace ConfRadar.Services.Services
         Task<List<Repositories.Models.PaperPhase>> GetListPaperPhases();
         Task<List<ConferenceWithAssignedPapersResponse>> GetAssignedPapersByReviewerId(string userId, string? confId);
         //Task<List<ConferenceWithAssignedPapersResponse>> GetAssignedPapersGroupedByConference(string userId, string? confId);
-        Task<List<CameraReadyDtoDetail>> ListPendingCameraReady();
+        //Task<List<CameraReadyDtoDetail>> ListPendingCameraReady();
         Task<List<FullPaperDtoDetail>> ListPendingfullpaper();
 
 
@@ -91,7 +92,7 @@ namespace ConfRadar.Services.Services
         Task<List<AvailableCoAuthorResponse>> GetAvailableCoAuthorForInclude(string conferenceId, string userId);
         #endregion
 
-        Task<bool> AutoGeneratePublishingLinks(string conferenceId, string userId);
+        //Task<bool> AutoGeneratePublishingLinks(string conferenceId, string userId);
 
     }
     public class PaperService : IPaperService
@@ -127,8 +128,10 @@ namespace ConfRadar.Services.Services
         {
             var timeNow = await _timeProviderService.GetVietnamTime();
             var dateNow = await _timeProviderService.GetVietnamDate();
+
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
+
             var auditLogPaper = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(AuditLogActionNameEnum.Paper.GetDescription());
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
             var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
@@ -145,6 +148,16 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Hội nghị với id {request.ConferenceId} không tồn tại");
 
+            }
+            var session = await _unitOfWork.ConferenceSessionRepository.GetSessionBySessionId(request.ConferenceSessionId);
+            if (session == null)
+            {
+                throw new BadRequestException($"Không tìm thấy phiên với id {request.ConferenceSessionId}");
+
+            }
+            if (session.ConferenceId != request.ConferenceId)
+            {
+                throw new BadRequestException($"Phiên {request.ConferenceSessionId} không thuộc hội nghị với mã {request.ConferenceId}");
             }
             if (conference.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
             {
@@ -202,6 +215,8 @@ namespace ConfRadar.Services.Services
                 CreatedAt = timeNow,
                 Title = request.Title,
                 Description = request.Description,
+                ConferenceSessionId = request.ConferenceSessionId
+                
             };
             paper.PaperAuthors = new List<PaperAuthor>()
             {
@@ -238,10 +253,7 @@ namespace ConfRadar.Services.Services
                     var reviewerContractFound = await _unitOfWork.ReviewerContractRepository.GetContractByUserAndConferenceAsync(coauthorId, request.ConferenceId);
                     if (reviewerContractFound != null)
                     {
-                        if (reviewerContractFound.IsActive == true)
-                        {
-                            throw new BadRequestException($"Co author với id {coauthorId} tên {reviewerContractFound.User!.FullName} đang có hợp đồng review với hội nghị {paper.Conference!.ConferenceName}");
-                        }
+                        throw new BadRequestException($"Co author với id {coauthorId} tên {reviewerContractFound.User!.FullName} đang có hợp đồng review với hội nghị {paper.Conference!.ConferenceName}");
                     }
                     if (isReviewerOfConference == true)
                     {
@@ -494,35 +506,7 @@ namespace ConfRadar.Services.Services
 
 
 
-        //public async Task<int> SubmitFullPaper(CreateFullPaperRequest request, string userId)
-        //{
-        //    if (request.PaperId == null) throw new Exception("C?n có paperid d? n?p fullpaper");
-        //    var PaperBase = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
-        //    if (PaperBase == null) throw new Exception($"Không tìm th?y paper v?i id{request.PaperId}");
-        //    string fullPaperURL = string.Empty;
-        //    if(request.FullPaperFile != null)
-        //    {
-        //        if (request.FullPaperFile.ContentType == null) throw new Exception("Không có d? li?u file d?u vào d? n?p");
-        //        using var stream = request.FullPaperFile.OpenReadStream();
-        //        var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.FullPaperFile.FileName);
-        //        fullPaperURL = _objectStorageSettings.Value.EndPoint + await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.fullpaperfile.ToString(),uniqueFileName,stream,request.FullPaperFile.ContentType);
-        //    }
-        //    var pendingStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync("Pending");
-        //    var fullPaperObject = request.toModel(fullPaperURL, pendingStatus.ReviewStatusId);
-        //    await _unitOfWork.BeginTransactionAsync();
-        //    try {
-        //        await _unitOfWork.FullPaperRepository.CreateFullPaperAsync(fullPaperObject);
-        //        PaperBase.FullPaperId = fullPaperObject.FullPaperId;
-        //        await _unitOfWork.CommitAsync();
-        //        return fullPaperObject.toResponse();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await _unitOfWork.RollbackAsync(); 
-        //        throw;
-        //    }
-
-        //}
+       
         public async Task<int> SubmitFullPaper(CreateFullPaperRequest request, string userId)
         {
             var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
@@ -551,9 +535,10 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.FullPaperStartDate || dateNow > activeCurrentPhase.FullPaperEndDate)
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            if ( dateNow > activeCurrentPhase.FullPaperEndDate)
             {
-                throw new BadRequestException($"Giai đoạn fullpaper diễn ra từ {activeCurrentPhase.FullPaperStartDate} đến {activeCurrentPhase.FullPaperEndDate}");
+                throw new BadRequestException($"Hạn chót giai đoạn fullpaper diễn ra từ đến {activeCurrentPhase.FullPaperEndDate}");
             }
             if (paper.PaperPhaseId != currentFullPaperPhase.PaperPhaseId)
             {
@@ -587,7 +572,7 @@ namespace ConfRadar.Services.Services
                 FullPaperId = Guid.NewGuid().ToString(),
                 FullPaperUrl = fullPaperFileUrl,
                 ReviewStatusId = pendingReviewStatus.ReviewStatusId,
-                CreatedAt = await _timeProviderService.GetVietnamTime(),
+                CreatedAt = timeNow,
                 ReviewAt = null,
                 Description = request.Description,
                 Title = request.Title,
@@ -861,13 +846,13 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            if (dateNow > activeCurrentPhase.ReviseEndDate)
             {
-                throw new BadRequestException($"Giai đoạn revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
+                throw new BadRequestException($"Hạn chót giai đoạn revise diễn ra đến  {activeCurrentPhase.ReviseEndDate}");
             }
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper không đang trong giai đoạn revise");
+                throw new BadRequestException($"Bài báo phải ở trong giai đoạn revise để gửi revision submission");
             }
 
 
@@ -983,11 +968,7 @@ namespace ConfRadar.Services.Services
 
                 }
                 revisionPaper.RevisionRound = validRevisionDeadline.RoundNumber;
-                //var totalRevisionRoundAllowed = paper.Conference!.ResearchConferenceDetail!.RevisionAttemptAllowed;
-                //if (revisionPaper.RevisionRound > totalRevisionRoundAllowed)
-                //{
-                //    throw new BadRequestException($"Không thể nộp thêm revision vì quá số lần: {totalRevisionRoundAllowed} cho phép, vui lòng chờ đợi head reviewer!");
-                //}
+               
 
                 string? revisionFileUrl = null;
                 if (request.RevisionPaperFile != null)
@@ -1028,8 +1009,10 @@ namespace ConfRadar.Services.Services
 
         public async Task<int> CreateRevisionSubmissionFeedBack(CreateRevisionPaperSubmissionFeedback request, string userId)
         {
+            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null)
+            var revisePhaseStatus = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Revise.GetDescription());
+            if (readyConfStatus == null|| revisePhaseStatus==null|| pendingGlobalStatus ==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
@@ -1040,6 +1023,29 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy paper với id {request.PaperId}");
 
             }
+            if (paper.RevisionPaperId == null)
+            {
+                throw new NotFoundException("Không tìm thấy mã revision");
+            }
+            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
+            if (revisionPaper == null)
+            {
+                throw new NotFoundException($"Không tìm thấy revision với id {paper.RevisionPaperId}");
+
+            }
+
+            if (revisionPaper.GlobalStatusId!= pendingGlobalStatus.GlobalStatusId)
+            {
+                throw new BadRequestException($"Chỉ có thể gửi revision feedback khi revision trong trạng thái pending");
+
+            }
+
+
+            if (paper.PaperPhaseId != revisePhaseStatus.PaperPhaseId)
+            {
+                throw new BadRequestException("Bài báo phải trong giai đoạn revise mới được gửi feedback");
+            }
+
             var conferenceStatus = paper.Conference?.ConferenceStatus;
             if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
             if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
@@ -1053,9 +1059,10 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            if (dateNow > activeCurrentPhase.ReviseEndDate)
             {
-                throw new BadRequestException($"Giai đoạn gửi feedback revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
+                throw new BadRequestException($"Giai đoạn gửi feedback revise diễn ra hạn chót đến {activeCurrentPhase.ReviseEndDate}");
             }
             var revisionPaperSubmission = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(request.RevisionPaperSubmissionId);
             if (revisionPaperSubmission == null)
@@ -1091,7 +1098,7 @@ namespace ConfRadar.Services.Services
                     Feedback = feedback.Feedback,
                     Response = null,
                     SortOrder = feedback.SortOrder,
-                    CreatedAt = await _timeProviderService.GetVietnamTime(),
+                    CreatedAt = timeNow,
                     RevisionPaperSubmissionId = revisionPaperSubmission.RevisionPaperSubmissionId,
                 };
                 feedBackList.Add(feedbackObj);
@@ -1102,7 +1109,9 @@ namespace ConfRadar.Services.Services
         public async Task<int> CreateRevisionSubmissionResponse(CreateRevisionPaperSubmissionResponse request, string userId)
         {
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null)
+            var revisePhaseStatus = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Revise.GetDescription());
+
+            if (readyConfStatus == null|| revisePhaseStatus==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
@@ -1115,6 +1124,10 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId}");
 
+            }
+            if (paper.PaperPhaseId != revisePhaseStatus.PaperPhaseId)
+            {
+                throw new BadRequestException("Bài báo phải trong giai đoạn revise mới được gửi response");
             }
             var conferenceStatus = paper.Conference?.ConferenceStatus;
             if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
@@ -1129,9 +1142,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            if (dateNow > activeCurrentPhase.ReviseEndDate)
             {
-                throw new BadRequestException($"Giai đoạn gửi response revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
+                throw new BadRequestException($"Giai đoạn gửi response revise diễn ra hạn chót đến {activeCurrentPhase.ReviseEndDate}");
             }
             var revisionPaperSubmission = await _unitOfWork.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(request.RevisionPaperSubmissionId);
             if (revisionPaperSubmission == null)
@@ -1168,109 +1181,111 @@ namespace ConfRadar.Services.Services
             return await _unitOfWork.RevisionSubmissionFeedbackRepository.UpdateMultipleFeedbacksAsync(feedBackList);
         }
 
-        public async Task<int> CreateRevisionReview(CreateRevisionPaperReviewRequest request, string userId)
-        {
-            if (request.GlobalStatus == GlobalStatusEnum.Pending)
-            {
-                throw new BadRequestException($"Không thể chuyển trạng thái pending");
-            }
 
-            var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            var rejectGlobalStautus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+        #region removed
+        //public async Task<int> CreateRevisionReview(CreateRevisionPaperReviewRequest request, string userId)
+        //{
+        //    if (request.GlobalStatus == GlobalStatusEnum.Pending)
+        //    {
+        //        throw new BadRequestException($"Không thể chuyển trạng thái pending");
+        //    }
 
-            var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
-            if (acceptedGlobalStatus == null || currentRevisePhase == null || pendingGlobalStatus == null || rejectGlobalStautus == null || readyConfStatus == null)
-            {
-                throw new NotFoundException("Không tìm thấy trạng thái");
-            }
+        //    var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+        //    var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+        //    var rejectGlobalStautus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+        //    var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
 
-            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
-            if (paper == null)
-            {
-                throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId}");
-            }
-            var conferenceStatus = paper.Conference?.ConferenceStatus;
-            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
-            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
-            {
-                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+        //    var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
+        //    if (acceptedGlobalStatus == null || currentRevisePhase == null || pendingGlobalStatus == null || rejectGlobalStautus == null || readyConfStatus == null)
+        //    {
+        //        throw new NotFoundException("Không tìm thấy trạng thái");
+        //    }
 
-            }
-            var activeCurrentPhase = paper.ResearchConferencePhase;
-            if (activeCurrentPhase == null)
-            {
-                throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
-            }
-            var dateNow = await _timeProviderService.GetVietnamDate();
-            //if (dateNow < activeCurrentPhase.RevisionPaperReviewStart || dateNow > activeCurrentPhase.RevisionPaperReviewEnd)
-            //{
-            //    throw new BadRequestException($"Giai đoạn gửi review revise diễn ra từ {activeCurrentPhase.RevisionPaperReviewStart} đến {activeCurrentPhase.RevisionPaperReviewEnd}");
-            //}
+        //    var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
+        //    if (paper == null)
+        //    {
+        //        throw new NotFoundException($"Không tìm thấy paper  id {request.PaperId}");
+        //    }
+        //    var conferenceStatus = paper.Conference?.ConferenceStatus;
+        //    if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+        //    if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+        //    {
+        //        throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+
+        //    }
+        //    var activeCurrentPhase = paper.ResearchConferencePhase;
+        //    if (activeCurrentPhase == null)
+        //    {
+        //        throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
+        //    }
+        //    var dateNow = await _timeProviderService.GetVietnamDate();
+        //    //if (dateNow < activeCurrentPhase.RevisionPaperReviewStart || dateNow > activeCurrentPhase.RevisionPaperReviewEnd)
+        //    //{
+        //    //    throw new BadRequestException($"Giai đoạn gửi review revise diễn ra từ {activeCurrentPhase.RevisionPaperReviewStart} đến {activeCurrentPhase.RevisionPaperReviewEnd}");
+        //    //}
 
 
-            if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
-            {
-                throw new BadRequestException($"Không thể review vì paper đang không trong giai đoạn revise");
-            }
+        //    if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
+        //    {
+        //        throw new BadRequestException($"Không thể review vì paper đang không trong giai đoạn revise");
+        //    }
 
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
+        //    var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
 
-            if (paperReviewer == null)
-            {
-                throw new BadRequestException($"Bạn không có trong danh sách gán review");
-            }
-            var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
-            if (revisionPaper == null)
-            {
-                throw new NotFoundException($"Không tìm thấy revision paper {request.RevisionPaperId} trong hệ thống");
-            }
-            if (paper.RevisionPaperId != request.RevisionPaperId)
-            {
-                throw new NotFoundException($"Không tìm thấy revision paper {request.RevisionPaperId} tương ứng với paper");
-            }
-            if (revisionPaper.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
-            {
-                throw new BadRequestException($"Revision này dang không trong trong trạng thái pending");
-            }
-            var revisionReview = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperAndUserAsync(paper.RevisionPaperId, userId);
-            if (revisionReview != null)
-            {
-                throw new BadRequestException($"Bạn đã nộp revision review cho bài báo này rồi");
-            }
-            string revisionReviewUrl = string.Empty;
-            if (request.FeedbackMaterialFile != null)
-            {
-                using var stream = request.FeedbackMaterialFile.OpenReadStream();
-                var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.FeedbackMaterialFile.FileName);
-                var baseUri = _objectStorageSettings.Value.EndPoint;
-                var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.revisionpaperreviewfile.ToString(), uniqueFileName, stream, request.FeedbackMaterialFile.ContentType);
-                revisionReviewUrl = baseUri + objectStorageFileUrl;
-            }
-            string finalGlobalStatusId = string.Empty;
-            if (request.GlobalStatus == GlobalStatusEnum.Accepted)
-            {
-                finalGlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
-            }
-            else
-            {
-                finalGlobalStatusId = rejectGlobalStautus.GlobalStatusId;
-            }
-            var revisionPaperReviewObj = new RevisionPaperReview()
-            {
-                RevisionPaperReviewId = Guid.NewGuid().ToString(),
-                GlobalStatusId = finalGlobalStatusId,
-                Note = request.Note,
-                CreatedAt = await _timeProviderService.GetVietnamTime(),
-                //FeedbackToAuthor = request.FeedbackToAuthor,
-                FeedbackMaterialUrl = revisionReviewUrl,
-                ReviewerId = userId,
-                RevisionPaperId = request.RevisionPaperId,
-            };
-            return await _unitOfWork.RevisionPaperReviewRepository.CreateRevisionPaperReviewAsync(revisionPaperReviewObj);
-        }
-
+        //    if (paperReviewer == null)
+        //    {
+        //        throw new BadRequestException($"Bạn không có trong danh sách gán review");
+        //    }
+        //    var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(request.RevisionPaperId);
+        //    if (revisionPaper == null)
+        //    {
+        //        throw new NotFoundException($"Không tìm thấy revision paper {request.RevisionPaperId} trong hệ thống");
+        //    }
+        //    if (paper.RevisionPaperId != request.RevisionPaperId)
+        //    {
+        //        throw new NotFoundException($"Không tìm thấy revision paper {request.RevisionPaperId} tương ứng với paper");
+        //    }
+        //    if (revisionPaper.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
+        //    {
+        //        throw new BadRequestException($"Revision này dang không trong trong trạng thái pending");
+        //    }
+        //    //var revisionReview = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperAndUserAsync(paper.RevisionPaperId, userId);
+        //    //if (revisionReview != null)
+        //    //{
+        //    //    throw new BadRequestException($"Bạn đã nộp revision review cho bài báo này rồi");
+        //    //}
+        //    string revisionReviewUrl = string.Empty;
+        //    if (request.FeedbackMaterialFile != null)
+        //    {
+        //        using var stream = request.FeedbackMaterialFile.OpenReadStream();
+        //        var uniqueFileName = _tokenService.GenerateSecureRandomToken() + Path.GetExtension(request.FeedbackMaterialFile.FileName);
+        //        var baseUri = _objectStorageSettings.Value.EndPoint;
+        //        var objectStorageFileUrl = await _objectStorageFileService.UploadFileAsync(ObjectStorageBucketEnum.revisionpaperreviewfile.ToString(), uniqueFileName, stream, request.FeedbackMaterialFile.ContentType);
+        //        revisionReviewUrl = baseUri + objectStorageFileUrl;
+        //    }
+        //    string finalGlobalStatusId = string.Empty;
+        //    if (request.GlobalStatus == GlobalStatusEnum.Accepted)
+        //    {
+        //        finalGlobalStatusId = acceptedGlobalStatus.GlobalStatusId;
+        //    }
+        //    else
+        //    {
+        //        finalGlobalStatusId = rejectGlobalStautus.GlobalStatusId;
+        //    }
+        //    var revisionPaperReviewObj = new RevisionPaperReview()
+        //    {
+        //        RevisionPaperReviewId = Guid.NewGuid().ToString(),
+        //        GlobalStatusId = finalGlobalStatusId,
+        //        Note = request.Note,
+        //        CreatedAt = await _timeProviderService.GetVietnamTime(),
+        //        //FeedbackToAuthor = request.FeedbackToAuthor,
+        //        FeedbackMaterialUrl = revisionReviewUrl,
+        //        ReviewerId = userId,
+        //        RevisionPaperId = request.RevisionPaperId,
+        //    };
+        //    return  1; //_unitOfWork.RevisionPaperReviewRepository.CreateRevisionPaperReviewAsync(revisionPaperReviewObj);
+        //} 
+        #endregion
         public async Task<int> DecideReviseStatus(UpdateRevisionStatusRequest request, string userId)
         {
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
@@ -1474,50 +1489,52 @@ namespace ConfRadar.Services.Services
                 throw;
             }
         }
+        #region removed
+        //public async Task<List<RevisionPaperReviewResponse>> ListRevisionPaperReview(ListRevisionPaperReviewRequest request, string userId)
+        //{
+        //    var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
+        //    if (paper == null)
+        //    {
+        //        throw new NotFoundException($"Không tìm thấy  paper {request.PaperId} g");
+        //    }
 
-        public async Task<List<RevisionPaperReviewResponse>> ListRevisionPaperReview(ListRevisionPaperReviewRequest request, string userId)
-        {
-            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(request.PaperId);
-            if (paper == null)
-            {
-                throw new NotFoundException($"Không tìm thấy  paper {request.PaperId} g");
-            }
-
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
-            if (paperReviewer == null)
-            {
-                throw new NotFoundException($"Bạn không có quyền truy cập bài báo này");
-            }
-            if (paper.RevisionPaperId != request.RevisionPaperId)
-            {
-                throw new NotFoundException($"Không tìm thấy revision paper {request.RevisionPaperId} trong paper {request.PaperId}");
-            }
-            if (paperReviewer.IsHeadReviewer == false)
-            {
-                throw new NotFoundException($"Bạn không phải head reviewer");
-            }
-            var listRevisionPaperReview = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperIdAsync(request.RevisionPaperId);
-            var listRevisionPaperReviewResponse = listRevisionPaperReview.Select(x => new RevisionPaperReviewResponse
-            {
-                RevisionPaperReviewId = x.RevisionPaperReviewId,
-                GlobalStatusId = x.GlobalStatusId,
-                GlobalStatusName = x.GlobalStatus?.Name,
-                Note = x.Note,
-                CreatedAt = x.CreatedAt,
-                //FeedbackToAuthor = x.FeedbackToAuthor,
-                FeedbackMaterialUrl = x.FeedbackMaterialUrl,
-                ReviewerId = x.ReviewerId,
-                ReviewerName = x.Reviewer?.FullName,
-                ReviewerAvatarUrl = x.Reviewer?.AvatarUrl,
-                RevisionPaperId = x.RevisionPaperId,
-            }).ToList();
-            return listRevisionPaperReviewResponse;
-        }
-
+        //    var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, request.PaperId);
+        //    if (paperReviewer == null)
+        //    {
+        //        throw new NotFoundException($"Bạn không có quyền truy cập bài báo này");
+        //    }
+        //    if (paper.RevisionPaperId != request.RevisionPaperId)
+        //    {
+        //        throw new NotFoundException($"Không tìm thấy revision paper {request.RevisionPaperId} trong paper {request.PaperId}");
+        //    }
+        //    if (paperReviewer.IsHeadReviewer == false)
+        //    {
+        //        throw new NotFoundException($"Bạn không phải head reviewer");
+        //    }
+        //    var listRevisionPaperReview = await _unitOfWork.RevisionPaperReviewRepository.GetRevisionPaperReviewByRevisionPaperIdAsync(request.RevisionPaperId);
+        //    var listRevisionPaperReviewResponse = listRevisionPaperReview.Select(x => new RevisionPaperReviewResponse
+        //    {
+        //        RevisionPaperReviewId = x.RevisionPaperReviewId,
+        //        GlobalStatusId = x.GlobalStatusId,
+        //        GlobalStatusName = x.GlobalStatus?.Name,
+        //        Note = x.Note,
+        //        CreatedAt = x.CreatedAt,
+        //        //FeedbackToAuthor = x.FeedbackToAuthor,
+        //        FeedbackMaterialUrl = x.FeedbackMaterialUrl,
+        //        ReviewerId = x.ReviewerId,
+        //        ReviewerName = x.Reviewer?.FullName,
+        //        ReviewerAvatarUrl = x.Reviewer?.AvatarUrl,
+        //        RevisionPaperId = x.RevisionPaperId,
+        //    }).ToList();
+        //    return listRevisionPaperReviewResponse;
+        //}
+        #endregion
         public async Task<string> CreateCameraReady(CreateCameraReadyRequest request, string userId)
         {
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null)
+            var cameraReadyPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
+            var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+            if (readyConfStatus == null|| cameraReadyPhase==null|| acceptedGlobalStatus==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
@@ -1527,6 +1544,11 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Bài báo với id {request.PaperId} không tồn tại.");
             }
+            if (paper.PaperPhaseId != cameraReadyPhase.PaperPhaseId)
+            {
+                throw new BadRequestException($"Bài báo phải trong giai đoạn camera ready mới gửi được camera ready.");
+
+            }
             var conferenceStatus = paper.Conference?.ConferenceStatus;
             if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
             if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
@@ -1534,15 +1556,26 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
 
             }
-            var activeCurrentPhase = paper.ResearchConferencePhase;
-            if (activeCurrentPhase == null)
-            {
-                throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
-            }
+            //var activeCurrentPhase = paper.ResearchConferencePhase;
+            //if (activeCurrentPhase == null)
+            //{
+            //    throw new NotFoundException($"Không tìm thấy giai đoạn cho hội nghị {paper.Conference.ConferenceName}");
+            //}
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.CameraReadyStartDate || dateNow > activeCurrentPhase.CameraReadyEndDate)
+
+            var researchConferencePhases = paper.Conference?.ResearchConferencePhases;
+            if (researchConferencePhases == null || !researchConferencePhases.Any())
             {
-                throw new BadRequestException($"Giai đoạn {activeCurrentPhase.CameraReadyStartDate} đến {activeCurrentPhase.CameraReadyEndDate}");
+                throw new BadRequestException($"Không tìm thấy các giai đoạn trong hội nghị nghiên cứu này");
+            }
+            var activeResearchConferencePhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeResearchConferencePhase == null)
+            {
+                throw new NotFoundException("Không tìm thấy giai đoạn nào active");
+            }
+            if ( dateNow > activeResearchConferencePhase.AuthorPaymentEnd)
+            {
+                throw new BadRequestException($"Hạn chót nộp camera ready + thanh toán đến {activeResearchConferencePhase.AuthorPaymentEnd}");
             }
 
             // Check if paper already has a camera ready
@@ -1590,7 +1623,7 @@ namespace ConfRadar.Services.Services
                 var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
                 if (revisionPaper != null && revisionPaper.GlobalStatusId != null)
                 {
-                    var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+                    
                     if (revisionPaper.GlobalStatusId == acceptedGlobalStatus.GlobalStatusId)
                     {
                         isValidPaper = true;
@@ -1626,7 +1659,7 @@ namespace ConfRadar.Services.Services
             var cameraReady = new CameraReady
             {
                 CameraReadyId = Guid.NewGuid().ToString(),
-                GlobalStatusId = pendingGlobalStatus.GlobalStatusId,
+                //GlobalStatusId = pendingGlobalStatus.GlobalStatusId,
                 CameraReadyUrl = cameraReadyFileUrl,
                 CreatedAt = await _timeProviderService.GetVietnamTime(),
                 Description = request.Description,
@@ -1640,12 +1673,7 @@ namespace ConfRadar.Services.Services
             // Update Paper with CameraReadyId
             paper.CameraReadyId = cameraReady.CameraReadyId;
 
-            // Update paper phase to CameraReady
-            var cameraReadyPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
-            if (cameraReadyPhase != null)
-            {
-                paper.PaperPhaseId = cameraReadyPhase.PaperPhaseId;
-            }
+            
 
             await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
 
@@ -1660,24 +1688,25 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Camera ready với id {request.CameraReadyId} không tồn tại.");
             }
+            var cameraReadyPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null)
+            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+            if (readyConfStatus == null|| pendingGlobalStatus==null|| cameraReadyPhase==null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
-            // Validate that the camera ready is in "Pending" status
-            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            if (cameraReady.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
-            {
-                throw new BadRequestException("Camera ready phải trong trạng thái pending để cập nhật.");
-            }
+          
 
             // Find the paper associated with this camera ready
+            var dateNow = await _timeProviderService.GetVietnamDate();
             var paper = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(request.CameraReadyId);
             if (paper == null)
             {
                 throw new BadRequestException($"Paper liên kết với camera ready ID {request.CameraReadyId} không tồn tại.");
             }
+
+
+
             var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
             var conferenceStatus = basePaper.Conference?.ConferenceStatus;
             if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
@@ -1686,7 +1715,25 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
 
             }
+            if (basePaper.PaperPhaseId != cameraReadyPhase.PaperPhaseId)
+            {
+                throw new BadRequestException($"Bài báo phải trong giai đoạn camera ready mới được sửa camera ready.");
 
+            }
+            var researchConferencePhases = basePaper.Conference?.ResearchConferencePhases;
+            if (researchConferencePhases == null || !researchConferencePhases.Any())
+            {
+                throw new BadRequestException($"Không tìm thấy các giai đoạn trong hội nghị nghiên cứu này");
+            }
+            var activeResearchConferencePhase = researchConferencePhases.FirstOrDefault(rcp => rcp.IsActive == true);
+            if (activeResearchConferencePhase == null)
+            {
+                throw new NotFoundException("Không tìm thấy giai đoạn nào active");
+            }
+            if (dateNow > activeResearchConferencePhase.AuthorPaymentEnd)
+            {
+                throw new BadRequestException($"Hạn chót sửa camera ready đến {activeResearchConferencePhase.AuthorPaymentEnd}");
+            }
             var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paper.PaperId);
             if (paperAuthors == null)
             {
@@ -1723,7 +1770,10 @@ namespace ConfRadar.Services.Services
         public async Task<string> SubmitReviewForFullPaper(CreateFullPaperReviewRequest request, string userId)
         {
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null)
+            var fullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.FullPaper.GetDescription());
+            var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
+           
+            if (readyConfStatus == null || fullPaperPhase==null|| pendingReviewStatus == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
@@ -1735,26 +1785,11 @@ namespace ConfRadar.Services.Services
             }
             if (request.reviewStatus == ReviewStatusEnum.Pending)
             {
-                throw new BadRequestException("Không thể thành pending cho. Chỉ được accept hoặc reject");
+                throw new BadRequestException("Không thể chuyển pending. Chỉ được accept/reject/revise");
             }
             var timeNow = await _timeProviderService.GetVietnamTime();
             var dateNow = await _timeProviderService.GetVietnamDate();
-            //// Check if user is a reviewer (either Local Reviewer or External Reviewer)
-            //var localReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("Local Reviewer");
-            //var externalReviewerRole = await _unitOfWork.RoleRepository.GetRoleByRoleName("External Reviewer");
-
-            //if (localReviewerRole == null || externalReviewerRole == null)
-            //{
-            //    throw new BadRequestException("Reviewer roles do not exist in the system.");
-            //}
-
-            //var userRoles = await _unitOfWork.UserRoleRepository.GetMutipleUserRolesByUserId(userId);
-            //var hasReviewerRole = userRoles.Any(ur => ur.RoleId == localReviewerRole.RoleId || ur.RoleId == externalReviewerRole.RoleId);
-
-            //if (!hasReviewerRole)
-            //{
-            //    throw new BadRequestException("User must have Local Reviewer or External Reviewer role to submit a review.");
-            //}
+            
 
             // Validate that the full paper exists
             var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(request.FullPaperId);
@@ -1791,7 +1826,11 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Bạn hiện tại không tìm thấy trong danh sách gán reviewer");
             }
 
+            if (paper.PaperPhaseId!= fullPaperPhase.PaperPhaseId)
+            {
+                throw new BadRequestException($"Bài báo không trong trạng thái full paper nên không thể gửi review");
 
+            }
 
 
 
@@ -1809,12 +1848,7 @@ namespace ConfRadar.Services.Services
 
             }
 
-            // Validate that the full paper is in "Pending" review status
-            var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
-            if (pendingReviewStatus == null)
-            {
-                throw new BadRequestException("Không tìm thấy trạng thái trong hệ thống");
-            }
+            
 
             if (fullPaper.ReviewStatusId != pendingReviewStatus.ReviewStatusId)
             {
@@ -1837,7 +1871,6 @@ namespace ConfRadar.Services.Services
                 feedbackMaterialUrl = baseUri + objectStorageFileUrl;
             }
             var decideStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(request.reviewStatus.GetDescription());
-
             // Create the full paper review
             var fullPaperReview = new FullPaperReview
             {
@@ -1846,7 +1879,6 @@ namespace ConfRadar.Services.Services
                 ReviewerId = userId,
                 ReviewStatusId = decideStatus.ReviewStatusId,
                 Note = request.Note,
-                //FeedbackToAuthor = request.FeedbackToAuthor,
                 FeedbackMaterialUrl = feedbackMaterialUrl,
                 CreatedAt = timeNow,
             };
@@ -1885,7 +1917,7 @@ namespace ConfRadar.Services.Services
 
             return fullPaperReviewResponses;
         }
-
+        #region removed
         //public async Task<int> SubmitFullPaperReviewStatus(UpdateFullPaperReviewStatusRequest request, string userId)
         //{
         //    // Validate that the full paper review exists
@@ -1958,172 +1990,172 @@ namespace ConfRadar.Services.Services
         //    return await _unitOfWork.FullPaperReviewRepository.UpdateFullPaperReviewAsync(fullPaperReview);
         //}
 
-        public async Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId)
-        {
-            // Validate that the camera ready exists
-            var cameraReady = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(request.CameraReadyId);
-            if (cameraReady == null)
-            {
-                throw new BadRequestException($"Camera ready với id {request.CameraReadyId} không tồn tại.");
-            }
-            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null)
-            {
-                throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
-            }
-            // Validate that the camera ready is in "Pending" status
-            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            if (pendingGlobalStatus == null)
-            {
-                throw new BadRequestException("Giai đoạn pending không tồn tại trong hệ thống");
-            }
+        /*  public async Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId)
+          {
+              // Validate that the camera ready exists
+              var cameraReady = await _unitOfWork.CameraReadyRepository.GetCameraReadyByIdAsync(request.CameraReadyId);
+              if (cameraReady == null)
+              {
+                  throw new BadRequestException($"Camera ready với id {request.CameraReadyId} không tồn tại.");
+              }
+              var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+              if (readyConfStatus == null)
+              {
+                  throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
+              }
+              // Validate that the camera ready is in "Pending" status
+              var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+              if (pendingGlobalStatus == null)
+              {
+                  throw new BadRequestException("Giai đoạn pending không tồn tại trong hệ thống");
+              }
 
-            if (cameraReady.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
-            {
-                throw new BadRequestException("Camera ready phải trong trạng thái pending");
-            }
+              //if (cameraReady.GlobalStatusId != pendingGlobalStatus.GlobalStatusId)
+              //{
+              //    throw new BadRequestException("Camera ready phải trong trạng thái pending");
+              //}
 
-            // Validate that the user is a head reviewer for the paper associated with this camera ready
-            var timeNow = await _timeProviderService.GetVietnamTime();
-            var dateNow = await _timeProviderService.GetVietnamDate();
-            var paper = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(request.CameraReadyId);
-            if (paper == null)
-            {
-                throw new BadRequestException($"Bài báo với camera id {request.CameraReadyId} không tồn tại hoặc liên kết với nhau.");
-            }
-            var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
+              // Validate that the user is a head reviewer for the paper associated with this camera ready
+              var timeNow = await _timeProviderService.GetVietnamTime();
+              var dateNow = await _timeProviderService.GetVietnamDate();
+              var paper = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(request.CameraReadyId);
+              if (paper == null)
+              {
+                  throw new BadRequestException($"Bài báo với camera id {request.CameraReadyId} không tồn tại hoặc liên kết với nhau.");
+              }
+              var basePaper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paper.PaperId);
 
-            var conferenceStatus = basePaper.Conference?.ConferenceStatus;
-            if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
-            if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
-            {
-                throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
+              var conferenceStatus = basePaper.Conference?.ConferenceStatus;
+              if (conferenceStatus == null) throw new BadRequestException("Không tìm thấy trạng thái của hội nghị");
+              if (conferenceStatus.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
+              {
+                  throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
 
-            }
-
-
-            var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paper.PaperId);
-            if (paperReviewer == null)
-            {
-                throw new BadRequestException("Bạn không có quyền trong bài báo này");
-            }
-            var activeCurentResearchPhase = basePaper.ResearchConferencePhase;
-            if (activeCurentResearchPhase == null)
-            {
-                throw new NotFoundException("Không tìm thấy giai đoạn research trong bài báo");
-
-            }
-            if (dateNow < activeCurentResearchPhase.CameraReadyDecideStatusStart || dateNow > activeCurentResearchPhase.CameraReadyDecideStatusEnd)
-            {
-                throw new BadRequestException($"Giai đoạn quyết định camera ready từ {activeCurentResearchPhase.CameraReadyDecideStatusStart} đến {activeCurentResearchPhase.CameraReadyDecideStatusEnd}");
-            }
-            if (paperReviewer.IsHeadReviewer != true)
-            {
-                throw new BadRequestException("Chỉ head reviewer mới có thể quyết định bài báo");
-            }
-            // Update the camera ready status based on the request
-            string notiTitle = "Kết quả bài báo";
-            string notiMessage = string.Empty;
-            var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
-            var rootAuthorEntity = rootAuthor.User;
-
-            string subject = "Kết quả quyết định bài báo";
-            string coAuthorListName = string.Empty;
-            var coAuthors = basePaper.PaperAuthors.Where(pa => pa.IsRootAuthor == false);
-            if (coAuthors.Any())
-            {
-                coAuthorListName = string.Join(", ", coAuthors.Select(ca => ca.User.FullName));
-            }
-            else
-            {
-                coAuthorListName = "Không có";
-            }
-
-            string submissionDate = string.Empty;
-
-            if (basePaper.CreatedAt != null)
-            {
-                submissionDate = basePaper.CreatedAt?.ToString();
-            }
-            else
-            {
-                submissionDate = "null";
-            }
+              }
 
 
+              var paperReviewer = await _unitOfWork.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paper.PaperId);
+              if (paperReviewer == null)
+              {
+                  throw new BadRequestException("Bạn không có quyền trong bài báo này");
+              }
+              var activeCurentResearchPhase = basePaper.ResearchConferencePhase;
+              if (activeCurentResearchPhase == null)
+              {
+                  throw new NotFoundException("Không tìm thấy giai đoạn research trong bài báo");
+
+              }
+              //if (dateNow < activeCurentResearchPhase.CameraReadyDecideStatusStart || dateNow > activeCurentResearchPhase.CameraReadyDecideStatusEnd)
+              //{
+              //    throw new BadRequestException($"Giai đoạn quyết định camera ready từ {activeCurentResearchPhase.CameraReadyDecideStatusStart} đến {activeCurentResearchPhase.CameraReadyDecideStatusEnd}");
+              //}
+              if (paperReviewer.IsHeadReviewer != true)
+              {
+                  throw new BadRequestException("Chỉ head reviewer mới có thể quyết định bài báo");
+              }
+              // Update the camera ready status based on the request
+              string notiTitle = "Kết quả bài báo";
+              string notiMessage = string.Empty;
+              var rootAuthor = basePaper!.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true);
+              var rootAuthorEntity = rootAuthor.User;
+
+              string subject = "Kết quả quyết định bài báo";
+              string coAuthorListName = string.Empty;
+              var coAuthors = basePaper.PaperAuthors.Where(pa => pa.IsRootAuthor == false);
+              if (coAuthors.Any())
+              {
+                  coAuthorListName = string.Join(", ", coAuthors.Select(ca => ca.User.FullName));
+              }
+              else
+              {
+                  coAuthorListName = "Không có";
+              }
+
+              string submissionDate = string.Empty;
+
+              if (basePaper.CreatedAt != null)
+              {
+                  submissionDate = basePaper.CreatedAt?.ToString();
+              }
+              else
+              {
+                  submissionDate = "null";
+              }
 
 
-            GlobalStatus? newGlobalStatus = null;
-            switch (request.GlobalStatus)
-            {
-                case GlobalStatusEnum.Accepted:
-                    newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
-                    await _emailService.SendDecidePaperAcceptedTemplateEmailAsync(rootAuthorEntity.Email, rootAuthorEntity.FullName,
-                    subject, basePaper.PaperId, coAuthorListName, submissionDate, request.Reason,
-                    basePaper.ResearchConferencePhase.AuthorPaymentStart.ToString(),
-                    basePaper.ResearchConferencePhase.AuthorPaymentEnd.ToString(),
-    "Giai đoạn thanh toán", "EmailDecideAcceptedStatus.html");
-                    notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
-                    break;
-                case GlobalStatusEnum.Rejected:
-                    newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
-                    await _emailService.SendDecidePaperRejectedTemplateEmailAsync(
-                     rootAuthorEntity.Email,
-                     rootAuthorEntity.FullName,
-                     subject,
-                     basePaper.PaperId,
-                     coAuthorListName,
-                     submissionDate,
-                     request.Reason,
-                     "EmailDecideRejectedStatus.html");
+              GlobalStatus? newGlobalStatus = null;
+              switch (request.GlobalStatus)
+              {
+                  case GlobalStatusEnum.Accepted:
+                      newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+                      await _emailService.SendDecidePaperAcceptedTemplateEmailAsync(rootAuthorEntity.Email, rootAuthorEntity.FullName,
+                      subject, basePaper.PaperId, coAuthorListName, submissionDate, request.Reason,
+                      basePaper.ResearchConferencePhase.AuthorPaymentStart.ToString(),
+                      basePaper.ResearchConferencePhase.AuthorPaymentEnd.ToString(),
+      "Giai đoạn thanh toán", "EmailDecideAcceptedStatus.html");
+                      notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
-                    notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
+                      break;
+                  case GlobalStatusEnum.Rejected:
+                      newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+                      await _emailService.SendDecidePaperRejectedTemplateEmailAsync(
+                       rootAuthorEntity.Email,
+                       rootAuthorEntity.FullName,
+                       subject,
+                       basePaper.PaperId,
+                       coAuthorListName,
+                       submissionDate,
+                       request.Reason,
+                       "EmailDecideRejectedStatus.html");
 
 
-                    break;
-                case GlobalStatusEnum.Pending:
-                    newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-                    break;
-                default:
-                    throw new BadRequestException("Status không khả dụng");
-            }
-
-            if (newGlobalStatus == null)
-            {
-                throw new BadRequestException($"{request.GlobalStatus.GetDescription()} không tồn tại.");
-            }
-            int result = 0;
-            cameraReady.GlobalStatusId = newGlobalStatus.GlobalStatusId;
-            cameraReady.ReviewAt = timeNow;
-            cameraReady.Reason = request.Reason;
-            var notification = new Notification()
-            {
-                NotificationId = Guid.NewGuid().ToString(),
-                UserId = rootAuthor!.UserId,
-                Title = notiTitle,
-                Message = notiMessage,
-                Type = null,
-                CreatedAt = timeNow,
-                ReadStatus = false,
-            };
-            var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
-            if (!string.IsNullOrWhiteSpace(userDetail!.FirebaseMobileFcmToken))
-            {
-                await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
-            }
-            if (!string.IsNullOrWhiteSpace(userDetail.FirebaseWebFcmToken))
-            {
-                await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
-            }
-            result += await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
-            result += await _unitOfWork.CameraReadyRepository.UpdateCameraReadyAsync(cameraReady);
-            return result;
-        }
+                      notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
+                      break;
+                  case GlobalStatusEnum.Pending:
+                      newGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+                      break;
+                  default:
+                      throw new BadRequestException("Status không khả dụng");
+              }
+
+              if (newGlobalStatus == null)
+              {
+                  throw new BadRequestException($"{request.GlobalStatus.GetDescription()} không tồn tại.");
+              }
+              int result = 0;
+              //cameraReady.GlobalStatusId = newGlobalStatus.GlobalStatusId;
+              cameraReady.ReviewAt = timeNow;
+              //cameraReady.Reason = request.Reason;
+              var notification = new Notification()
+              {
+                  NotificationId = Guid.NewGuid().ToString(),
+                  UserId = rootAuthor!.UserId,
+                  Title = notiTitle,
+                  Message = notiMessage,
+                  Type = null,
+                  CreatedAt = timeNow,
+                  ReadStatus = false,
+              };
+              var userDetail = await _unitOfWork.UserRepository.GetUserByUserId(rootAuthor.UserId);
+              if (!string.IsNullOrWhiteSpace(userDetail!.FirebaseMobileFcmToken))
+              {
+                  await _notificationService.SendMobilePushAsync(userDetail.FirebaseMobileFcmToken, notiTitle, notiMessage);
+              }
+              if (!string.IsNullOrWhiteSpace(userDetail.FirebaseWebFcmToken))
+              {
+                  await _notificationService.SendWebPushAsync(userDetail.FirebaseWebFcmToken, notiTitle, notiMessage);
+              }
+              result += await _unitOfWork.NotificationRepository.CreateNotificationAsync(notification);
+              result += await _unitOfWork.CameraReadyRepository.UpdateCameraReadyAsync(cameraReady);
+              return result;
+          }
+        */
+        #endregion
         public async Task<List<PapersAssignedToReviewerResponse>> GetAllAssignedPapersToAReviewer(string userId, string conferenceId)
         {
             // Use the new repository method to get paper reviewers for user and conference
@@ -2249,8 +2281,8 @@ namespace ConfRadar.Services.Services
                     Description = p.CameraReady.Description,
                     CreatedAt = p.CameraReady.CreatedAt,
                     ReviewAt = p.CameraReady.ReviewAt,
-                    GlobalStatusId = p.CameraReady.GlobalStatusId,
-                    GlobalStatusName = p.CameraReady.GlobalStatus?.Name,
+                    //GlobalStatusId = p.CameraReady.GlobalStatusId,
+                    //GlobalStatusName = p.CameraReady.GlobalStatus?.Name,
 
                 }
 
@@ -2370,8 +2402,8 @@ namespace ConfRadar.Services.Services
                     CameraReadyEndDate = paper.ResearchConferencePhase.CameraReadyEndDate,
 
                     // 10. Camera Ready Decide
-                    CameraReadyDecideStatusStart = paper.ResearchConferencePhase.CameraReadyDecideStatusStart,
-                    CameraReadyDecideStatusEnd = paper.ResearchConferencePhase.CameraReadyDecideStatusEnd,
+                    //CameraReadyDecideStatusStart = paper.ResearchConferencePhase.CameraReadyDecideStatusStart,
+                    //CameraReadyDecideStatusEnd = paper.ResearchConferencePhase.CameraReadyDecideStatusEnd,
 
                     // 11. Author payment
                     AuthorPaymentStart = paper.ResearchConferencePhase.AuthorPaymentStart,
@@ -2389,12 +2421,12 @@ namespace ConfRadar.Services.Services
                 {
                     CameraReadyId = paper.CameraReady.CameraReadyId,
                     FileUrl = paper.CameraReady.CameraReadyUrl,
-                    Status = paper.CameraReady.GlobalStatus?.Name, // Safe navigation
+                    //Status = paper.CameraReady.GlobalStatus?.Name, // Safe navigation
                     Title = paper.CameraReady.Title,
                     Description = paper.CameraReady.Description,
                     Created = paper.CameraReady.CreatedAt,
                     Updated = paper.CameraReady.ReviewAt,
-                    Reason = paper.CameraReady.Reason,
+                    //Reason = paper.CameraReady.Reason,
                 } : null,
 
                 // Map the result from the parallel tasks
@@ -2452,14 +2484,14 @@ namespace ConfRadar.Services.Services
                 Updated = entity.ReviewAt,
                 Reason = entity.Reason,
                 OverallStatus = entity.GlobalStatus?.Name,
-                Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
-                {
-                    ReviewId = review.RevisionPaperReviewId,
-                    Note = review.Note,
-                    //FeedBackToAuthor = review.FeedbackToAuthor,
-                    FeedbackMaterialURL = review.FeedbackMaterialUrl,
-                    ReviewedAt = review.CreatedAt ?? default // Use default if nullable
-                }).ToList() ?? new List<RevisionReviewDtoDetail>(),
+                //Reviews = entity.RevisionPaperReviews?.Select(review => new RevisionReviewDtoDetail
+                //{
+                //    ReviewId = review.RevisionPaperReviewId,
+                //    Note = review.Note,
+                //    //FeedBackToAuthor = review.FeedbackToAuthor,
+                //    FeedbackMaterialURL = review.FeedbackMaterialUrl,
+                //    ReviewedAt = review.CreatedAt ?? default // Use default if nullable
+                //}).ToList() ?? new List<RevisionReviewDtoDetail>(),
 
                 Submissions = entity.RevisionPaperSubmissions?.Select(sub => new RevisionSubmissionDtoDetail
                 {
@@ -2619,25 +2651,25 @@ namespace ConfRadar.Services.Services
         //    return AssignedPapers;
         //}
 
-        public async Task<List<CameraReadyDtoDetail>> ListPendingCameraReady()
-        {
-            var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            List<CameraReady> pendingCameraready = await _unitOfWork.CameraReadyRepository.GetCameraBystatusName(pendingStatus!.Name!);
-            List<CameraReadyDtoDetail> result = new List<CameraReadyDtoDetail>();
-            foreach (CameraReady c in pendingCameraready)
-            {
-                var paperId = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(c.CameraReadyId);
-                CameraReadyDtoDetail responseDTO = new CameraReadyDtoDetail
-                {
-                    CameraReadyId = c?.CameraReadyId,
-                    FileUrl = c?.CameraReadyUrl,
-                    Status = c?.GlobalStatus.Name,
-                    RootPaperId = paperId.PaperId
-                };
-                result.Add(responseDTO);
-            }
-            return result;
-        }
+        //public async Task<List<CameraReadyDtoDetail>> ListPendingCameraReady()
+        //{
+        //    var pendingStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
+        //    List<CameraReady> pendingCameraready = await _unitOfWork.CameraReadyRepository.GetCameraBystatusName(pendingStatus!.Name!);
+        //    List<CameraReadyDtoDetail> result = new List<CameraReadyDtoDetail>();
+        //    foreach (CameraReady c in pendingCameraready)
+        //    {
+        //        var paperId = await _unitOfWork.PaperRepository.GetPaperByCameraReadyIdAsync(c.CameraReadyId);
+        //        CameraReadyDtoDetail responseDTO = new CameraReadyDtoDetail
+        //        {
+        //            CameraReadyId = c?.CameraReadyId,
+        //            FileUrl = c?.CameraReadyUrl,
+        //            Status = c?.GlobalStatus.Name,
+        //            RootPaperId = paperId.PaperId
+        //        };
+        //        result.Add(responseDTO);
+        //    }
+        //    return result;
+        //}
 
         public async Task<List<FullPaperDtoDetail>> ListPendingfullpaper()
         {
@@ -2721,8 +2753,8 @@ namespace ConfRadar.Services.Services
                     CameraReady = cameraReadyEntity != null ? new CameraReadyResponseDTO
                     {
                         CameraReadyId = cameraReadyEntity.CameraReadyId,
-                        GlobalStatusId = cameraReadyEntity.GlobalStatusId,
-                        GlobalStatusName = cameraReadyEntity.GlobalStatus?.Name,
+                        //GlobalStatusId = cameraReadyEntity.GlobalStatusId,
+                        //GlobalStatusName = cameraReadyEntity.GlobalStatus?.Name,
                         CameraReadyUrl = cameraReadyEntity.CameraReadyUrl
                     } : null
                 };
@@ -2821,11 +2853,11 @@ namespace ConfRadar.Services.Services
         public async Task<int> UpdateAbstract(UpdateAbstractRequest request, string userId)
         {
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            var paperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
+            var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByName(PaperPhaseEnum.Abstract.GetDescription());
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
 
 
-            if (paperPhase == null || pendingGlobalStatus == null || readyConfStatus == null)
+            if (abstractPhase == null || pendingGlobalStatus == null || readyConfStatus == null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");
             }
@@ -2858,14 +2890,14 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy các giai đoạn {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.RegistrationStartDate || dateNow > activeCurrentPhase.RegistrationEndDate)
+            if (dateNow > activeCurrentPhase.RegistrationEndDate)
             {
-                throw new BadRequestException($"Giai đoạn sửa abstract diễn ra từ {activeCurrentPhase.RegistrationStartDate} đến {activeCurrentPhase.RegistrationEndDate}");
+                throw new BadRequestException($"Hạn chót sửa abstract diễn ra  đến {activeCurrentPhase.RegistrationEndDate}");
             }
 
-            if (paper.PaperPhaseId != paperPhase.PaperPhaseId)
+            if (paper.PaperPhaseId != abstractPhase.PaperPhaseId)
             {
-                throw new BadRequestException($"Paper hiện tại đang không trong giai đoạn chỉnh sửa abstract");
+                throw new BadRequestException($"Bài báo phải trong giai đoạn abstract để chỉnh sửa");
             }
             var rootAuthorCheck = paper.PaperAuthors.FirstOrDefault(pa => pa.IsRootAuthor == true && pa.UserId == userId);
             if (rootAuthorCheck == null)
@@ -3016,9 +3048,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy các giai đoạn cho hội nghị {paper.Conference!.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.FullPaperStartDate || dateNow > activeCurrentPhase.FullPaperEndDate)
+            if ( dateNow > activeCurrentPhase.FullPaperEndDate)
             {
-                throw new BadRequestException($"Giai đoạn fullpaper diễn ra từ {activeCurrentPhase.FullPaperStartDate} đến {activeCurrentPhase.FullPaperEndDate}");
+                throw new BadRequestException($"Hạn chót giai đoạn fullpaper diễn ra đến {activeCurrentPhase.FullPaperEndDate}");
             }
 
             if (paper.PaperPhaseId != fullPaperPhase.PaperPhaseId)
@@ -3120,9 +3152,9 @@ namespace ConfRadar.Services.Services
             {
                 throw new NotFoundException("Không tìm thấy thông tin deadline của revision submission này");
             }
-            if (dateNow < currentRevisionPaperSubmissionDeadline!.StartSubmissionDate || dateNow > currentRevisionPaperSubmissionDeadline!.EndSubmissionDate)
+            if (dateNow > currentRevisionPaperSubmissionDeadline!.EndSubmissionDate)
             {
-                throw new BadRequestException($"Bạn không thể chỉnh sửa vì deadline revision submission này từ {currentRevisionPaperSubmissionDeadline.StartSubmissionDate} đến {currentRevisionPaperSubmissionDeadline.EndSubmissionDate}");
+                throw new BadRequestException($"Bạn không thể chỉnh sửa vì deadline revision submission này hạn chót đến {currentRevisionPaperSubmissionDeadline.EndSubmissionDate}");
             }
             var revisionSubmissionFeedbackList = currentRevisionPaperSubmission.RevisionSubmissionFeedbacks;
             if (revisionSubmissionFeedbackList.Any())
@@ -3251,8 +3283,8 @@ namespace ConfRadar.Services.Services
             var myFullPaperReviews = await _unitOfWork.FullPaperReviewRepository
                 .GetReviewsByUserAndPaperIdsAsync(userId, paperIds);
 
-            var myRevisionReviews = await _unitOfWork.RevisionPaperReviewRepository
-                .GetReviewsByUserAndPaperIdsAsync(userId, paperIds);
+            //var myRevisionReviews = await _unitOfWork.RevisionPaperReviewRepository
+            //    .GetReviewsByUserAndPaperIdsAsync(userId, paperIds);
 
             var dateNow = await _timeProviderService.GetVietnamDate();
             var responseList = new List<ReviewerWorkItemResponse>();
@@ -3332,7 +3364,7 @@ namespace ConfRadar.Services.Services
                             .Any(fb => fb.UserId == userId);
                     }
 
-                    var myRevReview = myRevisionReviews.FirstOrDefault(r => r.RevisionPaperId == paper.RevisionPaperId);
+                    //var myRevReview = myRevisionReviews.FirstOrDefault(r => r.RevisionPaperId == paper.RevisionPaperId);
                     bool isRevPending = paper.RevisionPaper.GlobalStatus?.Name == PendingStatus;
 
                     dto.RevisionWork = new RevisionWorkItem
@@ -3344,7 +3376,7 @@ namespace ConfRadar.Services.Services
 
                         IsFeedbackSubmitted = hasGivenFeedback,
 
-                        IsMyReviewSubmitted = myRevReview != null,
+                       // IsMyReviewSubmitted = myRevReview != null,
 
                         CanGiveFeedback = isHead
                                           && dateNow >= startReviseDate
@@ -3361,19 +3393,19 @@ namespace ConfRadar.Services.Services
                 // --- C. CAMERA READY ---
                 if (paper.CameraReady != null)
                 {
-                    bool isCrPending = paper.CameraReady.GlobalStatus?.Name == PendingStatus;
+                    //bool isCrPending = paper.CameraReady.GlobalStatus?.Name == PendingStatus;
 
                     dto.CameraReadyWork = new CameraReadyWorkItem
                     {
                         CameraReadyId = paper.CameraReady.CameraReadyId,
                         FileUrl = paper.CameraReady.CameraReadyUrl,
-                        StatusName = paper.CameraReady.GlobalStatus?.Name,
+                    //    StatusName = paper.CameraReady.GlobalStatus?.Name,
 
-                        CanDecide = isHead
-                                    && phaseConfig != null
-                                    && dateNow >= phaseConfig.CameraReadyDecideStatusStart
-                                    && dateNow <= phaseConfig.CameraReadyDecideStatusEnd
-                                    && isCrPending
+                    //    CanDecide = isHead
+                    //                && phaseConfig != null
+                    //                && dateNow >= phaseConfig.CameraReadyDecideStatusStart
+                    //                && dateNow <= phaseConfig.CameraReadyDecideStatusEnd
+                    //                && isCrPending
                     };
                 }
 
@@ -3450,75 +3482,75 @@ namespace ConfRadar.Services.Services
 
         }
 
-        public async Task<bool> AutoGeneratePublishingLinks(string conferenceId, string userId)
-        {
-            // === BƯỚC 1: LẤY CÁC THÔNG TIN CẦN THIẾT ===
-            var completedConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
-            var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+        //public async Task<bool> AutoGeneratePublishingLinks(string conferenceId, string userId)
+        //{
+        //    // === BƯỚC 1: LẤY CÁC THÔNG TIN CẦN THIẾT ===
+        //    var completedConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
+        //    var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
 
-            if (completedConfStatus == null || acceptedGlobalStatus == null)
-                throw new NotFoundException("Không tìm thấy các trạng thái hệ thống cần thiết (Completed hoặc Accepted).");
+        //    if (completedConfStatus == null || acceptedGlobalStatus == null)
+        //        throw new NotFoundException("Không tìm thấy các trạng thái hệ thống cần thiết (Completed hoặc Accepted).");
 
-            // Lấy thông tin hội nghị, bao gồm cả ResearchDetail và Publisher
-            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
-            if (conference == null)
-                throw new BadRequestException($"Hội nghị với ID {conferenceId} không tồn tại.");
+        //    // Lấy thông tin hội nghị, bao gồm cả ResearchDetail và Publisher
+        //    var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(conferenceId);
+        //    if (conference == null)
+        //        throw new BadRequestException($"Hội nghị với ID {conferenceId} không tồn tại.");
 
-            // === BƯỚC 2: VALIDATION QUYỀN VÀ TRẠNG THÁI ===
-            if (conference.CreatedBy != userId)
-                throw new Exception("Chỉ người tổ chức hội nghị mới có thể thực hiện hành động này.");
+        //    // === BƯỚC 2: VALIDATION QUYỀN VÀ TRẠNG THÁI ===
+        //    if (conference.CreatedBy != userId)
+        //        throw new Exception("Chỉ người tổ chức hội nghị mới có thể thực hiện hành động này.");
 
-            //if (conference.ConferenceStatusId != completedConfStatus.ConferenceStatusId)
-            //    throw new BadRequestException("Hội nghị phải ở trạng thái 'Completed' mới có thể công bố link xuất bản.");
+        //    //if (conference.ConferenceStatusId != completedConfStatus.ConferenceStatusId)
+        //    //    throw new BadRequestException("Hội nghị phải ở trạng thái 'Completed' mới có thể công bố link xuất bản.");
 
-            // Kiểm tra xem hội nghị có nhà xuất bản không
-            var publisher = conference.ResearchConferenceDetail?.Publisher;
-            if (publisher == null)
-                throw new BadRequestException("Hội nghị này chưa được cấu hình nhà xuất bản.");
+        //    // Kiểm tra xem hội nghị có nhà xuất bản không
+        //    //var publisher = conference.ResearchConferenceDetail?.Publisher;
+        //    //if (publisher == null)
+        //    //    throw new BadRequestException("Hội nghị này chưa được cấu hình nhà xuất bản.");
 
-            // === BƯỚC 3: LẤY CÁC BÀI BÁO CẦN XUẤT BẢN ===
-            var papersToPublish = await _unitOfWork.PaperRepository.GetAcceptedPaperToPublish(conferenceId, acceptedGlobalStatus.GlobalStatusId);
+        //    // === BƯỚC 3: LẤY CÁC BÀI BÁO CẦN XUẤT BẢN ===
+        //    var papersToPublish = await _unitOfWork.PaperRepository.GetAcceptedPaperToPublish(conferenceId, acceptedGlobalStatus.GlobalStatusId);
 
-            if (!papersToPublish.Any())
-            {
-                return true; // Không có bài báo nào cần xử lý, coi như thành công.
-            }
-
-
-
-            // === BƯỚC 5: LƯU THAY ĐỔI VÀ TRẢ VỀ KẾT QUẢ ===
+        //    if (!papersToPublish.Any())
+        //    {
+        //        return true; // Không có bài báo nào cần xử lý, coi như thành công.
+        //    }
 
 
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                if (string.IsNullOrWhiteSpace(publisher.LinkTemplate))
-                {
-                    foreach (var paper in papersToPublish)
-                    {
-                        paper.PublishingLink = GenerateDefaultLink();
-                        await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
-                    }
-                }
-                else
-                {
-                    // Xử lý sinh link từ template
-                    foreach (var paper in papersToPublish)
-                    {
-                        paper.PublishingLink = GenerateLinkFromTemplate(publisher.LinkTemplate);
-                        await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
-                    }
-                }
-                await _unitOfWork.CommitAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackAsync();
-                throw ex;
-            }
 
-        }
+        //    // === BƯỚC 5: LƯU THAY ĐỔI VÀ TRẢ VỀ KẾT QUẢ ===
+
+
+        //    await _unitOfWork.BeginTransactionAsync();
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(publisher.LinkTemplate))
+        //        {
+        //            foreach (var paper in papersToPublish)
+        //            {
+        //                paper.PublishingLink = GenerateDefaultLink();
+        //                await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            // Xử lý sinh link từ template
+        //            foreach (var paper in papersToPublish)
+        //            {
+        //                paper.PublishingLink = GenerateLinkFromTemplate(publisher.LinkTemplate);
+        //                await _unitOfWork.PaperRepository.UpdatePaperAsync(paper);
+        //            }
+        //        }
+        //        await _unitOfWork.CommitAsync();
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await _unitOfWork.RollbackAsync();
+        //        throw ex;
+        //    }
+
+        //}
 
 
         private string GenerateDefaultLink()

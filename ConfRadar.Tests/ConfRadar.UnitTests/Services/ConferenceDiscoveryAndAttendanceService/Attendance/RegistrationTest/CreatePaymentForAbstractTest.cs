@@ -1,4 +1,4 @@
-﻿//using ConfRadar.Repositories;
+//using ConfRadar.Repositories;
 //using ConfRadar.Repositories.Models;
 //using ConfRadar.Repositories.Repositories;
 //using ConfRadar.Services.Common;
@@ -165,8 +165,8 @@
 //            };
 //            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync(paperId)).ReturnsAsync(paper);
 
-//            _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1"))
-//                .ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "GS_ACCEPTED" });
+            //_mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1"))
+                //.ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "GS_ACCEPTED" });
 
 //            // conference price
 //            var cp = CreateValidConferencePrice();
@@ -391,20 +391,20 @@
 //            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
 //        }
 
-//        [Fact]
-//        public async Task ShouldThrow_WhenCameraReadyNotAccepted()
-//        {
-//            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
-//            SetupBaseValidMocks();
-//            _mockConferenceStatusRepo
-//.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
-//.ReturnsAsync(new ConferenceStatus
-//{
-//    ConferenceStatusId = "CS_READY",
-//    ConferenceStatusName = "Ready"
-//});
-//            _mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "NOT_ACCEPTED" });
-//            _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(new GlobalStatus { GlobalStatusId = "GS_ACCEPTED" });
+        [Fact]
+        public async Task ShouldThrow_WhenCameraReadyNotAccepted()
+        {
+            var req = new CreatePaperPaymentRequest { PaymentMethodId = "PM1", ConferencePriceId = "CP1", PaperId = "P1" };
+            SetupBaseValidMocks();
+            _mockConferenceStatusRepo
+.Setup(r => r.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+.ReturnsAsync(new ConferenceStatus
+{
+    ConferenceStatusId = "CS_READY",
+    ConferenceStatusName = "Ready"
+});
+            //_mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1")).ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "NOT_ACCEPTED" });
+            _mockGlobalStatusRepo.Setup(r => r.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(new GlobalStatus { GlobalStatusId = "GS_ACCEPTED" });
 
 //            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreatePaymentForAbstract(req, "U1"));
 //        }

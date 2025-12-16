@@ -1,6 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -89,8 +91,6 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<PricePhase> PricePhases { get; set; }
 
-    public virtual DbSet<Publisher> Publishers { get; set; }
-
     public virtual DbSet<RankingCategory> RankingCategories { get; set; }
 
     public virtual DbSet<RankingFileUrl> RankingFileUrls { get; set; }
@@ -114,8 +114,6 @@ public partial class ConfRadarDbContext : DbContext
     public virtual DbSet<ReviewerContract> ReviewerContracts { get; set; }
 
     public virtual DbSet<RevisionPaper> RevisionPapers { get; set; }
-
-    public virtual DbSet<RevisionPaperReview> RevisionPaperReviews { get; set; }
 
     public virtual DbSet<RevisionPaperSubmission> RevisionPaperSubmissions { get; set; }
 
@@ -166,7 +164,7 @@ public partial class ConfRadarDbContext : DbContext
         return connectionString;
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -240,12 +238,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.CameraReadyId).HasMaxLength(50);
             entity.Property(e => e.CameraReadyUrl).HasColumnName("CameraReadyURL");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
             entity.Property(e => e.ReviewAt).HasColumnType("timestamp without time zone");
-
-            entity.HasOne(d => d.GlobalStatus).WithMany(p => p.CameraReadies)
-                .HasForeignKey(d => d.GlobalStatusId)
-                .HasConstraintName("FK_CameraReady_GlobalStatusId");
         });
 
         modelBuilder.Entity<CheckinStatus>(entity =>
@@ -621,6 +614,7 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.AbstractId).HasMaxLength(50);
             entity.Property(e => e.CameraReadyId).HasMaxLength(50);
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
+            entity.Property(e => e.ConferenceSessionId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.FullPaperId).HasMaxLength(50);
             entity.Property(e => e.PaperPhaseId).HasMaxLength(50);
@@ -639,6 +633,10 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.Conference).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.ConferenceId)
                 .HasConstraintName("FK_Paper_ConferenceId");
+
+            entity.HasOne(d => d.ConferenceSession).WithMany(p => p.Papers)
+                .HasForeignKey(d => d.ConferenceSessionId)
+                .HasConstraintName("FK_Paper_ConferenceSessionId");
 
             entity.HasOne(d => d.FullPaper).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.FullPaperId)
@@ -834,11 +832,6 @@ public partial class ConfRadarDbContext : DbContext
                 .HasConstraintName("FK_PricePhase_ResearchConferencePhaseId");
         });
 
-        modelBuilder.Entity<Publisher>(entity =>
-        {
-            entity.ToTable("Publisher");
-        });
-
         modelBuilder.Entity<RankingCategory>(entity =>
         {
             entity.HasKey(e => e.RankingCategoryId).HasName("RankingCategories_pkey");
@@ -962,7 +955,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.ToTable("ResearchConferenceDetail");
 
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
-            entity.Property(e => e.PublisherId).HasMaxLength(50);
             entity.Property(e => e.RankValue).HasMaxLength(255);
             entity.Property(e => e.RankingCategoryId).HasMaxLength(50);
             entity.Property(e => e.SubmitPaperFee).HasPrecision(10, 2);
@@ -971,10 +963,6 @@ public partial class ConfRadarDbContext : DbContext
                 .HasForeignKey<ResearchConferenceDetail>(d => d.ConferenceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ResearchConferenceDetail_ConferenceId");
-
-            entity.HasOne(d => d.Publisher).WithMany(p => p.ResearchConferenceDetails)
-                .HasForeignKey(d => d.PublisherId)
-                .HasConstraintName("FK_ResearchDetail_Publisher");
 
             entity.HasOne(d => d.RankingCategory).WithMany(p => p.ResearchConferenceDetails)
                 .HasForeignKey(d => d.RankingCategoryId)
@@ -1044,31 +1032,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.RevisionRoundDeadline).WithMany(p => p.RevisionPapers)
                 .HasForeignKey(d => d.RevisionRoundDeadlineId)
                 .HasConstraintName("FK_RevisionPaper_RevisionRoundDeadlineId");
-        });
-
-        modelBuilder.Entity<RevisionPaperReview>(entity =>
-        {
-            entity.HasKey(e => e.RevisionPaperReviewId).HasName("RevisionPaperReview_pkey");
-
-            entity.ToTable("RevisionPaperReview");
-
-            entity.Property(e => e.RevisionPaperReviewId).HasMaxLength(50);
-            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
-            entity.Property(e => e.ReviewerId).HasMaxLength(50);
-            entity.Property(e => e.RevisionPaperId).HasMaxLength(50);
-
-            entity.HasOne(d => d.GlobalStatus).WithMany(p => p.RevisionPaperReviews)
-                .HasForeignKey(d => d.GlobalStatusId)
-                .HasConstraintName("FK_RevisionPaperReview_GlobalStatusId");
-
-            entity.HasOne(d => d.Reviewer).WithMany(p => p.RevisionPaperReviews)
-                .HasForeignKey(d => d.ReviewerId)
-                .HasConstraintName("FK_RevisionPaperReview_ReviewerId");
-
-            entity.HasOne(d => d.RevisionPaper).WithMany(p => p.RevisionPaperReviews)
-                .HasForeignKey(d => d.RevisionPaperId)
-                .HasConstraintName("FK_RevisionPaperReview_RevisionPaperId");
         });
 
         modelBuilder.Entity<RevisionPaperSubmission>(entity =>

@@ -87,10 +87,10 @@ namespace ConfRadar.Services.Services
                 {
                     if (paper.RevisionPaper.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
                 }
-                if (paper.CameraReady != null)
-                {
-                    if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
-                }
+                //if (paper.CameraReady != null)
+                //{
+                //    if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
+                //}
                 if (isAllReviewed)
                 {
                     totalReviewedPapersDetailResponse.TotalPaperReviewed += 1;
@@ -142,10 +142,10 @@ namespace ConfRadar.Services.Services
                     {
                         if (paper.RevisionPaper.GlobalStatus == pendingGlobalStatus) isAllCompleted = false;
                     }
-                    if (paper.CameraReady != null)
-                    {
-                        if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllCompleted = false;
-                    }
+                    //if (paper.CameraReady != null)
+                    //{
+                    //    if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllCompleted = false;
+                    //}
                     if (!isAllCompleted)
                     {
                         totalPendingReview.TotalPendingReview += 1;

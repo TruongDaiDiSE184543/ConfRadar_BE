@@ -1,4 +1,4 @@
-﻿//using ConfRadar.Repositories;
+//using ConfRadar.Repositories;
 //using ConfRadar.Repositories.Models;
 //using ConfRadar.Repositories.Repositories;
 //using ConfRadar.Services.Common;
@@ -115,33 +115,32 @@
 //            return ticket;
 //        }
 
-//        private Paper CreatePaper(string ticketId)
-//        {
-//            return new Paper
-//            {
-//                PaperId = $"P_{ticketId}",
-//                Abstract = new Abstract
-//                {
-//                    AbstractId = $"ABS_{ticketId}",
-//                    GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_PENDING", Name = "Pending" }
-//                },
-//                FullPaper = new FullPaper
-//                {
-//                    FullPaperId = $"FP_{ticketId}",
-//                    ReviewStatus = new ReviewStatus { ReviewStatusId = "RS_PENDING", Name = "Pending" }
-//                },
-//                RevisionPaper = new RevisionPaper
-//                {
-//                    RevisionPaperId = $"REV_{ticketId}",
-//                    GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_PENDING", Name = "Pending" }
-//                },
-//                CameraReady = new CameraReady
-//                {
-//                    CameraReadyId = $"CR_{ticketId}",
-//                    GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_PENDING", Name = "Pending" }
-//                }
-//            };
-//        }
+        private Paper CreatePaper(string ticketId)
+        {
+            return new Paper
+            {
+                PaperId = $"P_{ticketId}",
+                Abstract = new Abstract
+                {
+                    AbstractId = $"ABS_{ticketId}",
+                    GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_PENDING", Name = "Pending" }
+                },
+                FullPaper = new FullPaper
+                {
+                    FullPaperId = $"FP_{ticketId}",
+                    ReviewStatus = new ReviewStatus { ReviewStatusId = "RS_PENDING", Name = "Pending" }
+                },
+                RevisionPaper = new RevisionPaper
+                {
+                    RevisionPaperId = $"REV_{ticketId}",
+                    GlobalStatus = new GlobalStatus { GlobalStatusId = "GS_PENDING", Name = "Pending" }
+                },
+                CameraReady = new CameraReady
+                {
+                    CameraReadyId = $"CR_{ticketId}",
+                }
+            };
+        }
 
 //        private void SetupCommonMocks()
 //        {
@@ -298,11 +297,11 @@
 //            // Assert
 //            Assert.Equal(3, result);
 
-//            // Verify all paper phases are rejected
-//            Assert.Equal("GS_REJECTED", ticket.Paper!.Abstract!.GlobalStatus.GlobalStatusId);
-//            Assert.Equal("RS_REJECTED", ticket.Paper!.FullPaper!.ReviewStatus.ReviewStatusId);
-//            Assert.Equal("GS_REJECTED", ticket.Paper!.RevisionPaper!.GlobalStatus.GlobalStatusId);
-//            Assert.Equal("GS_REJECTED", ticket.Paper!.CameraReady!.GlobalStatus.GlobalStatusId);
+            // Verify all paper phases are rejected
+            Assert.Equal("GS_REJECTED", ticket.Paper!.Abstract!.GlobalStatus.GlobalStatusId);
+            Assert.Equal("RS_REJECTED", ticket.Paper!.FullPaper!.ReviewStatus.ReviewStatusId);
+            Assert.Equal("GS_REJECTED", ticket.Paper!.RevisionPaper!.GlobalStatus.GlobalStatusId);
+            //Assert.Equal("GS_REJECTED", ticket.Paper!.CameraReady!.GlobalStatus.GlobalStatusId);
 
 //            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
 //        }
