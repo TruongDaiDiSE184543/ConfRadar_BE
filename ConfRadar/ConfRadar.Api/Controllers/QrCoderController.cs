@@ -18,6 +18,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> VerifyQrCode([FromBody] VerifyQrDataRequest request)
         {
             var message = await _serviceManager.QRCoderService.ProceedQrCode(request);
+
             return Ok(ApiResponse<object>.SuccessResponse(message, "đã check in thành công"));
         }
     }

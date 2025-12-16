@@ -27,18 +27,18 @@
 //            // Gắn mock TicketRepo vào UnitOfWork
 //            _mockUnitOfWork.Setup(u => u.TicketRepository).Returns(_mockTicketRepo.Object);
 
-            
-            
+
+
 //            var mockTime = new Mock<ITimeProviderService>();
 //            var mockMomo = new Mock<IMomoService>();
-            
+
 
 //            // Khởi tạo TicketService
 //            _ticketService = new TicketService(
 //                _mockUnitOfWork.Object,
 //                mockTime.Object, 
 //                mockMomo.Object  
-                                 
+
 //            );
 //        }
 

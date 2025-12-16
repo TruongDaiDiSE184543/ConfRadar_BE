@@ -132,7 +132,7 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(fp => fp.ReviewStatus)
                 // revision
                 .Include(p => p.RevisionPaper)
-                    //.ThenInclude(rp => rp.RevisionPaperReviews)
+                //.ThenInclude(rp => rp.RevisionPaperReviews)
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rp => rp.GlobalStatus)
 

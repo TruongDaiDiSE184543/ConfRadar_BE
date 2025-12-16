@@ -1,8 +1,10 @@
-using ConfRadar.Api.Responses;
+﻿using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Destination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -21,15 +23,12 @@ namespace ConfRadar.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateDestination([FromBody] CreateDestinationRequest request)
         {
-            try
-            {
-                var destinationId = await _serviceManager.DestinationService.CreateDestinationAsync(request);
-                return Ok(ApiResponse<string>.SuccessResponse(destinationId, "Destination created successfully"));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponse<object>.FailResponse(ex.Message));
-            }
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var destinationId = await _serviceManager.DestinationService.CreateDestinationAsync(request);
+           await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"tạo điểm đến {request.Name} đến thành công");
+           return Ok(ApiResponse<string>.SuccessResponse(destinationId, "Tạo điểm đến thành công"));
+            
+          
         }
 
         [Authorize(Roles = "Conference Organizer,Admin")]
@@ -38,12 +37,14 @@ namespace ConfRadar.Api.Controllers
         {
             try
             {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var result = await _serviceManager.DestinationService.UpdateDestinationAsync(request, id);
                 if (result > 0)
                 {
-                    return Ok(ApiResponse<object>.SuccessResponse(null, "Destination updated successfully"));
+                    await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"cập nhật điểm đến với id {id} thành công");
+                    return Ok(ApiResponse<object>.SuccessResponse(null, "Cập nhật điểm đến thành công"));
                 }
-                return NotFound(ApiResponse<object>.FailResponse("Destination not found"));
+                return NotFound(ApiResponse<object>.FailResponse("Không tìm thấy điểm đến"));
             }
             catch (Exception ex)
             {

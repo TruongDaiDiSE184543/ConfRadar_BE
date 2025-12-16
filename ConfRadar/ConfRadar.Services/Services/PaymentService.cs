@@ -314,11 +314,11 @@ namespace ConfRadar.Services.Services
             var reviewStatusAccepted = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Accepted.GetDescription());
 
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            if (readyConfStatus == null|| reviewStatusAccepted== null|| globalStatusAccepted == null)
+            if (readyConfStatus == null || reviewStatusAccepted == null || globalStatusAccepted == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái trong hệ thống");
             }
-            if (paymentMethod == null )
+            if (paymentMethod == null)
             {
                 throw new BadRequestException($"Không tìm thấy phuong thúc thanh toán nào với mã {request.PaymentMethodId}");
             }
@@ -349,7 +349,7 @@ namespace ConfRadar.Services.Services
             }
             bool canPurchase = false;
 
-            if (paper.FullPaperId !=null)
+            if (paper.FullPaperId != null)
             {
                 var fullPaper = await _unitOfWork.FullPaperRepository.GetFullPaperByIdAsync(paper.FullPaperId);
                 if (fullPaper == null) throw new NotFoundException("Không tìm thấy full paper");
@@ -362,7 +362,7 @@ namespace ConfRadar.Services.Services
             if (paper.RevisionPaperId != null)
             {
                 var revisionPaper = await _unitOfWork.RevisionPaperRepository.GetRevisionPaperByIdAsync(paper.RevisionPaperId);
-                if (revisionPaper==null) throw new NotFoundException("Không tìm thấy revision paper");
+                if (revisionPaper == null) throw new NotFoundException("Không tìm thấy revision paper");
                 if (revisionPaper.GlobalStatusId == globalStatusAccepted.GlobalStatusId)
                 {
                     canPurchase = true;
@@ -373,8 +373,8 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("Bạn phải có fullpaper được chấp nhận hoặc revision được chấp nhận để thực hiện thanh toán cho bài báo");
             }
 
-           
-         
+
+
 
 
 
@@ -459,7 +459,7 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Giai đoạn hội nghị nghiên cứu không khả dụng. Xin vui lòng liên hệ ban tổ chức");
             }
 
-           
+
             if (activeResearchConferencePhase.AuthorPaymentEnd < dateNow)
             {
                 throw new BadRequestException($"Ðã hết thời hạn mua vé. Hạn chót {activeResearchConferencePhase.AuthorPaymentEnd}");
@@ -486,9 +486,9 @@ namespace ConfRadar.Services.Services
             decimal applyPercent = 0;
 
             var validPhases = conferencePrice.PricePhases
-            .Where(p => /*p.StartDate <= dateNow &&*/ p.EndDate >= dateNow&& 
-            p.ResearchConferencePhase!=null &&
-            p.ResearchConferencePhase.IsActive==true)
+            .Where(p => /*p.StartDate <= dateNow &&*/ p.EndDate >= dateNow &&
+            p.ResearchConferencePhase != null &&
+            p.ResearchConferencePhase.IsActive == true)
             .OrderBy(p => p.EndDate)
             .ToList();
 

@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Shared.DTO.Report;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,7 @@ namespace ConfRadar.Api.Controllers
 
 
             var report = await _serviceManager.ReportService.CreateReportAsync(userId, request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Report, $"đã tạo báo cáo");
             return Ok(ApiResponse<object>.SuccessResponse(null, "Report được tạo thành công "));
         }
 
@@ -40,7 +42,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetUnresolvedReports()
         {
             var reports = await _serviceManager.ReportService.GetUnresolvedReportsAsync();
-            return Ok(ApiResponse<List<UnresolvedReportResponse>>.SuccessResponse(reports, "Unresolved reports retrieved successfully"));
+            return Ok(ApiResponse<List<UnresolvedReportResponse>>.SuccessResponse(reports, "Danh sách báo cáo chưa được xử lí"));
         }
 
         /// <summary>
@@ -54,7 +56,9 @@ namespace ConfRadar.Api.Controllers
 
 
             var feedback = await _serviceManager.ReportService.CreateReportFeedbackAsync(reportId, adminId, request);
-            return Ok(ApiResponse<ReportFeedbackResponse>.SuccessResponse(feedback, "Report feedback created successfully"));
+            await _serviceManager.AuditLogService.CreateAuditLog(adminId, Services.Common.AuditLogActionNameEnum.Report, $"đã trả lời báo cáo");
+
+            return Ok(ApiResponse<ReportFeedbackResponse>.SuccessResponse(feedback, "Đã trả lời báo cáo thành công"));
         }
 
         [HttpGet("{reportId}/get-response")]

@@ -1,8 +1,10 @@
 using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
 {
@@ -24,7 +26,7 @@ namespace ConfRadar.Api.Controllers
             try
             {
                 var config = await _serviceManager.SystemConfigurationService.GetAllSessionConfigurationAsync();
-                return Ok(ApiResponse<SessionConfigurationResponse>.SuccessResponse(config, "Session configuration retrieved successfully"));
+                return Ok(ApiResponse<SessionConfigurationResponse>.SuccessResponse(config, " truy xu?t c?u hình phiên thành công "));
             }
             catch (Exception ex)
             {
@@ -38,12 +40,14 @@ namespace ConfRadar.Api.Controllers
         {
             try
             {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var result = await _serviceManager.SystemConfigurationService.UpdateSessionConfigurationAsync(request);
                 if (result > 0)
                 {
-                    return Ok(ApiResponse<object>.SuccessResponse(null, "Session configuration updated successfully"));
+                    await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"c?u hình phiên c?p nh?t thành công");
+                    return Ok(ApiResponse<object>.SuccessResponse(null, "C?u hình phiên c?p nh?t thành công"));
                 }
-                return BadRequest(ApiResponse<object>.FailResponse("Failed to update session configuration"));
+                return BadRequest(ApiResponse<object>.FailResponse("C?u hình phiên c?p nh?t th?t b?i"));
             }
             catch (Exception ex)
             {

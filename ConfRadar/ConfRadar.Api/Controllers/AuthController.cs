@@ -45,6 +45,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> LocalLogin([FromBody] LocalLoginUserRequest request)
         {
             var loginResponse = await _serviceManager.AuthService.LocalLogin(request);
+
             return Ok(ApiResponse<LoginUserResponse>.SuccessResponse(loginResponse, "Đăng nhập thành công"));
         }
         [HttpPost("firebase-login")]
@@ -71,6 +72,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             await _serviceManager.AuthService.ChangePassword(request.OldPassword, request.NewPassword, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Authentication, $"đổi mật khẩu");
             return Ok(ApiResponse<object>.SuccessResponse(null, "Password đổi thành công"));
         }
         [Authorize]
@@ -85,14 +87,19 @@ namespace ConfRadar.Api.Controllers
         [HttpPut("suspend-account")]
         public async Task<IActionResult> SuspendAccount([FromBody] UserSuspendRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.SuspendAccount(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.User, $"đã đình chỉ tài khoản với người dùng id {request.UserId}");
+
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã đình chỉ tài khoản này!"));
         }
         [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("activate-account")]
         public async Task<IActionResult> ActivateAccount([FromBody] UserActiveAccountRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.ActivateAccount(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.User, $"đã kích hoạt tài khoản cho người dùng với id {request.UserId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã kích hoạt tài khoản của người dùng"));
         }
         [Authorize]
@@ -101,6 +108,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.UpdateProfile(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Authentication, $"đã cập nhật lại hồ sơ cá nhân");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật profile"));
 
         }
@@ -122,7 +130,9 @@ namespace ConfRadar.Api.Controllers
         [HttpPost("create-collaborator-account")]
         public async Task<IActionResult> CreateCollaboratorAccount([FromBody] CreateCollaboratorAccountRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.CreateCollaboratorAccount(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.User, $"tạo tài khoản cho collaborator");
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo account cho collaborator"));
         }
         [Authorize(Roles = "Conference Organizer")]
@@ -149,21 +159,29 @@ namespace ConfRadar.Api.Controllers
         [HttpPut("suspend-external-reviewer")]
         public async Task<IActionResult> SuspendExternalReviewer([FromBody] UserSuspendRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.SuspendExternalReviewerAccount(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.User, $"Đã đình chỉ người reviewer outsource với id {request.UserId}");
+
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã suspend người reviewer outsource với id {request.UserId}"));
         }
         [Authorize(Roles = "Conference Organizer,Admin")]
         [HttpPut("activate-external-reviewer")]
         public async Task<IActionResult> ActivateExternalReviewer([FromBody] UserActiveAccountRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.ActivateExternalReviewerAccount(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.User, $"Đã kích hoạt tài khoản người reviewer outsource với id {request.UserId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã activate người reviewer outsource với id {request.UserId}"));
         }
         [Authorize(Roles = "Conference Organizer")]
         [HttpPost("create-local-reviewer-account")]
         public async Task<IActionResult> CreateLocalReviewerAccount([FromBody] CreateLocalReviewerAccountRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.CreateLocalReviewerAccount(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.User, $"đã tạo tài khoản cho local reviewer với email {request.Email}");
+
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo account cho local reviewer"));
         }
 
@@ -178,7 +196,10 @@ namespace ConfRadar.Api.Controllers
         [HttpPut("update-organization")]
         public async Task<IActionResult> UpdateOrganization([FromBody] OrganizationUpdateRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AuthService.UpdateOrganization(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.User, $"đã cập nhật thông tin cho tổ chức mã {request.OrganizationId}");
+
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã update"));
         }
         [HttpGet("list-collaborator-accounts")]

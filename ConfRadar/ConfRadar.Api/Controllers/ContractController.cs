@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Shared.DTO.Collaborator;
 using ConfRadar.Shared.DTO.Contract;
@@ -39,7 +40,10 @@ namespace ConfRadar.Api.Controllers
         [HttpPost("create-review-contract")]
         public async Task<IActionResult> CreateReviewerContract([FromForm] CreateReviewerContractRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ContractService.CreateReviewerContract(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Contract, $"đã tạo hợp đồng thành công cho reviewer với id {request.ReviewerId} thuộc hội nghị {request.ConferenceId}");
+
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã tạo hợp đồng thành công"));
         }
 
@@ -47,7 +51,10 @@ namespace ConfRadar.Api.Controllers
         [HttpPost("create-review-contract-for-new-user")]
         public async Task<IActionResult> CreateReviewerContractForNewUser([FromForm] CreateReviewerContractForNewUserRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ContractService.CreateReviewerContractForNewUser(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Contract, $"đã tạo hợp đồng thành công cho người dùng {request.FullName}");
+
             return Ok(ApiResponse<int>.SuccessResponse(result, $"Đã tạo hợp đồng thành công cho người dùng {request.FullName}"));
         }
         [Authorize]
@@ -133,8 +140,10 @@ namespace ConfRadar.Api.Controllers
 
         public async Task<IActionResult> UpdateCollabContract([FromBody] UpdateCollabContractRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ContractService.UpdateCollabContract(request);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Danh sách hợp đồng collaborator update thành công"));
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Contract, $"cập nhật hợp đồng collaborator với mã {request.CollaboratorContractId} thành công cho ");
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Cập nhật  hợp đồng collaborator  thành công"));
 
         }
 

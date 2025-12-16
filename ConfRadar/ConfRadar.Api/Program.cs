@@ -26,16 +26,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var seedDataService = scope.ServiceProvider.GetRequiredService<ISeedDataService>();
-    //await seedDataService.SeedRolesAsync();
-    //await seedDataService.SeedGlobalStatusesAsync();
-    //await seedDataService.SeedConferenceStatusesAsync();
-    //await seedDataService.SeedRankingCategoriesAsync();
-    //await seedDataService.SeedReviewStatusesAsync();
-    //await seedDataService.SeedPaperPhasesAsync();
-    //await seedDataService.SeedPaymentMethodsAsync();
-    //await seedDataService.SeedCheckInStatusAsync();
-    //await seedDataService.SeedWaitListStatusesAsync();
-    //await seedDataService.SeedAuditLogCategoriesAsync();
+    await seedDataService.SeedRolesAsync();
+    await seedDataService.SeedGlobalStatusesAsync();
+    await seedDataService.SeedConferenceStatusesAsync();
+    await seedDataService.SeedRankingCategoriesAsync();
+    await seedDataService.SeedReviewStatusesAsync();
+    await seedDataService.SeedPaperPhasesAsync();
+    await seedDataService.SeedPaymentMethodsAsync();
+    await seedDataService.SeedCheckInStatusAsync();
+    await seedDataService.SeedWaitListStatusesAsync();
+    await seedDataService.SeedAuditLogCategoriesAsync();
     //await seedDataService.SeedPublishersAsync();
 }
 app.UseCors("AllowAll");

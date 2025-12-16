@@ -95,7 +95,7 @@ namespace ConfRadar.Services.Services
             }
 
             var transactionList = ticket.Transactions;
-           
+
             var transaction = transactionList.FirstOrDefault(t => t.TransactionId == request.TransactionId);
             if (transaction == null)
             {
@@ -105,7 +105,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException("Không tìm thấy các giai đoạn cho vé này");
             }
-            
+
             var refundRequestAlreadyExisted = await _unitOfWork.RefundRequestRepository.GetRefundRequestByTicketIdAsync(request.TicketId);
             if (refundRequestAlreadyExisted != null)
             {
