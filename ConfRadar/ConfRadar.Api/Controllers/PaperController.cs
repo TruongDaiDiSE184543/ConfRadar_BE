@@ -57,6 +57,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.SubmitAbstract(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã nộp abstract thành công vào hội nghị {request.ConferenceId} với phiên {request.ConferenceSessionId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã nộp abstract thành công"));
         }
         [Authorize(Roles = "Conference Organizer")]
@@ -64,7 +65,9 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DecideAbstractPaperStatus([FromBody] UpdateAbstractPaperStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideAbstractPaperStatus(request, userId);
+            var result = await _serviceManager.PaperService.DecideAbstractPaperStatus(request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã quyết định abstract của người dùng {userId}");
+
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã quyết định abstract thành công"));
         }
         [Authorize(Roles = "Conference Organizer")]
@@ -91,6 +94,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.SubmitFullPaper(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã gửi thành công full paper tiêu đề {request.Title}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công full paper"));
         }
         [Authorize]
@@ -98,8 +102,9 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DecideFullPaperStatus([FromBody] UpdateFullPaperStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công full paper status"));
+            var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request,userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã quyết định fullpaper {request.FullPaperId}");
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã quyết định fullpaper thành công"));
         }
 
 
@@ -112,12 +117,14 @@ namespace ConfRadar.Api.Controllers
 
 
         [HttpPost("submit-fullpaper-review")]
-        //[Authorize(Roles = "Local Reviewer,External Reviewer")]
+        [Authorize]
         public async Task<IActionResult> SubmitReviewForFullPaper([FromForm] CreateFullPaperReviewRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.SubmitReviewForFullPaper(request, userId);
-            return Ok(ApiResponse<string>.SuccessResponse(result, "Review submitted successfully for full paper"));
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"gửi review cho fullpaper mã {request.FullPaperId}");
+
+            return Ok(ApiResponse<string>.SuccessResponse(result, "Gửi review fullpaper thành công"));
         }
 
 
@@ -126,7 +133,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> GetFullPaperReviewsByFullPaperId(string fullPaperId)
         {
             var result = await _serviceManager.PaperService.GetFullPaperReviewsByFullPaperId(fullPaperId);
-            return Ok(ApiResponse<List<FullPaperReviewResponse>>.SuccessResponse(result, "Full paper reviews retrieved successfully"));
+            return Ok(ApiResponse<List<FullPaperReviewResponse>>.SuccessResponse(result, "Truy xuất fullpaper review thành công"));
         }
 
 
@@ -149,6 +156,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.CreateRevisionSubmissionFeedBack(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"gửi thành công revision feedback cho bài báo {request.PaperId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision feedback"));
 
         }
@@ -158,6 +166,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.CreateRevisionSubmissionResponse(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"gửi thành công revision response cho bài báo {request.PaperId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công revision response"));
         }
         //[Authorize]
@@ -173,8 +182,9 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DecideReviseStatus([FromBody] UpdateRevisionStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideReviseStatus(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công status thành công cho giai đoạn revise"));
+            var result = await _serviceManager.PaperService.DecideReviseStatus(request,userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"Đã quyết định giai đoạn revise thành công cho bài báo {request.PaperId}");
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã quyết định revise thành công"));
         }
         //[Authorize]
         //[HttpGet("list-revision-paper-review")]
@@ -191,7 +201,8 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.CreateCameraReady(request, userId);
-            return Ok(ApiResponse<string>.SuccessResponse(result, "Camera ready created successfully"));
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã gửi camera ready cho bài báo {request.PaperId}");
+            return Ok(ApiResponse<string>.SuccessResponse(result, "Đã gửi camera ready thành công"));
         }
         [HttpPut("update-abstract")]
         [Authorize]
@@ -207,6 +218,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.UpdateFullPaper(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"Đã cập nhật thành công fullpaper cho bài báo {request.PaperId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công fullpaper"));
         }
         [HttpPut("update-revision-submission")]
@@ -215,6 +227,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.UpdateRevisionPaperSubmission(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"Đã cập nhật thành công revision paper submission cho bài báo {request.PaperId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật thành công revision paper submission"));
         }
         [HttpPut("update-camera-ready")]
@@ -223,7 +236,8 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.UpdateCameraReady(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Camera ready updated successfully"));
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"Đã cập nhật camera ready {request.CameraReadyId} thành công");
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã cập nhật camera ready thành công"));
         }
 
 
@@ -339,6 +353,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.LeaveWaitList(userId, request.ConferenceId);
+            //await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"Đã thoát hàng đợi của hội nghị {request.ConferenceId}");
             return Ok(ApiResponse<LeaveWaitListResponse>.SuccessResponse(result, "Đã thoát khỏi hàng đợi"));
         }
         [Authorize]
@@ -347,6 +362,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.AddWaitList(userId, request.ConferenceId);
+            //await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"Đã vào hàng đợi của hội nghị {request.ConferenceId}");
             return Ok(ApiResponse<AddWaitListResponse>.SuccessResponse(result, "Đã thêm vào  hàng đợi"));
         }
 
@@ -356,6 +372,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.MarkCompleteRevise(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"Đã dánh dấu revise thành công cho bài báo với revision paper id {request.RevisionPaperId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã đánh dấu thành công"));
         }
 

@@ -25,13 +25,13 @@ namespace ConfRadar.Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITimeProviderService _timeProviderService;
-        private readonly HttpClient _httpClient;
+
         private readonly IOptions<FirebaseSettings> _firebaseSettings;
-        public NotificationService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService, HttpClient httpClient, IOptions<FirebaseSettings> firebaseSettings)
+        public NotificationService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService, IOptions<FirebaseSettings> firebaseSettings)
         {
             _unitOfWork = unitOfWork;
             _timeProviderService = timeProviderService;
-            _httpClient = httpClient;
+
             _firebaseSettings = firebaseSettings;
         }
 
@@ -118,7 +118,8 @@ namespace ConfRadar.Services.Services
         {
 
             var accessToken = await GetFirebaseAccessToken();
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             var message = new
             {
                 message = new
@@ -130,7 +131,7 @@ namespace ConfRadar.Services.Services
             };
             var json = JsonSerializer.Serialize(message);
             var url = $"https://fcm.googleapis.com/v1/projects/{_firebaseSettings.Value.ProjectId}/messages:send";
-            var response = await _httpClient.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
+            var response = await httpClient.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
@@ -154,12 +155,13 @@ namespace ConfRadar.Services.Services
 
                 }
             };
+            using var httpClient = new HttpClient();
             var json = JsonSerializer.Serialize(message);
             var accessToken = await GetFirebaseAccessToken();
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var url = $"https://fcm.googleapis.com/v1/projects/{_firebaseSettings.Value.ProjectId}/messages:send";
-            var response = await _httpClient.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
+            var response = await httpClient.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();

@@ -1,5 +1,6 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
+using ConfRadar.Services.Common;
 using ConfRadar.Shared.DTO.AuditLog;
 
 namespace ConfRadar.Services.Services
@@ -8,13 +9,16 @@ namespace ConfRadar.Services.Services
     {
         Task<List<AuditLogDetailResponse>> GetListAuditLogDetail();
         Task<List<AuditLogCategory>> GetAuditLogCategories();
+        Task<int> CreateAuditLog(string userId, AuditLogActionNameEnum auditActionEnum, string actionDescription);
     }
     public class AuditLogService : IAuditLogService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public AuditLogService(IUnitOfWork unitOfWork)
+        private readonly ITimeProviderService _timeProviderService;
+        public AuditLogService(IUnitOfWork unitOfWork, ITimeProviderService timeProviderService)
         {
             _unitOfWork = unitOfWork;
+            _timeProviderService = timeProviderService;
         }
 
         public async Task<List<AuditLogCategory>> GetAuditLogCategories()
@@ -38,6 +42,22 @@ namespace ConfRadar.Services.Services
 
 
             }).ToList();
+        }
+        public async Task<int> CreateAuditLog(string userId, AuditLogActionNameEnum auditActionEnum, string actionDescription)
+        {
+
+            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
+            var timeNow = await _timeProviderService.GetVietnamTime();
+            var auditAction = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(auditActionEnum.GetDescription());
+            var auditLog = new AuditLog()
+            {
+                AuditLogId = Guid.NewGuid().ToString(),
+                UserId = userId,
+                CategoryId = auditAction != null ? auditAction.CategoryId : null,
+                ActionDescription = $"Người dùng {user.FullName} đã {actionDescription} vào lúc {timeNow}",
+                CreatedAt = timeNow,
+            };
+            return await _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLog);
         }
     }
 }

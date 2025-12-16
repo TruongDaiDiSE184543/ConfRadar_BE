@@ -665,7 +665,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
 
         [Required(ErrorMessage = "Định dạng bài báo là bắt buộc.")]
-        [MaxLength(255, ErrorMessage ="")]
+        [MaxLength(255, ErrorMessage = "")]
         public string PaperFormat { get; set; }
 
         // `int` không phải nullable, nên [Required] chỉ để làm rõ. Quan trọng là Range.

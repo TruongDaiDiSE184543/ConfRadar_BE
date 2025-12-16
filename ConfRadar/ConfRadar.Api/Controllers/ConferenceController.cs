@@ -1,4 +1,5 @@
 ﻿using ConfRadar.Api.Responses;
+using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
@@ -6,6 +7,7 @@ using ConfRadar.Services.DTOs.Ticket;
 using ConfRadar.Shared.DTO.Conference;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -83,7 +85,8 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.SubmitConferenceFeedback(request, userId);
-            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công feedback"));
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"đã gửi thành công đánh giá cho hội nghị với phiên {request.ConferenceSessionId} với đánh giá {request.Rating} sao");
+            return Ok(ApiResponse<int>.SuccessResponse(result, "Đã gửi thành công đánh giá"));
         }
 
         // NEW ENDPOINT 3: Get conferences by status ID with filtering
@@ -273,6 +276,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.RequestOrganizerApproval(confId, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"gửi yêu cầu duyệt cho sự kiện với id {confId}");
             if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "Gửi yêu cầu duyệt cho conference thành công"));
             return Ok(ApiResponse<bool>.FailResponse("Gửi yêu cầu duyệt cho conference thất bại"));
         }
@@ -294,19 +298,23 @@ namespace ConfRadar.Api.Controllers
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> ApproveConference(string conferenceId, [FromBody] ApproveConferenceRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.ApproveConferenceAsync(conferenceId, request);
             if (result)
             {
+                await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"duyệt hội nghị {conferenceId} thành công");
                 return Ok(ApiResponse<object>.SuccessResponse(null, "Duyệt hội nghị thành công"));
             }
-            return NotFound(ApiResponse<object>.FailResponse("Conference not found or could not be approved"));
+            return NotFound(ApiResponse<object>.FailResponse("Conference không tìm thấy hay được xét duyệt"));
         }
 
         [HttpPut("disable-conference")]
         [Authorize(Roles = "Conference Organizer")]
         public async Task<IActionResult> DisablingConference([FromQuery] string conferenceId, [FromQuery] string? reason = null)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.DisableContractedConference(conferenceId, reason);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"vô hiệu hóa hội nghị {conferenceId} ");
             return Ok(ApiResponse<bool>.SuccessResponse(result, "Disable Hội nghị thành công"));
         }
 
@@ -339,12 +347,13 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.ConferenceService.ChangeConferenceStatus(userId, confid, newStatus, reason);
             if (result)
             {
-                return Ok(ApiResponse<bool>.SuccessResponse(result, "Update trạng thái hội nghị thành công"));
+                await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"cập nhật trạng thái hội nghị {confid} thành công");
+                return Ok(ApiResponse<bool>.SuccessResponse(result, "cập nhật trạng thái hội nghị thành công"));
 
             }
             else
             {
-                return Ok(ApiResponse<bool>.FailResponse("Update Hội nghị thất bại"));
+                return Ok(ApiResponse<bool>.FailResponse("cập nhật Hội nghị thất bại"));
             }
         }
 
@@ -374,8 +383,12 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ConferenceService.ActivateNextPhase(confId, userId);
-            if (result) return Ok(ApiResponse<bool>.SuccessResponse(result, "kich hoat waitlit thanh cocng"));
-            return Ok(ApiResponse<bool>.FailResponse("kich hoat waitlit thất bại"));
+            if (result)
+            {
+                await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"kích hoạt giai đoạn kế tiếp thành công cho hội nghị {confId}");
+                return Ok(ApiResponse<bool>.SuccessResponse(result, "kích hoạt giai đoạn kế tiếp thành công"));
+            }
+            return Ok(ApiResponse<bool>.FailResponse("kích hoạt giai đoạn kế tiếp thất bại"));
         }
 
         [HttpPut("add-days-since-last-onhold")]

@@ -4,6 +4,7 @@ using ConfRadar.Services.DTOs.Orcid;
 using ConfRadar.Services.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers
@@ -27,6 +28,7 @@ namespace ConfRadar.Api.Controllers
 
 
             string orcidOauth = _serviceManager.OrcidService.GenerateAuthorizationLink(userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Authentication, $"đã liên kết tài khoản orcid ");
             return Ok(ApiResponse<string>.SuccessResponse(orcidOauth, "Lấy link oauth thành công"));
         }
 

@@ -166,7 +166,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             _mockPaperRepo.Setup(r => r.GetPaperByIdAsync(paperId)).ReturnsAsync(paper);
 
             //_mockCameraReadyRepo.Setup(r => r.GetCameraReadyByIdAsync("CR1"))
-                //.ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "GS_ACCEPTED" });
+            //.ReturnsAsync(new CameraReady { CameraReadyId = "CR1", GlobalStatusId = "GS_ACCEPTED" });
 
             // conference price
             var cp = CreateValidConferencePrice();

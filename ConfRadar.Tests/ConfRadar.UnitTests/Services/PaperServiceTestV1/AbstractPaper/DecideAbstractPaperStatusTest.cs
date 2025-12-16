@@ -169,7 +169,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             };
 
             // ACT
-            await _paperService.DecideAbstractPaperStatus(request, userId);
+            await _paperService.DecideAbstractPaperStatus(request);
 
             // ASSERT
             // Verify Abstract updated to Accepted
@@ -201,7 +201,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             };
 
             // ACT
-            await _paperService.DecideAbstractPaperStatus(request, userId);
+            await _paperService.DecideAbstractPaperStatus(request);
 
             // ASSERT
             // Verify Abstract updated to Rejected
@@ -222,7 +222,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
 
             // ACT & ASSERT
             await Assert.ThrowsAsync<BadRequestException>(
-                () => _paperService.DecideAbstractPaperStatus(request, "user-1")
+                () => _paperService.DecideAbstractPaperStatus(request)
             );
         }
 
@@ -238,7 +238,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
 
             // ACT & ASSERT
             await Assert.ThrowsAsync<NotFoundException>(
-                () => _paperService.DecideAbstractPaperStatus(request, "user-1")
+                () => _paperService.DecideAbstractPaperStatus(request)
             );
         }
 
@@ -261,7 +261,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
 
             // ACT & ASSERT
             var ex = await Assert.ThrowsAsync<BadRequestException>(
-                () => _paperService.DecideAbstractPaperStatus(request, "user-1")
+                () => _paperService.DecideAbstractPaperStatus(request)
             );
             ex.Message.Should().Contain("Ngày quyết định abstract này từ");
         }
@@ -281,7 +281,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
 
             // ACT & ASSERT
             var ex = await Assert.ThrowsAsync<BadRequestException>(
-                () => _paperService.DecideAbstractPaperStatus(request, "user-1")
+                () => _paperService.DecideAbstractPaperStatus(request)
             );
             ex.Message.Should().Contain("Paper đang không trong quá trình quyết định abstract");
         }
@@ -301,7 +301,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
 
             // ACT & ASSERT
             var ex = await Assert.ThrowsAsync<BadRequestException>(
-                () => _paperService.DecideAbstractPaperStatus(request, "user-1")
+                () => _paperService.DecideAbstractPaperStatus(request)
             );
             ex.Message.Should().Contain("abstract không trong quá trình pending");
         }
