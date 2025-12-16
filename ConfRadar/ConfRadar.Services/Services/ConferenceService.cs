@@ -1372,7 +1372,7 @@ namespace ConfRadar.Services.Services
                         AbstractStatus = SubmittedPaper.Abstract?.GlobalStatus?.Name,
                         FullpaperStatus = SubmittedPaper.FullPaper?.ReviewStatus?.Name,
                         RevisionStatus = SubmittedPaper.RevisionPaper?.GlobalStatus?.Name,
-                        //CameraReadyStatus = SubmittedPaper.CameraReady?.GlobalStatus?.Name,
+                        HasSubmittedCameraReady = SubmittedPaper.CameraReady != null ? true : false,
                         ResearchPhaseId = SubmittedPaper.ResearchConferencePhaseId
                     };
                 }
