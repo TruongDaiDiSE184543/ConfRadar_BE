@@ -292,7 +292,7 @@ namespace ConfRadar.Services.DTOs.Conference
         public string AbstractStatus { get; set; }
         public string FullpaperStatus { get; set; }
         public string RevisionStatus { get; set; }
-        public string CameraReadyStatus { get; set; }
+        public bool HasSubmittedCameraReady { get; set; }
         public string ResearchPhaseId { get; set; }
     }
 
