@@ -505,7 +505,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        private async Task<ConferenceSession> UpdateSessionInternalAsync(string sessionId, UpdateConferenceSessionRequest request, string userId,bool allowReadyStatus = false)
+        private async Task<ConferenceSession> UpdateSessionInternalAsync(string sessionId, UpdateConferenceSessionRequest request, string userId, bool allowReadyStatus = false)
         {
             var session = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
             if (session == null) throw new NotFoundException($"Không tìm thấy phiên với ID {sessionId}");

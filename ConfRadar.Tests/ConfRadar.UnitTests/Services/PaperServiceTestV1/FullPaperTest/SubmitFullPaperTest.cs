@@ -4,11 +4,6 @@ using ConfRadar.Services.DTOs.FullPaper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.FullPaperTest
 {

@@ -5,11 +5,6 @@ using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
 using Microsoft.Extensions.Options;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.RevisionPaperTest

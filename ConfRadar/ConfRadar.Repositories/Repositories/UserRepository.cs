@@ -71,7 +71,7 @@ namespace ConfRadar.Repositories.Repositories
 
         public async Task<User?> GetUserByForgetPasswordToken(string token)
         {
-            return await _context.Users.FirstOrDefaultAsync(x => x.PasswordResetToken == token || x.VerificationToken ==token);
+            return await _context.Users.FirstOrDefaultAsync(x => x.PasswordResetToken == token || x.VerificationToken == token);
         }
 
         public async Task<User?> GetUserByName(string name)
