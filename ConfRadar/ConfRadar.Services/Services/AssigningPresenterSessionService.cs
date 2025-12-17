@@ -14,6 +14,7 @@ namespace ConfRadar.Services.Services
         Task<PresenterSessionResponse> GetPresentSessionbySessionAndPaperid(string sessionId, string paperId);
         Task<List<PresenterSessionResponse>> GetAllPresenterResponse(string confId);
         Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId);
+        Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaperInSession(string sessionId);
         Task<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest> ChangePresenterSession(string currentRootAuthorId, CreatePresenterChangeRequest request); //check if paper and user exist, user is author of paper in the paperauthor is the user whose record in paper author ispresenter is true and the same as the request.newuserid? can't change to the same user, check if paper is complete throw exception if not, check if this new userId already bought a conferenceprice of this conference (just check to see the conferenceprice) and have a conferenceprice of type isauthor = true so they are eligible to be nominated as the new presenter of paper
         Task<bool> ApprovePresenterChangeRequest(ApprovePresenterChangeRequest request, string approvedById);
         Task<List<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>> GetPendingPresenterChangeRequests(string confId);
@@ -21,6 +22,7 @@ namespace ConfRadar.Services.Services
         Task<SessionChangeRequestResponse> CreateSessionChangeRequest(CreateSessionChangeRequest request, string requestedById);
         Task<List<ConfRadar.Services.DTOs.PresenterSession.SessionChangeRequestResponse>> GetPendingSessionChangeRequests(string confId);
         Task<bool> ApproveSessionChangeRequest(ApproveSessionChangeRequest request, string approvedById);
+        Task<bool> Unassign(string paperId, string sessionId);
     }
 
     public class AssigningPresenterSessionService : IAssigningPresenterSessionService
@@ -35,7 +37,7 @@ namespace ConfRadar.Services.Services
             _tokenService = tokenService;
             _timeProviderService = timeProviderService;
         }
-
+        #region: helper
         private async Task checkConference(Conference conf)
         {
             var today = await _timeProviderService.GetVietnamDate();
@@ -53,18 +55,7 @@ namespace ConfRadar.Services.Services
             return;
         }
 
-        public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId)
-        {
-            var acceptedStatus = _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription()).Result;
-            var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus, confId);
-            List<PaperDetailResponseDtoDetail> paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
-            {
-                PaperId = paper.PaperId,
-                Title = paper.Title,
-                Description = paper.Description,
-            }).ToList();
-            return paperDetailResponseDTOs;
-        }
+        
 
 
         // make a helper class to check if a paper is in complete form aka camera ready of it is in accepted status, use  the globalstatusenum to get accepted string then use that to get paper whose camera global status id = acceptedid
@@ -97,6 +88,40 @@ namespace ConfRadar.Services.Services
             return cameraReady != null;
         }
 
+#endregion
+
+        public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId)
+        {
+            var acceptedStatus = _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription()).Result;
+            var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus, confId);
+            List<PaperDetailResponseDtoDetail> paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
+            {
+                PaperId = paper.PaperId,
+                Title = paper.Title,
+                Description = paper.Description,
+            }).ToList();
+            return paperDetailResponseDTOs;
+        }
+
+        public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaperInSession(string sessionId)
+        {
+            //check session and conf
+            var session = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(sessionId);
+            if (session == null)
+                throw new Exception("Không tìm thấy session ");
+
+            //conf is of type research
+            var conf = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(session.ConferenceId);
+            await checkConference(conf);
+            var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaperFromResearchSession(sessionId);
+            List<PaperDetailResponseDtoDetail> paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
+            {
+                PaperId = paper.PaperId,
+                Title = paper.Title,
+                Description = paper.Description,
+            }).ToList();
+            return paperDetailResponseDTOs;
+        }
         public async Task<PresenterSessionResponse> AssignPresenterToSession(string paperId, string sessionId)
         {
             // Check if paper exists
@@ -202,6 +227,61 @@ namespace ConfRadar.Services.Services
                 throw e;
             }
 
+        }
+
+
+        public async Task<bool> Unassign(string paperId, string sessionId)
+        {
+            // 1. Kiểm tra Paper và Session có tồn tại không
+            var paper = await _unitOfWork.PaperRepository.GetPaperByIdAsync(paperId);
+            if (paper == null) throw new NotFoundException($"Paper với ID {paperId} không tồn tại.");
+
+            var session = await _unitOfWork.ConferenceSessionRepository.GetConferenceSessionByIdAsync(sessionId);
+            if (session == null) throw new NotFoundException($"Session với ID {sessionId} không tồn tại.");
+
+            // 2. Kiểm tra thời gian và trạng thái hội nghị 
+            var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(session.ConferenceId);
+            if (conference == null) throw new NotFoundException("Không tìm thấy hội nghị.");
+            await checkConference(conference); 
+
+            // 3. Kiểm tra xem Paper có đang được gán vào Session này không
+            var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByIdAsync(sessionId, paperId);
+            if (presentAuthor == null)
+            {
+                throw new BadRequestException($"Paper ID {paperId} không được gán cho session {sessionId}.");
+            }
+
+            // 4. Tìm Presenter hiện tại của Paper này
+            var paperAuthors = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paperId);
+            var presenterAuthor = paperAuthors.FirstOrDefault(pa => pa.IsPresenter == true);
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // 5. Cập nhật UserCheckIn: IsPresenter = false
+                if (presenterAuthor != null)
+                {
+                    var userCheckIn = await _unitOfWork.UserCheckInRepository.GetUserCheckInByUserAndSessionAsync(presenterAuthor.UserId, sessionId);
+                    if (userCheckIn != null)
+                    {
+                        userCheckIn.IsPresenter = false;
+                        await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(userCheckIn);
+                    }
+                    
+                }
+
+                // 6. Xóa bản ghi trong PresentAuthor
+                await _unitOfWork.PresentAuthorRepository.DeletePresentAuthorAsync(presentAuthor);
+
+             
+                await _unitOfWork.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw ex;
+            }
         }
 
         public async Task<List<PresenterSessionResponse>> GetAllPresenterResponse(string confId)

@@ -1919,15 +1919,10 @@ namespace ConfRadar.Services.Services
                     // Shared tables data (same as technical conference)
                     Policies = conference.Policies?.Select(p => p.ToConferencePolicyResponse()).ToList(),
                     Sponsors = conference.Sponsors?.Select(s => s.ToSponsorResponse()).ToList(),
-                    //RefundPolicies = refundPolicies?.Select(rp => new DTOs.Conference.RefundPolicyResponse
-                    //{
-                    //    RefundPolicyId = rp.RefundPolicyId,
-                    //    PercentRefund = rp.PercentRefund,
-                    //    RefundDeadline = rp.RefundDeadline,
-                    //    RefundOrder = rp.RefundOrder
-                    //}).ToList(),
+                   
                     ConferenceMedia = conference.ConferenceMedia?.Select(cm => cm.ToConferenceMediaResponse()).ToList(),
-                    ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList()
+                    ConferencePrices = conference.ConferencePrices?.Select(cp => cp.ToConferencePriceWithPhasesResponse()).ToList(),
+                    ConferenceTimelines =conference.ConferenceTimelines?.Select(t => t.ToConferenceTimelineResponse()).ToList()
                 };
 
                 responses.Add(response);

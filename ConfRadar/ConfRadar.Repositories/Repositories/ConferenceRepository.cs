@@ -317,6 +317,10 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(c => c.ResearchConferenceDetail)
                 .Include(c => c.ResearchConferencePhases)
                 .Include(c => c.RankingFileUrls)
+                .Include(c => c.ConferenceTimelines)
+                    .ThenInclude(t => t.PreviousStatus)
+                .Include(c => c.ConferenceTimelines)
+                    .ThenInclude(t => t.AfterwardStatus)
                 .Include(c => c.RankingReferenceUrls)
                 .Include(c => c.MaterialDownloads)
                 .Include(c => c.ConferenceStatus)
@@ -383,6 +387,7 @@ namespace ConfRadar.Repositories.Repositories
                            .ThenInclude(d => d.City)
                .Include(c => c.Sponsors)
                .Include(c => c.RefundPolicies)
+               .Include(c => c.ConferenceTimelines)
                .AsQueryable();
 
             if (!string.IsNullOrEmpty(userId))
