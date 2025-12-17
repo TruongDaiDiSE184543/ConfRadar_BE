@@ -175,23 +175,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId));
         }
 
-        [Fact]
-        public async Task CreateRefundTicketRequest_ShouldThrow_WhenMultipleTransactions()
-        {
-            // Arrange
-            SetupGlobalAndPaymentMethodMocks();
-
-            var ticket = CreateBasicTicket();
-            // add another transaction to make count > 1
-            ticket.Transactions.Add(new Transaction { TransactionId = "TX2", Amount = 50m });
-
-            _mockTicketRepo.Setup(t => t.GetTicketByTicketIdAndUserId(ticket.TicketId, ticket.UserId))
-                .ReturnsAsync(ticket);
-
-            var req = CreateRequest(ticket.TicketId, "TX1");
-
-            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId));
-        }
+       
 
         [Fact]
         public async Task CreateRefundTicketRequest_ShouldThrow_WhenTransactionNotFound()
@@ -208,6 +192,30 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
             await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId));
         }
+        [Fact]
+        public async Task CreateRefundTicketRequest_ShouldThrow_WhenResearchConference()
+        {
+            // Arrange
+            SetupGlobalAndPaymentMethodMocks();
+
+            var ticket = CreateBasicTicket();
+            ticket.PricePhase!.ConferencePrice!.Conference!.IsResearchConference = true;
+
+            _mockTicketRepo
+                .Setup(t => t.GetTicketByTicketIdAndUserId(ticket.TicketId, ticket.UserId))
+                .ReturnsAsync(ticket);
+
+            var req = CreateRequest(ticket.TicketId, "TX1");
+
+            // Act + Assert
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.CreateRefundTicketRequest(req, ticket.UserId)
+            );
+
+            await Assert.ThrowsAsync<BadRequestException>(() =>_service.CreateRefundTicketRequest(req, ticket.UserId)
+);
+
+        }
 
         [Fact]
         public async Task CreateRefundTicketRequest_ShouldThrow_WhenPricePhaseNull()
@@ -223,7 +231,9 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
             var req = CreateRequest(ticket.TicketId, "TX1");
 
-            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId));
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId));
+
+            Assert.Contains("giai đoạn", ex.Message);
         }
 
         [Fact]

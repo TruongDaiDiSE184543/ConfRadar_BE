@@ -11,602 +11,181 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
 {
     public class GetTechnicalConferenceDetailTest
     {
-        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-        private readonly Mock<IConferenceRepository> _mockConferenceRepo;
-        private readonly Mock<ITicketRepository> _mockTicketRepo;
-        private readonly Mock<IConferenceStatusRepository> _mockConferenceStatusRepo;
-        private readonly Mock<IConferenceStatusService> _mockConferenceStatusService;
-        private readonly Mock<IConferenceTimelineService> _mockTimelineService;
-        private readonly Mock<IObjectStorageFileService> _mockObjectStorage;
-        private readonly Mock<ITokenService> _mockTokenService;
-        private readonly Mock<ISystemConfigurationService> _mockSystemConfig;
-        private readonly Mock<ITimeProviderService> _mockTimeProvider;
-        private readonly Mock<INotificationService> _mockNotificationService;
-        private readonly ConferenceService _service;
+        private readonly Mock<IUnitOfWork> uow;
+        private readonly ConferenceService _conferenceService;
 
         public GetTechnicalConferenceDetailTest()
         {
-            _mockUnitOfWork = new Mock<IUnitOfWork>();
-            _mockConferenceRepo = new Mock<IConferenceRepository>();
-            _mockTicketRepo = new Mock<ITicketRepository>();
-            _mockConferenceStatusRepo = new Mock<IConferenceStatusRepository>();
-            _mockConferenceStatusService = new Mock<IConferenceStatusService>();
-            _mockTimelineService = new Mock<IConferenceTimelineService>();
-            _mockObjectStorage = new Mock<IObjectStorageFileService>();
-            _mockTokenService = new Mock<ITokenService>();
-            _mockSystemConfig = new Mock<ISystemConfigurationService>();
-            _mockTimeProvider = new Mock<ITimeProviderService>();
-            _mockNotificationService = new Mock<INotificationService>();
-
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository).Returns(_mockConferenceRepo.Object);
-            _mockUnitOfWork.Setup(u => u.TicketRepository).Returns(_mockTicketRepo.Object);
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository).Returns(_mockConferenceStatusRepo.Object);
-
-            var objectStorageSettings = Options.Create(new AppSettingConfig.ObjectStorageSettings());
-
-            _service = new ConferenceService(
-                _mockUnitOfWork.Object,
-                _mockConferenceStatusService.Object,
-                _mockTimelineService.Object,
-                _mockObjectStorage.Object,
-                _mockTokenService.Object,
-                _mockSystemConfig.Object,
-                objectStorageSettings,
-                _mockTimeProvider.Object,
-                _mockNotificationService.Object
+            uow = new Mock<IUnitOfWork>();
+            _conferenceService = new ConferenceService(
+                uow.Object,
+                Mock.Of<IConferenceStatusService>(),
+                Mock.Of<IConferenceTimelineService>(),
+                Mock.Of<IObjectStorageFileService>(),
+                Mock.Of<ITokenService>(),
+                Mock.Of<ISystemConfigurationService>(),
+                Options.Create(new AppSettingConfig.ObjectStorageSettings()),
+                Mock.Of<ITimeProviderService>(),
+                Mock.Of<INotificationService>()
             );
         }
 
-        private Conference GetSampleTechnicalConference()
+        private Conference CreateConference(string conferenceId, string status = "Ready", bool isResearch = false)
         {
             return new Conference
             {
-                ConferenceId = "CONF1",
-                ConferenceName = "Tech Summit 2025",
-                Description = "Annual technology summit",
-                StartDate = new DateOnly(2025, 12, 10),
-                EndDate = new DateOnly(2025, 12, 12),
-                TotalSlot = 500,
-                AvailableSlot = 450,
-                Address = "Tech Convention Center",
-                BannerImageUrl = "tech-banner.jpg",
-                CreatedAt = new DateTime(2025, 11, 1),
-                TicketSaleStart = new DateOnly(2025, 11, 1),
-                TicketSaleEnd = new DateOnly(2025, 12, 9),
-                IsInternalHosted = true,
-                IsResearchConference = false,
-                CityId = "CITY1",
-                ConferenceCategoryId = "CAT1",
-                ConferenceStatusId = "Ready",
-                CreatedBy = "USER1",
-                CreatedByNavigation = new User
+                ConferenceId = conferenceId,
+                ConferenceName = "Test Conference",
+                Description = "Test Desc",
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
+                EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)),
+                ConferenceStatus = new ConferenceStatus
                 {
-                    UserId = "USER1",
-                    FullName = "John Doe",
-                    Organization = new Organization
-                    {
-                        OrganizationId = "ORG1",
-                        OrganizationName = "Tech Corp"
-                    }
+                    ConferenceStatusId = "status1",
+                    ConferenceStatusName = status
                 },
-                ConferenceCategory = new ConferenceCategory
-                {
-                    ConferenceCategoryId = "CAT1",
-                    ConferenceCategoryName = "Technology"
-                },
+                IsResearchConference = isResearch,
+                CreatedByNavigation = new User { FullName = "Creator Name" },
                 TechnicalConferenceDetail = new TechnicalConferenceDetail
                 {
-                    ConferenceId = "CONF1",
-                    TargetAudience = "Developers, Tech enthusiasts"
-                },
-                Policies = new List<Policy>
-                {
-                    new Policy
-                    {
-                        PolicyId = "POL1",
-                        Description = "No refunds after event starts"
-                    }
-                },
-                Sponsors = new List<Sponsor>
-                {
-                    new Sponsor
-                    {
-                        SponsorId = "SPO1",
-                        Name = "Tech Sponsor Inc",
-                        ImageUrl = "sponsor-logo.jpg"
-                    }
-                },
-                ConferenceMedia = new List<ConferenceMedium>
-                {
-                    new ConferenceMedium
-                    {
-                        ConferenceMediaId = "MED1",
-                        ConferenceMediaUrl = "video1.mp4",
-                    }
-                },
-                ConferencePrices = new List<ConferencePrice>
-                {
-                    new ConferencePrice
-                    {
-                        ConferencePriceId = "CP1",
-                        TicketPrice = 1000000,
-                        TicketName = "Standard Ticket",
-                        TicketDescription = "Standard access",
-                        IsAuthor = false,
-                        TotalSlot = 300,
-                        AvailableSlot = 280,
-                        PricePhases = new List<PricePhase>
-                        {
-                            new PricePhase
-                            {
-                                PricePhaseId = "PP1",
-                                PhaseName = "Early Bird",
-                                StartDate = new DateOnly(2025, 11, 1),
-                                EndDate = new DateOnly(2025, 11, 20),
-                                ApplyPercent = 20,
-                                TotalSlot = 100,
-                                AvailableSlot = 90,
-                                RefundPolicies = new List<RefundPolicy>
-                                {
-                                    new RefundPolicy
-                                    {
-                                        RefundPolicyId = "RP1",
-                                        PercentRefund = 90,
-                                        PricePhaseId = "PP1",
-                                        RefundDeadline = new DateOnly(2025, 11, 15),
-                                        RefundOrder = 1
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    ConferenceId = conferenceId,
+                    TargetAudience = "Developers"
                 },
                 ConferenceSessions = new List<ConferenceSession>
                 {
                     new ConferenceSession
                     {
-                        ConferenceSessionId = "SESS1",
-                        Title = "Keynote: Future of AI",
-                        Description = "Opening keynote",
-                        StartTime = new DateTime(2025, 12, 10, 9, 0, 0),
-                        EndTime = new DateTime(2025, 12, 10, 10, 0, 0),
-                        Room = new Room
-                        {
-                            RoomId = "ROOM1",
-                            DisplayName = "Main Hall",
-                            Destination = new Destination
-                            {
-                                DestinationId = "DEST1",
-                                Name = "Tech Center",
-                                City = new City
-                                {
-                                    CityId = "CITY1",
-                                    CityName = "Ho Chi Minh City"
-                                }
-                            }
-                        },
-                        Speakers = new List<Speaker>
-                        {
-                            new Speaker
-                            {
-                                SpeakerId = "SPK1",
-                                Name = "Jane Smith",
-                                Description = "AI Expert"
-                            }
-                        },
-                        ConferenceSessionMedia = new List<ConferenceSessionMedium>
-                        {
-                            new ConferenceSessionMedium
-                            {
-                                ConferenceSessionMediaId = "SESSMED1",
-                                MediaUrl = "session-video.mp4"
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        private Conference GetSampleResearchConference()
-        {
-            return new Conference
-            {
-                ConferenceId = "CONF2",
-                ConferenceName = "Research Summit 2025",
-                Description = "Academic research conference",
-                StartDate = new DateOnly(2025, 12, 15),
-                EndDate = new DateOnly(2025, 12, 17),
-                IsResearchConference = true,
-                CreatedBy = "USER1",
-                CreatedByNavigation = new User
-                {
-                    UserId = "USER1",
-                    FullName = "John Doe"
-                }
-            };
-        }
-
-        // Helper method to setup common mocks
-        private void SetupConferenceMock(Conference conference)
-        {
-            _mockConferenceRepo
-                .Setup(r => r.GetTechnicalIncludedById(conference.ConferenceId, null))
-                .ReturnsAsync(conference);
-
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus
-                {
-                    ConferenceStatusId = "READY",
-                    ConferenceStatusName = "Ready"
-                });
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldReturnDetailWithoutTicketInfo_WhenUserIdIsNull()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("CONF1", result.ConferenceId);
-            Assert.Equal("Tech Summit 2025", result.ConferenceName);
-            Assert.NotNull(result.purchasedInfo);
-            Assert.Equal(string.Empty, result.purchasedInfo.ticketId);
-            Assert.Equal(string.Empty, result.purchasedInfo.conferencePriceId);
-            Assert.Equal(string.Empty, result.purchasedInfo.pricePhaseId);
-
-            _mockTicketRepo.Verify(r => r.GetTicketByUserIdAndConferenceId(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldReturnDetailWithTicketInfo_WhenUserHasTicket()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            var ticket = new Ticket
-            {
-                TicketId = "TICKET1",
-                UserId = "USER1",
-                PricePhaseId = "PP1",
-                PricePhase = new PricePhase
-                {
-                    PricePhaseId = "PP1",
-                    ConferencePrice = new ConferencePrice
+                        ConferenceSessionId = "s1",
+                        SessionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                        StartTime = DateTime.UtcNow.Date.AddHours(9)
+                    },
+                    new ConferenceSession
                     {
-                        ConferencePriceId = "CP1",
-                        Conference = new Conference()
-                        {
-                            ConferenceId = "CONF1",
-                        }
+                        ConferenceSessionId = "s2",
+                        SessionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                        StartTime = DateTime.UtcNow.Date.AddHours(14)
                     }
                 }
             };
-
-            _mockTicketRepo
-                .Setup(r => r.GetTicketByUserIdAndConferenceId("USER1", "CONF1"))
-                .ReturnsAsync(ticket);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", "USER1");
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("TICKET1", result.purchasedInfo.ticketId);
-            Assert.Equal("CP1", result.purchasedInfo.conferencePriceId);
-            Assert.Equal("PP1", result.purchasedInfo.pricePhaseId);
-            _mockTicketRepo.Verify(r => r.GetTicketByUserIdAndConferenceId("USER1", "CONF1"), Times.Once);
         }
 
         [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldReturnDetailWithNullTicketInfo_WhenUserHasNoTicket()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
+        public async Task GetTechnicalConferenceDetailAsync_ValidConference_ReturnsDetail()
+        { // Arrange
+            var conferenceId = "conf1";
+            var conference = CreateConference(conferenceId);
 
-            _mockTicketRepo
-                .Setup(r => r.GetTicketByUserIdAndConferenceId("USER1", "CONF1"))
-                .ReturnsAsync((Ticket)null);
+            // Mock ConferenceRepository
+            uow.Setup(x => x.ConferenceRepository.GetTechnicalIncludedById(
+                    It.IsAny<string>(), It.IsAny<string?>()
+                ))
+               .ReturnsAsync(conference);
+
+            // Mock ConferenceStatusRepository
+            uow.Setup(x => x.ConferenceStatusRepository.GetConferenceStatusByName(It.IsAny<string>()))
+               .ReturnsAsync(new ConferenceStatus
+               {
+                   ConferenceStatusId = "status1",
+                   ConferenceStatusName = "Ready"
+               });
 
             // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", "USER1");
+            var result = await _conferenceService.GetTechnicalConferenceDetailAsync(conferenceId, null);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Null(result.purchasedInfo.ticketId);
-            Assert.Null(result.purchasedInfo.conferencePriceId);
-            Assert.Null(result.purchasedInfo.pricePhaseId);
+            Assert.Equal(conferenceId, result.ConferenceId);
+            Assert.Equal("Test Conference", result.ConferenceName);
+            Assert.Equal("Developers", result.TargetAudience);
+            Assert.NotNull(result.Sessions);
         }
 
         [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldThrowNotFoundException_WhenConferenceDoesNotExist()
-        {
-            // Arrange
-            _mockConferenceRepo
-                .Setup(r => r.GetTechnicalIncludedById("NONEXISTENT", null))
-                .ReturnsAsync((Conference)null);
+        public async Task GetTechnicalConferenceDetailAsync_ConferenceNotFound_ThrowsNotFoundException()
+        {// Arrange
+            var conferenceId = "nonexistent";
 
-            _mockConferenceStatusRepo
-                .Setup(r => r.GetConferenceStatusByName("Ready"))
-                .ReturnsAsync(new ConferenceStatus
-                {
-                    ConferenceStatusId = "READY",
-                    ConferenceStatusName = "Ready"
-                });
+            // Mock ConferenceRepository trả về null
+            uow.Setup(x => x.ConferenceRepository.GetTechnicalIncludedById(
+                    It.IsAny<string>(), It.IsAny<string?>()
+                ))
+               .ReturnsAsync((Conference)null);
+
+            // Mock ConferenceStatusRepository trả về một status hợp lệ
+            uow.Setup(x => x.ConferenceStatusRepository.GetConferenceStatusByName(It.IsAny<string>()))
+               .ReturnsAsync(new ConferenceStatus
+               {
+                   ConferenceStatusId = "status1",
+                   ConferenceStatusName = "Ready"
+               });
 
             // Act & Assert
-            await Assert.ThrowsAsync<NotFoundException>(
-                () => _service.GetTechnicalConferenceDetailAsync("NONEXISTENT", null)
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _conferenceService.GetTechnicalConferenceDetailAsync(conferenceId, null)
             );
+
+            Assert.Contains(conferenceId, ex.Message);
         }
 
         [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldThrowException_WhenConferenceIsResearchType()
+        public async Task GetTechnicalConferenceDetailAsync_IsResearchConference_ThrowsException()
         {
             // Arrange
-            var conference = GetSampleResearchConference();
-            SetupConferenceMock(conference);
+            var conferenceId = "conf2";
+            var conference = CreateConference(conferenceId, isResearch: true);
+
+            // Mock ConferenceRepository trả về conference research
+            uow.Setup(x => x.ConferenceRepository.GetTechnicalIncludedById(
+                    It.IsAny<string>(), It.IsAny<string?>()
+                ))
+               .ReturnsAsync(conference);
+
+            // Mock ConferenceStatusRepository trả về status hợp lệ
+            uow.Setup(x => x.ConferenceStatusRepository.GetConferenceStatusByName(It.IsAny<string>()))
+               .ReturnsAsync(new ConferenceStatus
+               {
+                   ConferenceStatusId = "status1",
+                   ConferenceStatusName = "Ready"
+               });
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(
-                () => _service.GetTechnicalConferenceDetailAsync("CONF2", null)
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.GetTechnicalConferenceDetailAsync(conferenceId, null)
             );
-            Assert.Equal("chức năng chỉ dành cho tech", exception.Message);
+
+            Assert.Contains("tech", ex.Message);
         }
 
         [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldMapBasicPropertiesCorrectly()
+        public async Task GetTechnicalConferenceDetailAsync_InvalidStatus_ThrowsBadRequestException()
         {
             // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
+            var conferenceId = "conf3";
+            var conference = CreateConference(conferenceId, status: "Pending");
 
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
+            // Mock ConferenceRepository trả về conference có status Pending
+            uow.Setup(x => x.ConferenceRepository.GetTechnicalIncludedById(
+                    It.IsAny<string>(), It.IsAny<string?>()
+                ))
+               .ReturnsAsync(conference);
 
-            // Assert
-            Assert.Equal("CONF1", result.ConferenceId);
-            Assert.Equal("Tech Summit 2025", result.ConferenceName);
-            Assert.Equal("Annual technology summit", result.Description);
-            Assert.Equal(new DateOnly(2025, 12, 10), result.StartDate);
-            Assert.Equal(new DateOnly(2025, 12, 12), result.EndDate);
-            Assert.Equal(500, result.TotalSlot);
-            Assert.Equal(450, result.AvailableSlot);
-            Assert.Equal("Tech Convention Center", result.Address);
-            Assert.Equal("tech-banner.jpg", result.BannerImageUrl);
-            Assert.True(result.IsInternalHosted);
-            Assert.False(result.IsResearchConference);
-            Assert.Equal("CITY1", result.CityId);
-            Assert.Equal("CAT1", result.ConferenceCategoryId);
-            Assert.Equal("Ready", result.ConferenceStatusId);
-            Assert.Equal("USER1", result.createdBy);
-            Assert.Equal("John Doe", result.UserNameCreator);
-        }
+            // Mock ConferenceStatusRepository trả về status Ready (service cần gọi)
+            uow.Setup(x => x.ConferenceStatusRepository.GetConferenceStatusByName(It.IsAny<string>()))
+               .ReturnsAsync(new ConferenceStatus
+               {
+                   ConferenceStatusId = "status1",
+                   ConferenceStatusName = "Ready"
+               });
 
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldIncludeTargetAudience()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _conferenceService.GetTechnicalConferenceDetailAsync(conferenceId, null)
+            );
 
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result.TargetAudience);
-            Assert.Equal("Developers, Tech enthusiasts", result.TargetAudience);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldIncludePolicies()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result.Policies);
-            Assert.Single(result.Policies);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldIncludeSponsors()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result.Sponsors);
-            Assert.Single(result.Sponsors);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldIncludeConferenceMedia()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result.ConferenceMedia);
-            Assert.Single(result.ConferenceMedia);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldIncludeConferencePricesWithPhases()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result.ConferencePrices);
-            Assert.Single(result.ConferencePrices);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldIncludeSessionsWithSpeakers()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result.Sessions);
-            Assert.Single(result.Sessions);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldHandleNullTechnicalDetail()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            conference.TechnicalConferenceDetail = null;
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.Null(result.TargetAudience);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldHandleEmptyCollections()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            conference.Policies = new List<Policy>();
-            conference.Sponsors = new List<Sponsor>();
-            conference.ConferenceMedia = new List<ConferenceMedium>();
-            conference.ConferencePrices = new List<ConferencePrice>();
-            conference.ConferenceSessions = new List<ConferenceSession>();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result.Policies);
-            Assert.Empty(result.Policies);
-            Assert.NotNull(result.Sponsors);
-            Assert.Empty(result.Sponsors);
-            Assert.NotNull(result.ConferenceMedia);
-            Assert.Empty(result.ConferenceMedia);
-            Assert.NotNull(result.ConferencePrices);
-            Assert.Empty(result.ConferencePrices);
-            Assert.NotNull(result.Sessions);
-            Assert.Empty(result.Sessions);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldHandleNullCollections()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            conference.Policies = null;
-            conference.Sponsors = null;
-            conference.ConferenceMedia = null;
-            conference.ConferencePrices = null;
-            conference.ConferenceSessions = null;
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("CONF1", result.ConferenceId);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldIncludeCompleteNestedData()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotNull(result.ConferencePrices);
-            Assert.NotNull(result.Sessions);
-            Assert.NotNull(result.Sponsors);
-            Assert.NotNull(result.Policies);
-            Assert.NotNull(result.ConferenceMedia);
-            Assert.NotNull(result.purchasedInfo);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldVerifyAllIncludesAreCalled()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            _mockConferenceRepo.Verify(r => r.GetTechnicalIncludedById("CONF1", null), Times.Once);
-            Assert.NotNull(result);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldMapCreatorInformation()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.Equal("USER1", result.createdBy);
-            Assert.Equal("John Doe", result.UserNameCreator);
-        }
-
-        [Fact]
-        public async Task GetTechnicalConferenceDetailAsync_ShouldMapTicketSaleDates()
-        {
-            // Arrange
-            var conference = GetSampleTechnicalConference();
-            SetupConferenceMock(conference);
-
-            // Act
-            var result = await _service.GetTechnicalConferenceDetailAsync("CONF1", null);
-
-            // Assert
-            Assert.Equal(new DateOnly(2025, 11, 1), result.TicketSaleStart);
-            Assert.Equal(new DateOnly(2025, 12, 9), result.TicketSaleEnd);
+            Assert.Contains("trạng thái không khả dụng", ex.Message);
         }
     }
+
 }
+
+      

@@ -58,6 +58,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         public async Task UpdateAbstract_ShouldThrow_WhenPaperPhaseOrPendingStatusNull()
         {
             var request = new UpdateAbstractRequest { PaperId = "p1" };
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync((GlobalStatus)null);
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>())).ReturnsAsync((PaperPhase)null);
 
@@ -67,7 +73,19 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         [Fact]
         public async Task UpdateAbstract_ShouldThrow_WhenPaperNotFound()
         {
-            var request = new UpdateAbstractRequest { PaperId = "p1" };
+            var request = new UpdateAbstractRequest { PaperId = "p1",
+            };
+           
+
+            _mockUnitOfWork
+                .Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "abstract" });
+
+            _mockUnitOfWork
+                .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+
+
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
                 .ReturnsAsync(new GlobalStatus { GlobalStatusId = "status1" });
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
@@ -81,7 +99,29 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         public async Task UpdateAbstract_ShouldThrow_WhenPaperHasNoAbstract()
         {
             var request = new UpdateAbstractRequest { PaperId = "p1" };
-            var paper = new Paper { PaperId = "p1", AbstractId = null };
+            var paper = new Paper { PaperId = "p1", AbstractId = null,
+                Conference = new Conference
+                {
+                    ConferenceId = "conf1",
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusId = "ready"
+                    }
+                }
+
+            };
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
                 .ReturnsAsync(new GlobalStatus { GlobalStatusId = "status1" });
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
@@ -97,6 +137,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var request = new UpdateAbstractRequest { PaperId = "p1" };
             var paper = new Paper { PaperId = "p1", AbstractId = "abs1" };
             var abstractPaper = new Abstract { AbstractId = "abs1", GlobalStatusId = "otherStatus" };
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
                 .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pendingStatus" });
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
@@ -120,9 +166,22 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperPhaseId = "phase1",
                 PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "user1", IsRootAuthor = true } },
                 AbstractId = "abs1",
-                Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1" } // cần có
+                Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1",
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusId = "ready"
+                    }
+                } ,
+
+               
             };
 
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>())).ReturnsAsync(paperPhase);
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(globalStatus);
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
@@ -154,6 +213,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 AbstractId = "abs1",
                 Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1" } // phải có Conference
             };
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>())).ReturnsAsync(paperPhase);
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(globalStatus);
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
@@ -186,7 +251,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 AbstractId = "abs1",
                 Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1" } // thêm Conference
             };
-
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>())).ReturnsAsync(paperPhase);
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(globalStatus);
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
@@ -218,9 +288,19 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                     RegistrationStartDate = dateNow, // bắt đầu đúng hôm nay
                     RegistrationEndDate = dateNow.AddDays(1) // kết thúc ngày mai
                 },
-                Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1" }
+                Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1",
+                    ConferenceStatus = new ConferenceStatus
+                    {
+                        ConferenceStatusId = "ready"
+                    }
+                }
             };
-
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>())).ReturnsAsync(paperPhase);
             _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(globalStatus);
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
@@ -254,7 +334,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperId = "p1",
                 CoAuthorId = new List<string> { "user1" } // trùng root author
             };
-
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
             _mockUnitOfWork.Setup(u => u.AbstractRepository.GetAbstractByIdAsync("abs1"))
     .ReturnsAsync(new Abstract { AbstractId = "abs1", GlobalStatusId = "status1" });
@@ -296,7 +381,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperId = "p1",
                 CoAuthorId = new List<string> { "user2" }
             };
-
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
                 .ReturnsAsync(new PaperPhase { PaperPhaseId = "phase1" });
@@ -336,7 +426,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperId = "p1",
                 CoAuthorId = new List<string> { "user3" }
             };
-
+            _mockUnitOfWork
+  .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+  .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
                 .ReturnsAsync(new PaperPhase { PaperPhaseId = "phase1" });
@@ -361,7 +456,15 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperId = "p1",
                 PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "root", IsRootAuthor = true } },
                 AbstractId = "abs1",
-                Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1" },
+                Conference = new Conference 
+                { 
+                    ConferenceId = "conf1",
+                    ConferenceName = "Conf1",
+                    ConferenceStatus = new ConferenceStatus 
+                    {
+                        ConferenceStatusId = "ready"
+                    }
+                },
                 PaperPhaseId = "phase1",
                 ResearchConferencePhase = new ResearchConferencePhase
                 {
@@ -378,7 +481,12 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperId = "p1",
                 AbstractFile = mockFile.Object
             };
-
+            _mockUnitOfWork
+    .Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+    .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork
+    .Setup(u => u.PaperReviewerRepository.GetPaperReviewersByConferenceIdAsync(It.IsAny<string>()))
+    .ReturnsAsync(new List<PaperReviewer>());
             _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
             _mockUnitOfWork.Setup(u => u.AbstractRepository.GetAbstractByIdAsync("abs1"))
     .ReturnsAsync(new Abstract { AbstractId = "abs1", GlobalStatusId = "status1" });
