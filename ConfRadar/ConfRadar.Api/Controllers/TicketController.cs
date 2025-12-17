@@ -40,6 +40,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.TicketService.CreateRefundTicketRequest(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Ticket, $"đã refund vé mã{request.TicketId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Hãy check yêu cầu lịch sử refund để biết thêm thông tin chi tiết"));
         }
         [Authorize(Roles = "Conference Organizer,Collaborator")]

@@ -39,6 +39,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaymentService.CreatePaymentForTechConference(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Transaction, $"đã tạo 1 giao dịch mua vé hội thảo");
             return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Thanh toán đã hoạt động"));
         }
         [Authorize]
@@ -47,6 +48,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaymentService.CreatePaymentForAbstract(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Transaction, $"đã tạo 1 giao dịch mua vé hội nghị với vai trò tác giả");
             return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Thanh toán đã hoạt động"));
         }
         [Authorize]
@@ -55,6 +57,8 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaymentService.CreatePaymentForResearchAsAttendee(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Transaction, $"đã tạo 1 giao dịch mua vé hội nghị với vai trò dự thính");
+
             return Ok(ApiResponse<GeneralPaymentResultResponse>.SuccessResponse(result, "Thanh toán đã hoạt động"));
 
         }

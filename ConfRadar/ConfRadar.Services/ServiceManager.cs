@@ -121,7 +121,7 @@ namespace ConfRadar.Services
             IReviewerService reviewerService
             ,
             IAuditLogService auditLogService
-            //IPublisherService publisherService
+           //IPublisherService publisherService
 
            )
         {
@@ -213,7 +213,7 @@ namespace ConfRadar.Services
         public IReviewerService ReviewerService => _reviewerService;
 
         public IAuditLogService AuditLogService => _auditLogService;
-       // public IPublisherService PublisherService => _publisherService;
+        // public IPublisherService PublisherService => _publisherService;
     }
 
 }

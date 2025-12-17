@@ -41,6 +41,8 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AssigningPresenterSessionService.AssignPresenterToSession(request.PaperId, request.SessionId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"gán người trình bày với bài báo {request.PaperId} vào phiên {request.SessionId}");
+
             return Ok(ApiResponse<PresenterSessionResponse>.SuccessResponse(result, "Gán người trình bày vào phiên thành công"));
         }
 
@@ -60,6 +62,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AssigningPresenterSessionService.ChangePresenterSession(userId, request);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"yêu cầu thay đổi người trình bài với người dùng với id:{request.NewUserId} cho bài báo {request.PaperId}");
             return Ok(ApiResponse<ConfRadar.Services.DTOs.PresenterSession.PresenterChangeRequest>.SuccessResponse(result, "Yêu cầu thay đổi người trình bày đã được gửi"));
         }
 
@@ -69,6 +72,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.AssigningPresenterSessionService.ApprovePresenterChangeRequest(request, userId);
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã phê duyệt yêu cầu thay đổi người trình bài cho presenter change request với id {request.PresenterChangeRequestId}");
             if (result)
             {
                 return Ok(ApiResponse<bool>.SuccessResponse(result, "Xử lý yêu cầu thay đổi người trình bày thành công"));

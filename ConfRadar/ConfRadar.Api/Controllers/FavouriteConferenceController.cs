@@ -31,6 +31,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.FavoriteConferenceService.AddFavouriteAsync(userId, request.ConferenceId);
+
             return Ok(ApiResponse<AddedFavouriteConfereceResponse>.SuccessResponse(result, "Đã thêm sự kiện vào danh mục yêu thích"));
 
         }
