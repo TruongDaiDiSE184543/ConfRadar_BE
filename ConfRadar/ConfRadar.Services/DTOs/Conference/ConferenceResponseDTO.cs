@@ -333,8 +333,8 @@ namespace ConfRadar.Services.DTOs.Conference
         public string ConferenceSessionId { get; set; } = string.Empty;
         public string? Title { get; set; }
         public string? Description { get; set; }
-        public DateTime? StartTime { get; set; }
-        public DateTime? EndTime { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public TimeOnly? EndTime { get; set; }
         public DateOnly? SessionDate { get; set; }
         public string? ConferenceId { get; set; }
         public string? RoomId { get; set; }
