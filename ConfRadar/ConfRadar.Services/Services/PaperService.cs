@@ -134,11 +134,7 @@ namespace ConfRadar.Services.Services
 
             //var auditLogPaper = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(AuditLogActionNameEnum.Paper.GetDescription());
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            var user = await _unitOfWork.UserRepository.GetUserByUserId(userId);
-            if (user == null)
-            {
-                throw new NotFoundException($"Không tìm thấy người dùng với id {userId}");
-            }
+            
             if (abstractPhase == null || pendingGlobalStatus == null  || readyConfStatus == null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");

@@ -12,173 +12,505 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
     public class DecideFullPaperStatusTests
     {
-        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-        private readonly Mock<ITimeProviderService> _mockTime;
-        private readonly Mock<ITicketService> _mockTicket;
-        private readonly Mock<INotificationService> _mockNoti;
-        private readonly Mock<IEmailService> _mockEmail;
-        private readonly PaperService _paperService;
+        private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+        private readonly Mock<ITimeProviderService> _mockTimeProvider = new();
+        private readonly PaperService _service;
 
         public DecideFullPaperStatusTests()
         {
-            _mockUnitOfWork = new Mock<IUnitOfWork>();
-            _mockTime = new Mock<ITimeProviderService>();
-            _mockTicket = new Mock<ITicketService>();
-            _mockNoti = new Mock<INotificationService>();
-            _mockEmail = new Mock<IEmailService>();
-
-            // Các mock phụ
-            var mockMomo = new Mock<IMomoService>();
-            var mockToken = new Mock<ITokenService>();
-            var mockFile = new Mock<IObjectStorageFileService>();
-            var mockStep = new Mock<IConferenceStepService>();
-            var options = Options.Create(new ObjectStorageSettings());
-
-            _paperService = new PaperService(
-               _mockUnitOfWork.Object, mockMomo.Object, mockToken.Object, options,
-               mockFile.Object, _mockTicket.Object, _mockTime.Object, _mockNoti.Object, mockStep.Object, _mockEmail.Object
-           );
+            // Các service khác mock trống vì không liên quan exception
+            _service = new PaperService(
+                _mockUnitOfWork.Object,
+                null!,
+                null!,
+                null!,
+                null!,
+                null!,
+                _mockTimeProvider.Object,
+                null!,
+                null!,
+                null!
+            );
         }
 
-        private void SetupHappyPathMocks(string userId, string paperId, string fullPaperId, bool isHead)
+        [Fact]
+        public async Task ReviewStatusPending_ThrowsBadRequestException()
         {
-            var now = DateTime.Now;
-            _mockTime.Setup(t => t.GetVietnamTime()).ReturnsAsync(now);
-            _mockTime.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(now));
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Pending
+            };
 
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Không thể chuyển qua status pending", ex.Message);
+        }
+
+        [Fact]
+        public async Task StatusNotFound_ThrowsNotFoundException()
+        {
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync((ReviewStatus?)null);
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Không thấy các trạng thái", ex.Message);
+        }
+
+        [Fact]
+        public async Task PaperNotFound_ThrowsBadRequestException()
+        {
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync((Paper?)null);
+
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Không tìm thấy paper", ex.Message);
+        }
+
+        [Fact]
+        public async Task ConferenceNotReady_ThrowsBadRequestException()
+        {
             var paper = new Paper
             {
-                PaperId = paperId,
-                FullPaperId = fullPaperId,
-                PaperPhaseId = "phase-fullpaper",
-                TicketId = "t1",
-                ResearchConferencePhase = new ResearchConferencePhase { FullPaperDecideStatusStart = DateOnly.FromDateTime(now.AddDays(-1)), FullPaperDecideStatusEnd = DateOnly.FromDateTime(now.AddDays(1)) },
-                Conference = new Conference(),
-                PaperAuthors = new List<PaperAuthor> { new PaperAuthor { IsRootAuthor = true, UserId = "author1" } },
+                PaperId = "p1",
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "notready" } },
+                PaperPhaseId = "fullpaper",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                FullPaperId = "fp1",
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
             };
 
             _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
-                .ReturnsAsync((string name) => new ReviewStatus { ReviewStatusId = $"status-{name.ToLower()}", Name = name });
-
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
             _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
-                .ReturnsAsync((string name) => new PaperPhase { PaperPhaseId = $"phase-{name.ToLower()}", PhaseName = name });
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
 
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
 
-            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync(new GlobalStatus());
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
 
-            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(paperId)).ReturnsAsync(paper);
-            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(fullPaperId)).ReturnsAsync(new FullPaper { FullPaperId = fullPaperId, ReviewStatusId = "status-pending" });
-
-            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(paperId))
-                .ReturnsAsync(new List<PaperReviewer> { new PaperReviewer { UserId = userId, IsHeadReviewer = isHead } });
-
-            _mockUnitOfWork.Setup(u => u.FullPaperReviewRepository.GetFullPaperReviewsByFullPaperIdAsync(fullPaperId)).ReturnsAsync(new List<FullPaperReview> { new FullPaperReview() });
-
-            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId(It.IsAny<string>())).ReturnsAsync(new User());
-            _mockUnitOfWork.Setup(u => u.NotificationRepository.CreateNotificationAsync(It.IsAny<Notification>())).ReturnsAsync(1);
+            Assert.Contains("Hội nghị chưa ready", ex.Message);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Accept_And_AdvanceToCameraReadyPhase()
+        public async Task ResearchConferencePhaseNull_ThrowsNotFoundException()
         {
-            // ARRANGE
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("head1", "p1", "fp1", true);
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperPhaseId = "fullpaper",
+                ResearchConferencePhase = null,
+                FullPaperId = "fp1",
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
 
-            // ACT
-            await _paperService.DecideFullPaperFinalStatus(request, "head1");
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
 
-            // ASSERT
-            _mockUnitOfWork.Verify(u => u.FullPaperRepository.UpdateFullPaperAsync(It.Is<FullPaper>(fp => fp.ReviewStatusId == "status-accepted")), Times.Once);
-            _mockUnitOfWork.Verify(u => u.PaperRepository.UpdatePaperAsync(It.Is<Paper>(p => p.PaperPhaseId == "phase-cameraready")), Times.Once);
-            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("không tìm thấy giai đoạn", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Reject_And_TriggerRefund()
+        public async Task FullPaperNull_ThrowsBadRequestException()
         {
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Rejected };
-            SetupHappyPathMocks("head1", "p1", "fp1", true);
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                PaperPhaseId = "fullpaper",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                FullPaperId = "fp1",
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
 
-            await _paperService.DecideFullPaperFinalStatus(request, "head1");
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync((FullPaper?)null);
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
 
-            _mockUnitOfWork.Verify(u => u.FullPaperRepository.UpdateFullPaperAsync(It.Is<FullPaper>(fp => fp.ReviewStatusId == "status-rejected")), Times.Once);
-            //_mockTicket.Verify(t => t.RefundAuthorCloneFunction("author1", "t1", It.IsAny<string>()), Times.Once);
-            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Full paper với id", ex.Message);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Revise_And_AdvanceToRevisePhase()
+        public async Task FullPaperIdMismatch_ThrowsBadRequestException()
         {
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Revise };
-            SetupHappyPathMocks("head1", "p1", "fp1", true);
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                PaperPhaseId = "fullpaper",
+                FullPaperId = "fp_real",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
+            var fullPaper = new FullPaper { FullPaperId = "fp_wrong", ReviewStatusId = "pending" };
 
-            await _paperService.DecideFullPaperFinalStatus(request, "head1");
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(fullPaper);
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));  
 
-            _mockUnitOfWork.Verify(u => u.FullPaperRepository.UpdateFullPaperAsync(It.Is<FullPaper>(fp => fp.ReviewStatusId == "status-revise")), Times.Once);
-            _mockUnitOfWork.Verify(u => u.PaperRepository.UpdatePaperAsync(It.Is<Paper>(p => p.PaperPhaseId == "phase-revise")), Times.Once);
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp_wrong",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("không khớp với fullpaper id", ex.Message);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Throw_When_UserIsNotHeadReviewer()
+        public async Task FullPaperNotPending_ThrowsBadRequestException()
         {
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("normal-reviewer", "p1", "fp1", false); // isHead = false
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                PaperPhaseId = "fullpaper",
+                FullPaperId = "fp1",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
+            var fullPaper = new FullPaper { FullPaperId = "fp1", ReviewStatusId = "accepted" };
 
-            await Assert.ThrowsAsync<NotFoundException>(() => _paperService.DecideFullPaperFinalStatus(request, "normal-reviewer"));
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(fullPaper);
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
+
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("không trong trạng thái pending", ex.Message);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Throw_When_DecisionDeadlineExpired()
+        public async Task PaperPhaseNotFullPaper_ThrowsBadRequestException()
         {
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("head1", "p1", "fp1", true);
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                PaperPhaseId = "revise",
+                FullPaperId = "fp1",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
+            var fullPaper = new FullPaper { FullPaperId = "fp1", ReviewStatusId = "pending" };
 
-            // Override time to be in the past
-            var expiredDate = DateTime.Now.AddDays(-5);
-            _mockTime.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(expiredDate));
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(fullPaper);
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
 
-            var paper = await _mockUnitOfWork.Object.PaperRepository.GetPaperByIdAsync("p1");
-            paper.ResearchConferencePhase.FullPaperDecideStatusStart = DateOnly.FromDateTime(expiredDate.AddDays(-10));
-            paper.ResearchConferencePhase.FullPaperDecideStatusEnd = DateOnly.FromDateTime(expiredDate.AddDays(-2));
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
 
-            await Assert.ThrowsAsync<BadRequestException>(() => _paperService.DecideFullPaperFinalStatus(request, "head1"));
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Paper phase không đang trong giai đoạn full paper", ex.Message);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Throw_When_FullPaperIsNotPending()
+        public async Task PaperReviewerListEmpty_ThrowsNotFoundException()
         {
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("head1", "p1", "fp1", true);
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                PaperPhaseId = "fullpaper",
+                FullPaperId = "fp1",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
+            var fullPaper = new FullPaper { FullPaperId = "fp1", ReviewStatusId = "pending" };
 
-            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync("fp1"))
-                .ReturnsAsync(new FullPaper { FullPaperId = "fp1", ReviewStatusId = "status-accepted" }); // Not pending
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(fullPaper);
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(new List<PaperReviewer>()); // empty
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
 
-            await Assert.ThrowsAsync<BadRequestException>(() => _paperService.DecideFullPaperFinalStatus(request, "head1"));
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Không tìm thấy danh sách paper reviewer", ex.Message);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Throw_When_PaperIsNotInFullPaperPhase()
+        public async Task NotHeadReviewer_ThrowsNotFoundException()
         {
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("head1", "p1", "fp1", true);
+            var paperReviewer = new PaperReviewer { IsHeadReviewer = false, UserId = "user2" };
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                PaperPhaseId = "fullpaper",
+                FullPaperId = "fp1",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
+            var fullPaper = new FullPaper { FullPaperId = "fp1", ReviewStatusId = "pending" };
 
-            var paper = await _mockUnitOfWork.Object.PaperRepository.GetPaperByIdAsync("p1");
-            paper.PaperPhaseId = "phase-abstract"; // Wrong phase
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(fullPaper);
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(new List<PaperReviewer> { paperReviewer });
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
 
-            await Assert.ThrowsAsync<BadRequestException>(() => _paperService.DecideFullPaperFinalStatus(request, "head1"));
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Bạn không phải là head reviewer", ex.Message);
         }
 
         [Fact]
-        public async Task DecideFullPaperStatus_Should_Throw_When_NoReviewsHaveBeenSubmitted()
+        public async Task FullPaperReviewsEmpty_ThrowsBadRequestException()
         {
-            var request = new UpdateFullPaperStatusRequest { PaperId = "p1", FullPaperId = "fp1", ReviewStatus = ReviewStatusEnum.Accepted };
-            SetupHappyPathMocks("head1", "p1", "fp1", true);
+            var paperReviewer = new PaperReviewer { IsHeadReviewer = true, UserId = "user1" };
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                PaperPhaseId = "fullpaper",
+                FullPaperId = "fp1",
+                ResearchConferencePhase = new ResearchConferencePhase
+                {
+                    FullPaperDecideStatusStart = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    FullPaperDecideStatusEnd = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+                },
+                Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "ready" } },
+                PaperAuthors = new List<PaperAuthor> { new() { IsRootAuthor = true, User = new User { UserId = "user1" } } }
+            };
+            var fullPaper = new FullPaper { FullPaperId = "fp1", ReviewStatusId = "pending" };
 
-            _mockUnitOfWork.Setup(u => u.FullPaperReviewRepository.GetFullPaperReviewsByFullPaperIdAsync("fp1"))
-                .ReturnsAsync(new List<FullPaperReview>()); // No reviews
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.FullPaperRepository.GetFullPaperByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(fullPaper);
+            _mockUnitOfWork.Setup(u => u.ReviewStatusRepository.GetReviewStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ReviewStatus { ReviewStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.PaperPhaseRepository.GetPaperPhaseByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "fullpaper" });
+            _mockUnitOfWork.Setup(u => u.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pending" });
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
+            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(new List<PaperReviewer> { paperReviewer });
+            _mockUnitOfWork.Setup(u => u.FullPaperReviewRepository.GetFullPaperReviewsByFullPaperIdAsync(It.IsAny<string>()))
+                .ReturnsAsync(new List<FullPaperReview>()); // empty
+            _mockTimeProvider.Setup(t => t.GetVietnamDate())
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
 
-            await Assert.ThrowsAsync<BadRequestException>(() => _paperService.DecideFullPaperFinalStatus(request, "head1"));
+            var request = new UpdateFullPaperStatusRequest
+            {
+                PaperId = "p1",
+                FullPaperId = "fp1",
+                ReviewStatus = ReviewStatusEnum.Accepted
+            };
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.DecideFullPaperFinalStatus(request, "user1"));
+
+            Assert.Contains("Cần ít nhất 1 review từ các reviewer", ex.Message);
         }
+
     }
 }

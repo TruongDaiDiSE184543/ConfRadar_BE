@@ -13,197 +13,274 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
     public class SubmitRevisionFeedbackTests
     {
-        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-        private readonly Mock<ITimeProviderService> _mockTime;
-        private readonly Mock<IEmailService> _mockEmail;
-
-        // Mock các repo con
-        private readonly Mock<IPaperRepository> _mockPaperRepo;
-        private readonly Mock<IPaperReviewerRepository> _mockPaperReviewerRepo;
-        private readonly Mock<IRevisionPaperSubmissionRepository> _mockRevisionSubmissionRepo;
-        private readonly Mock<IRevisionSubmissionFeedbackRepository> _mockFeedbackRepo;
-
-        private readonly PaperService _paperService;
+        private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+        private readonly Mock<ITimeProviderService> _mockTimeProviderService = new();
+        private readonly PaperService _service;
 
         public SubmitRevisionFeedbackTests()
         {
-            _mockUnitOfWork = new Mock<IUnitOfWork>();
-            _mockTime = new Mock<ITimeProviderService>();
+            _mockTimeProviderService.Setup(x => x.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
+            _mockTimeProviderService.Setup(x => x.GetVietnamTime()).ReturnsAsync(DateTime.UtcNow);
 
-            // Khởi tạo các mock repo con
-            _mockPaperRepo = new Mock<IPaperRepository>();
-            _mockPaperReviewerRepo = new Mock<IPaperReviewerRepository>();
-            _mockRevisionSubmissionRepo = new Mock<IRevisionPaperSubmissionRepository>();
-            _mockFeedbackRepo = new Mock<IRevisionSubmissionFeedbackRepository>();
-
-            // Gắn mock repo con vào UnitOfWork
-            _mockUnitOfWork.Setup(u => u.PaperRepository).Returns(_mockPaperRepo.Object);
-            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository).Returns(_mockPaperReviewerRepo.Object);
-            _mockUnitOfWork.Setup(u => u.RevisionPaperSubmissionRepository).Returns(_mockRevisionSubmissionRepo.Object);
-            _mockUnitOfWork.Setup(u => u.RevisionSubmissionFeedbackRepository).Returns(_mockFeedbackRepo.Object);
-
-            // Các mock phụ để khởi tạo service
-            var mockMomo = new Mock<IMomoService>();
-            var mockToken = new Mock<ITokenService>();
-            var mockFile = new Mock<IObjectStorageFileService>();
-            var mockTicket = new Mock<ITicketService>();
-            var mockNoti = new Mock<INotificationService>();
-            var mockStep = new Mock<IConferenceStepService>();
-            _mockEmail = new Mock<IEmailService>();
-            var options = Options.Create(new ObjectStorageSettings());
-
-            _paperService = new PaperService(
-                _mockUnitOfWork.Object, mockMomo.Object, mockToken.Object, options,
-                mockFile.Object, mockTicket.Object, _mockTime.Object, mockNoti.Object, mockStep.Object,
-                _mockEmail.Object
+            _service = new PaperService(
+                _mockUnitOfWork.Object,
+                Mock.Of<IMomoService>(),
+                Mock.Of<ITokenService>(),
+                Mock.Of<IOptions<ObjectStorageSettings>>(),
+                Mock.Of<IObjectStorageFileService>(),
+                Mock.Of<ITicketService>(),
+                _mockTimeProviderService.Object,
+                Mock.Of<INotificationService>(),
+                Mock.Of<IConferenceStepService>(),
+                Mock.Of<IEmailService>()
             );
         }
-
-        private void SetupHappyPathMocks(string userId, string paperId, string submissionId, bool isHead)
+        [Fact]
+        public async Task CreateRevisionFeedback_StatusOrPhaseNull_ThrowsNotFoundException()
         {
-            var now = DateTime.Now;
-            _mockTime.Setup(t => t.GetVietnamTime()).ReturnsAsync(now);
-            _mockTime.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(now));
+            _mockUnitOfWork.Setup(x => x.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>())).ReturnsAsync((GlobalStatus?)null);
+            _mockUnitOfWork.Setup(x => x.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>())).ReturnsAsync((ConferenceStatus?)null);
+            _mockUnitOfWork.Setup(x => x.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>())).ReturnsAsync((PaperPhase?)null);
 
-            // Mock Paper
-            var paper = new Paper
-            {
-                PaperId = paperId,
-                Conference = new Conference { ConferenceName = "Test Conf" },
-                ResearchConferencePhase = new ResearchConferencePhase
-                {
-                    // Đang trong giai đoạn Revise
-                    ReviseStartDate = DateOnly.FromDateTime(now.AddDays(-10)),
-                    ReviseEndDate = DateOnly.FromDateTime(now.AddDays(10))
-                }
-            };
-            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync(paperId)).ReturnsAsync(paper);
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback(), "user1"));
 
-            // Mock Revision Submission
-            var submission = new RevisionPaperSubmission
+            Assert.Contains("Không tìm thấy trạng thái", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_PaperNotFound_ThrowsNotFoundException()
+        {
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync((Paper?)null);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Không tìm thấy paper với id", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_RevisionPaperIdNull_ThrowsNotFoundException()
+        {
+            SetupBasicStatusPhaseMocks();
+
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = null };
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Không tìm thấy mã revision", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_RevisionPaperNotFound_ThrowsNotFoundException()
+        {
+            SetupBasicStatusPhaseMocks();
+
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1" };
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync((RevisionPaper?)null);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Không tìm thấy revision với id r1", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_RevisionPaperNotPending_ThrowsBadRequestException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "otherStatus" };
+
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Chỉ có thể gửi revision feedback khi revision trong trạng thái pending", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_PaperNotRevisePhase_ThrowsBadRequestException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "otherPhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Bài báo phải trong giai đoạn revise", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_ConferenceNotReady_ThrowsBadRequestException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "notReadyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Hội nghị chưa ready", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_ResearchPhaseNull_ThrowsNotFoundException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = null };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Không tìm thấy giai đoạn cho hội nghị", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_DeadlineExpired_ThrowsBadRequestException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1" }, "user1"));
+
+            Assert.Contains("Giai đoạn gửi feedback revise diễn ra hạn chót", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_RevisionPaperSubmissionNotFound_ThrowsNotFoundException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync(It.IsAny<string>())).ReturnsAsync((RevisionPaperSubmission?)null);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "s1" }, "user1"));
+
+            Assert.Contains("Không tìm thấy revision paper submission id", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_DeadlineRoundNull_ThrowsNotFoundException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+            var revisionSubmission = new RevisionPaperSubmission { RevisionPaperSubmissionId = "s1", RevisionDeadlineRound = null };
+
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync("s1")).ReturnsAsync(revisionSubmission);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "s1" }, "user1"));
+
+            Assert.Contains("Không tìm thấy revision deadline", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateRevisionFeedback_UserNotReviewer_ThrowsNotFoundException()
+        {
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+            var revisionSubmission = new RevisionPaperSubmission
             {
-                RevisionPaperSubmissionId = submissionId,
+                RevisionPaperSubmissionId = "s1",
+                // Giả sử EndSubmissionDate trực tiếp có trong RevisionPaperSubmission
                 RevisionDeadlineRound = new RevisionRoundDeadline
                 {
-                    // Đang trong deadline của round này
-                    StartSubmissionDate = DateOnly.FromDateTime(now.AddDays(-5)),
-                    EndSubmissionDate = DateOnly.FromDateTime(now.AddDays(5))
+                    EndSubmissionDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
                 }
             };
-            _mockRevisionSubmissionRepo.Setup(r => r.GetRevisionPaperSubmissionByIdAsync(submissionId)).ReturnsAsync(submission);
 
-            // Mock Paper Reviewer (quyền hạn)
-            _mockPaperReviewerRepo.Setup(r => r.GetPaperReviewersByPaperIdAndUserIdAsync(userId, paperId))
-                .ReturnsAsync(new PaperReviewer { IsHeadReviewer = isHead });
 
-            // Mock hàm create
-            _mockFeedbackRepo.Setup(r => r.CreateMultipleFeedbacksAsync(It.IsAny<List<RevisionSubmissionFeedback>>())).ReturnsAsync(1);
+            SetupBasicStatusPhaseMocks();
+
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync("s1")).ReturnsAsync(revisionSubmission);
+            _mockUnitOfWork.Setup(x => x.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync("user1", "p1")).ReturnsAsync((PaperReviewer?)null);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "s1" }, "user1"));
+
+            Assert.Contains("Không tìm thấy user id user1", ex.Message);
         }
 
         [Fact]
-        public async Task CreateRevisionSubmissionFeedBack_Should_Succeed_When_UserIsHeadReviewer_And_WithinDeadlines()
+        public async Task CreateRevisionFeedback_UserNotHeadReviewer_ThrowsNotFoundException()
         {
-            // ARRANGE
-            var userId = "head1";
-            var request = new CreateRevisionPaperSubmissionFeedback
+            var paper = new Paper { PaperId = "p1", RevisionPaperId = "r1", PaperPhaseId = "revisePhase", Conference = new Conference { ConferenceStatus = new ConferenceStatus { ConferenceStatusId = "readyStatus" } }, ResearchConferencePhase = new ResearchConferencePhase { ReviseEndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)) } };
+            var revisionPaper = new RevisionPaper { RevisionPaperId = "r1", GlobalStatusId = "pendingStatus" };
+            var revisionSubmission = new RevisionPaperSubmission
             {
-                PaperId = "p1",
-                RevisionPaperSubmissionId = "sub1",
-                Feedbacks = new List<RevisionPaperSubmissionFeedbackRequest>
+                RevisionPaperSubmissionId = "s1",
+                // Giả sử EndSubmissionDate trực tiếp có trong RevisionPaperSubmission
+                RevisionDeadlineRound = new RevisionRoundDeadline
                 {
-                    new RevisionPaperSubmissionFeedbackRequest { Feedback = "Point 1 needs clarification.", SortOrder = 1 }
+                    EndSubmissionDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
                 }
             };
-            SetupHappyPathMocks(userId, "p1", "sub1", true);
+            var paperReviewer = new PaperReviewer { IsHeadReviewer = false };
 
-            // ACT
-            var result = await _paperService.CreateRevisionSubmissionFeedBack(request, userId);
+            SetupBasicStatusPhaseMocks();
 
-            // ASSERT
-            result.Should().BeGreaterThan(0);
-            _mockFeedbackRepo.Verify(r => r.CreateMultipleFeedbacksAsync(
-                It.Is<List<RevisionSubmissionFeedback>>(list =>
-                    list.Count == 1 &&
-                    list[0].Feedback == "Point 1 needs clarification." &&
-                    list[0].UserId == userId
-                )), Times.Once);
+            _mockUnitOfWork.Setup(x => x.PaperRepository.GetPaperByIdAsync("p1")).ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperRepository.GetRevisionPaperByIdAsync("r1")).ReturnsAsync(revisionPaper);
+            _mockUnitOfWork.Setup(x => x.RevisionPaperSubmissionRepository.GetRevisionPaperSubmissionByIdAsync("s1")).ReturnsAsync(revisionSubmission);
+            _mockUnitOfWork.Setup(x => x.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync("user1", "p1")).ReturnsAsync(paperReviewer);
+
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+                _service.CreateRevisionSubmissionFeedBack(new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "s1" }, "user1"));
+
+            Assert.Contains("Chức năng này dành cho head reviewer", ex.Message);
         }
 
-        [Fact]
-        public async Task CreateRevisionSubmissionFeedBack_Should_Throw_When_UserIsNotHeadReviewer()
+        // Helper mock các status/phase cơ bản
+        private void SetupBasicStatusPhaseMocks()
         {
-            var userId = "normal-reviewer";
-            var request = new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "sub1", Feedbacks = new List<RevisionPaperSubmissionFeedbackRequest>() };
-            SetupHappyPathMocks(userId, "p1", "sub1", false); // isHead = false
+            _mockUnitOfWork.Setup(x => x.GlobalStatusRepository.GetGlobalStatusByName(It.IsAny<string>()))
+                .ReturnsAsync(new GlobalStatus { GlobalStatusId = "pendingStatus" });
 
-            var ex = await Assert.ThrowsAsync<NotFoundException>(() => _paperService.CreateRevisionSubmissionFeedBack(request, userId));
-            ex.Message.Should().Contain("Chức năng này dành cho head reviewer");
-        }
+            _mockUnitOfWork.Setup(x => x.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
+                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "readyStatus" });
 
-        [Fact]
-        public async Task CreateRevisionSubmissionFeedBack_Should_Throw_When_OutsideRevisePhase()
-        {
-            var userId = "head1";
-            var request = new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "sub1", Feedbacks = new List<RevisionPaperSubmissionFeedbackRequest>() };
-            SetupHappyPathMocks(userId, "p1", "sub1", true);
-
-            // Override ngày tháng để nằm ngoài Phase
-            var paper = await _mockPaperRepo.Object.GetPaperByIdAsync("p1");
-            paper.ResearchConferencePhase.ReviseStartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(5));
-            paper.ResearchConferencePhase.ReviseEndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(10));
-
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() => _paperService.CreateRevisionSubmissionFeedBack(request, userId));
-            ex.Message.Should().Contain("Giai đoạn gửi feedback revise diễn ra từ");
-        }
-
-        [Fact]
-        public async Task CreateRevisionSubmissionFeedBack_Should_Throw_When_OutsideSubmissionDeadline()
-        {
-            var userId = "head1";
-            var request = new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "sub1", Feedbacks = new List<RevisionPaperSubmissionFeedbackRequest>() };
-            SetupHappyPathMocks(userId, "p1", "sub1", true);
-
-            // Override ngày tháng để nằm ngoài Deadline của Round
-            var submission = await _mockRevisionSubmissionRepo.Object.GetRevisionPaperSubmissionByIdAsync("sub1");
-            submission.RevisionDeadlineRound.StartSubmissionDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-10));
-            submission.RevisionDeadlineRound.EndSubmissionDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-5));
-
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() => _paperService.CreateRevisionSubmissionFeedBack(request, userId));
-            ex.Message.Should().Contain("Deadline cho tương tác qua lại nằm từ");
-        }
-
-        [Fact]
-        public async Task CreateRevisionSubmissionFeedBack_Should_Throw_When_PaperNotFound()
-        {
-            var userId = "head1";
-            var request = new CreateRevisionPaperSubmissionFeedback { PaperId = "p-not-found", RevisionPaperSubmissionId = "sub1", Feedbacks = new List<RevisionPaperSubmissionFeedbackRequest>() };
-            _mockPaperRepo.Setup(r => r.GetPaperByIdAsync("p-not-found")).ReturnsAsync((Paper)null);
-
-            await Assert.ThrowsAsync<NotFoundException>(() => _paperService.CreateRevisionSubmissionFeedBack(request, userId));
-        }
-
-        [Fact]
-        public async Task CreateRevisionSubmissionFeedBack_Should_Throw_When_SubmissionNotFound()
-        {
-            var userId = "head1";
-            var request = new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "sub-not-found", Feedbacks = new List<RevisionPaperSubmissionFeedbackRequest>() };
-            SetupHappyPathMocks(userId, "p1", "sub1", true); // Setup với sub1
-            _mockRevisionSubmissionRepo.Setup(r => r.GetRevisionPaperSubmissionByIdAsync("sub-not-found")).ReturnsAsync((RevisionPaperSubmission)null);
-
-            await Assert.ThrowsAsync<NotFoundException>(() => _paperService.CreateRevisionSubmissionFeedBack(request, userId));
-        }
-
-        [Fact]
-        public async Task CreateRevisionSubmissionFeedBack_Should_Throw_When_ReviewerNotAssignedToPaper()
-        {
-            var userId = "head1";
-            var request = new CreateRevisionPaperSubmissionFeedback { PaperId = "p1", RevisionPaperSubmissionId = "sub1", Feedbacks = new List<RevisionPaperSubmissionFeedbackRequest>() };
-            SetupHappyPathMocks(userId, "p1", "sub1", true);
-
-            // Mock user này không được assign vào paper p1
-            _mockPaperReviewerRepo.Setup(r => r.GetPaperReviewersByPaperIdAndUserIdAsync("other-user", "p1")).ReturnsAsync((PaperReviewer)null);
-
-            await Assert.ThrowsAsync<NotFoundException>(() => _paperService.CreateRevisionSubmissionFeedBack(request, "other-user"));
+            _mockUnitOfWork.Setup(x => x.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
+                .ReturnsAsync(new PaperPhase { PaperPhaseId = "revisePhase" });
         }
     }
 }

@@ -88,11 +88,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Vé với mã {request.TicketId} đã được hoàn tiền. Không thể yêu cầu hoàn tiền nữa");
             }
-            if (ticket.PricePhase!.ConferencePrice!.Conference.IsResearchConference == true)
-            {
-                throw new BadRequestException($"Vé hội nghị nghiên cứu không cho phép hoàn tiền");
-
-            }
+            
 
             var transactionList = ticket.Transactions;
 
@@ -103,9 +99,13 @@ namespace ConfRadar.Services.Services
             }
             if (ticket.PricePhase == null)
             {
-                throw new BadRequestException("Không tìm thấy các giai đoạn cho vé này");
+                throw new NotFoundException("Không tìm thấy các giai đoạn cho vé này");
             }
+            if (ticket.PricePhase!.ConferencePrice!.Conference.IsResearchConference == true)
+            {
+                throw new BadRequestException($"Vé hội nghị nghiên cứu không cho phép hoàn tiền");
 
+            }
             var refundRequestAlreadyExisted = await _unitOfWork.RefundRequestRepository.GetRefundRequestByTicketIdAsync(request.TicketId);
             if (refundRequestAlreadyExisted != null)
             {

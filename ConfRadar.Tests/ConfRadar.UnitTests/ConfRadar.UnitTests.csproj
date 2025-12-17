@@ -29,9 +29,6 @@
 
 
   <ItemGroup>
-    <Folder Include="Services\PaperServiceTestV1\FullPaper\" />
-    <Folder Include="Services\PaperServiceTestV1\CameraReady\" />
-    <Folder Include="Services\PaperServiceTestV1\RevisionPaper\" />
     <Folder Include="Utilities\" />
     <Folder Include="Shared\" />
   </ItemGroup>
