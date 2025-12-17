@@ -287,9 +287,19 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("Token không tương ứng với người dùng nào ");
             }
             var timeNow = await _timeProviderService.GetVietnamTime();
-            if (user.PasswordResetTokenExpiry == null || user.VerificationToken == null || user.PasswordResetTokenExpiry < timeNow || user.VerificationTokenExpiry < timeNow)
+            if (user.PasswordResetToken != null && user.PasswordResetTokenExpiry != null)
             {
+                if (user.PasswordResetTokenExpiry < timeNow)
+                {
                 throw new ConfRadarAuthenticationException("Token đã hết hạn");
+                }
+            }
+            if (user.VerificationToken != null && user.VerificationTokenExpiry != null)
+            {
+                if (user.VerificationTokenExpiry < timeNow)
+                {
+                    throw new ConfRadarAuthenticationException("Token đã hết hạn");
+                }
             }
             user.PasswordHash = _passwordHasher.Hash(newPassword);
             if (user.PasswordResetToken != null)
@@ -297,7 +307,7 @@ namespace ConfRadar.Services.Services
                 user.PasswordResetToken = null;
                 user.PasswordResetTokenExpiry = null;
             }
-            if (user.VerificationTokenExpiry != null)
+            if (user.VerificationToken != null)
             {
                 user.VerificationToken = null;
                 user.VerificationTokenExpiry = null;
