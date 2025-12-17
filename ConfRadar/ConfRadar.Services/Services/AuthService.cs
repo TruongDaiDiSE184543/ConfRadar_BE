@@ -284,12 +284,12 @@ namespace ConfRadar.Services.Services
             var user = await _unitOfWork.UserRepository.GetUserByForgetPasswordToken(token);
             if (user == null)
             {
-                throw new NotFoundException("Token is not found");
+                throw new NotFoundException("Token không tương ứng với người dùng nào ");
             }
             var timeNow = await _timeProviderService.GetVietnamTime();
             if (user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry <= timeNow)
             {
-                throw new ConfRadarAuthenticationException("Token is expired");
+                throw new ConfRadarAuthenticationException("Token đã hết hạn");
             }
             user.PasswordHash = _passwordHasher.Hash(newPassword);
             user.PasswordResetToken = null;
