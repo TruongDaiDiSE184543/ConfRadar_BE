@@ -1,6 +1,8 @@
 ﻿using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -378,7 +380,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.EndTime).HasColumnType("timestamp without time zone");
             entity.Property(e => e.RoomId).HasMaxLength(50);
             entity.Property(e => e.StartTime).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.Title).HasMaxLength(255);
 
             entity.HasOne(d => d.Conference).WithMany(p => p.ConferenceSessions)
                 .HasForeignKey(d => d.ConferenceId)
@@ -612,7 +613,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.AbstractId).HasMaxLength(50);
             entity.Property(e => e.CameraReadyId).HasMaxLength(50);
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
-            entity.Property(e => e.ConferenceSessionId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.FullPaperId).HasMaxLength(50);
             entity.Property(e => e.PaperPhaseId).HasMaxLength(50);
@@ -631,10 +631,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasOne(d => d.Conference).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.ConferenceId)
                 .HasConstraintName("FK_Paper_ConferenceId");
-
-            entity.HasOne(d => d.ConferenceSession).WithMany(p => p.Papers)
-                .HasForeignKey(d => d.ConferenceSessionId)
-                .HasConstraintName("FK_Paper_ConferenceSessionId");
 
             entity.HasOne(d => d.FullPaper).WithMany(p => p.Papers)
                 .HasForeignKey(d => d.FullPaperId)

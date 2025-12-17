@@ -21,9 +21,9 @@ namespace ConfRadar.Services.DTOs.Abstract
 
         public List<string>? CoAuthorId { get; set; }
 
-        [Required(ErrorMessage = "Mã phiên là bắt buộc")]
+        //[Required(ErrorMessage = "Mã phiên là bắt buộc")]
 
-        public string ConferenceSessionId { get; set; }
+        //public string ConferenceSessionId { get; set; }
     }
 
 
