@@ -145,16 +145,16 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Hội nghị với id {request.ConferenceId} không tồn tại");
 
             }
-            var session = await _unitOfWork.ConferenceSessionRepository.GetSessionBySessionId(request.ConferenceSessionId);
-            if (session == null)
-            {
-                throw new BadRequestException($"Không tìm thấy phiên với id {request.ConferenceSessionId}");
+            //var session = await _unitOfWork.ConferenceSessionRepository.GetSessionBySessionId(request.ConferenceSessionId);
+            //if (session == null)
+            //{
+            //    throw new BadRequestException($"Không tìm thấy phiên với id {request.ConferenceSessionId}");
 
-            }
-            if (session.ConferenceId != request.ConferenceId)
-            {
-                throw new BadRequestException($"Phiên {request.ConferenceSessionId} không thuộc hội nghị với mã {request.ConferenceId}");
-            }
+            //}
+            //if (session.ConferenceId != request.ConferenceId)
+            //{
+            //    throw new BadRequestException($"Phiên {request.ConferenceSessionId} không thuộc hội nghị với mã {request.ConferenceId}");
+            //}
             if (conference.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
             {
                 throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
@@ -211,7 +211,7 @@ namespace ConfRadar.Services.Services
                 CreatedAt = timeNow,
                 Title = request.Title,
                 Description = request.Description,
-                ConferenceSessionId = request.ConferenceSessionId
+                //ConferenceSessionId = request.ConferenceSessionId
 
             };
             paper.PaperAuthors = new List<PaperAuthor>()
@@ -2347,7 +2347,7 @@ namespace ConfRadar.Services.Services
                 Description = paper.Description,
                 Created = paper.CreatedAt,
                 RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName, avatarUrl = RootAuthor.AvatarUrl } : null,
-                PublishingLink = paper.PublishingLink ?? "N/A",
+                //PublishingLink = paper.PublishingLink ?? "N/A",
                 CoAuthors = coAuthors?.Select(user => new Author
                 {
                     userId = user.UserId,

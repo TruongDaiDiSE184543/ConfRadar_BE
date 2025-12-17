@@ -57,7 +57,7 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.PaperService.SubmitAbstract(request, userId);
-            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã nộp abstract thành công vào hội nghị {request.ConferenceId} với phiên {request.ConferenceSessionId}");
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã nộp abstract thành công vào hội nghị {request.ConferenceId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã nộp abstract thành công"));
         }
         [Authorize(Roles = "Conference Organizer")]
