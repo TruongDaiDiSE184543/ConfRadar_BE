@@ -4,8 +4,6 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.FullPaperReview;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
@@ -504,9 +502,9 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             Assert.Contains("Full paper phải trong trạng thái pending", ex.Message);
         }
 
-       
 
-       
+
+
 
     }
 }

@@ -2,13 +2,10 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
-using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Reflection;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
@@ -134,7 +131,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             typeof(ResearchConferencePhase)
                 .GetProperty("RegistrationEndDate")!
                 .SetValue(phase, dateNow.AddDays(1));
-          
+
 
             _mockUow.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync("conf-1"))
                 .ReturnsAsync(new Conference
@@ -180,7 +177,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             {
                 ConferenceId = "conf-1",
                 //ConferenceSessionId = "session-1",
-                CoAuthorId = new List<string> { "user-1" } 
+                CoAuthorId = new List<string> { "user-1" }
             };
 
             var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
@@ -678,7 +675,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 .GetAttendeeTicketByUserIdAndConferenceId(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<Ticket>());
 
-          
+
 
 
             // Act

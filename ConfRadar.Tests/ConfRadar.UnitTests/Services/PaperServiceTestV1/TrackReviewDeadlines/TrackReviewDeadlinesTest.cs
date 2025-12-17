@@ -1,8 +1,6 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;
@@ -47,7 +45,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackReviewDeadlines
             Assert.Empty(result);
         }
 
-     
+
 
         [Fact]
         public async Task GetAssignedPapers_FullPaper_CanReviewAndDecideLogic()
@@ -91,6 +89,6 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.TrackReviewDeadlines
             Assert.True(dto.FullPaperWork.CanDecide);
         }
 
-        
+
     }
 }

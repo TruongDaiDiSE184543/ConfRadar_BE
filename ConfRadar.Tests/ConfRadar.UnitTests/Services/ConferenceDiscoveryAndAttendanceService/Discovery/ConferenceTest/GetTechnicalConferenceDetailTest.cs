@@ -1,6 +1,5 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
@@ -188,4 +187,3 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.D
 
 }
 
-      

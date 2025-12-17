@@ -166,8 +166,8 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(p => p.CameraReady != null)
                 // Điều kiện IsPublish vẫn nằm ở ConferencePrice, điều này đúng
                 .Where(p => p.Ticket != null && p.Ticket.PricePhase.ConferencePrice.IsPublish == true);
-                // Chỉ lấy những paper chưa có link
-                //.Where(p => string.IsNullOrEmpty(p.PublishingLink));
+            // Chỉ lấy những paper chưa có link
+            //.Where(p => string.IsNullOrEmpty(p.PublishingLink));
 
             return await query.ToListAsync();
         }

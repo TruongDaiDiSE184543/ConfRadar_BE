@@ -102,7 +102,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DecideFullPaperStatus([FromBody] UpdateFullPaperStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request,userId);
+            var result = await _serviceManager.PaperService.DecideFullPaperFinalStatus(request, userId);
             await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"đã quyết định fullpaper {request.FullPaperId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã quyết định fullpaper thành công"));
         }
@@ -182,7 +182,7 @@ namespace ConfRadar.Api.Controllers
         public async Task<IActionResult> DecideReviseStatus([FromBody] UpdateRevisionStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _serviceManager.PaperService.DecideReviseStatus(request,userId);
+            var result = await _serviceManager.PaperService.DecideReviseStatus(request, userId);
             await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Paper, $"Đã quyết định giai đoạn revise thành công cho bài báo {request.PaperId}");
             return Ok(ApiResponse<int>.SuccessResponse(result, "Đã quyết định revise thành công"));
         }

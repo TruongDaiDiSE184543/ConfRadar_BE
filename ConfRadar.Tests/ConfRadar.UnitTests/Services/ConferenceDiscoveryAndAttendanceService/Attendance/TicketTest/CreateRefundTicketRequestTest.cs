@@ -175,7 +175,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             await Assert.ThrowsAsync<BadRequestException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId));
         }
 
-       
+
 
         [Fact]
         public async Task CreateRefundTicketRequest_ShouldThrow_WhenTransactionNotFound()
@@ -212,7 +212,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
                 _service.CreateRefundTicketRequest(req, ticket.UserId)
             );
 
-            await Assert.ThrowsAsync<BadRequestException>(() =>_service.CreateRefundTicketRequest(req, ticket.UserId)
+            await Assert.ThrowsAsync<BadRequestException>(() => _service.CreateRefundTicketRequest(req, ticket.UserId)
 );
 
         }

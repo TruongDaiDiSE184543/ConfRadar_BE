@@ -287,13 +287,21 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("Token không tương ứng với người dùng nào ");
             }
             var timeNow = await _timeProviderService.GetVietnamTime();
-            if (user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry <= timeNow)
+            if (user.PasswordResetTokenExpiry == null || user.VerificationToken == null || user.PasswordResetTokenExpiry < timeNow || user.VerificationTokenExpiry < timeNow)
             {
                 throw new ConfRadarAuthenticationException("Token đã hết hạn");
             }
             user.PasswordHash = _passwordHasher.Hash(newPassword);
-            user.PasswordResetToken = null;
-            user.PasswordResetTokenExpiry = null;
+            if (user.PasswordResetToken != null)
+            {
+                user.PasswordResetToken = null;
+                user.PasswordResetTokenExpiry = null;
+            }
+            if (user.VerificationTokenExpiry != null)
+            {
+                user.VerificationToken = null;
+                user.VerificationTokenExpiry = null;
+            }
             if (user.IsEmailConfirmed == false)
             {
                 user.IsEmailConfirmed = true;

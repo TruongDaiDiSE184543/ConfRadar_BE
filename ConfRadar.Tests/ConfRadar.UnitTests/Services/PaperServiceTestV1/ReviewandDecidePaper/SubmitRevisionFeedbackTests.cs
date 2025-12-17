@@ -1,10 +1,8 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.DTOs.RevisionPaper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
 using static ConfRadar.Services.Common.AppSettingConfig;

@@ -1,15 +1,11 @@
 using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
-using ConfRadar.Repositories.Repositories;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using ConfRadar.Shared.DTO.Payment;
-using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Text.Json;
 using static ConfRadar.Services.Common.AppSettingConfig;
 namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.Attendance.RegistrationTest
 {
@@ -395,7 +391,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Contains("Giai đoạn hội nghị nghiên cứu không khả dụng", ex.Message);
         }
 
-      
+
 
         private void SetupBaseMocks()
         {
@@ -440,14 +436,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             };
         }
 
-       
 
-       
 
-      
-       
 
-       
+
+
+
+
+
 
         [Fact]
         public async Task ShouldThrow_WhenPhaseNotActive()
@@ -976,7 +972,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
 
     }
 }
-       
+
 
 
 

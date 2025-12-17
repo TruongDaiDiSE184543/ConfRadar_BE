@@ -1,5 +1,4 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Destination;
 using Microsoft.AspNetCore.Authorization;
@@ -25,10 +24,10 @@ namespace ConfRadar.Api.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var destinationId = await _serviceManager.DestinationService.CreateDestinationAsync(request);
-           await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"tạo điểm đến {request.Name} đến thành công");
-           return Ok(ApiResponse<string>.SuccessResponse(destinationId, "Tạo điểm đến thành công"));
-            
-          
+            await _serviceManager.AuditLogService.CreateAuditLog(userId, Services.Common.AuditLogActionNameEnum.Conference, $"tạo điểm đến {request.Name} đến thành công");
+            return Ok(ApiResponse<string>.SuccessResponse(destinationId, "Tạo điểm đến thành công"));
+
+
         }
 
         [Authorize(Roles = "Conference Organizer,Admin")]

@@ -4,9 +4,7 @@ using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.FullPaper;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using Microsoft.Extensions.Options;
 using Moq;
-using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
 {
@@ -257,7 +255,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.ReviewandDecidePaper
             _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(It.IsAny<string>()))
                 .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "ready" });
             _mockTimeProvider.Setup(t => t.GetVietnamDate())
-                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));  
+                .ReturnsAsync(DateOnly.FromDateTime(DateTime.UtcNow));
 
             var request = new UpdateFullPaperStatusRequest
             {

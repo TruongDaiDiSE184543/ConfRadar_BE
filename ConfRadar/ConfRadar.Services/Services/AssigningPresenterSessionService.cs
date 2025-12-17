@@ -55,7 +55,7 @@ namespace ConfRadar.Services.Services
             return;
         }
 
-        
+
 
 
         // make a helper class to check if a paper is in complete form aka camera ready of it is in accepted status, use  the globalstatusenum to get accepted string then use that to get paper whose camera global status id = acceptedid
@@ -88,7 +88,7 @@ namespace ConfRadar.Services.Services
             return cameraReady != null;
         }
 
-#endregion
+        #endregion
 
         public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaper(string confId)
         {
@@ -242,7 +242,7 @@ namespace ConfRadar.Services.Services
             // 2. Kiểm tra thời gian và trạng thái hội nghị 
             var conference = await _unitOfWork.ConferenceRepository.GetConferenceByIdAsync(session.ConferenceId);
             if (conference == null) throw new NotFoundException("Không tìm thấy hội nghị.");
-            await checkConference(conference); 
+            await checkConference(conference);
 
             // 3. Kiểm tra xem Paper có đang được gán vào Session này không
             var presentAuthor = await _unitOfWork.PresentAuthorRepository.GetPresentAuthorByIdAsync(sessionId, paperId);
@@ -267,13 +267,13 @@ namespace ConfRadar.Services.Services
                         userCheckIn.IsPresenter = false;
                         await _unitOfWork.UserCheckInRepository.UpdateUserCheckInAsync(userCheckIn);
                     }
-                    
+
                 }
 
                 // 6. Xóa bản ghi trong PresentAuthor
                 await _unitOfWork.PresentAuthorRepository.DeletePresentAuthorAsync(presentAuthor);
 
-             
+
                 await _unitOfWork.CommitAsync();
                 return true;
             }
