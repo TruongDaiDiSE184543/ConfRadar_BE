@@ -271,10 +271,11 @@ namespace ConfRadar.Services.Services
             //{
             //    throw new ConfRadarAuthenticationException("Email is not confirmed");
             //}
+            var timeNow = await _timeProviderService.GetVietnamTime();
             var resetToken = _tokenService.GenerateSecureRandomToken();
             var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailResetPassword_FE + $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
-            user.PasswordResetTokenExpiry = await _timeProviderService.GetVietnamTime();
+            user.PasswordResetTokenExpiry = timeNow.AddDays(1);
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
             await _emailService.SendAuthenticationTemplateEmailAsync(email, user.FullName, resetLink, "Forget Password", "EmailForgetPassword.html");
         }
