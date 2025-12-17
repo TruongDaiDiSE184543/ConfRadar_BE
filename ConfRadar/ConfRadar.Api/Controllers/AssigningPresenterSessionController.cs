@@ -19,11 +19,19 @@ namespace ConfRadar.Api.Controllers
         {
             _serviceManager = serviceManager;
         }
-
+        [Authorize(Roles = "Conference Organizer")]
         [HttpGet("Get-accepted-papers")]
         public async Task<IActionResult> GetAllAcceptedPaper([FromQuery] string confId)
         {
             var result = await _serviceManager.AssigningPresenterSessionService.GetAllAcceptedPaper(confId);
+            return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result, "Lấy thành công"));
+        }
+
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpGet("Get-accepted-papers-from-session")]
+        public async Task<IActionResult> GetAllAcceptedPaperFromSession([FromQuery] string sessionId)
+        {
+            var result = await _serviceManager.AssigningPresenterSessionService.GetAllAcceptedPaperInSession(sessionId);
             return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result, "Lấy thành công"));
         }
 
@@ -35,6 +43,16 @@ namespace ConfRadar.Api.Controllers
             var result = await _serviceManager.AssigningPresenterSessionService.AssignPresenterToSession(request.PaperId, request.SessionId);
             return Ok(ApiResponse<PresenterSessionResponse>.SuccessResponse(result, "Gán người trình bày vào phiên thành công"));
         }
+
+        [Authorize(Roles = "Conference Organizer")]
+        [HttpPost("unassign")]
+        public async Task<IActionResult> UnAssign([FromBody] AssignPresenterToSessionRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _serviceManager.AssigningPresenterSessionService.Unassign(request.PaperId, request.SessionId);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Gỡ bài báo khỏi thành công phiên thành công"));
+        }
+
 
         [Authorize(Roles = "Customer")]
         [HttpPost("request-change-presenter")]

@@ -505,7 +505,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        private async Task<ConferenceSession> UpdateSessionInternalAsync(string sessionId, UpdateConferenceSessionRequest request, string userId)
+        private async Task<ConferenceSession> UpdateSessionInternalAsync(string sessionId, UpdateConferenceSessionRequest request, string userId,bool allowReadyStatus = false)
         {
             var session = await _unitOfWork.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId);
             if (session == null) throw new NotFoundException($"Không tìm thấy phiên với ID {sessionId}");
@@ -516,7 +516,24 @@ namespace ConfRadar.Services.Services
             // 1.1. Phân quyền và trạng thái
             if (conference.CreatedBy != userId)
                 throw new Exception("Bạn không có quyền cập nhật phiên này.");
-            if (conference.IsInternalHosted != true)
+
+            if (allowReadyStatus)
+            {
+                // Nếu chỉ update Room và được phép ở trạng thái Ready
+                // chặn nếu hội nghị đã kết thúc hoặc bị hủy
+                var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
+                string statusName = currentStatus.ConferenceStatusName;
+
+                if (statusName == ConferenceStatusEnum.Deleted.GetDescription() ||
+                    statusName == ConferenceStatusEnum.Cancelled.GetDescription() ||
+                    statusName == ConferenceStatusEnum.Completed.GetDescription())
+                {
+                    throw new BadRequestException($"Không thể cập nhật phòng khi hội nghị đang ở trạng thái '{statusName}'.");
+                }
+
+                // Nếu là Ready, Preparing, OnHold, Draft -> Cho phép đi tiếp
+            }
+            else if (conference.IsInternalHosted != true)
             {
                 await EnsureConferenceIsEditable(conference, true);
             }
@@ -3229,8 +3246,19 @@ namespace ConfRadar.Services.Services
             if (conference.IsResearchConference != true)
                 throw new BadRequestException("Chức năng này chỉ dành cho phiên của hội nghị nghiên c?u.");
 
+            //nếu là reserach conf thì ngay cả khi ready vẫn có thể update thay đổi phòng
+            // Logic xác định xem có phải CHỈ update RoomId hay không
+            // Điều kiện: RoomId có giá trị (khác null) VÀ tất cả các trường khác đều null
+            bool isOnlyUpdateRoom = request.RoomId != null
+                                    && request.Title == null
+                                    && request.Description == null
+                                    && request.Date == null
+                                    && request.StartTime == null
+                                    && request.EndTime == null;
+
+
             // G?i hàm helper chung d? th?c hi?n t?t c? công vi?c
-            var updatedSession = await UpdateSessionInternalAsync(sessionId, request, userId);
+            var updatedSession = await UpdateSessionInternalAsync(sessionId, request, userId, isOnlyUpdateRoom);
 
             // Tr? v? dúng ki?u response
             return updatedSession.ToResearchResponseWithMedia();
