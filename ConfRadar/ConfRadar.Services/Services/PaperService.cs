@@ -877,9 +877,8 @@ namespace ConfRadar.Services.Services
                 RevisionPaper? revisionPaper = null;
                 if (paper.RevisionPaperId == null)
                 {
-                    validRevisionDeadline = researchConferenceDeadLine
-                    .FirstOrDefault(rcd => rcd.StartSubmissionDate <= dateNow
-                    && dateNow <= rcd.EndSubmissionDate);
+                    validRevisionDeadline = researchConferenceDeadLine.OrderBy(rcd => rcd.RoundNumber)
+                    .FirstOrDefault(rcd => dateNow <= rcd.EndSubmissionDate);
 
 
                     if (validRevisionDeadline == null)
