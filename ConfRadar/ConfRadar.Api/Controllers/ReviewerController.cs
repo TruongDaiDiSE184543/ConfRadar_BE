@@ -23,7 +23,7 @@ namespace ConfRadar.Api.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _serviceManager.ReviewerService.GetTotalAssignPapers(userId);
-            return Ok(ApiResponse<GetTotalAssignPapersDetailResponse>.SuccessResponse(result, "Thông tin tổng số bài đã làm"));
+            return Ok(ApiResponse<GetTotalAssignPapersDetailResponse>.SuccessResponse(result, "Thông tin tổng số bài được giao"));
         }
         [HttpGet("stats/reviewed")]
         [Authorize]
