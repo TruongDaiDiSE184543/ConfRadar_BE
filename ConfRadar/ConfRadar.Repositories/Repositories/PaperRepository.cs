@@ -35,6 +35,7 @@ namespace ConfRadar.Repositories.Repositories
         Task UpdateMutiplePapersAsync(List<Paper> papers);
         Task<List<Paper>> GetAcceptedPaperToPublish(string conferenceId, string acceptedGlobalStatusId);
         Task UpdateMultiplePapersAsync(List<Paper> papers);
+        Task<Paper> GetSubmittedPaperWith4PhaseStatusByConferenceId(string confId);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -524,6 +525,8 @@ namespace ConfRadar.Repositories.Repositories
                     .ThenInclude(fp => fp.ReviewStatus)
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rp => rp.GlobalStatus)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rvp => rvp.RevisionPaperSubmissions)
                 .Include(p => p.CameraReady)
                 //.ThenInclude(cr => cr.GlobalStatus)
                 .Where(p => p.ConferenceId == confId)
@@ -614,6 +617,24 @@ namespace ConfRadar.Repositories.Repositories
                 //.ThenInclude(c => c.GlobalStatus)
                 .Include(p => p.PaperAuthors)
                 .Where(p => p.ConferenceId == confId && p.PaperAuthors.Any(pa => pa.UserId == rootAuthorId && pa.IsRootAuthor == true))
+                .AsNoTracking().AsSplitQuery();
+            return await query.FirstOrDefaultAsync();
+        }
+
+
+        public async Task<Paper> GetSubmittedPaperWith4PhaseStatusByConferenceId(string confId)
+        {
+            IQueryable<Paper> query = _context.Papers
+                .Include(p => p.Abstract)
+                    .ThenInclude(a => a.GlobalStatus)
+                .Include(p => p.FullPaper)
+                    .ThenInclude(fp => fp.ReviewStatus)
+                .Include(p => p.RevisionPaper)
+                    .ThenInclude(rvp => rvp.GlobalStatus)
+                .Include(p => p.CameraReady)
+                //.ThenInclude(c => c.GlobalStatus)
+                .Include(p => p.PaperAuthors)
+                .Where(p => p.ConferenceId == confId )
                 .AsNoTracking().AsSplitQuery();
             return await query.FirstOrDefaultAsync();
         }

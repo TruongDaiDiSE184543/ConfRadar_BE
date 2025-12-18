@@ -190,6 +190,7 @@
         public string? Status { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
+        public string? AbstractURL { get; set; }
     }
 
     public class PaperFullPaperPhaseResponse
@@ -198,20 +199,22 @@
         public string? Status { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
+        public string? FullPaperURL { get; set; }
     }
 
     public class PaperRevisionPhaseResponse
     {
         public string? Id { get; set; }
         public string? Status { get; set; }
+        public List<string>? submissionIds { get; set; }
     }
 
     public class PaperCameraReadyPhaseResponse
     {
         public string? Id { get; set; }
-        public string? Status { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
+        public string? CameraReadyURL { get; set; }
     }
 
     // Danh sách Reviewer được gán
