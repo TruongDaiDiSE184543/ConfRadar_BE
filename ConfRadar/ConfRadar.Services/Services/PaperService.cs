@@ -2417,7 +2417,7 @@ namespace ConfRadar.Services.Services
                 {
                     CameraReadyId = paper.CameraReady.CameraReadyId,
                     FileUrl = paper.CameraReady.CameraReadyUrl,
-                    //Status = paper.CameraReady.GlobalStatus?.Name, // Safe navigation
+                    //Status = paper.CameraReady.GlobalStatus?.Name, 
                     Title = paper.CameraReady.Title,
                     Description = paper.CameraReady.Description,
                     Created = paper.CameraReady.CreatedAt,

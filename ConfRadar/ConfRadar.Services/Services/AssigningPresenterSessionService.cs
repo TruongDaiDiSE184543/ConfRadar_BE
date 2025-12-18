@@ -5,6 +5,7 @@ using ConfRadar.Services.DTOs.Paper;
 using ConfRadar.Services.DTOs.PresenterSession;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Mappers;
+using System.Drawing.Printing;
 
 namespace ConfRadar.Services.Services
 {
@@ -94,13 +95,60 @@ namespace ConfRadar.Services.Services
         {
             var acceptedStatus = _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription()).Result;
             var list = await _unitOfWork.PaperRepository.GetAllAcceptedPaper(acceptedStatus, confId);
-            List<PaperDetailResponseDtoDetail> paperDetailResponseDTOs = list.Select(paper => new PaperDetailResponseDtoDetail
+            List<PaperDetailResponseDtoDetail> response= new List<PaperDetailResponseDtoDetail>();
+            foreach (var paper in list)
             {
-                PaperId = paper.PaperId,
-                Title = paper.Title,
-                Description = paper.Description,
-            }).ToList();
-            return paperDetailResponseDTOs;
+                //get all authors
+                var allAuthor = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paper.PaperId);
+                //get rootauthor
+                var paperRootAuthor = allAuthor.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                var RootAuthor = await _unitOfWork.UserRepository.GetUserByUserId(paperRootAuthor.UserId);
+                var coAuthorIds = allAuthor.Where(pa => pa.UserId != RootAuthor.UserId).Select(paper => paper.UserId).ToList();
+                List<User> coAuthors = new List<User>();
+                if (coAuthorIds.Count() > 0)
+                {
+                    foreach (var authorId in coAuthorIds)
+                    {
+                        User CoAuthor = await _unitOfWork.UserRepository.GetUserByUserId(authorId);
+                        if (CoAuthor != null)
+                        {
+                            coAuthors.Add(CoAuthor);
+                        }
+                    }
+                }
+
+                var paperDetail = await _unitOfWork.PaperRepository.GetSubmittedPaperWith4PhaseStatusByConferenceId(confId);
+                PaperDetailResponseDtoDetail paperDetailResponseDtoDetail = new PaperDetailResponseDtoDetail()
+                {
+                    PaperId = paperDetail.PaperId,
+                    Title = paperDetail.Title,
+                    Description = paperDetail.Description,
+                    Abstract = new AbstractDtoDetail()
+                    {
+                        AbstractId = paperDetail.AbstractId,
+                        Title = paperDetail.Abstract.Title,
+                        Description = paperDetail.Abstract.Description,
+                        FileUrl = paperDetail.Abstract.AbstractUrl,
+                    },
+                    CameraReady = new CameraReadyDtoDetail()
+                    {
+                        CameraReadyId = paperDetail.CameraReadyId,
+                        Title = paperDetail.CameraReady.Title,
+                        Description = paperDetail.CameraReady.Description,
+                        FileUrl= paperDetail.CameraReady.CameraReadyUrl
+                        
+                    },
+                    RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName, avatarUrl = RootAuthor.AvatarUrl } : null,
+                    CoAuthors = coAuthors?.Select(user => new Author
+                    {
+                        userId = user.UserId,
+                        fullName = user.FullName,
+                        avatarUrl = user.AvatarUrl
+                    }).ToList(),
+                };
+                response.Add(paperDetailResponseDtoDetail);
+            }
+            return response;
         }
 
         public async Task<List<PaperDetailResponseDtoDetail>> GetAllAcceptedPaperInSession(string sessionId)

@@ -405,7 +405,8 @@ namespace ConfRadar.Services.Services
                         Id = paper.Abstract.AbstractId,
                         Status = paper.Abstract.GlobalStatus?.Name ?? "Chưa xác định",
                         Title = paper.Abstract.Title,
-                        Description = paper.Abstract.Description
+                        Description = paper.Abstract.Description,
+                        AbstractURL = paper.Abstract.AbstractUrl
                     };
                 }
 
@@ -417,7 +418,8 @@ namespace ConfRadar.Services.Services
                         Id = paper.FullPaper.FullPaperId,
                         Status = paper.FullPaper.ReviewStatus?.Name ?? "Chưa xác định",
                         Title = paper.FullPaper.Title,
-                        Description = paper.FullPaper.Description
+                        Description = paper.FullPaper.Description,
+                        FullPaperURL = paper.FullPaper.FullPaperUrl
                     };
                 }
 
@@ -427,7 +429,8 @@ namespace ConfRadar.Services.Services
                     paperDetail.RevisionPhase = new DTOs.Statistics.PaperRevisionPhaseResponse
                     {
                         Id = paper.RevisionPaper.RevisionPaperId,
-                        Status = paper.RevisionPaper.GlobalStatus?.Name ?? "Chưa xác định"
+                        Status = paper.RevisionPaper.GlobalStatus?.Name ?? "Chưa xác định",
+                        submissionIds = paper.RevisionPaper.RevisionPaperSubmissions != null ?  paper.RevisionPaper.RevisionPaperSubmissions.Select(s => s.RevisionPaperSubmissionId).ToList() : null,
                     };
                 }
 
@@ -437,9 +440,9 @@ namespace ConfRadar.Services.Services
                     paperDetail.CameraReadyPhase = new DTOs.Statistics.PaperCameraReadyPhaseResponse
                     {
                         Id = paper.CameraReady.CameraReadyId,
-                        //Status = paper.CameraReady.GlobalStatus?.Name ?? "Chưa xác định",
                         Title = paper.CameraReady.Title,
-                        Description = paper.CameraReady.Description
+                        Description = paper.CameraReady.Description,
+                        CameraReadyURL =  paper.CameraReady.CameraReadyUrl
                     };
                 }
 
