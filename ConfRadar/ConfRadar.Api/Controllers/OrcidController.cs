@@ -4,7 +4,6 @@ using ConfRadar.Services.DTOs.Orcid;
 using ConfRadar.Services.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers

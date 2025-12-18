@@ -49,7 +49,7 @@ namespace ConfRadar.Services.Services
 
         #region quyết định
         Task<int> DecideAbstractPaperStatus(UpdateAbstractPaperStatusRequest request); //
-        Task<int> DecideFullPaperFinalStatus(UpdateFullPaperStatusRequest request,string userId);//
+        Task<int> DecideFullPaperFinalStatus(UpdateFullPaperStatusRequest request, string userId);//
         Task<int> DecideReviseStatus(UpdateRevisionStatusRequest request, string userId);//
         //Task<int> DecideCameraReadyStatus(UpdateCameraReadyStatusRequest request, string userId);//
         Task<int> MarkCompleteRevise(MarkCompleteReviseRequest request, string userId);
@@ -134,8 +134,8 @@ namespace ConfRadar.Services.Services
 
             //var auditLogPaper = await _unitOfWork.AuditLogCategoryRepository.GetAuditLogCategoryByNameAsync(AuditLogActionNameEnum.Paper.GetDescription());
             var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
-            
-            if (abstractPhase == null || pendingGlobalStatus == null  || readyConfStatus == null)
+
+            if (abstractPhase == null || pendingGlobalStatus == null || readyConfStatus == null)
             {
                 throw new NotFoundException($"Không tìm thấy trạng thái");
             }
@@ -145,16 +145,16 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException($"Hội nghị với id {request.ConferenceId} không tồn tại");
 
             }
-            var session = await _unitOfWork.ConferenceSessionRepository.GetSessionBySessionId(request.ConferenceSessionId);
-            if (session == null)
-            {
-                throw new BadRequestException($"Không tìm thấy phiên với id {request.ConferenceSessionId}");
+            //var session = await _unitOfWork.ConferenceSessionRepository.GetSessionBySessionId(request.ConferenceSessionId);
+            //if (session == null)
+            //{
+            //    throw new BadRequestException($"Không tìm thấy phiên với id {request.ConferenceSessionId}");
 
-            }
-            if (session.ConferenceId != request.ConferenceId)
-            {
-                throw new BadRequestException($"Phiên {request.ConferenceSessionId} không thuộc hội nghị với mã {request.ConferenceId}");
-            }
+            //}
+            //if (session.ConferenceId != request.ConferenceId)
+            //{
+            //    throw new BadRequestException($"Phiên {request.ConferenceSessionId} không thuộc hội nghị với mã {request.ConferenceId}");
+            //}
             if (conference.ConferenceStatusId != readyConfStatus.ConferenceStatusId)
             {
                 throw new BadRequestException($"Hội nghị chưa ready nên không thể thực thi");
@@ -211,7 +211,7 @@ namespace ConfRadar.Services.Services
                 CreatedAt = timeNow,
                 Title = request.Title,
                 Description = request.Description,
-                ConferenceSessionId = request.ConferenceSessionId
+                //ConferenceSessionId = request.ConferenceSessionId
 
             };
             paper.PaperAuthors = new List<PaperAuthor>()
@@ -592,7 +592,7 @@ namespace ConfRadar.Services.Services
         }
 
 
-        public async Task<int> DecideFullPaperFinalStatus(UpdateFullPaperStatusRequest request,string userId)
+        public async Task<int> DecideFullPaperFinalStatus(UpdateFullPaperStatusRequest request, string userId)
         {
             if (request.ReviewStatus == ReviewStatusEnum.Pending)
             {
@@ -1282,7 +1282,7 @@ namespace ConfRadar.Services.Services
         //    return  1; //_unitOfWork.RevisionPaperReviewRepository.CreateRevisionPaperReviewAsync(revisionPaperReviewObj);
         //} 
         #endregion
-        public async Task<int> DecideReviseStatus(UpdateRevisionStatusRequest request,string userId)
+        public async Task<int> DecideReviseStatus(UpdateRevisionStatusRequest request, string userId)
         {
             var currentRevisePhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
 
@@ -2347,7 +2347,7 @@ namespace ConfRadar.Services.Services
                 Description = paper.Description,
                 Created = paper.CreatedAt,
                 RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName, avatarUrl = RootAuthor.AvatarUrl } : null,
-                PublishingLink = paper.PublishingLink ?? "N/A",
+                //PublishingLink = paper.PublishingLink ?? "N/A",
                 CoAuthors = coAuthors?.Select(user => new Author
                 {
                     userId = user.UserId,

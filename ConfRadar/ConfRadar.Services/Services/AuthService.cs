@@ -271,10 +271,11 @@ namespace ConfRadar.Services.Services
             //{
             //    throw new ConfRadarAuthenticationException("Email is not confirmed");
             //}
+            var timeNow = await _timeProviderService.GetVietnamTime();
             var resetToken = _tokenService.GenerateSecureRandomToken();
             var resetLink = FrontEndDomain.Url + ConfRadarApiEndPoint.EmailResetPassword_FE + $"?token={resetToken}";
             user.PasswordResetToken = resetToken;
-            user.PasswordResetTokenExpiry = await _timeProviderService.GetVietnamTime();
+            user.PasswordResetTokenExpiry = timeNow.AddDays(1);
             await _unitOfWork.UserRepository.UpdateUserAsync(user);
             await _emailService.SendAuthenticationTemplateEmailAsync(email, user.FullName, resetLink, "Forget Password", "EmailForgetPassword.html");
         }
@@ -284,16 +285,34 @@ namespace ConfRadar.Services.Services
             var user = await _unitOfWork.UserRepository.GetUserByForgetPasswordToken(token);
             if (user == null)
             {
-                throw new NotFoundException("Token is not found");
+                throw new NotFoundException("Token không tương ứng với người dùng nào ");
             }
             var timeNow = await _timeProviderService.GetVietnamTime();
-            if (user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry <= timeNow)
+            if (user.PasswordResetToken != null && user.PasswordResetTokenExpiry != null)
             {
-                throw new ConfRadarAuthenticationException("Token is expired");
+                if (user.PasswordResetTokenExpiry < timeNow)
+                {
+                throw new ConfRadarAuthenticationException("Token đã hết hạn");
+                }
+            }
+            if (user.VerificationToken != null && user.VerificationTokenExpiry != null)
+            {
+                if (user.VerificationTokenExpiry < timeNow)
+                {
+                    throw new ConfRadarAuthenticationException("Token đã hết hạn");
+                }
             }
             user.PasswordHash = _passwordHasher.Hash(newPassword);
-            user.PasswordResetToken = null;
-            user.PasswordResetTokenExpiry = null;
+            if (user.PasswordResetToken != null)
+            {
+                user.PasswordResetToken = null;
+                user.PasswordResetTokenExpiry = null;
+            }
+            if (user.VerificationToken != null)
+            {
+                user.VerificationToken = null;
+                user.VerificationTokenExpiry = null;
+            }
             if (user.IsEmailConfirmed == false)
             {
                 user.IsEmailConfirmed = true;

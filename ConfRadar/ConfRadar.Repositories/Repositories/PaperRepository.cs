@@ -24,7 +24,7 @@ namespace ConfRadar.Repositories.Repositories
         Task<ToTalPaperDetailForReviewerResponse?> GetPaperDetailForReviewer(string paperId, string userId);
         Task<Paper> GetAllIncludeById(string paper);
         Task<List<Paper>> GetPapersByConferenceIdAsync(string confId);
-        Task<List<Paper>> GetAllAcceptedPaperFromResearchSession(string sessionId);
+        //Task<List<Paper>> GetAllAcceptedPaperFromResearchSession(string sessionId);
         Task<List<Paper>> GetPapersWithPhasesForStatisticsByConferenceIdAsync(string confId);
         Task<Paper> GetSubmittedPaperWith4PhaseStatusByConferenceIdAndRootAuthor(string confId, string rootAuthorId);
         Task<List<Paper>> GetAllAcceptedPaper(GlobalStatus acceptedStatus, string confId);
@@ -166,9 +166,9 @@ namespace ConfRadar.Repositories.Repositories
                 .Where(p => p.ConferenceId == conferenceId)
                 .Where(p => p.CameraReady != null)
                 // Điều kiện IsPublish vẫn nằm ở ConferencePrice, điều này đúng
-                .Where(p => p.Ticket != null && p.Ticket.PricePhase.ConferencePrice.IsPublish == true)
-                // Chỉ lấy những paper chưa có link
-                .Where(p => string.IsNullOrEmpty(p.PublishingLink));
+                .Where(p => p.Ticket != null && p.Ticket.PricePhase.ConferencePrice.IsPublish == true);
+            // Chỉ lấy những paper chưa có link
+            //.Where(p => string.IsNullOrEmpty(p.PublishingLink));
 
             return await query.ToListAsync();
         }
@@ -500,16 +500,16 @@ namespace ConfRadar.Repositories.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Paper>> GetAllAcceptedPaperFromResearchSession(string sessionId)
-        {
-            return await _context.Papers.Include(p => p.ConferenceSession)
-                .Where
-                (
-                p => p.ConferenceSessionId == sessionId && 
-                p.TicketId != null && 
-                p.CameraReady != null
-                ).ToListAsync();
-        }
+        //public async Task<List<Paper>> GetAllAcceptedPaperFromResearchSession(string sessionId)
+        //{
+        //    return await _context.Papers.Include(p => p.ConferenceSession)
+        //        .Where
+        //        (
+        //        p => p.ConferenceSessionId == sessionId && 
+        //        p.TicketId != null && 
+        //        p.CameraReady != null
+        //        ).ToListAsync();
+        //}
 
         public async Task<List<Paper>> GetPapersByConferenceIdAsync(string confId)
         {

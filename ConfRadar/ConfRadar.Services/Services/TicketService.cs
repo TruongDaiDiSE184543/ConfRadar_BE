@@ -88,7 +88,7 @@ namespace ConfRadar.Services.Services
             {
                 throw new BadRequestException($"Vé với mã {request.TicketId} đã được hoàn tiền. Không thể yêu cầu hoàn tiền nữa");
             }
-            
+
 
             var transactionList = ticket.Transactions;
 

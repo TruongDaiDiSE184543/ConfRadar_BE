@@ -298,7 +298,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceDiscoveryAndAttendanceService.A
             Assert.Equal(3, result);
 
             //Verify all paper phases are rejected
-Assert.Equal("GS_REJECTED", ticket.Paper!.Abstract!.GlobalStatus.GlobalStatusId);
+            Assert.Equal("GS_REJECTED", ticket.Paper!.Abstract!.GlobalStatus.GlobalStatusId);
             Assert.Equal("RS_REJECTED", ticket.Paper!.FullPaper!.ReviewStatus.ReviewStatusId);
             Assert.Equal("GS_REJECTED", ticket.Paper!.RevisionPaper!.GlobalStatus.GlobalStatusId);
 

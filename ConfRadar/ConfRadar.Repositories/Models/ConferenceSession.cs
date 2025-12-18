@@ -24,8 +24,6 @@ public partial class ConferenceSession
 
     public virtual ICollection<ConferenceSessionMedium> ConferenceSessionMedia { get; set; } = new List<ConferenceSessionMedium>();
 
-    public virtual ICollection<Paper> Papers { get; set; } = new List<Paper>();
-
     public virtual ICollection<PresentAuthor> PresentAuthors { get; set; } = new List<PresentAuthor>();
 
     public virtual Room? Room { get; set; }

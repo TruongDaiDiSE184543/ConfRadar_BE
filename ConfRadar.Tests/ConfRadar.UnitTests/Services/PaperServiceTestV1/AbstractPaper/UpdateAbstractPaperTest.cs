@@ -73,9 +73,11 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         [Fact]
         public async Task UpdateAbstract_ShouldThrow_WhenPaperNotFound()
         {
-            var request = new UpdateAbstractRequest { PaperId = "p1",
+            var request = new UpdateAbstractRequest
+            {
+                PaperId = "p1",
             };
-           
+
 
             _mockUnitOfWork
                 .Setup(u => u.PaperPhaseRepository.GetPaperPhaseByName(It.IsAny<string>()))
@@ -99,7 +101,10 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
         public async Task UpdateAbstract_ShouldThrow_WhenPaperHasNoAbstract()
         {
             var request = new UpdateAbstractRequest { PaperId = "p1" };
-            var paper = new Paper { PaperId = "p1", AbstractId = null,
+            var paper = new Paper
+            {
+                PaperId = "p1",
+                AbstractId = null,
                 Conference = new Conference
                 {
                     ConferenceId = "conf1",
@@ -166,14 +171,17 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperPhaseId = "phase1",
                 PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "user1", IsRootAuthor = true } },
                 AbstractId = "abs1",
-                Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1",
+                Conference = new Conference
+                {
+                    ConferenceId = "conf1",
+                    ConferenceName = "Conf1",
                     ConferenceStatus = new ConferenceStatus
                     {
                         ConferenceStatusId = "ready"
                     }
-                } ,
+                },
 
-               
+
             };
 
             _mockUnitOfWork
@@ -288,7 +296,10 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                     RegistrationStartDate = dateNow, // bắt đầu đúng hôm nay
                     RegistrationEndDate = dateNow.AddDays(1) // kết thúc ngày mai
                 },
-                Conference = new Conference { ConferenceId = "conf1", ConferenceName = "Conf1",
+                Conference = new Conference
+                {
+                    ConferenceId = "conf1",
+                    ConferenceName = "Conf1",
                     ConferenceStatus = new ConferenceStatus
                     {
                         ConferenceStatusId = "ready"
@@ -456,11 +467,11 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 PaperId = "p1",
                 PaperAuthors = new List<PaperAuthor> { new PaperAuthor { UserId = "root", IsRootAuthor = true } },
                 AbstractId = "abs1",
-                Conference = new Conference 
-                { 
+                Conference = new Conference
+                {
                     ConferenceId = "conf1",
                     ConferenceName = "Conf1",
-                    ConferenceStatus = new ConferenceStatus 
+                    ConferenceStatus = new ConferenceStatus
                     {
                         ConferenceStatusId = "ready"
                     }

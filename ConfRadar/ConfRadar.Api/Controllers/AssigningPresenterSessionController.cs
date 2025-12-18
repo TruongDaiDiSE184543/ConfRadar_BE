@@ -27,13 +27,13 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result, "Lấy thành công"));
         }
 
-        [Authorize(Roles = "Conference Organizer")]
-        [HttpGet("Get-accepted-papers-from-session")]
-        public async Task<IActionResult> GetAllAcceptedPaperFromSession([FromQuery] string sessionId)
-        {
-            var result = await _serviceManager.AssigningPresenterSessionService.GetAllAcceptedPaperInSession(sessionId);
-            return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result, "Lấy thành công"));
-        }
+        //[Authorize(Roles = "Conference Organizer")]
+        //[HttpGet("Get-accepted-papers-from-session")]
+        //public async Task<IActionResult> GetAllAcceptedPaperFromSession([FromQuery] string sessionId)
+        //{
+        //    var result = await _serviceManager.AssigningPresenterSessionService.GetAllAcceptedPaperInSession(sessionId);
+        //    return Ok(ApiResponse<List<PaperDetailResponseDtoDetail>>.SuccessResponse(result, "Lấy thành công"));
+        //}
 
         [Authorize(Roles = "Conference Organizer")]
         [HttpPost("assign-presenter-to-session")]

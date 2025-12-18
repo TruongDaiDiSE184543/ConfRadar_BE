@@ -1,5 +1,4 @@
 ﻿using ConfRadar.Api.Responses;
-using ConfRadar.Repositories.Models;
 using ConfRadar.Services;
 using ConfRadar.Services.DTOs.Conference;
 using ConfRadar.Services.DTOs.General;
@@ -7,7 +6,6 @@ using ConfRadar.Services.DTOs.Ticket;
 using ConfRadar.Shared.DTO.Conference;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Claims;
 
 namespace ConfRadar.Api.Controllers

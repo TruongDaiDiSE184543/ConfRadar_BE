@@ -26,17 +26,11 @@ public partial class Paper
 
     public string? Description { get; set; }
 
-    public string? PublishingLink { get; set; }
-
-    public string? ConferenceSessionId { get; set; }
-
     public virtual Abstract? Abstract { get; set; }
 
     public virtual CameraReady? CameraReady { get; set; }
 
     public virtual Conference? Conference { get; set; }
-
-    public virtual ConferenceSession? ConferenceSession { get; set; }
 
     public virtual FullPaper? FullPaper { get; set; }
 

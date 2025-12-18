@@ -2,13 +2,10 @@
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.Abstract;
-using ConfRadar.Services.DTOs.Payment;
 using ConfRadar.Services.Exceptions;
 using ConfRadar.Services.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Reflection;
 using static ConfRadar.Services.Common.AppSettingConfig;
 
 namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
@@ -74,31 +71,31 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
 
             Assert.Contains("Hội nghị", ex.Message);
         }
-        [Fact]
-        public async Task SubmitAbstract_SessionNotBelongConference_ShouldThrowBadRequest()
-        {
-            MockCommon();
+        //[Fact]
+        //public async Task SubmitAbstract_SessionNotBelongConference_ShouldThrowBadRequest()
+        //{
+        //    MockCommon();
 
-            _mockUow.Setup(u => u.UserRepository.GetUserByUserId(It.IsAny<string>()))
-                .ReturnsAsync(new User());
+        //    _mockUow.Setup(u => u.UserRepository.GetUserByUserId(It.IsAny<string>()))
+        //        .ReturnsAsync(new User());
 
-            _mockUow.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(It.IsAny<string>()))
-                .ReturnsAsync(new Conference { ConferenceId = "conf-1", ConferenceStatusId = "READY" });
+        //    _mockUow.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(It.IsAny<string>()))
+        //        .ReturnsAsync(new Conference { ConferenceId = "conf-1", ConferenceStatusId = "READY" });
 
-            _mockUow.Setup(u => u.ConferenceSessionRepository.GetSessionBySessionId(It.IsAny<string>()))
-                .ReturnsAsync(new ConferenceSession { ConferenceId = "conf-2" });
+        //    _mockUow.Setup(u => u.ConferenceSessionRepository.GetSessionBySessionId(It.IsAny<string>()))
+        //        .ReturnsAsync(new ConferenceSession { ConferenceId = "conf-2" });
 
-            var request = new CreateAbstractRequest
-            {
-                ConferenceId = "conf-1",
-                ConferenceSessionId = "session-1"
-            };
+        //    var request = new CreateAbstractRequest
+        //    {
+        //        ConferenceId = "conf-1",
+        //        //ConferenceSessionId = "session-1"
+        //    };
 
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.SubmitAbstract(request, "user-1"));
+        //    var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+        //        _service.SubmitAbstract(request, "user-1"));
 
-            Assert.Contains("không thuộc hội nghị", ex.Message);
-        }
+        //    Assert.Contains("không thuộc hội nghị", ex.Message);
+        //}
         [Fact]
         public async Task SubmitAbstract_AddSelfAsCoAuthor_ShouldThrowBadRequest()
         {
@@ -134,7 +131,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             typeof(ResearchConferencePhase)
                 .GetProperty("RegistrationEndDate")!
                 .SetValue(phase, dateNow.AddDays(1));
-          
+
 
             _mockUow.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync("conf-1"))
                 .ReturnsAsync(new Conference
@@ -179,8 +176,8 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var request = new CreateAbstractRequest
             {
                 ConferenceId = "conf-1",
-                ConferenceSessionId = "session-1",
-                CoAuthorId = new List<string> { "user-1" } 
+                //ConferenceSessionId = "session-1",
+                CoAuthorId = new List<string> { "user-1" }
             };
 
             var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
@@ -189,25 +186,25 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             Assert.Contains("chính mình", ex.Message);
         }
 
-        [Fact]
-        public async Task SubmitAbstract_SessionNotFound_ShouldThrowBadRequest()
-        {
-            MockCommon();
+        //[Fact]
+        //public async Task SubmitAbstract_SessionNotFound_ShouldThrowBadRequest()
+        //{
+        //    MockCommon();
 
-            _mockUow.Setup(u => u.UserRepository.GetUserByUserId(It.IsAny<string>()))
-                .ReturnsAsync(new User());
+        //    _mockUow.Setup(u => u.UserRepository.GetUserByUserId(It.IsAny<string>()))
+        //        .ReturnsAsync(new User());
 
-            _mockUow.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(It.IsAny<string>()))
-                .ReturnsAsync(new Conference { ConferenceStatusId = "READY" });
+        //    _mockUow.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(It.IsAny<string>()))
+        //        .ReturnsAsync(new Conference { ConferenceStatusId = "READY" });
 
-            _mockUow.Setup(u => u.ConferenceSessionRepository.GetSessionBySessionId(It.IsAny<string>()))
-                .ReturnsAsync((ConferenceSession?)null);
+        //    _mockUow.Setup(u => u.ConferenceSessionRepository.GetSessionBySessionId(It.IsAny<string>()))
+        //        .ReturnsAsync((ConferenceSession?)null);
 
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
-                _service.SubmitAbstract(new CreateAbstractRequest(), "user-1"));
+        //    var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+        //        _service.SubmitAbstract(new CreateAbstractRequest(), "user-1"));
 
-            Assert.Contains("Không tìm thấy phiên", ex.Message);
-        }
+        //    Assert.Contains("Không tìm thấy phiên", ex.Message);
+        //}
         [Fact]
         public async Task SubmitAbstract_ConferenceNotReady_ShouldThrowBadRequest()
         {
@@ -300,7 +297,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 _service.SubmitAbstract(new CreateAbstractRequest
                 {
                     ConferenceId = "conf-1",
-                    ConferenceSessionId = "session-1"
+                    //ConferenceSessionId = "session-1"
                 }, "user-1"));
 
             Assert.Contains("đã nộp", ex.Message);
@@ -364,7 +361,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var request = new CreateAbstractRequest
             {
                 ConferenceId = "CONF1",
-                ConferenceSessionId = "SESSION1",
+                //ConferenceSessionId = "SESSION1",
                 Title = "Test Abstract",
                 Description = "Test Description"
             };
@@ -438,7 +435,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var request = new CreateAbstractRequest
             {
                 ConferenceId = "CONF1",
-                ConferenceSessionId = "SESSION1",
+                //ConferenceSessionId = "SESSION1",
                 Title = "Test Abstract",
                 Description = "Test Description"
             };
@@ -509,7 +506,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var request = new CreateAbstractRequest
             {
                 ConferenceId = "CONF1",
-                ConferenceSessionId = "SESSION1",
+                //ConferenceSessionId = "SESSION1",
                 Title = "Test Abstract",
                 Description = "Test Description"
             };
@@ -580,7 +577,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var request = new CreateAbstractRequest
             {
                 ConferenceId = "CONF1",
-                ConferenceSessionId = "SESSION1",
+                //ConferenceSessionId = "SESSION1",
                 Title = "Test Abstract",
                 Description = "Test Description"
             };
@@ -617,7 +614,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
             var request = new CreateAbstractRequest
             {
                 ConferenceId = "conf-1",
-                ConferenceSessionId = "session-1",
+                //ConferenceSessionId = "session-1",
                 CoAuthorId = new List<string> { "coauthor-1" }
             };
             _mockUow.Setup(u => u.RoleRepository
@@ -678,7 +675,7 @@ namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.AbstractPaper
                 .GetAttendeeTicketByUserIdAndConferenceId(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new List<Ticket>());
 
-          
+
 
 
             // Act
