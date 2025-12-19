@@ -9,16 +9,14 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateTechnicalConferenceBasicRequest
     {
         [Required(ErrorMessage = "Tên hội nghị là bắt buộc.")]
-        [MaxLength(255, ErrorMessage = "Tên hội nghị không được vượt quá 255 ký tự.")]
         public string ConferenceName { get; set; }
 
-        [MaxLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự.")]
         public string Description { get; set; }
 
         [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc.")]
         public DateOnly StartDate { get; set; }
 
-        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc.")]
+        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc.")] 
         public DateOnly EndDate { get; set; }
 
         [Required(ErrorMessage = "Tổng số vé là bắt buộc.")]
@@ -26,7 +24,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public int TotalSlot { get; set; }
 
         [Required(ErrorMessage = "Địa chỉ là bắt buộc.")]
-        [MaxLength(255, ErrorMessage = "Địa chỉ không được vượt quá 255 ký tự.")]
+
         public string Address { get; set; }
 
         [Required(ErrorMessage = "Ảnh bìa là bắt buộc.")]
@@ -42,7 +40,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public bool? IsResearchConference { get; set; }
 
         [Required(ErrorMessage = "ID danh mục là bắt buộc.")]
-        [MaxLength(50)]
+
         public string ConferenceCategoryId { get; set; }
 
         [Required(ErrorMessage = "ID thành phố là bắt buộc.")]
@@ -83,11 +81,9 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Giá vé là bắt buộc")]
         public decimal TicketPrice { get; set; }
 
-        [MaxLength(255)]
         [Required(ErrorMessage = "Tên vé là bắt buộc")]
         public string TicketName { get; set; }
 
-        [MaxLength(500)]
         [Required(ErrorMessage = "Mô tả vé là bắt buộc")]
         public string TicketDescription { get; set; }
         [Required(ErrorMessage = "Đây có phải là vé cho vai trò tác giả?")]
@@ -116,10 +112,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateConferenceSessionRequest
     {
         [Required(ErrorMessage = "Tiêu đề phiên là bắt buộc")]
-        [MaxLength(50)]
         public string Title { get; set; }
 
-        [MaxLength(500)]
         public string? Description { get; set; }
         [Required(ErrorMessage = "Thời gian bắt đầu là bắt buộc")]
         public TimeOnly? StartTime { get; set; }
@@ -143,10 +137,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateSpeakerRequest
     {
         [Required(ErrorMessage = "Tên diễn giả là bắt buộc")]
-        [MaxLength(255)]
         public string Name { get; set; }
 
-        [MaxLength(250)]
         public string? Description { get; set; }
         //public string? ImageUrl { get; set; }
         public IFormFile Image { get; set; }
@@ -160,7 +152,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Step 4: Conference Policies
     public class CreateConferencePolicyRequest
     {
-        [MaxLength(255)]
+
         [Required(ErrorMessage = "Tên chính sách là bắt buộc")]
         public string? PolicyName { get; set; }
         [Required(ErrorMessage = "Mô tả là bắt buộc")]
@@ -187,7 +179,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Step 6: Conference Sponsors
     public class CreateSponsorRequest
     {
-        [MaxLength(50)]
+
         [Required(ErrorMessage = "Tên nhà tài trợ là bắt buộc")]
         public string? Name { get; set; }
 
@@ -203,10 +195,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Update Requests for individual components
     public class UpdateConferenceBasicRequest
     {
-        [MaxLength(255)]
         public string? ConferenceName { get; set; }
 
-        [MaxLength(500)]
         public string? Description { get; set; }
 
 
@@ -216,13 +206,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Range(1, int.MaxValue, ErrorMessage = "Tổng số vé phải là một số dương.")]
         public int? TotalSlot { get; set; }
 
-        [MaxLength(255)]
         public string? Address { get; set; }
 
         public IFormFile? BannerImageFile { get; set; }
 
 
-        [MaxLength(50)]
         public string? ConferenceCategoryId { get; set; }
 
         public string? CityId { get; set; }
@@ -236,10 +224,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateResearchConferenceBasicRequest
     {
-        [MaxLength(255)]
         public string? ConferenceName { get; set; }
 
-        [MaxLength(500)]
         public string? Description { get; set; }
 
 
@@ -249,13 +235,11 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Range(1, int.MaxValue, ErrorMessage = "Tổng số vé phải là một số dương.")]
         public int? TotalSlot { get; set; }
 
-        [MaxLength(255)]
         public string? Address { get; set; }
 
         public IFormFile? BannerImageFile { get; set; }
 
 
-        [MaxLength(50)]
         public string? ConferenceCategoryId { get; set; }
 
         public string? CityId { get; set; }
@@ -266,11 +250,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class UpdateConferencePriceRequest
     {
         public decimal? TicketPrice { get; set; }
-
-        [MaxLength(255)]
         public string? TicketName { get; set; }
 
-        [MaxLength(500)]
         public string? TicketDescription { get; set; }
 
         public int? TotalSlot { get; set; }
@@ -285,10 +266,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateConferenceSessionRequest
     {
-        [MaxLength(250)]
         public string? Title { get; set; }
 
-        [MaxLength(500)]
         public string? Description { get; set; }
 
         public TimeOnly? StartTime { get; set; }
@@ -303,10 +282,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class UpdateSpeakerRequest
     {
         [Required(ErrorMessage = "Tên diễn giả là bắt buộc")]
-        [MaxLength(255)]
         public string Name { get; set; }
 
-        [MaxLength(250)]
         public string? Description { get; set; }
         public IFormFile? Image { get; set; }
 
@@ -320,7 +297,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateConferencePolicyRequest
     {
-        [MaxLength(255)]
         public string? PolicyName { get; set; }
 
         public string? Description { get; set; }
@@ -335,7 +311,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateSponsorRequest
     {
-        [MaxLength(50)]
         public string? Name { get; set; }
 
         public IFormFile? ImageFile { get; set; }
@@ -450,28 +425,24 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public string? LinkTemplate { get; set; }
     }
 
-    public class PublisherRequest
-    {
-        [Required(ErrorMessage = "Tên nhà xuất bản là bắt buộc")]
-        [MaxLength(255)]
-        public string Name { get; set; }
+    //public class PublisherRequest
+    //{
+    //    [Required(ErrorMessage = "Tên nhà xuất bản là bắt buộc")]
+    //    public string Name { get; set; }
 
-        [Required(ErrorMessage = "Định dạng bài báo (Paper Format) là bắt buộc")]
-        [MaxLength(50)]
-        public string PaperFormat { get; set; }
+    //    [Required(ErrorMessage = "Định dạng bài báo (Paper Format) là bắt buộc")]
+    //    public string PaperFormat { get; set; }
 
-        [MaxLength(500)]
-        public string? Description { get; set; }
+    //    public string? Description { get; set; }
 
-        [Url(ErrorMessage = "Website URL không hợp lệ")]
-        public string? WebsiteUrl { get; set; }
+    //    [Url(ErrorMessage = "Website URL không hợp lệ")]
+    //    public string? WebsiteUrl { get; set; }
 
-        [Url(ErrorMessage = "Logo URL không hợp lệ")]
-        public string? LogoUrl { get; set; }
+    //    [Url(ErrorMessage = "Logo URL không hợp lệ")]
+    //    public string? LogoUrl { get; set; }
 
-        [MaxLength(500)]
-        public string? LinkTemplate { get; set; } // <-- THÊM VÀO
-    }
+    //    public string? LinkTemplate { get; set; } // <-- THÊM VÀO
+    //}
 
     public class ConferencePriceListWithPhasesResponse
     {
@@ -546,10 +517,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateResearchConferenceBasicRequest
     {
         [Required(ErrorMessage = "Tên hội nghị là bắt buộc")]
-        [MaxLength(255)]
         public string ConferenceName { get; set; }
-
-        [MaxLength(500)]
         public string Description { get; set; }
 
         [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
@@ -560,7 +528,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Required(ErrorMessage = "Tổng số slot là bắt buộc")]
         public int TotalSlot { get; set; }
 
-        [MaxLength(255)]
         public string? Address { get; set; }
 
         public IFormFile BannerImageFile { get; set; }
@@ -573,7 +540,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public bool? IsResearchConference { get; set; }
 
         [Required(ErrorMessage = "ID danh mục là bắt buộc")]
-        [MaxLength(50)]
         public string ConferenceCategoryId { get; set; }
 
         [Required(ErrorMessage = "ID thành phố là bắt buộc")]
@@ -590,10 +556,8 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateResearchSessionRequest
     {
         [Required(ErrorMessage = "Tiêu đề phiên là bắt buộc")]
-        [MaxLength(50)]
         public string Title { get; set; }
 
-        [MaxLength(500)]
         public string? Description { get; set; }
         [Required(ErrorMessage = "Thời gian bắt đầu là bắt buộc")]
         public TimeOnly? StartTime { get; set; }
@@ -604,7 +568,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
 
         public string? RoomId { get; set; }
-        // Note: No speakers for research conference sessions
         public List<CreateConferenceSessionMediaRequest> SessionMedias { get; set; }
     }
 
@@ -665,20 +628,18 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     {
 
         [Required(ErrorMessage = "Định dạng bài báo là bắt buộc.")]
-        [MaxLength(255, ErrorMessage = "")]
         public string PaperFormat { get; set; }
 
-        // `int` không phải nullable, nên [Required] chỉ để làm rõ. Quan trọng là Range.
+        
         [Required(ErrorMessage = "Số lượng bài báo dự kiến chấp nhận là bắt buộc.")]
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng bài báo chấp nhận phải là một số dương.")]
         public int NumberPaperAccept { get; set; }
 
-        // `int?` là nullable, nên [Required] là cần thiết.
+
         [Required(ErrorMessage = "Số lần cho phép sửa đổi là bắt buộc.")]
         [Range(1, int.MaxValue, ErrorMessage = "Số lần cho phép sửa đổi phải là một số dương.")]
         public int? RevisionAttemptAllowed { get; set; }
 
-        [MaxLength(1000, ErrorMessage = "Mô tả xếp hạng không được vượt quá 1000 ký tự.")]
         public string? RankingDescription { get; set; }
 
         [Required(ErrorMessage = "Vui lòng cho biết hội nghị có cho phép người nghe tham dự hay không.")]
@@ -697,14 +658,12 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         public decimal SubmitPaperFee { get; set; }
 
         [Required(ErrorMessage = "Loại xếp hạng (Ranking Category) là bắt buộc.")]
-        [MaxLength(50)]
         public string RankingCategoryId { get; set; }
     }
 
     public class UpdateResearchConferenceDetailRequest
     {
 
-        [MaxLength(255, ErrorMessage = "Định dạng bài báo là bắt buộc.")]
         public string? PaperFormat { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng bài báo chấp nhận phải là một số dương.")]
@@ -713,7 +672,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Range(1, int.MaxValue, ErrorMessage = "Số lần cho phép sửa đổi phải là một số dương.")]
         public int? RevisionAttemptAllowed { get; set; }
 
-        [MaxLength(1000, ErrorMessage = "Mô tả xếp hạng không được vượt quá 1000 ký tự.")]
         public string? RankingDescription { get; set; }
 
         public bool? AllowListener { get; set; }
@@ -727,7 +685,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         [Range(0, (double)decimal.MaxValue, ErrorMessage = "Phí nộp paper không được là số âm.")]
         public decimal? SubmitPaperFee { get; set; }
 
-        [MaxLength(50)]
         public string? RankingCategoryId { get; set; }
     }
 
@@ -919,7 +876,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateMaterialDownloadRequest
     {
 
-        [MaxLength(1000)]
         public string? FileDescription { get; set; }
         //public string? FileName{ get; set; }
 
@@ -929,7 +885,7 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class UpdateMaterialDownloadRequest
     {
 
-        [MaxLength(1000)]
+
         public string? FileDescription { get; set; }
 
         public IFormFile? File { get; set; }
@@ -946,7 +902,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Research Conference Step 6: Ranking File URLs
     public class CreateRankingFileUrlRequest
     {
-        [MaxLength(1000)]
 
         public string? FileUrl { get; set; }
         [Required(ErrorMessage = "Cần phải có File là bắt buộc")]
@@ -955,7 +910,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
 
     public class UpdateRankingFileUrlRequest
     {
-        [MaxLength(1000)]
         public string? FileUrl { get; set; }
         [Required]
         public IFormFile? File { get; set; }
@@ -970,7 +924,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     // Research Conference Step 7: Ranking Reference URLs
     public class CreateRankingReferenceUrlRequest
     {
-        [MaxLength(1000)]
         [Url]
         [Required(ErrorMessage = "URL tham khảo là bắt buộc")]
         public string? ReferenceUrl { get; set; }
@@ -979,7 +932,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class UpdateRankingReferenceUrlRequest
     {
         [Required]
-        [MaxLength(1000)]
         public string ReferenceUrlId { get; set; }
     }
 
@@ -1045,20 +997,15 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
     public class CreateSpeakerRequestForConferenceSession
     {
         [Required(ErrorMessage = "Tên diễn giả là bắt buộc")]
-        [MaxLength(255)]
         public string Name { get; set; }
 
-        [MaxLength(250)]
         public string? Description { get; set; }
         public IFormFile Image { get; set; }
     }
 
     public class UpdateSpeakerRequestForConferenceSession
     {
-        [MaxLength(255)]
         public string? Name { get; set; }
-
-        [MaxLength(250)]
         public string? Description { get; set; }
         public IFormFile? Image { get; set; }
     }

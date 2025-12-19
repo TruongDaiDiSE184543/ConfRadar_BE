@@ -25,6 +25,7 @@ namespace ConfRadar.Services.DTOs.Paper
         public CameraReadyDtoDetail? CameraReady { get; set; }
         public ResearchPhaseDtoDetail? ResearchPhase { get; set; }
         public List<RevisionDeadlineDetail>? revisionDeadline { get; set; }
+        public bool? IsAssignedToSession {get; set; }
     }
 
     public class Author
