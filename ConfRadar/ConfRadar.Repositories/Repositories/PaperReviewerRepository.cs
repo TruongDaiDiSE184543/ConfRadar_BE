@@ -124,6 +124,8 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.PaperPhase)
                 .Include(p => p.Ticket)
 
+                .Include(p=> p.Conference)
+
                 .Include(p => p.PaperReviewers)
                 //full paper
                 .Include(p => p.FullPaper)

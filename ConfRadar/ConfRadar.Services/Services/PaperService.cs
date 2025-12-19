@@ -877,9 +877,8 @@ namespace ConfRadar.Services.Services
                 RevisionPaper? revisionPaper = null;
                 if (paper.RevisionPaperId == null)
                 {
-                    validRevisionDeadline = researchConferenceDeadLine
-                    .FirstOrDefault(rcd => rcd.StartSubmissionDate <= dateNow
-                    && dateNow <= rcd.EndSubmissionDate);
+                    validRevisionDeadline = researchConferenceDeadLine.OrderBy(rcd => rcd.RoundNumber)
+                    .FirstOrDefault(rcd => dateNow <= rcd.EndSubmissionDate);
 
 
                     if (validRevisionDeadline == null)
@@ -3220,9 +3219,9 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException($"Không tìm thấy giai đoạn nào diễn ra cho hội nghị {paper.Conference.ConferenceName}");
             }
             var dateNow = await _timeProviderService.GetVietnamDate();
-            if (dateNow < activeCurrentPhase.ReviseStartDate || dateNow > activeCurrentPhase.ReviseEndDate)
+            if (dateNow > activeCurrentPhase.ReviseEndDate)
             {
-                throw new BadRequestException($"Giai đoạn đánh dấu revise diễn ra từ {activeCurrentPhase.ReviseStartDate} đến {activeCurrentPhase.ReviseEndDate}");
+                throw new BadRequestException($"Giai đoạn đánh dấu revise hạn chót đến  {activeCurrentPhase.ReviseEndDate}");
             }
             if (paper.PaperPhaseId != currentRevisePhase.PaperPhaseId)
             {

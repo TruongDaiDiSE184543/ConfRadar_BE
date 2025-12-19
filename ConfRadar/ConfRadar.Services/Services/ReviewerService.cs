@@ -53,44 +53,41 @@ namespace ConfRadar.Services.Services
         {
             var totalReviewedPapersDetailResponse = new GetTotalReviewedPapersDetailResponse();
             var papers = await _unitOfWork.PaperReviewerRepository.GetTotalPapersBelongToReviewer(userId);
-            if (papers.Count <= 0)
+            if (papers == null || papers.Count == 0)
             {
                 return totalReviewedPapersDetailResponse;
             }
 
-            var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
-            var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
+            var acceptedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Accepted.GetDescription());
+            var acceptedReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Accepted.GetDescription());
 
-            var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
-            //var fullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.FullPaper.GetDescription());
-            //var revisionPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
-            //var cameraReadyPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
-            if (pendingGlobalStatus == null || pendingReviewStatus == null || abstractPhase == null /*|| fullPaperPhase ==null || revisionPaperPhase==null || cameraReadyPhase==null*/)
+            var rejectedGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Rejected.GetDescription());
+            var rejectedReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Rejected.GetDescription());
+
+
+            //var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
+
+
+            if (acceptedGlobalStatus == null || acceptedReviewStatus == null || rejectedReviewStatus == null || rejectedGlobalStatus == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái");
             }
             foreach (var paper in papers)
             {
                 var paperReviewRole = paper.PaperReviewers.FirstOrDefault(pa => pa.UserId == userId);
-                bool isHeadReviewer = (bool)paperReviewRole.IsHeadReviewer;
-                bool isAllReviewed = true;
-                var paperPhase = paper.PaperPhase;
-                if (paperPhase == abstractPhase)
-                {
-                    continue;
-                }
+                bool isHeadReviewer = paperReviewRole?.IsHeadReviewer ?? false;
+                bool isAllReviewed = false;
+                //var paperPhase = paper.PaperPhase;
                 if (paper.FullPaper != null)
                 {
-                    if (paper.FullPaper.ReviewStatus == pendingReviewStatus) isAllReviewed = false;
+                    if (paper.FullPaper.ReviewStatusId == acceptedReviewStatus.ReviewStatusId|| paper.FullPaper.ReviewStatusId == rejectedReviewStatus.ReviewStatusId) 
+                        isAllReviewed = true;
                 }
                 if (paper.RevisionPaper != null)
                 {
-                    if (paper.RevisionPaper.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
+                    if (paper.RevisionPaper.GlobalStatusId == acceptedGlobalStatus.GlobalStatusId || paper.RevisionPaper.GlobalStatusId==rejectedGlobalStatus.GlobalStatusId) 
+                        isAllReviewed = true;
                 }
-                //if (paper.CameraReady != null)
-                //{
-                //    if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllReviewed = false;
-                //}
                 if (isAllReviewed)
                 {
                     totalReviewedPapersDetailResponse.TotalPaperReviewed += 1;
@@ -106,47 +103,42 @@ namespace ConfRadar.Services.Services
         {
             var totalPendingReview = new GetTotalPendingReviewsDetailResponse();
             var papers = await _unitOfWork.PaperReviewerRepository.GetTotalPapersBelongToReviewer(userId);
-            if (papers.Count <= 0)
+            if (papers ==null || papers.Count <= 0)
             {
                 return totalPendingReview;
             }
-            papers = papers.Where(p => p.Ticket != null && p.Ticket.IsRefunded == false).ToList();
+            //papers = papers.Where(p => p.Ticket != null && p.Ticket.IsRefunded == false).ToList();
             var pendingGlobalStatus = await _unitOfWork.GlobalStatusRepository.GetGlobalStatusByName(GlobalStatusEnum.Pending.GetDescription());
             var pendingReviewStatus = await _unitOfWork.ReviewStatusRepository.GetReviewStatusByNameAsync(ReviewStatusEnum.Pending.GetDescription());
 
-            var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
-            //var fullPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.FullPaper.GetDescription());
-            //var revisionPaperPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Revise.GetDescription());
-            //var cameraReadyPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.CameraReady.GetDescription());
-            if (pendingGlobalStatus == null || pendingReviewStatus == null || abstractPhase == null /*|| fullPaperPhase == null || revisionPaperPhase == null || cameraReadyPhase == null*/)
+            //var abstractPhase = await _unitOfWork.PaperPhaseRepository.GetPaperPhaseByNameAsync(PaperPhaseEnum.Abstract.GetDescription());
+          
+
+            if (pendingGlobalStatus == null || pendingReviewStatus == null)
             {
                 throw new NotFoundException("Không tìm thấy trạng thái");
             }
             foreach (var paper in papers)
             {
                 var paperReviewRole = paper.PaperReviewers.FirstOrDefault(pa => pa.UserId == userId);
-                bool isHeadReviewer = (bool)paperReviewRole.IsHeadReviewer;
-                var paperPhase = paper.PaperPhase;
+                bool isHeadReviewer = paperReviewRole?.IsHeadReviewer ?? false; 
+                //var paperPhase = paper.PaperPhase;
                 if (isHeadReviewer)
                 {
-                    bool isAllCompleted = true;
-                    if (/*paper.Ticket?.IsRefunded == true || */ paperPhase == abstractPhase)
-                    {
-                        continue;
-                    }
+                    bool isPending = false;
+                   
                     if (paper.FullPaper != null)
                     {
-                        if (paper.FullPaper.ReviewStatus == pendingReviewStatus) isAllCompleted = false;
+                        if (paper.FullPaper.ReviewStatusId == pendingReviewStatus.ReviewStatusId)
+                            isPending = true;
                     }
                     if (paper.RevisionPaper != null)
                     {
-                        if (paper.RevisionPaper.GlobalStatus == pendingGlobalStatus) isAllCompleted = false;
+                        if (paper.RevisionPaper.GlobalStatusId == pendingGlobalStatus.GlobalStatusId)
+                            isPending = true;
                     }
-                    //if (paper.CameraReady != null)
-                    //{
-                    //    if (paper.CameraReady.GlobalStatus == pendingGlobalStatus) isAllCompleted = false;
-                    //}
-                    if (!isAllCompleted)
+                   
+                    if (isPending)
                     {
                         totalPendingReview.TotalPendingReview += 1;
                         var paperDetail = CreatePaperDetail(paper, isHeadReviewer);
@@ -155,18 +147,12 @@ namespace ConfRadar.Services.Services
                 }
                 else
                 {
-                    if (/*paper.Ticket?.IsRefunded == true ||*/ paperPhase == abstractPhase)
-                    {
-                        continue;
-                    }
+                   
                     bool isPending = false;
-                    if (paper.FullPaper != null && paper.FullPaper.ReviewStatus == pendingReviewStatus)
+                    if (paper.FullPaper != null)
                     {
-                        isPending = true;
-                    }
-                    if (paper.RevisionPaper != null && paper.RevisionPaper.GlobalStatus == pendingGlobalStatus)
-                    {
-                        isPending = true;
+                        if (paper.FullPaper.ReviewStatusId == pendingReviewStatus.ReviewStatusId)
+                            isPending = true;
                     }
                     if (isPending)
                     {
