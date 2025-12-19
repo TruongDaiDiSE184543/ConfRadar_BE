@@ -19,7 +19,7 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS
         // Endpoint 1: Get all conferences with their price phases (with pagination/filtering)
-        Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noSubmitFee = null, int? totalRevisionRound = 0, string? targetAudience = null);
+        Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noSubmitFee = null, int? totalRevisionRound = 0, string? targetAudience = null, bool? isComplete = false);
 
         // Endpoint 2: Get detailed technical conference data
         Task<TechnicalConferenceDetailResponse> GetTechnicalConferenceDetailAsync(string conferenceId, string? userId);
@@ -771,14 +771,23 @@ namespace ConfRadar.Services.Services
 
         // NEW ENDPOINTS IMPLEMENTATION
 
-        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null, DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, bool? allowListener = null, bool? noSubmitFee = null, int? totalRevisionRound = null, string? targetAudience = null)
+        public async Task<PagedResult<ConferenceWithPricesResponse>> GetConferencesWithPricesAsync(int page, int pageSize, string? searchKeyword = null, string? cityId = null
+            , DateOnly? startDate = null, DateOnly? endDate = null, bool? isResearch = null, string? rankingCategoryId = null, 
+            bool? allowListener = null, bool? noSubmitFee = null, int? totalRevisionRound = null, string? targetAudience = null, bool? isComplete = false)
         {
             var readyStatus = await _unitOfWork.ConferenceStatusRepository
        .GetConferenceStatusByName(ConferenceStatusEnum.Ready.GetDescription());
 
+            //get completed status
+            var completedStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Completed.GetDescription());
+
+            ConferenceStatus statusId = isComplete.Value ? completedStatus : readyStatus;
+
             // 1. Gọi Repo (đã thêm Include Technical)
             IQueryable<Conference> query = _unitOfWork.ConferenceRepository
-                .GetConferencesWithPrice(readyStatus.ConferenceStatusId);
+                .GetConferencesWithPrice(statusId.ConferenceStatusId);
+
+
 
             // 2. Filter Cơ bản
             if (!string.IsNullOrEmpty(searchKeyword))

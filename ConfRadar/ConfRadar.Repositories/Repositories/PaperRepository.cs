@@ -496,7 +496,9 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
                 .Include(p => p.CameraReady)
-                .Where(p => p.CameraReady != null /*&& p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId */ && p.ConferenceId == confId && p.TicketId != null)
+                .Where(p => p.CameraReady != null /*&& p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId */ && p.ConferenceId == confId && p.TicketId != null &&
+                p.Abstract != null &&
+                p.FullPaper != null)
                 .ToListAsync();
         }
 
@@ -632,6 +634,7 @@ namespace ConfRadar.Repositories.Repositories
                 .Include(p => p.RevisionPaper)
                     .ThenInclude(rvp => rvp.GlobalStatus)
                 .Include(p => p.CameraReady)
+                .Include(p => p.PresentAuthors)
                 //.ThenInclude(c => c.GlobalStatus)
                 .Include(p => p.PaperAuthors)
                 .Where(p => p.ConferenceId == confId )

@@ -1,6 +1,7 @@
-﻿using ConfRadar.Repositories.Models;
+﻿using System;
+using System.Collections.Generic;
+using ConfRadar.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace ConfRadar.Repositories.Data;
 
@@ -151,21 +152,14 @@ public partial class ConfRadarDbContext : DbContext
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
-    public static string GetConnectionString(string connectionStringName)
-    {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        string connectionString = config.GetConnectionString(connectionStringName);
-        return connectionString;
-    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql(GetConnectionString("DefaultConnection"));
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=104.234.167.145;Port=5433;Database=confradar_db;Username=confradar123;Password=12345");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("uuid-ossp");
+
         modelBuilder.Entity<Abstract>(entity =>
         {
             entity.HasKey(e => e.AbstractId).HasName("Abstract_pkey");
@@ -288,7 +282,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
             entity.Property(e => e.CityId).HasMaxLength(50);
             entity.Property(e => e.ConferenceCategoryId).HasMaxLength(50);
-            entity.Property(e => e.ConferenceName).HasMaxLength(100);
             entity.Property(e => e.ConferenceStatusId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.CreatedBy).HasMaxLength(50);
@@ -442,9 +435,6 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.DestinationId).HasMaxLength(50);
             entity.Property(e => e.CityId).HasMaxLength(50);
-            entity.Property(e => e.District).HasMaxLength(255);
-            entity.Property(e => e.Name).HasMaxLength(255);
-            entity.Property(e => e.Street).HasMaxLength(255);
 
             entity.HasOne(d => d.City).WithMany(p => p.Destinations)
                 .HasForeignKey(d => d.CityId)
@@ -523,7 +513,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.GeneralFaqid)
                 .HasMaxLength(50)
                 .HasColumnName("GeneralFAQId");
-            entity.Property(e => e.Name).HasMaxLength(255);
         });
 
         modelBuilder.Entity<GlobalStatus>(entity =>
@@ -741,7 +730,6 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.PolicyId).HasMaxLength(50);
             entity.Property(e => e.ConferenceId).HasMaxLength(50);
-            entity.Property(e => e.PolicyName).HasMaxLength(255);
 
             entity.HasOne(d => d.Conference).WithMany(p => p.Policies)
                 .HasForeignKey(d => d.ConferenceId)
@@ -812,7 +800,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.PricePhaseId).HasMaxLength(50);
             entity.Property(e => e.ApplyPercent).HasPrecision(10, 2);
             entity.Property(e => e.ConferencePriceId).HasMaxLength(50);
-            entity.Property(e => e.PhaseName).HasMaxLength(255);
             entity.Property(e => e.ResearchConferencePhaseId).HasMaxLength(50);
 
             entity.HasOne(d => d.ConferencePrice).WithMany(p => p.PricePhases)
@@ -829,7 +816,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.HasKey(e => e.RankingCategoryId).HasName("RankingCategories_pkey");
 
             entity.Property(e => e.RankingCategoryId).HasMaxLength(50);
-            entity.Property(e => e.RankName).HasMaxLength(255);
         });
 
         modelBuilder.Entity<RankingFileUrl>(entity =>
@@ -912,7 +898,6 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.ReportId).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.ReportSubject).HasMaxLength(255);
             entity.Property(e => e.UserId).HasMaxLength(50);
 
             entity.HasOne(d => d.User).WithMany(p => p.Reports)
@@ -928,7 +913,6 @@ public partial class ConfRadarDbContext : DbContext
 
             entity.Property(e => e.ReportId).HasMaxLength(50);
             entity.Property(e => e.AdminId).HasMaxLength(50);
-            entity.Property(e => e.ReportSubject).HasMaxLength(255);
 
             entity.HasOne(d => d.Admin).WithMany(p => p.ReportFeedbacks)
                 .HasForeignKey(d => d.AdminId)
@@ -1117,7 +1101,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.GlobalStatusId).HasMaxLength(50);
             entity.Property(e => e.NewConferenceSessionId).HasMaxLength(50);
             entity.Property(e => e.PaperId).HasMaxLength(50);
-            entity.Property(e => e.Reason).HasMaxLength(255);
             entity.Property(e => e.RequestAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.ReviewedAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.TicketId).HasMaxLength(50);
@@ -1384,8 +1367,6 @@ public partial class ConfRadarDbContext : DbContext
             entity.Property(e => e.WalletTransactionId).HasMaxLength(50);
             entity.Property(e => e.Amount).HasPrecision(18, 2);
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.Description).HasMaxLength(255);
-            entity.Property(e => e.TransactionType).HasMaxLength(50);
             entity.Property(e => e.WalletId).HasMaxLength(50);
 
             entity.HasOne(d => d.Wallet).WithMany(p => p.WalletTransactions).HasForeignKey(d => d.WalletId);

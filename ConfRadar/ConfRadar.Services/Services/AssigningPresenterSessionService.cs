@@ -123,21 +123,21 @@ namespace ConfRadar.Services.Services
                     PaperId = paperDetail.PaperId,
                     Title = paperDetail.Title,
                     Description = paperDetail.Description,
-                    Abstract = new AbstractDtoDetail()
+                    Abstract = paperDetail.Abstract != null ? new AbstractDtoDetail()
                     {
                         AbstractId = paperDetail.AbstractId,
                         Title = paperDetail.Abstract.Title,
                         Description = paperDetail.Abstract.Description,
                         FileUrl = paperDetail.Abstract.AbstractUrl,
-                    },
-                    CameraReady = new CameraReadyDtoDetail()
+                    } : null,
+                    CameraReady = paperDetail.CameraReady != null ? new CameraReadyDtoDetail()
                     {
                         CameraReadyId = paperDetail.CameraReadyId,
                         Title = paperDetail.CameraReady.Title,
                         Description = paperDetail.CameraReady.Description,
                         FileUrl= paperDetail.CameraReady.CameraReadyUrl
                         
-                    },
+                    }: null,
                     RootAuthor = RootAuthor != null ? new Author { userId = RootAuthor.UserId, fullName = RootAuthor.FullName, avatarUrl = RootAuthor.AvatarUrl } : null,
                     CoAuthors = coAuthors?.Select(user => new Author
                     {
@@ -145,6 +145,7 @@ namespace ConfRadar.Services.Services
                         fullName = user.FullName,
                         avatarUrl = user.AvatarUrl
                     }).ToList(),
+                    IsAssignedToSession = paperDetail.PresentAuthors.Any()
                 };
                 response.Add(paperDetailResponseDtoDetail);
             }
