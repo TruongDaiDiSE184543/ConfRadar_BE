@@ -10,6 +10,14 @@ namespace ConfRadar.Services.Services
         Task<List<AuditLogDetailResponse>> GetListAuditLogDetail();
         Task<List<AuditLogCategory>> GetAuditLogCategories();
         Task<int> CreateAuditLog(string userId, AuditLogActionNameEnum auditActionEnum, string actionDescription);
+        Task<int> GetUserCount();
+        Task<List<AuditLogDetailResponse>> GetRecentAuditActivity(int? rows = null);
+        Task<List<AuditReportDetailResponse>> GetRecentReport(int? rows = null);
+        Task<AuditInternalConferenceCountDetailResponse> CountActiveInternalEvents();
+        Task<AuditExternalConferenceCountDetailResponse> CountActiveExternalEvents();
+        Task<List<GeneralFaq>> GetListGeneralFAQ();
+
+
     }
     public class AuditLogService : IAuditLogService
     {
@@ -58,6 +66,55 @@ namespace ConfRadar.Services.Services
                 CreatedAt = timeNow,
             };
             return await _unitOfWork.AuditLogRepository.CreateAuditLogAsync(auditLog);
+        }
+
+        public async Task<int> GetUserCount()
+        {
+            return await _unitOfWork.AuditLogRepository.CountUser();
+        }
+        public async Task<int> CountUnResolveReport()
+        {
+            return await _unitOfWork.AuditLogRepository.CountUnResolveReports();
+        }
+       
+
+      
+
+
+
+        public async Task<List<AuditLogDetailResponse>> GetRecentAuditActivity(int? rows = null)
+        {
+           return await _unitOfWork.AuditLogRepository.GetRecentAuditActivity(rows);
+        }
+
+        public async Task<List<AuditReportDetailResponse>> GetRecentReport(int? rows = null)
+        {
+            return await _unitOfWork.AuditLogRepository.GetRecentReport(rows);
+        }
+
+        public async Task<AuditInternalConferenceCountDetailResponse> CountActiveInternalEvents()
+        {
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                return new AuditInternalConferenceCountDetailResponse();
+            }
+            return await _unitOfWork.AuditLogRepository.CountActiveInternalEvents(readyConfStatus.ConferenceStatusId);
+        }
+
+        public async Task<AuditExternalConferenceCountDetailResponse> CountActiveExternalEvents()
+        {
+            var readyConfStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Ready.GetDescription());
+            if (readyConfStatus == null)
+            {
+                return new AuditExternalConferenceCountDetailResponse();
+            }
+            return await _unitOfWork.AuditLogRepository.CountActiveExternalEvents(readyConfStatus.ConferenceStatusId);
+        }
+
+        public async Task<List<GeneralFaq>> GetListGeneralFAQ()
+        {
+            return await _unitOfWork.GeneralFAQRepository.GetAllGeneralFAQAsync();
         }
     }
 }
