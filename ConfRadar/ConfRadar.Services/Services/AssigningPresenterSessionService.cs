@@ -98,12 +98,15 @@ namespace ConfRadar.Services.Services
             List<PaperDetailResponseDtoDetail> response= new List<PaperDetailResponseDtoDetail>();
             foreach (var paper in list)
             {
+                var paperDetail = await _unitOfWork.PaperRepository.GetAcceptedPaperWithAbstractAndCamerareadyPhaseByPaperId(paper.PaperId);
                 //get all authors
-                var allAuthor = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paper.PaperId);
+                //var allAuthor = await _unitOfWork.PaperAuthorRepository.GetPaperAuthorsByPaperIdAsync(paper.PaperId);
                 //get rootauthor
-                var paperRootAuthor = allAuthor.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                //var paperRootAuthor = allAuthor.FirstOrDefault(pa => pa.IsRootAuthor == true);
+                var paperRootAuthor = paperDetail.PaperAuthors.First(pa => pa.IsRootAuthor == true);
                 var RootAuthor = await _unitOfWork.UserRepository.GetUserByUserId(paperRootAuthor.UserId);
-                var coAuthorIds = allAuthor.Where(pa => pa.UserId != RootAuthor.UserId).Select(paper => paper.UserId).ToList();
+                //var coAuthorIds = allAuthor.Where(pa => pa.UserId != RootAuthor.UserId).Select(paper => paper.UserId).ToList();
+                var coAuthorIds = paperDetail.PaperAuthors.Where(pa => pa.UserId != RootAuthor.UserId).Select(paper => paper.UserId).ToList();
                 List<User> coAuthors = new List<User>();
                 if (coAuthorIds.Count() > 0)
                 {
@@ -117,7 +120,6 @@ namespace ConfRadar.Services.Services
                     }
                 }
 
-                var paperDetail = await _unitOfWork.PaperRepository.GetSubmittedPaperWith4PhaseStatusByConferenceId(confId);
                 PaperDetailResponseDtoDetail paperDetailResponseDtoDetail = new PaperDetailResponseDtoDetail()
                 {
                     PaperId = paperDetail.PaperId,
