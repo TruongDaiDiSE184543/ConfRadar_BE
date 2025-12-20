@@ -11,6 +11,7 @@ namespace ConfRadar.Services.Services
         Task<List<AuditLogCategory>> GetAuditLogCategories();
         Task<int> CreateAuditLog(string userId, AuditLogActionNameEnum auditActionEnum, string actionDescription);
         Task<int> GetUserCount();
+        Task<int> CountUnResolveReport();
         Task<List<AuditLogDetailResponse>> GetRecentAuditActivity(int? rows = null);
         Task<List<AuditReportDetailResponse>> GetRecentReport(int? rows = null);
         Task<AuditInternalConferenceCountDetailResponse> CountActiveInternalEvents();
