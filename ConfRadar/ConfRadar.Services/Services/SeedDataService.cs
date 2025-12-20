@@ -1,6 +1,7 @@
 ﻿using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConfRadar.Services.Services
 {
@@ -21,6 +22,7 @@ namespace ConfRadar.Services.Services
         Task SeedWaitListStatusesAsync();
         Task SeedAuditLogCategoriesAsync();
         //Task SeedPublishersAsync();
+        Task SeedGeneraFAQ();
     }
     public class SeedDataService : ISeedDataService
     {
@@ -325,6 +327,73 @@ namespace ConfRadar.Services.Services
         //        }
         //    );
         //}
+
+        public async Task SeedGeneraFAQ()
+        {
+            var generalFAQs = new Dictionary<string, (string name, string description)>
+            {
+                ["FAQ-001"] = (
+            "Hội thảo này dành cho đối tượng nào?",
+            "Sự kiện dành cho các nhà nghiên cứu, giảng viên, sinh viên, kỹ sư phần mềm và những người quan tâm đến công nghệ."
+        ),
+                ["FAQ-002"] = (
+            "Hội thảo tập trung vào nghiên cứu hay công nghệ ứng dụng?",
+            "Chương trình bao gồm cả nội dung nghiên cứu học thuật và công nghệ ứng dụng thực tiễn."
+        ),
+                ["FAQ-003"] = (
+            "Có yêu cầu kiến thức nền trước khi tham dự không?",
+            "Người tham dự không bắt buộc có nền tảng chuyên sâu, nhưng kiến thức cơ bản sẽ giúp theo dõi tốt hơn."
+        ),
+                ["FAQ-004"] = (
+            "Các chủ đề chính của hội thảo là gì?",
+            "Các chủ đề bao gồm AI, dữ liệu lớn, điện toán đám mây, an toàn thông tin và DevOps."
+        ),
+                ["FAQ-005"] = (
+            "Ngôn ngữ sử dụng trong hội thảo là gì?",
+            "Ngôn ngữ chính là tiếng Việt, một số phiên chuyên sâu có thể sử dụng tiếng Anh."
+        ),
+                ["FAQ-006"] = (
+            "Hội thảo có hoạt động kết nối không?",
+            "Chương trình có các phiên giao lưu và kết nối nhằm thúc đẩy hợp tác."
+        ),
+                ["FAQ-007"] = (
+            "Có cung cấp tài liệu sau hội thảo không?",
+            "Người tham dự có thể truy cập tài liệu trình bày sau khi sự kiện kết thúc."
+        ),
+                ["FAQ-008"] = (
+            "Có thể đặt câu hỏi cho diễn giả bằng cách nào?",
+            "Câu hỏi có thể được gửi trực tiếp trong phiên thảo luận hoặc qua hệ thống hỗ trợ."
+        ),
+                ["FAQ-009"] = (
+            "Hội thảo có giới hạn số lượng người tham dự không?",
+            "Một số phiên chuyên sâu có giới hạn số lượng để đảm bảo chất lượng."
+        )
+            };
+            var existingFAQs = await _unitOfWork.GeneralFAQRepository.GetAllGeneralFAQAsync();
+            var existingIds = existingFAQs.Select(g => g.GeneralFaqid).ToHashSet();
+
+            List<GeneralFaq> generalFaqsList = new List<GeneralFaq>();
+            foreach (var faq in generalFAQs)
+            {
+                if (!existingIds.Contains(faq.Key))
+                {
+                    generalFaqsList.Add(new GeneralFaq()
+                    {
+                        GeneralFaqid = faq.Key,
+                        Name = faq.Value.name,
+                        Description = faq.Value.description,
+                    });
+                }
+            }
+            if (generalFaqsList.Any())
+            {
+                await _unitOfWork.GeneralFAQRepository.CreateMultipleAsync(generalFaqsList);
+            }
+
+        }
+
+
+
 
     }
 
