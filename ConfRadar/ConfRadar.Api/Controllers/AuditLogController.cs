@@ -25,7 +25,13 @@ namespace ConfRadar.Api.Controllers
             var auditLogs = await _serviceManager.AuditLogService.GetListAuditLogDetail();
             return Ok(ApiResponse<List<AuditLogDetailResponse>>.SuccessResponse(auditLogs, "Danh sách audit log chi tiết"));
         }
-
+        [AllowAnonymous]
+        [HttpGet("list-audit-log-categories")]
+        public async Task<IActionResult> GetAuditLogCategories()
+        {
+            var categories = await _serviceManager.AuditLogService.GetAuditLogCategories();
+            return Ok(ApiResponse<List<AuditLogCategory>>.SuccessResponse(categories, "Danh sách danh mục audit log "));
+        }
 
 
         [Authorize]
