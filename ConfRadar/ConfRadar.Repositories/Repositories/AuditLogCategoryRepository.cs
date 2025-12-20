@@ -56,5 +56,8 @@ namespace ConfRadar.Repositories.Repositories
             await _context.AuditLogCategories.AddRangeAsync(categories);
             return await _context.SaveChangesAsync();
         }
+
+
+
     }
 }

@@ -87,6 +87,7 @@ namespace ConfRadar.Repositories
         IUserSuspendHistoryRepository UserSuspendHistoryRepository { get; }
         IAuditLogCategoryRepository AuditLogCategoryRepository { get; }
         //IPublisherRepository PublisherRepository { get; }
+        IGeneralFAQRepository GeneralFAQRepository { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitAsync();
@@ -179,6 +180,7 @@ namespace ConfRadar.Repositories
         private IUserSuspendHistoryRepository _UserSuspendHistoryRepository;
         private IAuditLogCategoryRepository _AuditLogCategoryRepository;
         //private IPublisherRepository _PublisherRepository;
+        private IGeneralFAQRepository _GeneralFAQRepository;
         public UnitOfWork(ConfRadarDbContext context)
         {
             _context = context;
@@ -318,6 +320,8 @@ namespace ConfRadar.Repositories
         public IUserSuspendHistoryRepository UserSuspendHistoryRepository => _UserSuspendHistoryRepository ??= new UserSuspendHistoryRepository(_context);
 
         public IAuditLogCategoryRepository AuditLogCategoryRepository => _AuditLogCategoryRepository ??= new AuditLogCategoryRepository(_context);
+
+        public IGeneralFAQRepository GeneralFAQRepository => _GeneralFAQRepository ??= new GeneralFAQRepository(_context);
 
         //public IPublisherRepository PublisherRepository => _PublisherRepository ??= new PublisherRepository(_context);
 
