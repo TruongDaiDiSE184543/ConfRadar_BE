@@ -35,7 +35,7 @@ namespace ConfRadar.Repositories.Repositories
         Task UpdateMutiplePapersAsync(List<Paper> papers);
         Task<List<Paper>> GetAcceptedPaperToPublish(string conferenceId, string acceptedGlobalStatusId);
         Task UpdateMultiplePapersAsync(List<Paper> papers);
-        Task<Paper> GetSubmittedPaperWith4PhaseStatusByConferenceId(string confId);
+        Task<Paper> GetAcceptedPaperWithAbstractAndCamerareadyPhaseByPaperId(string confId);
     }
     public class PaperRepository : GenericRepository<Paper>, IPaperRepository
     {
@@ -496,9 +496,9 @@ namespace ConfRadar.Repositories.Repositories
         {
             return await _context.Papers
                 .Include(p => p.CameraReady)
-                .Where(p => p.CameraReady != null /*&& p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId */ && p.ConferenceId == confId && p.TicketId != null &&
-                p.Abstract != null &&
-                p.FullPaper != null)
+                .Where(p => p.CameraReadyId != null /*&& p.CameraReady.GlobalStatusId == acceptedStatus.GlobalStatusId */ && p.ConferenceId == confId && p.TicketId != null &&
+                p.AbstractId != null &&
+                p.FullPaperId != null)
                 .ToListAsync();
         }
 
@@ -624,20 +624,15 @@ namespace ConfRadar.Repositories.Repositories
         }
 
 
-        public async Task<Paper> GetSubmittedPaperWith4PhaseStatusByConferenceId(string confId)
+        public async Task<Paper?> GetAcceptedPaperWithAbstractAndCamerareadyPhaseByPaperId(string paperId)
         {
             IQueryable<Paper> query = _context.Papers
                 .Include(p => p.Abstract)
                     .ThenInclude(a => a.GlobalStatus)
-                .Include(p => p.FullPaper)
-                    .ThenInclude(fp => fp.ReviewStatus)
-                .Include(p => p.RevisionPaper)
-                    .ThenInclude(rvp => rvp.GlobalStatus)
                 .Include(p => p.CameraReady)
                 .Include(p => p.PresentAuthors)
-                //.ThenInclude(c => c.GlobalStatus)
                 .Include(p => p.PaperAuthors)
-                .Where(p => p.ConferenceId == confId )
+                .Where(p => p.PaperId ==  paperId)
                 .AsNoTracking().AsSplitQuery();
             return await query.FirstOrDefaultAsync();
         }
