@@ -544,7 +544,7 @@ namespace ConfRadar.Services.Services
 
             if (invalidMessages.Any())
             {
-                string errorMessage = "Không thể chuyển sang trạng thái 'Ready'. Vui lòng khắc phục các vấn đề sau:\n- "
+                string errorMessage = "Không thể chuyển sang trạng thái 'Ready'. Vui lòng sửa những nơi có thời gian không hợp lệ:\n- "
                                     + string.Join("|", invalidMessages.Distinct());
                 throw new BadRequestException(errorMessage);
             }
@@ -668,11 +668,42 @@ namespace ConfRadar.Services.Services
             if (ShouldProcess(c => c.IsSessionStep))
             {
                 var sessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+
                 foreach (var session in sessions)
                 {
-                    session.SessionDate = Shift(session.SessionDate);
-                    session.StartTime = ShiftDt(session.StartTime);
-                    session.EndTime = ShiftDt(session.EndTime);
+                    // 1. Tính toán ngày giờ MỚI trước
+                    var newSessionDate = Shift(session.SessionDate);
+                    var newStartTime = ShiftDt(session.StartTime);
+                    var newEndTime = ShiftDt(session.EndTime);
+
+                    // 2. Nếu phiên có phòng (Internal Hosted), phải check xem ngày giờ MỚI phòng có trống không
+                    if (!string.IsNullOrEmpty(session.RoomId) && newSessionDate.HasValue && newStartTime.HasValue && newEndTime.HasValue)
+                    {
+                       
+
+                        // Gọi Repository để check 
+                        var overlappingSessions = await _unitOfWork.ConferenceSessionRepository
+                            .GetSessionsByRoomIdOverlappingTimeAsync(session.RoomId, newSessionDate.Value, newStartTime.Value, newEndTime.Value);
+
+                        // Lọc bỏ chính session đang xét (đề phòng trường hợp database chưa kịp commit thay đổi)
+                        var isConflict = overlappingSessions.Any(s => s.ConferenceSessionId != session.ConferenceSessionId);
+
+                        if (isConflict)
+                        {
+                            // Lấy tên phòng để báo lỗi cho rõ
+                            var room = await _unitOfWork.RoomRepository.GetRoomByIdAsync(session.RoomId);
+                            string roomName = room?.DisplayName ?? session.RoomId;
+
+                            throw new BadRequestException(
+                                $"Không thể tự động dời lịch. Phòng '{roomName}' đã bị đặt kín vào thời gian mới dự kiến ({newSessionDate.Value:dd/MM/yyyy} {newStartTime.Value:HH:mm}-{newEndTime.Value:HH:mm}) cho phiên '{session.Title}'. Vui lòng giải quyết xung đột phòng hoặc chọn ngày khác.");
+                        }
+                    }
+
+                    // 3. Nếu không trùng (hoặc không có phòng), tiến hành cập nhật
+                    session.SessionDate = newSessionDate;
+                    session.StartTime = newStartTime;
+                    session.EndTime = newEndTime;
+
                     await _unitOfWork.ConferenceSessionRepository.UpdateConferenceSessionAsync(session);
                 }
             }
@@ -2500,7 +2531,6 @@ namespace ConfRadar.Services.Services
                 throw new BadRequestException("Thời gian OnHold chưa đủ 1 ngày hoặc ngày hiện tại không hợp lệ để tự động điều chỉnh.");
             }
 
-            if (daysToShift <= 0) throw new BadRequestException("...");
 
             await _unitOfWork.BeginTransactionAsync();
             try

@@ -772,8 +772,6 @@ namespace ConfRadar.Services.DTOs.ConferenceStep
         // mà bạn muốn tự động tạo PricePhase tương ứng cho phase mới này.
         [Required]
         public List<string> AuthorConferencePriceIds { get; set; }
-        public int ApplyPercent { get; set; } = 100;
-        public string PhaseName { get; set; }
     }
 
     public class addRevisionRequest
