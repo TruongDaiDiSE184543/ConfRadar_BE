@@ -1,4 +1,4 @@
-﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.DTOs.ConferenceStep;
@@ -21,7 +21,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
 
         public ConferenceStepServiceUpdateConferenceSessionTests()
         {
-            // Khởi tạo tất cả các mock
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockObjectStorageFileService = new Mock<IObjectStorageFileService>();
             _mockTokenService = new Mock<ITokenService>();
@@ -40,220 +39,325 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
             );
         }
 
-        /// <summary>
-        /// Phương thức helper để thiết lập các mock chung cho một phiên và hội nghị hợp lệ.
-        /// </summary>
-        private void SetupMocksForSessionUpdate(
+        private void SetupMocks(
             string sessionId, string confId, string userId,
             ConferenceSession session, Conference conference,
-            List<ConferenceSession> otherSessionsInRoom = null)
+            List<ConferenceSession> otherSessions = null)
         {
-            // Mock để lấy phiên và hội nghị
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(sessionId)).ReturnsAsync(session);
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(conference);
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId)).ReturnsAsync(session);
-
-            // Mock cho việc kiểm tra trùng lặp thời gian
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>()))
-                           .ReturnsAsync(otherSessionsInRoom ?? new List<ConferenceSession>());
-
-            // === MOCKS CHO CÁC HELPER METHOD (EnsureConferenceIsEditable, ValidateUpdateForOnHoldConference) ===
-            var preparingStatus = new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" };
-            var draftStatus = new ConferenceStatus { ConferenceStatusId = "status-draft", ConferenceStatusName = "Draft" };
-            var onHoldStatus = new ConferenceStatus { ConferenceStatusId = "status-onhold", ConferenceStatusName = "OnHold" };
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(ConferenceStatusEnum.Preparing.GetDescription())).ReturnsAsync(preparingStatus);
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.Draft.GetDescription())).ReturnsAsync(draftStatus);
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName(ConferenceStatusEnum.OnHold.GetDescription())).ReturnsAsync(onHoldStatus);
-
-            // Mock trạng thái hiện tại MỘT CÁCH TỔNG QUÁT. Các test case đặc biệt sẽ ghi đè mock này.
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId))
-                           .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = conference.ConferenceStatusId, ConferenceStatusName = "Preparing" }); // Giả định mặc định là Preparing
-        }
-
-        [Fact]
-        public async Task UpdateConferenceSessionAsync_WithValidRequest_ShouldUpdateSuccessfully()
-        {
-            // SẮP ĐẶT (ARRANGE)
-            var sessionId = "session-1";
-            var confId = "conf-1";
-            var userId = "user-1";
-            var roomId = "room-1";
-
-            var existingSession = new ConferenceSession
-            {
-                ConferenceSessionId = sessionId,
-                ConferenceId = confId,
-                Title = "Tiêu đề cũ",
-                Description = "Mô tả cũ",
-                StartTime = new DateTime(2025, 12, 25, 9, 0, 0),
-                EndTime = new DateTime(2025, 12, 25, 10, 0, 0),
-                SessionDate = new DateOnly(2025, 12, 25),
-                RoomId = roomId
-            };
-
-            var parentConference = new Conference
-            {
-                ConferenceId = confId,
-                CreatedBy = userId,
-                IsResearchConference = false, // Phải là hội nghị kỹ thuật
-                IsInternalHosted = true,
-                ConferenceStatusId = "status-preparing",
-                StartDate = new DateOnly(2025, 12, 25),
-                EndDate = new DateOnly(2025, 12, 26)
-            };
-
-            var request = new UpdateConferenceSessionRequest
-            {
-                Title = "Tiêu đề mới",
-                Description = "Mô tả mới"
-            };
-
-            SetupMocksForSessionUpdate(sessionId, confId, userId, existingSession, parentConference);
-
-            // HÀNH ĐỘNG (ACT)
-            var result = await _conferenceStepService.UpdateConferenceSessionAsync(sessionId, request, userId);
-
-            // KHẲNG ĐỊNH (ASSERT)
-            result.Should().NotBeNull();
-            result.Title.Should().Be(request.Title);
-            result.Description.Should().Be(request.Description);
-
-            // Xác minh rằng phương thức cập nhật trong repository đã được gọi một lần
-            _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.UpdateConferenceSessionAsync(It.IsAny<ConferenceSession>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task UpdateConferenceSessionAsync_WhenSessionNotFound_ShouldThrowNotFoundException()
-        {
-            // SẮP ĐẶT (ARRANGE)
-            var sessionId = "phien-khong-ton-tai";
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(sessionId))
-                           .ReturnsAsync((ConferenceSession)null);
+                .ReturnsAsync(session);
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId))
+                .ReturnsAsync(conference);
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionWithDetailsAsync(sessionId))
+                .ReturnsAsync(session);
+            
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByRoomIdOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>()))
+                .ReturnsAsync(otherSessions ?? new List<ConferenceSession>());
 
-            var request = new UpdateConferenceSessionRequest();
+            // Status mocks
+            var pending = new ConferenceStatus { ConferenceStatusId = "pending", ConferenceStatusName = "Pending" };
+            var preparing = new ConferenceStatus { ConferenceStatusId = "preparing", ConferenceStatusName = "Preparing" };
+            var draft = new ConferenceStatus { ConferenceStatusId = "draft", ConferenceStatusName = "Draft" };
+            var onHold = new ConferenceStatus { ConferenceStatusId = "onhold", ConferenceStatusName = "OnHold" };
+            var deleted = new ConferenceStatus { ConferenceStatusId = "deleted", ConferenceStatusName = "Deleted" };
 
-            // HÀNH ĐỘNG & KHẲNG ĐỊNH (ACT & ASSERT)
-            var ex = await Assert.ThrowsAsync<NotFoundException>(
-                () => _conferenceStepService.UpdateConferenceSessionAsync(sessionId, request, "user-1")
-            );
-            ex.Message.Should().Contain($"Không tìm thấyy phiên với ID {sessionId}");
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Pending")).ReturnsAsync(pending);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Preparing")).ReturnsAsync(preparing);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("Draft")).ReturnsAsync(draft);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName("OnHold")).ReturnsAsync(onHold);
+
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync("pending")).ReturnsAsync(pending);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync("preparing")).ReturnsAsync(preparing);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync("draft")).ReturnsAsync(draft);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync("onhold")).ReturnsAsync(onHold);
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync("deleted")).ReturnsAsync(deleted);
+
+            if (!string.IsNullOrEmpty(session?.RoomId))
+            {
+                _mockUnitOfWork.Setup(u => u.RoomRepository.GetRoomByIdAsync(session.RoomId))
+                    .ReturnsAsync(new Room { RoomId = session.RoomId });
+            }
         }
 
         [Fact]
-        public async Task UpdateConferenceSessionAsync_WhenConferenceIsResearchType_ShouldThrowBadRequestException()
+        public async Task UpdateConferenceSessionAsync_SessionNotFound_ThrowsNotFoundException()
         {
-            // SẮP ĐẶT (ARRANGE)
-            var sessionId = "session-1";
-            var confId = "conf-1";
-            var userId = "user-1";
-
-            var existingSession = new ConferenceSession { ConferenceSessionId = sessionId, ConferenceId = confId };
-            var parentConference = new Conference
-            {
-                ConferenceId = confId,
-                CreatedBy = userId,
-                IsResearchConference = true // Đây là điểm mấu chốt gây ra lỗi
-            };
-
-            // Chỉ cần mock 2 lệnh gọi đầu tiên là đủ để gây ra lỗi
-            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetConferenceSessionByIdAsync(sessionId)).ReturnsAsync(existingSession);
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(parentConference);
-
-            var request = new UpdateConferenceSessionRequest();
-
-            // HÀNH ĐỘNG & KHẲNG ĐỊNH (ACT & ASSERT)
-            var ex = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.UpdateConferenceSessionAsync(sessionId, request, userId)
-            );
-            ex.Message.Should().Be("Chức năng này không dành cho phiên của hội nghị nghiên cứu.");
+            SetupMocks("sess1", "conf1", "user1", null, null);
+            await Assert.ThrowsAsync<NotFoundException>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", new UpdateConferenceSessionRequest(), "user1"));
         }
 
         [Fact]
-        public async Task UpdateConferenceSessionAsync_OnHoldExternalConferenceAndForbiddenFieldChange_ShouldThrowBadRequestException()
+        public async Task UpdateConferenceSessionAsync_ResearchConference_ThrowsBadRequestException()
         {
-            // SẮP ĐẶT (ARRANGE)
-            var sessionId = "session-1";
-            var confId = "conf-1";
-            var userId = "user-1";
+            var conf = new Conference { ConferenceId = "conf1", IsResearchConference = true };
+            var session = new ConferenceSession { ConferenceSessionId = "sess1", ConferenceId = "conf1" };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
 
-            var existingSession = new ConferenceSession { ConferenceSessionId = sessionId, ConferenceId = confId, Title = "Tiêu đề cũ" };
-            var parentConference = new Conference
-            {
-                ConferenceId = confId,
-                CreatedBy = userId,
-                IsResearchConference = false,
-                IsInternalHosted = false, // Hội nghị liên kết (external)
-                ConferenceStatusId = "status-onhold" // Đang tạm hoãn
-            };
-
-            var request = new UpdateConferenceSessionRequest
-            {
-                Title = "Tiêu đề mới" // Cố gắng thay đổi trường bị cấm
-            };
-
-            // Gọi helper mock chung
-            SetupMocksForSessionUpdate(sessionId, confId, userId, existingSession, parentConference);
-
-            // *** SỬA LỖI: Ghi đè mock từ helper để trả về đúng trạng thái "OnHold" ***
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync("status-onhold"))
-                           .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = "status-onhold", ConferenceStatusName = "OnHold" });
-
-            // HÀNH ĐỘNG & KHẲNG ĐỊNH (ACT & ASSERT)
-            var ex = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.UpdateConferenceSessionAsync(sessionId, request, userId)
-            );
-            ex.Message.Should().Be("Không thể thay đổi 'Tiêu đề phiên' khi hội nghị đang OnHold.");
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", new UpdateConferenceSessionRequest(), "user1"));
+            Assert.Contains("không dành cho phiên của hội nghị nghiên cứu", ex.Message);
         }
 
         [Fact]
-        public async Task UpdateConferenceSessionAsync_WhenTimeConflictsWithAnotherSession_ShouldThrowBadRequestException()
+        public async Task UpdateConferenceSessionAsync_OnHold_TitleChanged_ThrowsBadRequestException()
         {
-            // SẮP ĐẶT (ARRANGE)
-            var sessionId = "session-1";
-            var confId = "conf-1";
-            var userId = "user-1";
-            var roomId = "room-1";
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                IsResearchConference = false, 
+                ConferenceStatusId = "onhold", 
+                CreatedBy = "user1" 
+            };
+            var session = new ConferenceSession 
+            { 
+                ConferenceSessionId = "sess1", 
+                ConferenceId = "conf1", 
+                Title = "Old Title" 
+            };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
 
-            var existingSession = new ConferenceSession { ConferenceSessionId = sessionId, ConferenceId = confId, RoomId = roomId };
-            var parentConference = new Conference
-            {
-                ConferenceId = confId,
-                CreatedBy = userId,
-                IsResearchConference = false,
+            var request = new UpdateConferenceSessionRequest { Title = "New Title" };
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", request, "user1"));
+            Assert.Contains("Không thể thay đổi 'Tiêu đề phiên' khi hội nghị đang OnHold", ex.Message);
+        }
+
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_NotCreator_ThrowsException()
+        {
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                CreatedBy = "creator",
+                ConferenceStatusId = "preparing" // Added valid status
+            };
+            var session = new ConferenceSession { ConferenceSessionId = "sess1", ConferenceId = "conf1" };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
+
+            var ex = await Assert.ThrowsAsync<Exception>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", new UpdateConferenceSessionRequest(), "user1")); // user1 != creator
+            Assert.Contains("Bạn không có quyền cập nhật phiên này", ex.Message);
+        }
+
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_ExternalHosted_Preparing_ThrowsBadRequestException()
+        {
+            // EnsureConferenceIsEditable(conference, true) checks:
+            // if (conference.IsInternalHosted != true && conference.ConferenceStatusId == preparing.ConferenceStatusId) -> Throw
+            
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                CreatedBy = "user1",
+                IsInternalHosted = false, // External
+                ConferenceStatusId = "preparing"
+            };
+            var session = new ConferenceSession { ConferenceSessionId = "sess1", ConferenceId = "conf1" };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", new UpdateConferenceSessionRequest(), "user1"));
+            Assert.Contains("không thể cập nhật các thông tin cốt lõi", ex.Message);
+        }
+
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_InternalHosted_RoomIdRequired_ThrowsBadRequestException()
+        {
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                CreatedBy = "user1",
                 IsInternalHosted = true,
-                ConferenceStatusId = "status-preparing",
-                StartDate = new DateOnly(2025, 12, 25),
-                EndDate = new DateOnly(2025, 12, 26)
+                ConferenceStatusId = "preparing",
+                StartDate = DateOnly.FromDateTime(DateTime.Now),
+                EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1))
+            };
+            var session = new ConferenceSession 
+            { 
+                ConferenceSessionId = "sess1", 
+                ConferenceId = "conf1",
+                RoomId = null,
+                SessionDate = DateOnly.FromDateTime(DateTime.Now),
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddHours(1)
+            };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
+
+            var request = new UpdateConferenceSessionRequest { RoomId = "" }; // Trying to set null/empty
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", request, "user1"));
+            Assert.Contains("Hội nghị Technical nội bộ bắt buộc phiên", ex.Message);
+        }
+
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_RoomIdNotFound_ThrowsNotFoundException()
+        {
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                CreatedBy = "user1",
+                IsInternalHosted = true,
+                ConferenceStatusId = "preparing",
+                StartDate = DateOnly.FromDateTime(DateTime.Now),
+                EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1))
+            };
+            var session = new ConferenceSession 
+            { 
+                ConferenceSessionId = "sess1", 
+                ConferenceId = "conf1",
+                RoomId = "room1",
+                SessionDate = DateOnly.FromDateTime(DateTime.Now),
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddHours(1)
+            };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
+            
+            _mockUnitOfWork.Setup(u => u.RoomRepository.GetRoomByIdAsync("newRoom")).ReturnsAsync((Room)null);
+
+            var request = new UpdateConferenceSessionRequest { RoomId = "newRoom" };
+
+            await Assert.ThrowsAsync<NotFoundException>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", request, "user1"));
+        }
+
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_TimeOverlap_ThrowsBadRequestException()
+        {
+            var date = DateOnly.FromDateTime(DateTime.Now);
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                CreatedBy = "user1",
+                IsInternalHosted = true,
+                ConferenceStatusId = "preparing",
+                StartDate = date,
+                EndDate = date.AddDays(1)
+            };
+            var session = new ConferenceSession 
+            { 
+                ConferenceSessionId = "sess1", 
+                ConferenceId = "conf1",
+                RoomId = "room1",
+                SessionDate = date,
+                StartTime = date.ToDateTime(new TimeOnly(10, 0)),
+                EndTime = date.ToDateTime(new TimeOnly(11, 0))
             };
 
-            // Một phiên khác đã tồn tại trong cùng phòng, cùng ngày
-            var conflictingSession = new ConferenceSession
+            var otherSession = new ConferenceSession
             {
-                ConferenceSessionId = "session-2",
-                ConferenceId = confId,
-                RoomId = roomId,
-                SessionDate = new DateOnly(2025, 12, 25),
-                StartTime = new DateTime(2025, 12, 25, 10, 0, 0),
-                EndTime = new DateTime(2025, 12, 25, 11, 0, 0)
+                ConferenceSessionId = "sess2",
+                StartTime = date.ToDateTime(new TimeOnly(9, 30)),
+                EndTime = date.ToDateTime(new TimeOnly(10, 30)) // Overlaps with requested 10:00 start
             };
 
-            var request = new UpdateConferenceSessionRequest
-            {
-                Date = new DateOnly(2025, 12, 25),
-                StartTime = new TimeOnly(10, 30, 0), // Thời gian này bị trùng
-                EndTime = new TimeOnly(11, 30, 0)
+            SetupMocks("sess1", "conf1", "user1", session, conf, new List<ConferenceSession> { otherSession });
+            _mockUnitOfWork.Setup(u => u.RoomRepository.GetRoomByIdAsync("room1")).ReturnsAsync(new Room());
+
+            var request = new UpdateConferenceSessionRequest 
+            { 
+                RoomId = "room1", // Explicitly setting room trigger validation
+                StartTime = new TimeOnly(10, 0),
+                EndTime = new TimeOnly(11, 0)
             };
 
-            // Mock có một phiên khác trong phòng
-            SetupMocksForSessionUpdate(sessionId, confId, userId, existingSession, parentConference, new List<ConferenceSession> { conflictingSession });
-            _mockUnitOfWork.Setup(u => u.RoomRepository.GetRoomByIdAsync(roomId)).ReturnsAsync(new Room());
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => 
+                _conferenceStepService.UpdateConferenceSessionAsync("sess1", request, "user1"));
+            Assert.Contains("bị trùng lặp", ex.Message);
+        }
 
-            // HÀNH ĐỘNG & KHẲNG ĐỊNH (ACT & ASSERT)
-            var ex = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceStepService.UpdateConferenceSessionAsync(sessionId, request, userId)
-            );
-            ex.Message.Should().Contain("bị trùng lặp với một phiên đã có");
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_ExternalHosted_ForcesRoomIdNull_Success()
+        {
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                CreatedBy = "user1",
+                IsInternalHosted = false,
+                ConferenceStatusId = "draft", // Not preparing to pass EnsureConferenceIsEditable
+                StartDate = DateOnly.FromDateTime(DateTime.Now),
+                EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1))
+            };
+            var session = new ConferenceSession 
+            { 
+                ConferenceSessionId = "sess1", 
+                ConferenceId = "conf1",
+                RoomId = "someRoom", // Should be cleared
+                SessionDate = DateOnly.FromDateTime(DateTime.Now),
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now.AddHours(1)
+            };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
+
+            var request = new UpdateConferenceSessionRequest { RoomId = "newRoom" }; // Requesting a room
+
+            await _conferenceStepService.UpdateConferenceSessionAsync("sess1", request, "user1");
+
+            _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.UpdateConferenceSessionAsync(
+                It.Is<ConferenceSession>(s => s.RoomId == null)), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_InternalHosted_UpdatesSuccessfully()
+        {
+            var date = DateOnly.FromDateTime(DateTime.Now);
+            var conf = new Conference 
+            { 
+                ConferenceId = "conf1", 
+                CreatedBy = "user1",
+                IsInternalHosted = true,
+                ConferenceStatusId = "preparing",
+                StartDate = date,
+                EndDate = date.AddDays(1)
+            };
+            var session = new ConferenceSession 
+            { 
+                ConferenceSessionId = "sess1", 
+                ConferenceId = "conf1",
+                RoomId = "room1",
+                SessionDate = date,
+                StartTime = date.ToDateTime(new TimeOnly(10, 0)),
+                EndTime = date.ToDateTime(new TimeOnly(11, 0))
+            };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
+            _mockUnitOfWork.Setup(u => u.RoomRepository.GetRoomByIdAsync("room2")).ReturnsAsync(new Room { RoomId = "room2" });
+
+            var request = new UpdateConferenceSessionRequest 
+            { 
+                RoomId = "room2",
+                Title = "New Title",
+                StartTime = new TimeOnly(12, 0),
+                EndTime = new TimeOnly(13, 0)
+            };
+
+            var result = await _conferenceStepService.UpdateConferenceSessionAsync("sess1", request, "user1");
+
+            _mockUnitOfWork.Verify(u => u.ConferenceSessionRepository.UpdateConferenceSessionAsync(
+                It.Is<ConferenceSession>(s => 
+                    s.RoomId == "room2" && 
+                    s.Title == "New Title" &&
+                    s.StartTime.Value.Hour == 12
+                )), Times.Once);
+        }
+        
+        [Fact]
+        public async Task UpdateConferenceSessionAsync_ShortDuration_ThrowsBadRequestException()
+        {
+            var date = DateOnly.FromDateTime(DateTime.Now);
+            var conf = new Conference { ConferenceId = "conf1", CreatedBy = "user1", IsInternalHosted = true, ConferenceStatusId = "draft", StartDate = date, EndDate = date };
+            var session = new ConferenceSession { ConferenceSessionId = "sess1", ConferenceId = "conf1", RoomId = "room1", SessionDate = date, StartTime = date.ToDateTime(new TimeOnly(10,0)), EndTime = date.ToDateTime(new TimeOnly(11,0)) };
+            SetupMocks("sess1", "conf1", "user1", session, conf);
+            _mockUnitOfWork.Setup(u => u.RoomRepository.GetRoomByIdAsync("room1")).ReturnsAsync(new Room());
+
+            var request = new UpdateConferenceSessionRequest 
+            { 
+                StartTime = new TimeOnly(10, 0),
+                EndTime = new TimeOnly(10, 15) // 15 mins
+            };
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => _conferenceStepService.UpdateConferenceSessionAsync("sess1", request, "user1"));
+            Assert.Contains("ít nhất 30 phút", ex.Message);
         }
     }
 }
