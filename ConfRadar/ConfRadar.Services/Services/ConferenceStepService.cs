@@ -1130,7 +1130,7 @@ namespace ConfRadar.Services.Services
                 throw new NotFoundException("Không tìm thấy hội nghị gốc liên quan đến loại vé này.");
 
             if (conference.CreatedBy != userId)
-                throw new ForbiddenException("Bạn không có quyền cập nhật loại vé này.");
+                throw new Exception("Bạn không có quyền cập nhật loại vé này.");
 
             await EnsureConferenceIsEditable(conference, true);
 
