@@ -2691,8 +2691,6 @@ namespace ConfRadar.Services.Services
             if (conference.IsResearchConference != true)
                 throw new BadRequestException("Chức năng này chỉ dành cho hội nghị nghiên cứu.");
 
-            if (request.ApplyPercent < 0 || request.ApplyPercent > 100)
-                throw new Exception("Apply percent phải trong khoảng 0-100");
 
             // Kiểm tra trạng thái đặc biệt: Cho phép khi Preparing, Ready, hoặc OnHold
             var currentStatus = await _unitOfWork.ConferenceStatusRepository.GetConferenceStatusByIdAsync(conference.ConferenceStatusId);
@@ -2819,17 +2817,18 @@ namespace ConfRadar.Services.Services
                 foreach (var priceId in request.AuthorConferencePriceIds)
                 {
                     var conferencePrice = await _unitOfWork.ConferencePriceRepository.GetConferencePriceByIdAsync(priceId);
-                    string phaseName = !string.IsNullOrEmpty(request.PhaseName) ? request.PhaseName : $"Bán vé Giai đoạn {newPhaseOrder}";
+                    string safeTicketName = conferencePrice.TicketName ?? "Vé tham dự";
+                    string phaseName = $"Chi phí tham dự cho {safeTicketName} - Giai đoạn {newPhaseOrder}";
 
                     var newPricePhase = new PricePhase
                     {
                         PricePhaseId = Guid.NewGuid().ToString(),
                         ConferencePriceId = priceId,
                         ResearchConferencePhaseId = newPhaseModel.ResearchConferencePhaseId,
-                        PhaseName = phaseName, // Tên tự động
+                        PhaseName = phaseName, // Tên tự động có thể hiện giai đoạn
                         StartDate = newPhaseModel.AuthorPaymentStart,
                         EndDate = newPhaseModel.AuthorPaymentEnd,
-                        ApplyPercent = request.ApplyPercent, // Giả định không giảm giá
+                        ApplyPercent = 100, // Apply percent cho isAuthor sẽ luôn bằng 100
                         TotalSlot = conferencePrice.AvailableSlot, // Gán toàn bộ số vé còn lại
                         AvailableSlot = conferencePrice.AvailableSlot
                     };
