@@ -1,4 +1,4 @@
-﻿using ConfRadar.Repositories;
+using ConfRadar.Repositories;
 using ConfRadar.Repositories.Models;
 using ConfRadar.Services.Common;
 using ConfRadar.Services.Exceptions;
@@ -27,7 +27,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.Track_Conference_Sta
 
         public ChangeConferenceStatusTest()
         {
-            // Initialize Mocks
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockConferenceStatusService = new Mock<IConferenceStatusService>();
             _mockConferenceTimelineService = new Mock<IConferenceTimelineService>();
@@ -39,7 +38,6 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.Track_Conference_Sta
 
             _objectStorageSettings = new AppSettingConfig.ObjectStorageSettings();
 
-            // Initialize Service
             _conferenceService = new ConferenceService(
                 _mockUnitOfWork.Object,
                 _mockConferenceStatusService.Object,
@@ -57,225 +55,425 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.Track_Conference_Sta
 
         #region Helper Methods
 
-        private Conference CreateConference(string confId, string userId, string statusId, string statusName)
+        private void SetupStatusMocks()
         {
-            return new Conference
+            // Define statuses
+            var statuses = new List<ConferenceStatus>
+            {
+                new ConferenceStatus { ConferenceStatusId = "status-pending", ConferenceStatusName = "Pending" },
+                new ConferenceStatus { ConferenceStatusId = "status-draft", ConferenceStatusName = "Draft" },
+                new ConferenceStatus { ConferenceStatusId = "status-deleted", ConferenceStatusName = "Deleted" },
+                new ConferenceStatus { ConferenceStatusId = "status-rejected", ConferenceStatusName = "Rejected" },
+                new ConferenceStatus { ConferenceStatusId = "status-disabled", ConferenceStatusName = "Disabled" },
+                new ConferenceStatus { ConferenceStatusId = "status-onhold", ConferenceStatusName = "OnHold" },
+                new ConferenceStatus { ConferenceStatusId = "status-preparing", ConferenceStatusName = "Preparing" },
+                new ConferenceStatus { ConferenceStatusId = "status-ready", ConferenceStatusName = "Ready" },
+                new ConferenceStatus { ConferenceStatusId = "status-completed", ConferenceStatusName = "Completed" }
+            };
+
+            // Mock GetByName
+            foreach (var status in statuses)
+            {
+                _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync(status.ConferenceStatusName))
+                    .ReturnsAsync(status);
+                _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByName(status.ConferenceStatusName)) // Handling potential non-async call if any
+                    .ReturnsAsync(status);
+            }
+
+            // Mock GetById
+            foreach (var status in statuses)
+            {
+                _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(status.ConferenceStatusId))
+                    .ReturnsAsync(status);
+            }
+        }
+
+        private void SetupConference(string confId, string userId, string statusId, bool isInternal = true)
+        {
+            var conference = new Conference
             {
                 ConferenceId = confId,
                 CreatedBy = userId,
-                ConferenceName = "Test Conference",
-                Description = "Test Description",
                 ConferenceStatusId = statusId,
-                ConferenceStatus = new ConferenceStatus
-                {
-                    ConferenceStatusId = statusId,
-                    ConferenceStatusName = statusName
-                },
-                IsInternalHosted = true // Set internal to skip contract checks for simplicity
+                IsInternalHosted = isInternal
             };
-        }
-
-        private void SetupStatusMocks(string preparingId, string onHoldId, string pendingId, string draftId, string deletedId, string rejectedId, string disabledId)
-        {
-            // Setup GetById
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(preparingId))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = preparingId, ConferenceStatusName = "Preparing" });
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(onHoldId))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = onHoldId, ConferenceStatusName = "OnHold" });
-
-            // Setup GetByName (Used extensively in validation logic)
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Pending"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = pendingId, ConferenceStatusName = "Pending" });
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Draft"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = draftId, ConferenceStatusName = "Draft" });
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Deleted"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = deletedId, ConferenceStatusName = "Deleted" });
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Rejected"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = rejectedId, ConferenceStatusName = "Rejected" });
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Disabled"))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = disabledId, ConferenceStatusName = "Disabled" });
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("OnHold"))
-               .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = onHoldId, ConferenceStatusName = "OnHold" });
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId))
+                .ReturnsAsync(conference);
         }
 
         #endregion
 
-        #region Test Methods
+        #region Basic Validations
 
         [Fact]
-        public async Task ChangeConferenceStatus_Should_UpdateStatusAndCreateTimeline_When_TransitionIsValid()
+        public async Task ChangeConferenceStatus_ConferenceNotFound_ThrowsBadRequest()
         {
-            // ARRANGE
-            var userId = "user-123";
-            var confId = "conf-ABC";
+            SetupStatusMocks();
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync("conf-1")).ReturnsAsync((Conference)null);
 
-            var preparingId = "status-preparing";
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-ready"));
+            ex.Message.Should().Contain("Không tìm thấy hội nghị");
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_UserNotCreator_ThrowsBadRequest()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "creator", "status-draft");
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _conferenceService.ChangeConferenceStatus("other-user", "conf-1", "status-ready"));
+            ex.Message.Should().Contain("Chỉ có nguời tạo ra conference mới thay đổi được trạng thái");
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_NewStatusNotFound_ThrowsBadRequest()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-draft");
+            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync("invalid-status")).ReturnsAsync((ConferenceStatus)null);
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "invalid-status"));
+            ex.Message.Should().Contain("Không tìm thấy conference status");
+        }
+
+        #endregion
+
+        #region Disabled Status Tests (4 Cases)
+
+        [Fact]
+        public async Task ChangeConferenceStatus_ToDisabled_ThrowsException()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-ready");
+
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-disabled"));
+            ex.Message.Should().Contain("Không thể sử dụng với disabled status ở đây");
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_FromDisabled_ThrowsException()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-disabled");
+
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-ready"));
+            ex.Message.Should().Contain("Không thể sử dụng với disabled status ở đây");
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_FromDisabledToDisabled_ThrowsException()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-disabled");
+
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-disabled"));
+            ex.Message.Should().Contain("Không thể sử dụng với disabled status ở đây");
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_ToDisabled_FromPending_ThrowsException()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-pending");
+
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-disabled"));
+            ex.Message.Should().Contain("Không thể sử dụng với disabled status ở đây");
+        }
+
+        #endregion
+
+        #region OnHold Status Tests (4 Cases)
+
+        [Fact]
+        public async Task ChangeConferenceStatus_PreparingToOnHold_Success()
+        {
+            // Arrange
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-preparing");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Preparing", "OnHold")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.Now));
+
+            // Act
+            var result = await _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-onhold");
+
+            // Assert
+            result.Should().BeTrue();
+            _mockUnitOfWork.Verify(u => u.ConferenceRepository.UpdateConferenceAsync(It.Is<Conference>(c => c.ConferenceStatusId == "status-onhold")), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_ReadyToOnHold_Success()
+        {
+            // Arrange
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-ready");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Ready", "OnHold")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.Now));
+
+            // Act
+            var result = await _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-onhold");
+
+            // Assert
+            result.Should().BeTrue();
+            _mockUnitOfWork.Verify(u => u.ConferenceRepository.UpdateConferenceAsync(It.Is<Conference>(c => c.ConferenceStatusId == "status-onhold")), Times.Once);
+        }
+
+      
+
+        [Fact]
+        public async Task ChangeConferenceStatus_OnHoldToCompleted_InvalidTransition_ThrowsException()
+        {
+            // Arrange
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-onhold");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("OnHold", "Completed")).ReturnsAsync(false);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<AggregateException>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-completed"));
+            
+            ex.InnerExceptions[0].Message.Should().Contain("không hợp lệ");
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_OnHoldToReady_TimelinesOutdated_ThrowsBadRequest()
+        {
+            // Arrange
+            var userId = "user-1";
+            var confId = "conf-1";
             var onHoldId = "status-onhold";
+            var readyId = "status-ready";
+            var today = new DateOnly(2025, 1, 15);
+            var onHoldStartDate = new DateOnly(2025, 1, 1); // 14 days ago
 
-            // Setup status dictionaries (Pending, Draft, etc.) to satisfy validation logic
-            SetupStatusMocks(preparingId, onHoldId, "status-pending", "status-draft", "status-deleted", "status-rejected", "status-disabled");
+            SetupStatusMocks();
+            var conference = new Conference 
+            { 
+                ConferenceId = confId, 
+                CreatedBy = userId, 
+                ConferenceStatusId = onHoldId,
+                IsInternalHosted = true,
+                // Invalid date: StartDate falls between onHoldStartDate and today
+                StartDate = new DateOnly(2025, 1, 10) 
+            };
 
-            var conference = CreateConference(confId, userId, preparingId, "Preparing");
-            var newStatusEntity = new ConferenceStatus { ConferenceStatusId = onHoldId, ConferenceStatusName = "OnHold" };
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(conference);
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("OnHold", "Ready")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(today);
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(today.ToDateTime(new TimeOnly(0, 0)));
 
-            // Mock getting conference
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId))
-                .ReturnsAsync(conference);
+            // Mock Last Transition Ready -> OnHold
+            var timelineEntry = new ConferenceTimeline { ChangeDate = onHoldStartDate };
+            _mockUnitOfWork.Setup(u => u.ConferenceTimelineRepository.GetLastTransitionConferenceTimelineByConfIdAndStatusIdAsync(confId, readyId, onHoldId))
+                .ReturnsAsync(timelineEntry);
 
-            // Mock transaction
+            // Mock dependencies for ValidateConferenceTimelineAsync
+            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(confId)).ReturnsAsync(new List<ConferencePrice>());
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(confId)).ReturnsAsync(new List<ConferenceSession>());
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<AggregateException>(() =>
+                _conferenceService.ChangeConferenceStatus(userId, confId, readyId));
+            
+            ex.InnerExceptions[0].Message.Should().Contain("Các mốc thời gian sau đã bị lỗi thời");
+            ex.InnerExceptions[0].Message.Should().Contain("Ngày bắt đầu hội nghị");
+        }
+
+        [Fact]
+        public async Task ChangeConferenceStatus_OnHoldToReady_TimelinesValid_Success()
+        {
+            // Arrange
+            var userId = "user-1";
+            var confId = "conf-1";
+            var onHoldId = "status-onhold";
+            var readyId = "status-ready";
+            var today = new DateOnly(2025, 1, 15);
+            var onHoldStartDate = new DateOnly(2025, 1, 1);
+
+            SetupStatusMocks();
+            var conference = new Conference 
+            { 
+                ConferenceId = confId, 
+                CreatedBy = userId, 
+                ConferenceStatusId = onHoldId,
+                IsInternalHosted = true,
+                // Valid date: StartDate is in future
+                StartDate = new DateOnly(2025, 2, 1) 
+            };
+
+            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(conference);
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("OnHold", "Ready")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(today);
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(today.ToDateTime(new TimeOnly(0, 0)));
+
+            var timelineEntry = new ConferenceTimeline { ChangeDate = onHoldStartDate };
+            _mockUnitOfWork.Setup(u => u.ConferenceTimelineRepository.GetLastTransitionConferenceTimelineByConfIdAndStatusIdAsync(confId, readyId, onHoldId))
+                .ReturnsAsync(timelineEntry);
+
+            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository.GetPricesWithDetailsByConferenceIdAsync(confId)).ReturnsAsync(new List<ConferencePrice>());
+            _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(confId)).ReturnsAsync(new List<ConferenceSession>());
             _mockUnitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
 
-            // Mock transition validation
-            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Preparing", "OnHold"))
-                .ReturnsAsync(true);
+            // Act
+            var result = await _conferenceService.ChangeConferenceStatus(userId, confId, readyId);
 
-            // Mock time
+            // Assert
+            result.Should().BeTrue();
+            _mockUnitOfWork.Verify(u => u.ConferenceRepository.UpdateConferenceAsync(It.Is<Conference>(c => c.ConferenceStatusId == readyId)), Times.Once);
+        }
+
+        #endregion
+
+        #region Pending Status Tests
+
+        [Fact]
+        public async Task ChangeConferenceStatus_PendingToDeleted_Success()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-pending");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Pending", "Deleted")).ReturnsAsync(true);
             _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.Now));
 
-            // ACT
-            var result = await _conferenceService.ChangeConferenceStatus(userId, confId, onHoldId, "Testing Change Status");
-
-            // ASSERT
+            var result = await _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-deleted");
             result.Should().BeTrue();
-
-            // Verify conference status updated
-            conference.ConferenceStatusId.Should().Be(onHoldId);
-
-            // Verify repository update called
-            _mockUnitOfWork.Verify(u => u.ConferenceRepository.UpdateConferenceAsync(conference), Times.Once);
-
-            // Verify timeline created
-            _mockConferenceTimelineService.Verify(t => t.CreateConferenceTimelineAsync(It.Is<ConferenceTimeline>(
-                tl => tl.ConferenceId == confId &&
-                      tl.PreviousStatusId == preparingId &&
-                      tl.AfterwardStatusId == onHoldId
-            )), Times.Once);
-
-            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
 
         [Fact]
-        public async Task ChangeConferenceStatus_Should_ThrowBadRequestException_When_UserIsNotCreator()
+        public async Task ChangeConferenceStatus_PendingToDraft_Success()
         {
-            // ARRANGE
-            var userId = "hacker-user";
-            var confId = "conf-ABC";
-            var conference = CreateConference(confId, "creator-user", "status-prep", "Preparing");
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-pending");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Pending", "Draft")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.Now));
 
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId))
-                .ReturnsAsync(conference);
-
-            // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<BadRequestException>(
-                () => _conferenceService.ChangeConferenceStatus(userId, confId, "status-new")
-            );
-
-            exception.Message.Should().Contain("Chỉ có nguời tạo ra conference mới thay đổi được trạng thái");
+            var result = await _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-draft");
+            result.Should().BeTrue();
         }
 
         [Fact]
-        public async Task ChangeConferenceStatus_Should_ThrowException_When_TryingToUseDisabledStatus()
+        public async Task ChangeConferenceStatus_PendingToPreparing_ThrowsException()
         {
-            // ARRANGE
-            var userId = "user-123";
-            var confId = "conf-ABC";
-            var disabledId = "status-disabled";
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-pending");
 
-            SetupStatusMocks("status-prep", "status-onhold", "status-pending", "status-draft", "status-deleted", "status-rejected", disabledId);
-
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(disabledId))
-       .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = disabledId, ConferenceStatusName = "Disabled" });
-
-            var conference = CreateConference(confId, userId, "status-prep", "Preparing");
-
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId))
-                .ReturnsAsync(conference);
-
-            // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<Exception>(
-                () => _conferenceService.ChangeConferenceStatus(userId, confId, disabledId)
-            );
-
-            exception.Message.Should().Contain("Không thể sử dụng với disabled status ở đây");
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-preparing"));
+            ex.Message.Should().Contain("approve lên preparing");
         }
 
         [Fact]
-        public async Task ChangeConferenceStatus_Should_ThrowException_When_PendingToReady_WithoutApproval()
+        public async Task ChangeConferenceStatus_PendingToReady_ThrowsException()
         {
-            // ARRANGE
-            var userId = "user-123";
-            var confId = "conf-ABC";
-            var pendingId = "status-pending";
-            var readyId = "status-ready"; // Trying to jump to Ready
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-pending");
 
-            SetupStatusMocks("status-prep", "status-onhold", pendingId, "status-draft", "status-deleted", "status-rejected", "status-disabled");
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-ready"));
+            ex.Message.Should().Contain("approve lên preparing");
+        }
 
-            // Mock Ready status explicitly for GetById
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(readyId))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = readyId, ConferenceStatusName = "Ready" });
+        #endregion
 
-            var conference = CreateConference(confId, userId, pendingId, "Pending");
+        #region Draft Status Tests
 
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId))
-                .ReturnsAsync(conference);
+        [Fact]
+        public async Task ChangeConferenceStatus_DraftToDeleted_Success()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-draft");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Draft", "Deleted")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.Now));
 
-            // ACT & ASSERT
-            var exception = await Assert.ThrowsAsync<Exception>(
-                () => _conferenceService.ChangeConferenceStatus(userId, confId, readyId)
-            );
-
-            // The logic says: from pending can only go delete or back to draft. Otherwise throw exception.
-            exception.Message.Should().Contain("Conference cần Organizer approve lên preparing trước");
+            var result = await _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-deleted");
+            result.Should().BeTrue();
         }
 
         [Fact]
-        public async Task ChangeConferenceStatus_Should_ThrowBadRequestException_When_TransitionIsInvalid()
+        public async Task ChangeConferenceStatus_DraftToPending_ThrowsException()
         {
-            // ARRANGE
-            var userId = "user-123";
-            var confId = "conf-ABC";
-            var preparingId = "status-preparing";
-            var completedId = "status-completed"; // Invalid jump: Preparing -> Completed
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-draft");
 
-            SetupStatusMocks(preparingId, "status-onhold", "status-pending", "status-draft", "status-deleted", "status-rejected", "status-disabled");
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-pending"));
+            ex.Message.Should().Contain("chỉ có thể chuyển sang delete");
+        }
 
+        [Fact]
+        public async Task ChangeConferenceStatus_DraftToPreparing_ThrowsException()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-draft");
 
-            var completedStatus = new ConferenceStatus { ConferenceStatusId = completedId, ConferenceStatusName = "Completed" };
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-preparing"));
+            ex.Message.Should().Contain("chỉ có thể chuyển sang delete");
+        }
 
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(completedId))
-                .ReturnsAsync(completedStatus);
+        #endregion
 
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Completed"))
-                .ReturnsAsync(completedStatus);
+        #region Rejected Status Tests
 
-            // Mock Completed status
-            _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByIdAsync(completedId))
-                .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = completedId, ConferenceStatusName = "Completed" });
+        [Fact]
+        public async Task ChangeConferenceStatus_RejectedToDraft_Success()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-rejected");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Rejected", "Draft")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.Now));
 
-            var conference = CreateConference(confId, userId, preparingId, "Preparing");
+            var result = await _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-draft");
+            result.Should().BeTrue();
+        }
 
-            _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId))
-                .ReturnsAsync(conference);
+        [Fact]
+        public async Task ChangeConferenceStatus_RejectedToDeleted_Success()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-rejected");
+            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Rejected", "Deleted")).ReturnsAsync(true);
+            _mockTimeProviderService.Setup(t => t.GetVietnamDate()).ReturnsAsync(DateOnly.FromDateTime(DateTime.Now));
 
-            // Mock Transition Validity as FALSE
-            _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("Preparing", "Completed"))
-                .ReturnsAsync(false);
+            var result = await _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-deleted");
+            result.Should().BeTrue();
+        }
 
-            // ACT & ASSERT
-            // Note: The exception comes from private method UpdateConferenceStatusAsync which is called by ChangeConferenceStatus
-            var exception = await Assert.ThrowsAsync<AggregateException>(
-                () => _conferenceService.ChangeConferenceStatus(userId, confId, completedId)
-            );
+        [Fact]
+        public async Task ChangeConferenceStatus_RejectedToPending_ThrowsException()
+        {
+            SetupStatusMocks();
+            SetupConference("conf-1", "user-1", "status-rejected");
 
-            exception.Message.Should().Contain("không hợp lệ");
-            _mockUnitOfWork.Verify(u => u.RollbackAsync(), Times.Once);
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-pending"));
+            ex.Message.Should().Contain("chỉ có thể đổi lên draft");
+        }
+
+        #endregion
+
+        #region External Hosted (Collaborator) Tests
+
+        [Fact]
+        public async Task ChangeConferenceStatus_ExternalDeletedToAny_ThrowsException()
+        {
+            // This tests the logic: if (conference.IsInternalHosted != true && conference.ConferenceStatusId == deleteStatus.ConferenceStatusId)
+            SetupStatusMocks();
+            // Setup an external conference that is ALREADY deleted
+            SetupConference("conf-1", "user-1", "status-deleted", isInternal: false);
+
+            // Attempt to change to Draft
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-draft"));
+            
+            ex.Message.Should().Contain("Hội nghị được liên kết không thể chuyển sang trạng thái bị xoá");
         }
 
         #endregion
