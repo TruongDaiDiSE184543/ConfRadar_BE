@@ -442,7 +442,7 @@ namespace ConfRadar.Services.Services
                             subject, basePaper.PaperId, coAuthorListName, submissionDate, request.Reason,
                             basePaper.ResearchConferencePhase.FullPaperStartDate.ToString(),
                             basePaper.ResearchConferencePhase.FullPaperEndDate.ToString(),
-                            "Giai đoạn fullPaper", "EmailDecideAcceptedStatus.html");
+                            "Giai đoạn fullPaper", "EmailDecideAcceptedStatus.html", basePaper.Title);
                         break;
                     case GlobalStatusEnum.Rejected:
                         abstractPaper.GlobalStatusId = rejectedGlobalStatus.GlobalStatusId;
@@ -456,7 +456,8 @@ namespace ConfRadar.Services.Services
                          coAuthorListName,
                          submissionDate,
                          request.Reason,
-                         "EmailDecideRejectedStatus.html"
+                         "EmailDecideRejectedStatus.html",
+                          basePaper.Title
 );
 
                         notiMessage = $"Bài báo với id {basePaper.PaperId} tựa đề {basePaper.Title} của bạn đã bị từ chối ở phase abstract vào lúc {timeNow.ToString()}";
@@ -728,7 +729,9 @@ namespace ConfRadar.Services.Services
                 subject, paper.PaperId, coAuthorListName, submissionDate, request.Reason,
                 paper.ResearchConferencePhase.CameraReadyStartDate.ToString(),
                 paper.ResearchConferencePhase.CameraReadyEndDate.ToString(),
-                "Giai đoạn camera ready", "EmailDecideAcceptedStatus.html");
+                "Giai đoạn camera ready", "EmailDecideAcceptedStatus.html",
+                 paper.Title
+                );
 
 
 
@@ -750,7 +753,8 @@ namespace ConfRadar.Services.Services
                         coAuthorListName,
                         submissionDate,
                         request.Reason,
-                        "EmailDecideRejectedStatus.html");
+                        "EmailDecideRejectedStatus.html",
+                        paper.Title);
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase fullpaper vào lúc {timeNow.ToString()}";
 
                         break;
@@ -768,7 +772,8 @@ namespace ConfRadar.Services.Services
                 subject, paper.PaperId, coAuthorListName, submissionDate, request.Reason,
                 paper.ResearchConferencePhase.ReviseStartDate.ToString(),
                 paper.ResearchConferencePhase.ReviseEndDate.ToString(),
-                "Giai đoạn Revise", "EmailDecideAcceptedStatus.html");
+                "Giai đoạn Revise", "EmailDecideAcceptedStatus.html",
+                paper.Title);
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chuyển sang phase revise vào lúc {timeNow.ToString()}";
 
                         break;
@@ -1422,7 +1427,8 @@ namespace ConfRadar.Services.Services
                  subject, paper.PaperId, coAuthorListName, submissionDate, request.Reason,
                 paper.ResearchConferencePhase.CameraReadyStartDate.ToString(),
                 paper.ResearchConferencePhase.CameraReadyEndDate.ToString(),
-    "Giai đoạn Camera Ready", "EmailDecideAcceptedStatus.html");
+    "Giai đoạn Camera Ready", "EmailDecideAcceptedStatus.html",
+    paper.Title);
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã được chấp nhận trong phase camera ready vào lúc {timeNow.ToString()}";
 
 
@@ -1441,7 +1447,8 @@ namespace ConfRadar.Services.Services
                          coAuthorListName,
                          submissionDate,
                          request.Reason,
-                         "EmailDecideRejectedStatus.html");
+                         "EmailDecideRejectedStatus.html",
+                         paper.Title);
                         notiMessage = $"Bài báo với id {paper.PaperId} tựa đề {paper.Title} của bạn đã bị từ chối trong phase camera ready vào lúc {timeNow.ToString()}";
 
                         break;

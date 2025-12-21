@@ -42,6 +42,13 @@ namespace ConfRadar.Api.Controllers
             return Ok(ApiResponse<int>.SuccessResponse(user, "Tổng số người "));
         }
         [Authorize]
+        [HttpGet("total-unresolve-reports")]
+        public async Task<IActionResult> GetTotalUnResolveReport()
+        {
+            var reports = await _serviceManager.AuditLogService.CountUnResolveReport();
+            return Ok(ApiResponse<int>.SuccessResponse(reports, "Tổng số báo cáo cần giải quyết "));
+        }
+        [Authorize]
         [HttpGet("list-recent-audit")]
         public async Task<IActionResult> GetRecentAudits([FromQuery] int? row)
         {

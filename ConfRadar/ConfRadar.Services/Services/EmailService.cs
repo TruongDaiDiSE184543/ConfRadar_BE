@@ -13,8 +13,8 @@ namespace ConfRadar.Services.Services
         Task SendCreateAccountEmail(string toEmail, string userName, string link, string subject, string templateFileName);
         Task SendSuspendTemplateEmailAsync(string toEmail, string userName, string reason, string subject, string templateFileName);
         Task SendDecidePaperAcceptedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string
-            nextPhaseStartDate, string nextPhaseEndDate, string nextPhaseDescription, string templateFileName);
-        Task SendDecidePaperRejectedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string templateFileName);
+            nextPhaseStartDate, string nextPhaseEndDate, string nextPhaseDescription, string templateFileName, string paperTitle);
+        Task SendDecidePaperRejectedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string templateFileName, string paperTitle);
     }
     public class SmtpEmailService : IEmailService
     {
@@ -98,7 +98,7 @@ namespace ConfRadar.Services.Services
             await SendEmailAsync(toEmail, subject, body);
         }
 
-        public async Task SendDecidePaperAcceptedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string nextPhaseStartDate, string nextPhaseEndDate, string nextPhaseDescription, string templateFileName)
+        public async Task SendDecidePaperAcceptedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string nextPhaseStartDate, string nextPhaseEndDate, string nextPhaseDescription, string templateFileName,string paperTitle)
         {
             var replacements = new Dictionary<string, string>
     {
@@ -109,7 +109,9 @@ namespace ConfRadar.Services.Services
         { "{{Reason}}", decideReason },
         { "{{NextPhaseStartDate}}", nextPhaseStartDate },
         { "{{NextPhaseEndDate}}", nextPhaseEndDate },
-        { "{{NextPhaseDescription}}", nextPhaseDescription }
+        { "{{NextPhaseDescription}}", nextPhaseDescription },
+        { "{{PaperTitle}}", paperTitle },
+
     };
 
             var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", templateFileName);
@@ -118,7 +120,7 @@ namespace ConfRadar.Services.Services
             await SendEmailAsync(toEmail, subject, body);
         }
 
-        public async Task SendDecidePaperRejectedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string templateFileName)
+        public async Task SendDecidePaperRejectedTemplateEmailAsync(string toEmail, string userName, string subject, string paperId, string coAuthor, string submissionDate, string decideReason, string templateFileName,string paperTitle)
         {
             var replacements = new Dictionary<string, string>
     {
@@ -126,7 +128,9 @@ namespace ConfRadar.Services.Services
         { "{{PaperId}}", paperId },
         { "{{CoAuthor}}", coAuthor },
         { "{{SubmissionDate}}", submissionDate },
-        { "{{Reason}}", decideReason }
+        { "{{Reason}}", decideReason },
+        { "{{PaperTitle}}", paperTitle },
+
     };
 
             var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", templateFileName);
