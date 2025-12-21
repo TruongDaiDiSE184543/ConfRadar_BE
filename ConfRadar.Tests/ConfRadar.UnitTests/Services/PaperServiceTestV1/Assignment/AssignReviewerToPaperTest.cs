@@ -1,208 +1,171 @@
-﻿//using ConfRadar.Repositories;
-//using ConfRadar.Repositories.Models;
-//using ConfRadar.Services.DTOs.Paper;
-//using ConfRadar.Services.Exceptions;
-//using ConfRadar.Services.Services;
-//using Moq;
+using ConfRadar.Repositories;
+using ConfRadar.Repositories.Models;
+using ConfRadar.Services.DTOs.Paper;
+using ConfRadar.Services.Exceptions;
+using ConfRadar.Services.Services;
+using Moq;
+using Xunit;
 
-//namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.Assignment
-//{
-//    public class AssignReviewerToPaperTest
-//    {
-//        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-//        private readonly Mock<ITimeProviderService> _mockTimeProviderService;
-//        private readonly Mock<INotificationService> _mockNotificationService;
-//        private readonly PaperAssignmentService _service;
+namespace ConfRadar.UnitTests.Services.PaperServiceTestV1.Assignment
+{
+    public class AssignReviewerToPaperTest : PaperAssignmentService
+    {
+        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+        private readonly Mock<ITimeProviderService> _mockTimeProviderService;
+        private readonly Mock<INotificationService> _mockNotificationService;
 
-//        public AssignReviewerToPaperTest()
-//        {
-//            _mockUnitOfWork = new Mock<IUnitOfWork>();
-//            _mockTimeProviderService = new Mock<ITimeProviderService>();
-//            _mockNotificationService = new Mock<INotificationService>();
+        public AssignReviewerToPaperTest() : this(new Mock<IUnitOfWork>(), new Mock<ITimeProviderService>(), new Mock<INotificationService>())
+        {
+        }
 
-//            _service = new PaperAssignmentService(
-//                _mockUnitOfWork.Object,
-//                _mockTimeProviderService.Object,
-//                _mockNotificationService.Object
-//            );
-//        }
+        private AssignReviewerToPaperTest(Mock<IUnitOfWork> mockUow, Mock<ITimeProviderService> mockTp, Mock<INotificationService> mockNs)
+            : base(mockUow.Object, mockTp.Object, mockNs.Object)
+        {
+            _mockUnitOfWork = mockUow;
+            _mockTimeProviderService = mockTp;
+            _mockNotificationService = mockNs;
+        }
 
-//        [Fact]
-//        public async Task AssignReviewerToPaper_ShouldThrow_WhenUserNotFound()
-//        {
-//            var request = new AssignReviewerToPaperRequest { UserId = "U1", PaperId = "P1" };
-//            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//                .ReturnsAsync((User)null);
+        [Fact]
+        public async Task AssignReviewersToPaper_ShouldThrow_WhenNoHeadReviewer()
+        {
+            var request = new AssignReviewerToPaperRequest
+            {
+                PaperId = "P1",
+                Reviewers = new List<ReviewerAssignment>
+                {
+                    new ReviewerAssignment { UserId = "U1", IsHeadReviewer = false }
+                }
+            };
 
-//            await Assert.ThrowsAsync<BadRequestException>(() => _service.AssignReviewersToPaper(request));
-//        }
+            await Assert.ThrowsAsync<BadRequestException>(() => this.AssignReviewersToPaper(request));
+        }
 
-//        //[Fact]
-//        //public async Task AssignReviewerToPaper_ShouldThrow_WhenPaperNotFound()
-//        //{
-//        //    var request = new AssignReviewerToPaperRequest { Reviewers = List<>{Reviewer }, PaperId = "P1" };
-//        //    _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//        //        .ReturnsAsync(new User { UserId = "U1" });
-//        //    _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
-//        //        .ReturnsAsync((Paper)null);
+        [Fact]
+        public async Task AssignReviewersToPaper_ShouldThrow_WhenPaperNotFound()
+        {
+            var request = new AssignReviewerToPaperRequest
+            {
+                PaperId = "P1",
+                Reviewers = new List<ReviewerAssignment>
+                {
+                    new ReviewerAssignment { UserId = "U1", IsHeadReviewer = true }
+                }
+            };
 
-//        //    await Assert.ThrowsAsync<BadRequestException>(() => _service.AssignReviewerToPaper(request));
-//        //}
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
+                .ReturnsAsync((Paper)null);
 
-//        [Fact]
-//        public async Task AssignReviewerToPaper_ShouldThrow_WhenRolesNotExist()
-//        {
-//            var request = new AssignReviewerToPaperRequest { UserId = "U1", PaperId = "P1" };
-//            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//                .ReturnsAsync(new User { UserId = "U1" });
-//            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
-//                .ReturnsAsync(new Paper { PaperId = "P1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName(It.IsAny<string>()))
-//                .ReturnsAsync((Role)null);
+            await Assert.ThrowsAsync<BadRequestException>(() => this.AssignReviewersToPaper(request));
+        }
 
-//            await Assert.ThrowsAsync<BadRequestException>(() => _service.AssignReviewerToPaper(request));
-//        }
+        [Fact]
+        public async Task AssignReviewersToPaper_ShouldThrow_WhenUserIsAuthor()
+        {
+            var request = new AssignReviewerToPaperRequest
+            {
+                PaperId = "P1",
+                Reviewers = new List<ReviewerAssignment>
+                {
+                    new ReviewerAssignment { UserId = "U1", IsHeadReviewer = true }
+                }
+            };
 
-//        [Fact]
-//        public async Task AssignReviewerToPaper_ShouldThrow_WhenUserNotReviewerRole()
-//        {
-//            var request = new AssignReviewerToPaperRequest
-//            {
-//                UserId = "U1",
-//                PaperId = "P1",
-//                IsHeadReviewer = false
-//            };
+            var user = new User { UserId = "U1", FullName = "Author User" };
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
+                .ReturnsAsync(new Paper { PaperId = "P1" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
+                .ReturnsAsync(new Role { RoleId = "R1" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
+                .ReturnsAsync(new Role { RoleId = "R2" });
+            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
+                .ReturnsAsync(user);
 
-//            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//                .ReturnsAsync(new User { UserId = "U1" });
+            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
+                .ReturnsAsync(new PaperAuthor());
 
-//            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
-//                .ReturnsAsync(new Paper { PaperId = "P1" });
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => this.AssignReviewersToPaper(request));
+            Assert.Contains("là tác giả", ex.Message);
+        }
 
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R1", RoleName = "Local Reviewer" });
+        [Fact]
+        public async Task AssignReviewerToPaper_ShouldThrow_WhenUserNotReviewerRole()
+        {
+            var request = new AssignReviewerToPaperRequest
+            {
+                PaperId = "P1",
+                Reviewers = new List<ReviewerAssignment>
+                {
+                    new ReviewerAssignment { UserId = "U1", IsHeadReviewer = true }
+                }
+            };
 
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R2", RoleName = "External Reviewer" });
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
+                .ReturnsAsync(new Paper { PaperId = "P1" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
+                .ReturnsAsync(new Role { RoleId = "R1" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
+                .ReturnsAsync(new Role { RoleId = "R2" });
+            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
+                .ReturnsAsync(new User { UserId = "U1", FullName = "User" });
+            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
+                .ReturnsAsync((PaperAuthor)null);
+            _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId("U1"))
+                .ReturnsAsync(new List<UserRole>());
 
-//            // **CRITICAL FIX**: Mock PaperAuthorRepository để tránh NullReferenceException
-//            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
-//                .ReturnsAsync((PaperAuthor)null); // User không phải author
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() => this.AssignReviewersToPaper(request));
+            Assert.Contains("không có vai trò 'Local Reviewer' hoặc 'External Reviewer'", ex.Message);
+        }
 
-//            // User không có reviewer roles
-//            _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId("U1"))
-//                .ReturnsAsync(new List<UserRole>
-//                {
-//                    new UserRole { UserId = "U1", RoleId = "R_OTHER" } // Role khác
-//                });
+        [Fact]
+        public async Task AssignReviewersToPaper_ShouldReturnSuccess_WhenValid()
+        {
+            var request = new AssignReviewerToPaperRequest
+            {
+                PaperId = "P1",
+                Reviewers = new List<ReviewerAssignment>
+                {
+                    new ReviewerAssignment { UserId = "U1", IsHeadReviewer = true }
+                }
+            };
 
-//            // Act & Assert
-//            var exception = await Assert.ThrowsAsync<BadRequestException>(() =>
-//                _service.AssignReviewerToPaper(request));
+            var user = new User
+            {
+                UserId = "U1",
+                FullName = "Reviewer User",
+                FirebaseMobileFcmToken = "token1",
+                FirebaseWebFcmToken = "token2"
+            };
+            var paper = new Paper { PaperId = "P1", Title = "Paper 1", ConferenceId = "C1" };
 
-//            Assert.Contains("does not have Local Reviewer or External Reviewer role", exception.Message);
-//        }
+            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
+                .ReturnsAsync(paper);
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
+                .ReturnsAsync(new Role { RoleId = "R1" });
+            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
+                .ReturnsAsync(new Role { RoleId = "R2" });
+            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
+                .ReturnsAsync(user);
+            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
+                .ReturnsAsync((PaperAuthor)null);
+            _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId("U1"))
+                .ReturnsAsync(new List<UserRole> { new UserRole { RoleId = "R1" } });
 
-//        [Fact]
-//        public async Task AssignReviewerToPaper_ShouldThrow_WhenUserIsAuthor()
-//        {
-//            var request = new AssignReviewerToPaperRequest { UserId = "U1", PaperId = "P1" };
-//            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//                .ReturnsAsync(new User { UserId = "U1" });
-//            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
-//                .ReturnsAsync(new Paper { PaperId = "P1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R2" });
-//            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
-//                .ReturnsAsync(new PaperAuthor()); // user is author
-//            _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId("U1"))
-//                .ReturnsAsync(new List<UserRole> { new UserRole { RoleId = "R1" } });
+            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAsync("P1"))
+                .ReturnsAsync(new List<PaperReviewer>());
+            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.DeleteMultiplePaperReviewersAsync(It.IsAny<List<PaperReviewer>>()))
+                .ReturnsAsync(0);
+            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.CreateMultiplePaperReviewersAsync(It.IsAny<List<PaperReviewer>>()))
+                .ReturnsAsync(1);
+            _mockUnitOfWork.Setup(u => u.NotificationRepository.CreateMutipleNotificationAsync(It.IsAny<List<Notification>>()))
+                .ReturnsAsync(1);
 
-//            await Assert.ThrowsAsync<BadRequestException>(() => _service.AssignReviewerToPaper(request));
-//        }
+            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(DateTime.UtcNow);
 
-//        [Fact]
-//        public async Task AssignReviewerToPaper_ShouldThrow_WhenUserAlreadyReviewer()
-//        {
-//            var request = new AssignReviewerToPaperRequest { UserId = "U1", PaperId = "P1" };
-//            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//                .ReturnsAsync(new User { UserId = "U1" });
-//            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
-//                .ReturnsAsync(new Paper { PaperId = "P1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R2" });
-//            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
-//                .ReturnsAsync((PaperAuthor)null);
-//            _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId("U1"))
-//                .ReturnsAsync(new List<UserRole> { new UserRole { RoleId = "R1" } });
-//            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync("U1", "P1"))
-//                .ReturnsAsync(new PaperReviewer()); // already reviewer
+            var result = await this.AssignReviewersToPaper(request);
 
-//            await Assert.ThrowsAsync<BadRequestException>(() => _service.AssignReviewerToPaper(request));
-//        }
-
-//        [Fact]
-//        public async Task AssignReviewerToPaper_ShouldThrow_WhenHeadReviewerExists()
-//        {
-//            var request = new AssignReviewerToPaperRequest { UserId = "U1", PaperId = "P1", IsHeadReviewer = true };
-//            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//                .ReturnsAsync(new User { UserId = "U1" });
-//            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
-//                .ReturnsAsync(new Paper { PaperId = "P1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R2" });
-//            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
-//                .ReturnsAsync((PaperAuthor)null);
-//            _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId("U1"))
-//                .ReturnsAsync(new List<UserRole> { new UserRole { RoleId = "R1" } });
-//            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync("U1", "P1"))
-//                .ReturnsAsync((PaperReviewer)null);
-//            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetHeadReviewersByPaperIdAsync("P1"))
-//                .ReturnsAsync(new List<PaperReviewer> { new PaperReviewer() }); // head already exists
-
-//            await Assert.ThrowsAsync<BadRequestException>(() => _service.AssignReviewerToPaper(request));
-//        }
-
-//        [Fact]
-//        public async Task AssignReviewerToPaper_ShouldReturnSuccess_WhenValid()
-//        {
-//            var request = new AssignReviewerToPaperRequest { UserId = "U1", PaperId = "P1", IsHeadReviewer = true };
-//            _mockUnitOfWork.Setup(u => u.UserRepository.GetUserByUserId("U1"))
-//                .ReturnsAsync(new User { UserId = "U1", FirebaseMobileFcmToken = "token1", FirebaseWebFcmToken = "token2" });
-//            _mockUnitOfWork.Setup(u => u.PaperRepository.GetPaperByIdAsync("P1"))
-//                .ReturnsAsync(new Paper { PaperId = "P1", Title = "Paper 1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("Local Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R1" });
-//            _mockUnitOfWork.Setup(u => u.RoleRepository.GetRoleByRoleName("External Reviewer"))
-//                .ReturnsAsync(new Role { RoleId = "R2" });
-//            _mockUnitOfWork.Setup(u => u.PaperAuthorRepository.GetPaperAuthorByIdAsync("U1", "P1"))
-//                .ReturnsAsync((PaperAuthor)null);
-//            _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId("U1"))
-//                .ReturnsAsync(new List<UserRole> { new UserRole { RoleId = "R1" } });
-//            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetPaperReviewersByPaperIdAndUserIdAsync("U1", "P1"))
-//                .ReturnsAsync((PaperReviewer)null);
-//            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.GetHeadReviewersByPaperIdAsync("P1"))
-//                .ReturnsAsync(new List<PaperReviewer>());
-//            _mockUnitOfWork.Setup(u => u.PaperReviewerRepository.CreatePaperReviewerAsync(It.IsAny<PaperReviewer>()))
-//                .ReturnsAsync(1);
-//            _mockUnitOfWork.Setup(u => u.NotificationRepository.CreateNotificationAsync(It.IsAny<Notification>()))
-//                .ReturnsAsync(1);
-//            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
-//            _mockTimeProviderService.Setup(t => t.GetVietnamTime()).ReturnsAsync(DateTime.UtcNow);
-//            _mockNotificationService.Setup(n => n.SendMobilePushAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-//                .ReturnsAsync(true);
-//            _mockNotificationService.Setup(n => n.SendWebPushAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-//                .ReturnsAsync(true);
-
-//            var result = await _service.AssignReviewerToPaper(request);
-
-//            Assert.Contains("successfully assigned", result);
-//        }
-//    }
-//}
+            Assert.Contains("thành công", result);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
+        }
+    }
+}
