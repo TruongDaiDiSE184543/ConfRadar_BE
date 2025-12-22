@@ -2423,8 +2423,8 @@ namespace ConfRadar.Services.Services
             if (today <= active.AuthorPaymentEnd)
                 throw new BadRequestException($"Không thể kích hoạt phase tiếp theo khi phase hiện tại chưa kết thúc. Phase hiện tại kết thúc vào ngày: {active.AuthorPaymentEnd:dd/MM/yyyy}.");
             // 2.2b. Phải nằm trong khoảng thời gian đăng ký của phase tiếp theo
-            if (today < nextphase.RegistrationStartDate || today > nextphase.RegistrationEndDate)
-                throw new BadRequestException($"Chỉ có thể kích hoạt phase tiếp theo trong khoảng thời gian đăng ký của nó ({nextphase.RegistrationStartDate:dd/MM/yyyy} - {nextphase.RegistrationEndDate:dd/MM/yyyy}).");
+            //if (today < nextphase.RegistrationStartDate || today > nextphase.RegistrationEndDate)
+            //    throw new BadRequestException($"Chỉ có thể kích hoạt phase tiếp theo trong khoảng thời gian đăng ký của nó ({nextphase.RegistrationStartDate:dd/MM/yyyy} - {nextphase.RegistrationEndDate:dd/MM/yyyy}).");
             // 2.3. Kiểm tra xem người tổ chức đã tạo PricePhase cho vé Author trong giai đoạn Waitlist chưa
             var allAuthorPricePhases = await _unitOfWork.PricePhaseRepository.GetPricePhaseByconferenceIdThatIsAuthor(confId);
             bool hasPricePhaseForWaitlist = allAuthorPricePhases.Any(pp => pp.ResearchConferencePhaseId == nextphase.ResearchConferencePhaseId);
