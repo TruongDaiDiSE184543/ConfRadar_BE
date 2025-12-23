@@ -377,8 +377,8 @@ namespace ConfRadar.Services.Mappers
                 ConferenceCategoryId = model.ConferenceCategoryId,
                 TicketSaleStart = model.TicketSaleStart,
                 TicketSaleEnd = model.TicketSaleEnd,
-                statusName = model.ConferenceStatus.ConferenceStatusName,
-                creatorUserName = model.CreatedByNavigation.FullName
+                statusName = model.ConferenceStatus?.ConferenceStatusName,
+                creatorUserName = model.CreatedByNavigation?.FullName
 
             };
         }

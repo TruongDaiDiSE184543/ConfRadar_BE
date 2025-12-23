@@ -327,7 +327,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             var exception = await Assert.ThrowsAsync<BadRequestException>(
                 () => _conferenceStepService.AddConferenceSessionsAsync(conference.ConferenceId, request, "user-123"));
 
-            exception.Message.Should().Contain("conflicts with an existing session");
+            exception.Message.Should().Contain("bị trùng lặp");
         }
 
         [Fact]

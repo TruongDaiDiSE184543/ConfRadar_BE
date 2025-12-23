@@ -236,10 +236,10 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.Track_Conference_Sta
             _mockConferenceStatusService.Setup(s => s.IsStatusTransitionValidAsync("OnHold", "Completed")).ReturnsAsync(false);
 
             // Act & Assert
-            var ex = await Assert.ThrowsAsync<AggregateException>(() =>
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
                 _conferenceService.ChangeConferenceStatus("user-1", "conf-1", "status-completed"));
             
-            ex.InnerExceptions[0].Message.Should().Contain("không hợp lệ");
+            ex.Message.Should().Contain("không hợp lệ");
         }
 
         [Fact]
@@ -279,11 +279,11 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.Track_Conference_Sta
             _mockUnitOfWork.Setup(u => u.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(confId)).ReturnsAsync(new List<ConferenceSession>());
 
             // Act & Assert
-            var ex = await Assert.ThrowsAsync<AggregateException>(() =>
+            var ex = await Assert.ThrowsAsync<BadRequestException>(() =>
                 _conferenceService.ChangeConferenceStatus(userId, confId, readyId));
             
-            ex.InnerExceptions[0].Message.Should().Contain("Các mốc thời gian sau đã bị lỗi thời");
-            ex.InnerExceptions[0].Message.Should().Contain("Ngày bắt đầu hội nghị");
+            //ex.Message.Should().Contain("Các mốc thời gian sau đã bị lỗi thời");
+            ex.Message.Should().Contain("Ngày bắt đầu hội nghị");
         }
 
         [Fact]

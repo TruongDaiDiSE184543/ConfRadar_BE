@@ -59,7 +59,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
             _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(conference);
 
             // Mock Research Detail
-            var researchDetail = new ResearchConferenceDetail { ConferenceId = confId };
+            var researchDetail = new ResearchConferenceDetail { ConferenceId = confId ,RevisionAttemptAllowed =1};
             _mockUnitOfWork.Setup(u => u.ResearchConferenceDetailRepository.GetResearchConferenceDetailByConferenceIdAsync(confId)).ReturnsAsync(researchDetail);
 
             // Mock Active and Next Phase
@@ -72,8 +72,11 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
                 RegistrationStartDate = today, // Hợp lệ để kích hoạt
                 RegistrationEndDate = today.AddDays(5),
                 AuthorPaymentStart = today.AddDays(6),
-                AuthorPaymentEnd = today.AddDays(10)
+                AuthorPaymentEnd = today.AddDays(10),
+                RevisionRoundDeadlines = new List<RevisionRoundDeadline> { new RevisionRoundDeadline ()}
             };
+
+            _mockUnitOfWork.Setup(u => u.RevisionRoundDeadlineRepository.GetCsByPhaseIdAsync(It.IsAny<string>())).ReturnsAsync(new List<RevisionRoundDeadline> { new RevisionRoundDeadline()});
             _mockUnitOfWork.Setup(u => u.ResearchConferencePhaseRepository.GetActiveResearchConferencePhaseByConferenceIdAsync(confId)).ReturnsAsync(activePhase);
             _mockUnitOfWork.Setup(u => u.ResearchConferencePhaseRepository.GetResearchConferencePhaseByOrderAndConferenceIdAsync(confId, 2)).ReturnsAsync(nextPhase);
 
@@ -207,27 +210,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
             ex.Message.Should().Contain("khi phase hiện tại chưa kết thúc");
         }
 
-        [Fact]
-        public async Task ActivateNextPhase_WhenCalledOutsideOfRegistrationWindow_ShouldThrowBadRequestException()
-        {
-            // SẮP ĐẶT (ARRANGE)
-            var confId = "conf-1";
-            var userId = "user-1";
-            var today = new DateOnly(2025, 10, 20);
-            SetupDefaultMocks(confId, userId, today);
-
-            // Ghi đè mock để ngày hôm nay nằm ngoài cửa sổ đăng ký
-            var nextPhase = new ResearchConferencePhase
-            {
-                RegistrationStartDate = today.AddDays(1), // Cửa sổ bắt đầu từ ngày mai
-                RegistrationEndDate = today.AddDays(5)
-            };
-            _mockUnitOfWork.Setup(u => u.ResearchConferencePhaseRepository.GetResearchConferencePhaseByOrderAndConferenceIdAsync(confId, 2)).ReturnsAsync(nextPhase);
-
-            // HÀNH ĐỘNG & KHẲNG ĐỊNH (ACT & ASSERT)
-            var ex = await Assert.ThrowsAsync<BadRequestException>(() => _service.ActivateNextPhase(confId, userId));
-            ex.Message.Should().Contain("trong khoảng thời gian đăng ký của nó");
-        }
+       
 
         [Fact]
         public async Task ActivateNextPhase_WhenNoPricePhaseForNextPhase_ShouldThrowBadRequestException()

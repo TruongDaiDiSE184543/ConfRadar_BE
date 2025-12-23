@@ -67,14 +67,14 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         {
             return new CreateResearchConferenceDetailRequest
             {
-                //PaperFormat = "ieee",
+                PaperFormat = "ieee",
                 NumberPaperAccept = 50,
                 RevisionAttemptAllowed = 3,
                 RankingDescription = "This conference is ranked A in computer science",
                 AllowListener = true,
-                RankValue = "A",
+                RankValue = "Q1",
                 RankYear = 2024,
-                //ReviewFee = 100.50m,
+                SubmitPaperFee = 100.50m,
                 RankingCategoryId = "ranking-cat-123"
             };
         }
@@ -137,6 +137,8 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
             _mockUnitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
+
+    
         }
 
         #endregion
@@ -205,12 +207,12 @@ namespace ConfRadar.UnitTests.Services.ConferenceStepServiceTests
         }
 
         [Fact]
-        public async Task CreateResearchConferenceDetailAsync_Should_ThrowBadRequestException_When_ReviewFeeIsNegative()
+        public async Task CreateResearchConferenceDetailAsync_Should_ThrowBadRequestException_When_PaperSubmitFeeIsNegative()
         {
             // ARRANGE
             var request = CreateValidRequest();
             SetupValidMocks();
-            //request.ReviewFee = -10.50m; // Invalid: negative fee
+            request.SubmitPaperFee = -10.50m; // Invalid: negative fee
 
             // ACT & ASSERT
             await Assert.ThrowsAsync<BadRequestException>(
