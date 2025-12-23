@@ -282,8 +282,18 @@ namespace ConfRadar.Services.Services
             if (ShouldCheck(c => c.IsSessionStep))
             {
                 var allSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+                if (conf.IsResearchConference == true)
+                {
+                    var noRoomIds = allSessions.Where(s => s.RoomId == null).Select(s => s.Title).ToList();
+                    if (noRoomIds.Count() > 0)
+                    {
+
+                        invalidMessages.Add($"Vui lòng thêm thông tin phòng cho session các {string.Join(",", noRoomIds)}");
+                    }
+                }
                 foreach (var session in allSessions)
                 {
+  
                     AddIfInvalid(session.SessionDate, $"Phiên '{session.Title}'");
                 }
             }
@@ -295,7 +305,6 @@ namespace ConfRadar.Services.Services
                 var allResearchPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conf.ConferenceId);
                 foreach (var phase in allResearchPhases)
                 {
-
                     // SỬA LỖI LOGIC HIỂN THỊ NGÀY Ở ĐÂY
                     AddIfInvalid(phase.RegistrationEndDate, $"{phase.PhaseOrder}: Hạn chót đăng ký");
                     AddIfInvalid(phase.FullPaperEndDate, $"{phase.PhaseOrder}: Hạn chót nộp Full Paper");
