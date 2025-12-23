@@ -282,8 +282,18 @@ namespace ConfRadar.Services.Services
             if (ShouldCheck(c => c.IsSessionStep))
             {
                 var allSessions = await _unitOfWork.ConferenceSessionRepository.GetSessionsByConferenceIdAsync(conf.ConferenceId);
+                if (conf.IsResearchConference == true)
+                {
+                    var noRoomIds = allSessions.Where(s => s.RoomId == null).Select(s => s.Title).ToList();
+                    if (noRoomIds.Count() > 0)
+                    {
+
+                        invalidMessages.Add($"Vui lòng thêm thông tin phòng cho session các {string.Join(",", noRoomIds)}");
+                    }
+                }
                 foreach (var session in allSessions)
                 {
+  
                     AddIfInvalid(session.SessionDate, $"Phiên '{session.Title}'");
                 }
             }
@@ -295,7 +305,6 @@ namespace ConfRadar.Services.Services
                 var allResearchPhases = await _unitOfWork.ResearchConferencePhaseRepository.GetResearchPhaseByConfId(conf.ConferenceId);
                 foreach (var phase in allResearchPhases)
                 {
-
                     // SỬA LỖI LOGIC HIỂN THỊ NGÀY Ở ĐÂY
                     AddIfInvalid(phase.RegistrationEndDate, $"{phase.PhaseOrder}: Hạn chót đăng ký");
                     AddIfInvalid(phase.FullPaperEndDate, $"{phase.PhaseOrder}: Hạn chót nộp Full Paper");
@@ -395,7 +404,7 @@ namespace ConfRadar.Services.Services
 
             if (invalidMessages.Any())
             {
-                string errorMessage = "Không thể chuyển về trạng thái 'Ready'. Các mốc thời gian sau đã bị lỗi thời và cần được cập nhật:\n- "
+                string errorMessage = "Không thể chuyển về trạng thái 'Ready'. VUi lòng sửa sau những vấn để sau:\n- "
                                     + string.Join("|", invalidMessages.Distinct());
                 throw new BadRequestException(errorMessage);
             }
@@ -544,7 +553,7 @@ namespace ConfRadar.Services.Services
 
             if (invalidMessages.Any())
             {
-                string errorMessage = "Không thể chuyển sang trạng thái 'Ready'. Vui lòng sửa những nơi có thời gian không hợp lệ:\n- "
+                string errorMessage = "Không thể chuyển sang trạng thái 'Ready'. Vui lòng sửa những vấn đề sau:\n- "
                                     + string.Join("|", invalidMessages.Distinct());
                 throw new BadRequestException(errorMessage);
             }
@@ -1364,7 +1373,7 @@ namespace ConfRadar.Services.Services
             if (conference.IsInternalHosted != true && conference.ConferenceStatusId == deleteStatus.ConferenceStatusId)
                 throw new Exception("Hội nghị được liên kết không thể chuyển sang trạng thái bị xoá, chỉ có thể tự động chuyển sang trạng thái này khi hợp đồng bị huỷ");
 
-            return UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason).Result;
+            return await UpdateConferenceStatusAsync(conferenceId, newStatusEntity.ConferenceStatusName!, reason);
         }
 
 
