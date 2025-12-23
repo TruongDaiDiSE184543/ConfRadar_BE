@@ -8,6 +8,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
 {
@@ -42,6 +43,9 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
                 _mockConferenceService.Object,
                 _mockTimeProvider.Object
             );
+
+            _mockUnitOfWork.Setup(u => u.ConferencePriceRepository.GetPricesByConferenceIdAsync(It.IsAny<string>()))
+           .ReturnsAsync(new List<ConferencePrice>());
         }
 
         #endregion
@@ -50,6 +54,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
 
         private void SetupStatusMocks(string draftId, string preparingId, string pendingId, string onHoldId)
         {
+
             // Setup GetByName
             _mockUnitOfWork.Setup(u => u.ConferenceStatusRepository.GetConferenceStatusByNameAsync("Draft"))
                 .ReturnsAsync(new ConferenceStatus { ConferenceStatusId = draftId, ConferenceStatusName = "Draft" });
@@ -127,6 +132,7 @@ namespace ConfRadar.UnitTests.Services.ConferenceManangment.UpdateConference
             _mockUnitOfWork.Setup(u => u.ConferenceRepository.GetConferenceByIdAsync(confId)).ReturnsAsync(conference);
             _mockUnitOfWork.Setup(u => u.TechnicalConferenceDetailRepository.GetByConferenceIdAsync(confId)).ReturnsAsync(technicalDetail);
             _mockUnitOfWork.Setup(u => u.UserRoleRepository.GetMutipleUserRolesByUserId(userId)).ReturnsAsync(new List<UserRole>());
+
 
             // ACT
             var result = await _service.UpdateConferenceBasicAsync(confId, request, userId);
